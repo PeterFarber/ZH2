@@ -1,0 +1,273 @@
+Scene:
+  Name: Main Rink
+  Version: 1
+Entities:
+  - Entity: 100000000000001
+    NameComponent:
+      Name: Main Rink
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 100000000000002
+        - 100000000000003
+        - 100000000000004
+        - 100000000000005
+        - 100000000000006
+        - 100000000000007
+        - 100000000000008
+        - 100000000000009
+        - 100000000000010
+        - 100000000000011
+        - 100000000000012
+        - 100000000000013
+        - 100000000000014
+        - 100000000000015
+        - 100000000000016
+    RinkComponent:
+      RinkName: "Main Rink"
+  - Entity: 100000000000002
+    NameComponent:
+      Name: Home Goal
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -28]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    GoalComponent:
+      DefendingTeam: Home
+  - Entity: 100000000000003
+    NameComponent:
+      Name: Away Goal
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 28]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    GoalComponent:
+      DefendingTeam: Away
+  - Entity: 100000000000004
+    NameComponent:
+      Name: Puck Spawn
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.05, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    PuckComponent:
+      StartsInPlay: true
+  - Entity: 100000000000005
+    NameComponent:
+      Name: Home Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0, -10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 0
+  - Entity: 100000000000006
+    NameComponent:
+      Name: Home Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -15]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 1
+  - Entity: 100000000000007
+    NameComponent:
+      Name: Home Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, -10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 2
+  - Entity: 100000000000008
+    NameComponent:
+      Name: Home Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -25]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Home
+      Role: Goalie
+      Index: 0
+  - Entity: 100000000000009
+    NameComponent:
+      Name: Away Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 0
+  - Entity: 100000000000010
+    NameComponent:
+      Name: Away Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 15]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 1
+  - Entity: 100000000000011
+    NameComponent:
+      Name: Away Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 2
+  - Entity: 100000000000012
+    NameComponent:
+      Name: Away Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 25]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    SpawnPointComponent:
+      Team: Away
+      Role: Goalie
+      Index: 0
+  - Entity: 100000000000013
+    NameComponent:
+      Name: Center Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    FaceoffSpotComponent:
+      Index: 0
+  - Entity: 100000000000014
+    NameComponent:
+      Name: Home Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    FaceoffSpotComponent:
+      Index: 1
+  - Entity: 100000000000015
+    NameComponent:
+      Name: Away Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    FaceoffSpotComponent:
+      Index: 2
+  - Entity: 100000000000016
+    NameComponent:
+      Name: Gameplay Camera Rig
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 15, -45]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children: []
+    CameraRigMarkerComponent:
+      Purpose: GameplayCamera

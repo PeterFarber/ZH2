@@ -1,0 +1,51 @@
+---
+description: C++ and CMake coding rules.
+globs: **/*.cpp,**/*.hpp,**/*.h,**/CMakeLists.txt,**/*.cmake
+alwaysApply: false
+---
+
+# C++ / CMake Style Rules
+
+## Language
+
+- Use C++20 unless the user explicitly upgrades the project to C++23.
+- Prefer RAII.
+- Avoid raw owning pointers.
+- Prefer `std::unique_ptr` for ownership.
+- Prefer `std::shared_ptr` only when shared ownership is real.
+- Use `std::filesystem` for paths.
+- Use `std::chrono::steady_clock` for frame/tick timing.
+- Avoid exceptions for routine engine failures.
+- Prefer `Status` or `Result<T>` for recoverable failures.
+- Assertions are for programmer errors only.
+
+## Naming
+
+- Namespace: `Hockey`.
+- Types/classes: `PascalCase`.
+- Functions/methods: `PascalCase`.
+- Local variables: `camelCase`.
+- Private members: `m_Name`.
+- Static members: `s_Name`.
+- Constants: `kName`.
+- CMake targets: `hockey_core`, `hockey_ecs`, `hockey_renderer`, etc.
+- Executables: `HockeyGameClient`, `HockeyMapEditor`, `HockeyDedicatedServer`.
+
+## CMake
+
+Use target-based CMake.
+
+Required patterns:
+
+- `target_sources`
+- `target_include_directories`
+- `target_link_libraries`
+- imported targets like `SDL3::SDL3`, `spdlog::spdlog`, `fmt::fmt`
+
+Avoid:
+
+- global include directories
+- global compiler flags
+- manually hardcoded library paths
+- adding source files without updating the proper target
+- linking future-phase dependencies into current-phase targets

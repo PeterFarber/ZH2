@@ -1,0 +1,27 @@
+---
+description: Rules for phase-based development.
+globs:
+alwaysApply: true
+---
+
+# Phase Discipline
+
+Development is phase-based.
+
+Each phase must fully complete its subsystem before moving on.
+
+Do not implement future-phase systems early.
+
+Do not add placeholder systems unless the user explicitly asks for temporary scaffolding.
+
+## General rules
+
+- Do not sneak renderer code into Phase 1.
+- Do not sneak ECS code into Phase 1.
+- Do not sneak networking code into Phase 1.
+- Do not sneak physics code into Phase 1.
+- Do not sneak gameplay code into Phase 1.
+- Do not mix systems into `core`.
+- Do not rewrite the architecture without explaining why.
+- Do not create monolithic files.
+- Do not add dependencies not listed for the current phase unless the user approves.

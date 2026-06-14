@@ -1,0 +1,37 @@
+{
+    "name": "hockey-game",
+    "version": "0.1.0",
+    "dependencies": [
+        {
+            "name": "sdl3",
+            "features": [
+                "vulkan"
+            ]
+        },
+        "spdlog",
+        "fmt",
+        "glm",
+        "tomlplusplus",
+        "entt",
+        "yaml-cpp",
+        "volk",
+        "vulkan-headers",
+        "vulkan-memory-allocator",
+        "shaderc",
+        "spirv-cross",
+        "spirv-tools",
+        "stb",
+        "fastgltf",
+        "meshoptimizer",
+        "joltphysics",
+        {
+            "name": "imgui",
+            "features": [
+                "docking-experimental",
+                "sdl3-binding"
+            ]
+        },
+        "imguizmo",
+        "nativefiledialog-extended"
+    ]
+}

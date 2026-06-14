@@ -1,0 +1,33 @@
+[assets]
+auto_cook_dirty = true
+auto_discover = true
+auto_import = true
+hot_reload = true
+
+[autosave]
+enabled = true
+interval_seconds = 120
+
+[camera]
+fast_multiplier = 4.0
+mouse_sensitivity = 0.15000000596046448
+move_speed = 10.0
+
+[grid]
+show = true
+spacing = 1.0
+
+[scene]
+recent_0 = '/home/fxs/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
+recent_count = 1
+restore_last = true
+
+[snap]
+enabled = false
+move = 0.5
+rotate_degrees = 15.0
+scale = 0.10000000149011612
+
+[validation]
+after_load = true
+before_save = true

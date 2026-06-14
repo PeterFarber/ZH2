@@ -1,0 +1,159 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake: configure debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "linux-debug"
+            ],
+            "windows": {
+                "args": [
+                    "--preset",
+                    "windows-debug"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--preset",
+                    "linux-debug"
+                ]
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake: build debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "linux-debug"
+            ],
+            "windows": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "windows-debug"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "linux-debug"
+                ]
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "cmake: configure release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "linux-release"
+            ],
+            "windows": {
+                "args": [
+                    "--preset",
+                    "windows-release"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--preset",
+                    "linux-release"
+                ]
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake: build release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "linux-release"
+            ],
+            "windows": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "windows-release"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "linux-release"
+                ]
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "ctest: run debug tests",
+            "type": "shell",
+            "command": "ctest",
+            "args": [
+                "--preset",
+                "linux-debug"
+            ],
+            "windows": {
+                "args": [
+                    "--preset",
+                    "windows-debug"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--preset",
+                    "linux-debug"
+                ]
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "shaders: build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "linux-debug",
+                "--target",
+                "shaders"
+            ],
+            "windows": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "windows-debug",
+                    "--target",
+                    "shaders"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "linux-debug",
+                    "--target",
+                    "shaders"
+                ]
+            },
+            "problemMatcher": []
+        }
+    ]
+}

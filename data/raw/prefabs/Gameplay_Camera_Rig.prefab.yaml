@@ -1,0 +1,21 @@
+Prefab:
+  Name: Gameplay Camera Rig
+  Version: 1
+  AssetId: 5250896999589946519
+Root:
+  Entity: 100000000000016
+Entities:
+  - Entity: 100000000000016
+    NameComponent:
+      Name: Gameplay Camera Rig
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 15, -45]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    CameraRigMarkerComponent:
+      Purpose: GameplayCamera

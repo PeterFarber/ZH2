@@ -1,0 +1,77 @@
+---
+description: Engine dependency boundaries and forbidden dependencies.
+globs:
+alwaysApply: true
+---
+
+# Architecture Boundaries
+
+Respect this dependency direction:
+
+```text
+core
+ecs        -> core
+assets     -> core
+renderer   -> core, ecs, assets
+physics    -> core, ecs
+networking -> core, ecs
+gameplay   -> core, ecs, physics, networking
+editor     -> core, ecs, renderer, assets, gameplay
+
+game_client       -> core, ecs, renderer, assets, gameplay, networking
+map_editor        -> core, ecs, renderer, assets, editor
+dedicated_server  -> core, ecs, gameplay, networking, physics
+```
+
+## Core rules
+
+`core` may contain:
+
+- logging
+- assertions
+- status/result types
+- config
+- paths
+- filesystem helpers
+- command-line parsing
+- platform abstraction
+- signal handling
+- crash/terminate handling
+- time/timers
+- fixed timestep
+- UUID
+- SDL3 window wrapper
+- event queue
+- keyboard/mouse/gamepad input
+- application loops
+- job system/thread pool
+
+`core` must not contain:
+
+- Vulkan
+- renderer
+- ECS scene/entity logic
+- physics
+- networking
+- GameNetworkingSockets
+- gameplay
+- hockey rules
+- editor UI
+- ImGui
+- asset importer/cooker
+
+## Dedicated server rules
+
+The dedicated server:
+
+- must be headless
+- must not create a window
+- must not initialize Vulkan
+- must not link renderer
+- must not link ImGui
+- must not link editor UI
+- must own authoritative simulation later
+- must run fixed tick loop
+- must support Ctrl+C/SIGTERM shutdown
+
+If a requested change violates the dependency graph, stop and explain the violation before editing.

@@ -1,0 +1,28 @@
+# Hockey editor dark theme. Values are linear sRGB [0,1] RGBA tuples consumed by
+# EditorTheme. Missing keys fall back to the built-in ImGui dark style.
+
+[window]
+background = [0.09, 0.09, 0.11, 1.0]
+
+[header]
+default = [0.20, 0.22, 0.27, 1.0]
+hovered = [0.28, 0.30, 0.36, 1.0]
+active = [0.32, 0.34, 0.40, 1.0]
+
+[button]
+default = [0.20, 0.22, 0.27, 1.0]
+hovered = [0.28, 0.30, 0.36, 1.0]
+active = [0.36, 0.40, 0.48, 1.0]
+
+[frame]
+default = [0.14, 0.15, 0.18, 1.0]
+hovered = [0.20, 0.22, 0.27, 1.0]
+active = [0.24, 0.26, 0.31, 1.0]
+
+[tab]
+default = [0.14, 0.15, 0.18, 1.0]
+hovered = [0.28, 0.30, 0.36, 1.0]
+active = [0.22, 0.24, 0.29, 1.0]
+
+[accent]
+primary = [0.26, 0.59, 0.98, 1.0]

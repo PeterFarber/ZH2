@@ -1,0 +1,21 @@
+[app]
+sleep_when_idle = true
+
+[server]
+name = "Local Hockey Server"
+tick_rate = 60
+max_players = 8
+port = 27020
+
+[scene]
+startup_scene = "data/raw/scenes/main_rink.scene.yaml"
+validate_on_load = true
+
+[physics]
+fixed_delta_seconds = 0.0166666667
+gravity_x = 0.0
+gravity_y = -9.81
+gravity_z = 0.0
+enable_debug_draw = false
+enable_sleeping = true
+deterministic_mode = true

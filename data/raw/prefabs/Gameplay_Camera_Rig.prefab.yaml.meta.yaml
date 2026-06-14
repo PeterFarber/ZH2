@@ -1,0 +1,17 @@
+Asset:
+  ID: 11334614946227396423
+  Type: Prefab
+  Name: Gameplay_Camera_Rig.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Gameplay_Camera_Rig.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/11334614946227396423.prefab.yaml
+  RawFileTimestamp: 13790493695418202186
+  RawFileHash: 4705376165669395857
+  ImportedTimestamp: 1781461746
+  CookedTimestamp: 1781461729
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

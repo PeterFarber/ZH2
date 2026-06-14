@@ -1,0 +1,150 @@
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <string_view>
+
+#include "Hockey/Core/Result.hpp"
+
+namespace Hockey {
+
+class Config;
+
+// ---------------------------------------------------------------------------
+// Graphics settings enums
+// ---------------------------------------------------------------------------
+
+enum class DisplayMode { Windowed, BorderlessFullscreen, ExclusiveFullscreen };
+enum class GraphicsPreset { Low, Medium, High, Ultra, Custom };
+enum class Upscaler { None, FSR, XeSS, DLSS };
+enum class AntiAliasing { Off, FXAA, TAA, MSAA2x, MSAA4x, MSAA8x };
+enum class TextureQuality { Low, Medium, High, Ultra };
+enum class ShadowQuality { Off, Low, Medium, High, Ultra };
+enum class AmbientOcclusionQuality { Off, Low, Medium, High, Ultra };
+enum class ReflectionQuality { Off, Low, Medium, High, Ultra };
+enum class EffectQuality { Off, Low, Medium, High, Ultra };
+enum class DetailQuality { Low, Medium, High, Ultra };
+enum class ToneMapper { Linear, Reinhard, ACES };
+
+// ---------------------------------------------------------------------------
+// Complete renderer settings model. Fields cover display, upscaling, quality,
+// lighting, geometry, effects, hockey-specific quality, post-processing and
+// debug/performance flags. Only a subset of these is wired into actual GPU
+// behavior in Phase 3; the rest are persisted data paths for later phases.
+// ---------------------------------------------------------------------------
+
+struct RendererSettings {
+    // Display
+    DisplayMode displayMode = DisplayMode::Windowed;
+    uint32_t resolutionWidth = 1920;
+    uint32_t resolutionHeight = 1080;
+    uint32_t refreshRate = 0;
+    uint32_t monitorIndex = 0;
+    bool vsync = true;
+    uint32_t fpsLimit = 0;
+    bool hdr = true;
+    float brightness = 1.0f;
+    float fieldOfView = 70.0f;
+
+    // Upscaling / scaling
+    float renderScale = 1.0f;
+    bool dynamicResolution = false;
+    Upscaler upscaler = Upscaler::None;
+    float sharpening = 0.3f;
+
+    // Preset
+    GraphicsPreset preset = GraphicsPreset::High;
+
+    // Textures / materials
+    TextureQuality textureQuality = TextureQuality::High;
+    uint32_t textureStreamingBudgetMB = 4096;
+    uint32_t anisotropy = 16;
+    DetailQuality materialQuality = DetailQuality::High;
+
+    // Lighting / shadows
+    ShadowQuality shadowQuality = ShadowQuality::High;
+    float shadowDistance = 100.0f;
+    bool contactShadows = true;
+    AmbientOcclusionQuality aoQuality = AmbientOcclusionQuality::High;
+    ReflectionQuality reflectionQuality = ReflectionQuality::High;
+    DetailQuality globalIlluminationQuality = DetailQuality::Medium;
+
+    // Geometry
+    DetailQuality modelQuality = DetailQuality::High;
+    float lodDistanceMultiplier = 1.0f;
+    DetailQuality crowdQuality = DetailQuality::Medium;
+    DetailQuality arenaDetail = DetailQuality::High;
+    DetailQuality boardGlassDetail = DetailQuality::High;
+
+    // Effects
+    bool bloom = true;
+    bool motionBlur = false;
+    bool depthOfField = false;
+    bool lensFlare = true;
+    DetailQuality volumetricLighting = DetailQuality::Medium;
+    DetailQuality particleQuality = DetailQuality::High;
+
+    // Hockey-specific quality
+    DetailQuality iceQuality = DetailQuality::High;
+    ReflectionQuality iceReflectionQuality = ReflectionQuality::High;
+    DetailQuality iceScratchQuality = DetailQuality::High;
+    EffectQuality skateSprayQuality = EffectQuality::High;
+    EffectQuality puckTrailQuality = EffectQuality::Medium;
+    DetailQuality jerseyQuality = DetailQuality::High;
+    DetailQuality goalNetQuality = DetailQuality::High;
+
+    // Post-processing
+    AntiAliasing antiAliasing = AntiAliasing::FXAA;
+    ToneMapper toneMapper = ToneMapper::ACES;
+    bool filmGrain = false;
+    bool chromaticAberration = false;
+    bool vignette = false;
+
+    // Debug / performance overlays
+    bool showFPS = false;
+    bool showFrameTime = false;
+    bool showGPUStats = false;
+    bool showNetworkStats = false;
+};
+
+// ---------------------------------------------------------------------------
+// Construction / presets / persistence
+// ---------------------------------------------------------------------------
+
+RendererSettings MakeDefaultRendererSettings();
+RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings base = {});
+
+// Reads the [renderer] section from a Config into outSettings. Missing keys
+// keep their default values. Always succeeds (returns the read settings).
+Status LoadRendererSettings(const Config& config, RendererSettings& outSettings);
+void SaveRendererSettings(Config& config, const RendererSettings& settings);
+
+// ---------------------------------------------------------------------------
+// Enum <-> string conversions (used for config + UI later)
+// ---------------------------------------------------------------------------
+
+const char* ToString(DisplayMode value);
+const char* ToString(GraphicsPreset value);
+const char* ToString(Upscaler value);
+const char* ToString(AntiAliasing value);
+const char* ToString(TextureQuality value);
+const char* ToString(ShadowQuality value);
+const char* ToString(AmbientOcclusionQuality value);
+const char* ToString(ReflectionQuality value);
+const char* ToString(EffectQuality value);
+const char* ToString(DetailQuality value);
+const char* ToString(ToneMapper value);
+
+bool FromString(std::string_view text, DisplayMode& out);
+bool FromString(std::string_view text, GraphicsPreset& out);
+bool FromString(std::string_view text, Upscaler& out);
+bool FromString(std::string_view text, AntiAliasing& out);
+bool FromString(std::string_view text, TextureQuality& out);
+bool FromString(std::string_view text, ShadowQuality& out);
+bool FromString(std::string_view text, AmbientOcclusionQuality& out);
+bool FromString(std::string_view text, ReflectionQuality& out);
+bool FromString(std::string_view text, EffectQuality& out);
+bool FromString(std::string_view text, DetailQuality& out);
+bool FromString(std::string_view text, ToneMapper& out);
+
+} // namespace Hockey

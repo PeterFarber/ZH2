@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "vadimcn.vscode-lldb",
+        "slevesque.shader",
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "gruntfuggly.todo-tree",
+        "ms-vscode.hexeditor",
+        "streetsidesoftware.code-spell-checker"
+    ],
+    "unwantedRecommendations": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack"
+    ]
+}

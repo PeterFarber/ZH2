@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug selected CMake target",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "stopOnEntry": false,
+            "terminal": "integrated"
+        },
+        {
+            "name": "Debug selected CMake target with Vulkan validation",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "VK_INSTANCE_LAYERS": "VK_LAYER_KHRONOS_validation"
+            },
+            "stopOnEntry": false,
+            "terminal": "integrated"
+        }
+    ]
+}

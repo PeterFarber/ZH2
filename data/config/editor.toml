@@ -1,0 +1,47 @@
+[app]
+name = "Hockey Map Editor"
+target_fps = 0
+
+[window]
+title = "Hockey Map Editor"
+width = 1600
+height = 900
+resizable = true
+maximized = true
+start_centered = true
+
+[input]
+gamepad_enabled = true
+mouse_capture = false
+
+[renderer]
+vsync = true
+preset = "High"
+shadow_quality = "Medium"
+shadow_distance = 100.0
+ao_quality = "Medium"
+anti_aliasing = "FXAA"
+tone_mapper = "ACES"
+bloom = true
+brightness = 1.0
+anisotropy = 16
+
+[scene]
+startup_scene = "data/raw/scenes/main_rink.scene.yaml"
+autosave_enabled = true
+autosave_interval_seconds = 120
+
+[physics]
+fixed_delta_seconds = 0.0166666667
+gravity_x = 0.0
+gravity_y = -9.81
+gravity_z = 0.0
+enable_debug_draw = true
+enable_sleeping = true
+preview_simulation = false
+
+[assets]
+auto_discover = true
+auto_import = true
+auto_cook_dirty = true
+hot_reload = true

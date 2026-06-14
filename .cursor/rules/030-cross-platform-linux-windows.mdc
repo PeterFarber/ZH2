@@ -1,0 +1,37 @@
+---
+description: Windows and Linux compatibility requirements.
+globs: **/*.cpp,**/*.hpp,**/*.h,**/*.cmake,**/CMakeLists.txt,**/*.sh,**/*.ps1,**/*.toml
+alwaysApply: false
+---
+
+# Cross-Platform Windows/Linux Rules
+
+This project must support Windows and Linux.
+
+## Forbidden patterns
+
+Do not hardcode:
+
+- `.exe` in runtime logic.
+- Windows-only paths.
+- Backslash-only paths like `data\\config\\client.toml`.
+- Current-working-directory assumptions.
+- Windows-only APIs outside platform abstraction.
+- Linux-only APIs outside platform abstraction.
+- Direct `Sleep()` outside platform abstraction.
+- Direct `GetModuleFileNameW()` outside platform abstraction.
+- Direct `/proc/self/exe` logic outside platform abstraction.
+
+## Required patterns
+
+Use:
+
+- `std::filesystem::path`
+- `path / "child"`
+- `Paths::ConfigFile(...)`
+- `Paths::LogFile(...)`
+- `Paths::DataFile(...)`
+- `Platform::ExecutablePath()`
+- `Platform::SleepMilliseconds(...)`
+- `SignalHandler::Install()`
+- `SignalHandler::ShutdownRequested()`
