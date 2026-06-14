@@ -1,45 +1,31 @@
-# One-time Windows setup: verify build tools and bootstrap vcpkg.
+# Installs prerequisites, bootstraps vcpkg, and verifies the Windows build environment.
+param(
+    [switch]$SkipInstall,
+    [switch]$Elevated
+)
+
 $ErrorActionPreference = "Stop"
 
 Write-Host "== HockeyGame Windows setup =="
 
-function Test-Tool($name) {
-    if (Get-Command $name -ErrorAction SilentlyContinue) {
-        Write-Host "  found: $name"
-        return $true
-    }
-    Write-Warning "  missing: $name"
-    return $false
-}
+. "$PSScriptRoot\Prerequisites.ps1"
 
-Write-Host "Checking required tools..."
-$ok = $true
-$ok = (Test-Tool "cmake") -and $ok
-$ok = (Test-Tool "ninja") -and $ok
-$ok = (Test-Tool "git") -and $ok
-
-if (-not $ok) {
-    Write-Warning "Install the missing tools (Visual Studio 2022 C++ workload provides MSVC + CMake + Ninja)."
-    Write-Warning "Standalone: https://cmake.org/download and https://github.com/ninja-build/ninja/releases"
-}
-
-# Bootstrap vcpkg if VCPKG_ROOT points at a checkout that is not yet bootstrapped.
-if ($env:VCPKG_ROOT) {
-    $vcpkgExe = Join-Path $env:VCPKG_ROOT "vcpkg.exe"
-    $bootstrap = Join-Path $env:VCPKG_ROOT "bootstrap-vcpkg.bat"
-    if (Test-Path $vcpkgExe) {
-        Write-Host "vcpkg already bootstrapped at $env:VCPKG_ROOT."
-    } elseif (Test-Path $bootstrap) {
-        Write-Host "Bootstrapping vcpkg at $env:VCPKG_ROOT..."
-        & $bootstrap -disableMetrics
+if (-not $SkipInstall) {
+    $status = Get-HockeyPrerequisiteStatus
+    if (-not $status.Ready) {
+        if (-not $Elevated -and -not (Test-IsAdministrator)) {
+            Request-SetupElevation -SetupScript $PSCommandPath
+        }
+        Install-HockeyPrerequisites | Out-Null
     } else {
-        Write-Warning "VCPKG_ROOT is set to '$env:VCPKG_ROOT' but no vcpkg checkout was found there."
+        Write-Host "Prerequisites already satisfied."
     }
-} else {
-    Write-Warning "VCPKG_ROOT is not set. Clone vcpkg and set VCPKG_ROOT, for example:"
-    Write-Host '  git clone https://github.com/microsoft/vcpkg $env:USERPROFILE\vcpkg'
-    Write-Host '  & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics'
-    Write-Host '  setx VCPKG_ROOT "$env:USERPROFILE\vcpkg"'
 }
 
+. "$PSScriptRoot\Env.ps1"
+
+Write-Host "  repo:    $script:HockeyRoot"
+Write-Host "  vcpkg:   $env:VCPKG_ROOT"
+Write-Host "  cmake:   $(Get-Command cmake | Select-Object -ExpandProperty Source)"
+Write-Host "  ninja:   $(Get-Command ninja | Select-Object -ExpandProperty Source)"
 Write-Host "== Setup complete =="
