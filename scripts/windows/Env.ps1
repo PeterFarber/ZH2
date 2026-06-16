@@ -5,6 +5,19 @@ $ErrorActionPreference = "Stop"
 $script:HockeyRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $script:HockeyEnvInitialized = $false
 
+function Get-CmdExe {
+    if ($env:ComSpec -and (Test-Path -LiteralPath $env:ComSpec)) {
+        return $env:ComSpec
+    }
+
+    $fallback = Join-Path $env:SystemRoot "System32\cmd.exe"
+    if (Test-Path -LiteralPath $fallback) {
+        return $fallback
+    }
+
+    throw "cmd.exe was not found. Expected ComSpec or $fallback"
+}
+
 function Find-VisualStudioInstallation {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
     if (Test-Path $vswhere) {
@@ -35,7 +48,7 @@ function Import-VisualStudioDevEnvironment {
         throw "vcvars64.bat not found at $vcvars"
     }
 
-    cmd /c "`"$vcvars`" >nul 2>&1 && set" | ForEach-Object {
+    & (Get-CmdExe) /c "`"$vcvars`" >nul 2>&1 && set" | ForEach-Object {
         if ($_ -match '^([^=]+)=(.*)$') {
             Set-Item -Path "env:$($matches[1])" -Value $matches[2]
         }
@@ -71,7 +84,7 @@ Run: .\scripts\windows\setup.ps1
     }
 
     Write-Host "Bootstrapping vcpkg..."
-    cmd /c "`"$bootstrap`" -disableMetrics"
+    & (Get-CmdExe) /c "`"$bootstrap`" -disableMetrics"
     if ($LASTEXITCODE -ne 0) {
         throw "vcpkg bootstrap failed with exit code $LASTEXITCODE."
     }

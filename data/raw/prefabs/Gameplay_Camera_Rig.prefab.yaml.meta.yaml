@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/prefabs/Gameplay_Camera_Rig.prefab.yaml
   CookedPath: data/cooked/assets/prefabs/11334614946227396423.prefab.yaml
-  RawFileTimestamp: 13790493695418202186
-  RawFileHash: 4705376165669395857
-  ImportedTimestamp: 1781574092
-  CookedTimestamp: 1781573756
+  RawFileTimestamp: 134259447247131579
+  RawFileHash: 2884759087586424727
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574094
   Dependencies: []
   Dependents: []
   Dirty: true

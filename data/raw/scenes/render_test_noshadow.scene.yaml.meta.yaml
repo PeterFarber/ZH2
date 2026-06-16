@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/scenes/render_test_noshadow.scene.yaml
   CookedPath: data/cooked/assets/scenes/9657952321958232363.scene.yaml
-  RawFileTimestamp: 13790635696975787495
-  RawFileHash: 13648715088677372399
-  ImportedTimestamp: 1781574096
-  CookedTimestamp: 1781573762
+  RawFileTimestamp: 134260507681264503
+  RawFileHash: 17149242841577892400
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574102
   Dependencies: []
   Dependents: []
   Dirty: true

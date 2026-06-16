@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/rink_ice.material.yaml
   CookedPath: data/cooked/assets/materials/589019741743117030.material.yaml
-  RawFileTimestamp: 13790650856482601244
-  RawFileHash: 13471149491417464448
-  ImportedTimestamp: 1781574095
-  CookedTimestamp: 1781573761
+  RawFileTimestamp: 134260507679383440
+  RawFileHash: 5351045958080944904
+  ImportedTimestamp: 1781581180
+  CookedTimestamp: 1781574100
   Dependencies: [7078849729660824672, 3676396976082727918, 11395449678300773843, 17073435024746253433]
-  Dependents: [11284226548572360889, 9039238736338702129]
+  Dependents: [9175991790460576983, 9039238736338702129, 11284226548572360889]
   Dirty: true
   Missing: false
   Cooked: true

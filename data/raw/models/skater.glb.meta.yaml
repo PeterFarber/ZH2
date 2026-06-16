@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/models/skater.glb
   CookedPath: data/cooked/assets/models/6891371314753133998.model.bin
-  RawFileTimestamp: 13790645171171662778
+  RawFileTimestamp: 134260507681008872
   RawFileHash: 6061227441565028799
-  ImportedTimestamp: 1781574096
-  CookedTimestamp: 1781573763
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574103
   Dependencies: [8678109575161473379, 160456599279444274]
   Dependents: []
   Dirty: true

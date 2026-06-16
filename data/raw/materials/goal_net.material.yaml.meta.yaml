@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/goal_net.material.yaml
   CookedPath: data/cooked/assets/materials/17935261401580367734.material.yaml
-  RawFileTimestamp: 13790645465631287880
-  RawFileHash: 15715850904484899129
-  ImportedTimestamp: 1781574089
-  CookedTimestamp: 1781573747
+  RawFileTimestamp: 134260507679343443
+  RawFileHash: 18212339277089189908
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574084
   Dependencies: []
   Dependents: []
   Dirty: true

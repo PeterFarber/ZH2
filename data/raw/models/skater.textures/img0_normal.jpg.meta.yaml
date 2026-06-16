@@ -6,10 +6,10 @@ Asset:
   CookerVersion: TextureCooker_v1
   RawPath: data/raw/models/skater.textures/img0_normal.jpg
   CookedPath: data/cooked/assets/textures/13025721665702803394.tex.bin
-  RawFileTimestamp: 13790647345977527031
+  RawFileTimestamp: 134260507681033944
   RawFileHash: 7862396839781857537
-  ImportedTimestamp: 1781574089
-  CookedTimestamp: 1781573748
+  ImportedTimestamp: 1781581180
+  CookedTimestamp: 1781574084
   Dependencies: []
   Dependents: [8678109575161473379]
   Dirty: true

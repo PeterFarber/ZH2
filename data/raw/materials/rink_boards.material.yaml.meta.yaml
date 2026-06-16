@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/rink_boards.material.yaml
   CookedPath: data/cooked/assets/materials/15014011651065445078.material.yaml
-  RawFileTimestamp: 13790645465636288025
-  RawFileHash: 7516896831821715032
-  ImportedTimestamp: 1781574089
-  CookedTimestamp: 1781573747
+  RawFileTimestamp: 134260507679373441
+  RawFileHash: 162876942655160191
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574084
   Dependencies: []
   Dependents: []
   Dirty: true

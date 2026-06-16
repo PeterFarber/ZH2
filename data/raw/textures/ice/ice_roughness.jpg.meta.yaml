@@ -6,10 +6,10 @@ Asset:
   CookerVersion: TextureCooker_v1
   RawPath: data/raw/textures/ice/ice_roughness.jpg
   CookedPath: data/cooked/assets/textures/11395449678300773843.tex.bin
-  RawFileTimestamp: 13790646583946833632
+  RawFileTimestamp: 134260507682228788
   RawFileHash: 13776648050345805364
-  ImportedTimestamp: 1781574089
-  CookedTimestamp: 1781573748
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574085
   Dependencies: []
   Dependents: [589019741743117030]
   Dirty: true

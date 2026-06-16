@@ -6,10 +6,10 @@ Asset:
   CookerVersion: TextureCooker_v1
   RawPath: data/raw/textures/ice/ice_basecolor.jpg
   CookedPath: data/cooked/assets/textures/7078849729660824672.tex.bin
-  RawFileTimestamp: 13790646579095661423
+  RawFileTimestamp: 134260507681330011
   RawFileHash: 7572275322328671716
-  ImportedTimestamp: 1781574091
-  CookedTimestamp: 1781573753
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574091
   Dependencies: []
   Dependents: [589019741743117030]
   Dirty: true

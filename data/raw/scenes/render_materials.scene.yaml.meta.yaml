@@ -3,15 +3,15 @@ Asset:
   Type: Scene
   Name: render_materials.scene
   ImporterVersion: 1.0.0
-  CookerVersion: ""
+  CookerVersion: 1.0.0
   RawPath: data/raw/scenes/render_materials.scene.yaml
-  CookedPath: ""
-  RawFileTimestamp: 13790654679971671365
-  RawFileHash: 2301075507903474272
-  ImportedTimestamp: 1781574606
-  CookedTimestamp: 0
+  CookedPath: data/cooked/assets/scenes/11378009481156763344.scene.yaml
+  RawFileTimestamp: 134260507681244239
+  RawFileHash: 7837328002971075267
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574606
   Dependencies: []
   Dependents: []
   Dirty: true
   Missing: false
-  Cooked: false
+  Cooked: true

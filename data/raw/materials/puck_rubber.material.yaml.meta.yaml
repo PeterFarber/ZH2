@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/puck_rubber.material.yaml
   CookedPath: data/cooked/assets/materials/3094564343776955364.material.yaml
-  RawFileTimestamp: 13790645465636288025
-  RawFileHash: 3112200684477575963
-  ImportedTimestamp: 1781574091
-  CookedTimestamp: 1781573752
+  RawFileTimestamp: 134260507679363441
+  RawFileHash: 6605800253241681118
+  ImportedTimestamp: 1781581180
+  CookedTimestamp: 1781574090
   Dependencies: []
-  Dependents: [9039238736338702129]
+  Dependents: []
   Dirty: true
   Missing: false
   Cooked: true

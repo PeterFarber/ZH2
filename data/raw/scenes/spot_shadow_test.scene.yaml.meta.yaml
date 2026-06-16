@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/scenes/spot_shadow_test.scene.yaml
   CookedPath: data/cooked/assets/scenes/8403497455647703792.scene.yaml
-  RawFileTimestamp: 13790652704455529784
-  RawFileHash: 1855794253704457534
-  ImportedTimestamp: 1781574091
-  CookedTimestamp: 1781573753
+  RawFileTimestamp: 134260507681274493
+  RawFileHash: 9268338326066826517
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574091
   Dependencies: []
   Dependents: []
   Dirty: true

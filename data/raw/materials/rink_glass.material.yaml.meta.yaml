@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/rink_glass.material.yaml
   CookedPath: data/cooked/assets/materials/2451443617891371341.material.yaml
-  RawFileTimestamp: 13790645465636288025
-  RawFileHash: 6874253857258200442
-  ImportedTimestamp: 1781574091
-  CookedTimestamp: 1781573753
+  RawFileTimestamp: 134260507679373441
+  RawFileHash: 17959247753826852927
+  ImportedTimestamp: 1781581180
+  CookedTimestamp: 1781574091
   Dependencies: []
   Dependents: []
   Dirty: true
