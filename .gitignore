@@ -10,19 +10,11 @@ vcpkg_installed/
 _notes/*
 !_notes/.gitkeep
 
-# Cursor
-.cursor/plans/*
-!.cursor/plans/.gitkeep
-
 # Logs/temp
 data/logs/*
 !data/logs/.gitkeep
 data/temp/*
 !data/temp/.gitkeep
-
-# Docs
-docs/phase-rules/*
-!docs/phase-rules/.gitkeep
 
 # OS/editor
 .DS_Store

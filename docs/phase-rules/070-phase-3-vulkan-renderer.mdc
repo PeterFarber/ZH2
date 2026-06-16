@@ -1,0 +1,122 @@
+---
+description: Phase 3 scope — complete Vulkan renderer subsystem.
+globs: libs/renderer/**,libs/ecs/**,libs/assets/**,apps/game_client/**,apps/map_editor/**,apps/renderer_tests/**,data/shaders/**,data/config/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 3 — Complete Vulkan Renderer Subsystem
+
+Current phase: Phase 3.
+
+This phase builds the complete shared Vulkan renderer for the game client and map editor. The dedicated server must not link the renderer.
+
+## Allowed dependencies
+
+Existing dependencies plus:
+
+- Vulkan SDK
+- Vulkan headers
+- Volk
+- Vulkan Memory Allocator
+- shaderc
+- SPIRV-Cross
+- SPIRV-Tools
+- Tracy if profiling is implemented
+
+## Required library
+
+Create `hockey_renderer`.
+
+Dependency:
+
+```text
+hockey_renderer -> hockey_core, hockey_ecs
+```
+
+`HockeyDedicatedServer` must not link `hockey_renderer`, Vulkan, Volk, VMA, ImGui, or editor UI.
+
+## Required systems
+
+Implement complete:
+
+- renderer public API
+- renderer settings/stats
+- Vulkan instance/debug messenger/surface/device/queues
+- Volk init
+- VMA allocator
+- swapchain and resize/minimize handling
+- frame data and sync
+- command pools/buffers
+- buffers/textures/samplers/descriptors/pipelines/shaders
+- shader compilation
+- render graph
+- render targets
+- mesh system
+- material system
+- camera rendering
+- lighting/shadows
+- post-processing
+- debug rendering
+- GPU markers/debug names
+- profiling stats
+
+## Required renderer features
+
+Implement:
+
+- HDR internal render target
+- depth buffer
+- PBR material model
+- basic PBR lighting
+- directional/point/spot lights
+- shadow maps and cascaded directional shadows
+- ambient occlusion
+- bloom
+- tone mapping
+- anti-aliasing path
+- transparent rendering path
+- debug lines/shapes
+- offscreen editor viewport render target
+- render-to-swapchain path
+- render-to-texture path
+
+## Required hockey-specific render support
+
+Implement data/settings/material paths for ice, ice reflections, ice scratch detail, boards/glass, puck material, goal net, team jerseys, skate spray quality, and puck trail quality.
+
+## Required ECS render components
+
+Add and serialize `CameraComponent`, `MeshRendererComponent`, `LightComponent`, and other render components actually used.
+
+## Required graphics settings
+
+Implement complete `RendererSettings` model covering display, upscaling, quality, textures/materials, lighting, geometry, effects, hockey-specific quality, post-processing, and debug/performance flags.
+
+Settings must load from config and be applied where implemented.
+
+## Required app behavior
+
+Client initializes renderer, loads settings, renders scene to swapchain, handles resize, and shuts down cleanly.
+
+Editor initializes renderer, creates offscreen viewport render target, renders scene to target, and handles viewport resize.
+
+Server remains unchanged and renderer-free.
+
+## Required tests
+
+Create `HockeyRendererTests` and validate renderer init/shutdown, swapchain, resize, VMA, shader compile, built-in meshes, default materials, settings load, offscreen target, and server not linking renderer.
+
+## Phase 3 must not implement
+
+- map editor UI
+- physics simulation
+- networking
+- GameNetworkingSockets
+- hockey gameplay simulation
+- final asset pipeline
+- animation
+- audio
+
+## Definition of done
+
+Phase 3 is complete only when Vulkan renderer is functional, validation is clean, render graph/PBR/lighting/shadows/post/debug/offscreen viewport work, settings load, client/editor render, server has no renderer dependency, and no physics/networking/gameplay simulation exists.

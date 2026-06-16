@@ -1,0 +1,49 @@
+---
+description: Phase 7 scope — complete hockey gameplay simulation.
+globs: libs/gameplay/**,libs/ecs/**,libs/physics/**,libs/editor/**,apps/gameplay_tests/**,apps/game_client/**,apps/dedicated_server/**,data/raw/scenes/**,data/config/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 7 — Complete Hockey Gameplay Simulation
+
+Current phase: Phase 7.
+
+This phase builds the full hockey gameplay simulation without final networking.
+
+## Required library
+
+Create `hockey_gameplay`.
+
+Dependency:
+
+```text
+hockey_gameplay -> hockey_core, hockey_ecs, hockey_physics
+```
+
+## Required gameplay model
+
+Implement 4v4 hockey with 2 teams, 3 skaters + 1 goalie per team, 1 puck, 2 goals, periods/timer, score, faceoffs, goals, spawn/reset flow.
+
+## Required components
+
+Implement `PlayerComponent`, `SkaterComponent`, `GoalieComponent`, `PuckGameplayComponent`, `StickComponent`, `TeamStateComponent`, `MatchStateComponent`, `ScoreComponent`, `PossessionComponent`, `ShotComponent`, `PassComponent`, `CheckComponent`, `FaceoffComponent`, and `RespawnComponent`.
+
+## Required systems
+
+Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, shooting, passing, checking/contact, goal detection, score, match clock, periods, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
+
+## Input model
+
+Define gameplay input data independent from SDL. Gameplay must not directly read SDL input.
+
+## Server-readiness
+
+Gameplay must use fixed timestep, have no renderer/editor dependency, no direct SDL/Vulkan/ImGui dependency, and no direct networking dependency unless explicitly allowed.
+
+## Required tests
+
+Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, skater/goalie movement, shooting/pass/check paths, and server-mode fixed tick.
+
+## Definition of done
+
+Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/shooting/passing/checking/faceoffs work, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.

@@ -1,0 +1,43 @@
+---
+description: Phase 9 scope — complete animation, audio, UI, polish, optimization, packaging.
+globs: libs/animation/**,libs/audio/**,libs/ui/**,libs/gameplay/**,libs/renderer/**,apps/game_client/**,apps/map_editor/**,apps/dedicated_server/**,data/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 9 — Complete Animation, Audio, UI, Polish, Optimization, and Packaging
+
+Current phase: Phase 9.
+
+This phase completes the shippable game experience.
+
+## Required animation system
+
+Implement skeletal mesh support if not already complete, animation clips, graph/state machine, blending, hockey locomotion, goalie animations, stick handling, shooting, passing, checking, celebration, network animation state sync, and editor preview where needed.
+
+## Required audio system
+
+Implement audio device, sound assets, emitters, music, SFX, arena ambience, puck hits, skates, crowd, goal horn, UI sounds, volume settings, config persistence.
+
+## Required game UI
+
+Implement main menu, settings, graphics/audio/controls settings, lobby UI, team/role select, scoreboard, match clock, goal notification, pause menu, network stats overlay, debug overlay if enabled.
+
+## Required input polish
+
+Implement configurable bindings, controller mappings, deadzones, sensitivity, vibration, input presets, save/load settings.
+
+## Required optimization
+
+Implement CPU/GPU/network profiling, memory tracking, asset memory budgets, graphics presets tuning, frame pacing, loading-time optimization, server tick profiling, and bandwidth optimization.
+
+## Required packaging
+
+Implement Windows/Linux packages for client/editor/server, config defaults, data packaging, shader/asset packaging, logs/temp handling.
+
+## Required QA
+
+Test Windows client/editor/server, Linux client/editor/server, local multiplayer, dedicated server multiplayer, controller support, settings persistence, graphics/audio settings, reconnect/disconnect, scene loading, asset loading, and long-running server stability.
+
+## Definition of done
+
+Phase 9 is complete only when animation/audio/full UI/settings/lobby/HUD/controller config/profiling/packages all work, client/editor/server run from packaged builds, long-running dedicated server is stable, and the game is playable end-to-end.
