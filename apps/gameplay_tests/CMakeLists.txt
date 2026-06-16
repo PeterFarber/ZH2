@@ -1,0 +1,10 @@
+add_executable(HockeyGameplayTests
+    src/GameplayTestsMain.cpp
+    src/SettingsTuningTests.cpp
+    src/InputModelTests.cpp
+    src/EventTests.cpp
+    src/TeamTypesTests.cpp
+)
+
+target_link_libraries(HockeyGameplayTests PRIVATE hockey_core hockey_ecs hockey_physics hockey_gameplay)
+set_target_properties(HockeyGameplayTests PROPERTIES OUTPUT_NAME "HockeyGameplayTests")

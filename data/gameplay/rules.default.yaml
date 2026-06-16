@@ -1,0 +1,11 @@
+Match:
+  PeriodCount: 3
+  PeriodLengthSeconds: 300.0
+  SkatersPerTeam: 3
+  GoaliesPerTeam: 1
+Faceoff:
+  DelaySeconds: 1.0
+  LockPlayersSeconds: 0.5
+Goal:
+  PostGoalDelaySeconds: 3.0
+  RequirePuckTrigger: true

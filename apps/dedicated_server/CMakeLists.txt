@@ -4,5 +4,5 @@ add_executable(HockeyDedicatedServer
     src/DedicatedServerApp.hpp
 )
 
-target_link_libraries(HockeyDedicatedServer PRIVATE hockey_core hockey_ecs hockey_physics)
+target_link_libraries(HockeyDedicatedServer PRIVATE hockey_core hockey_ecs hockey_physics hockey_gameplay)
 set_target_properties(HockeyDedicatedServer PROPERTIES OUTPUT_NAME "HockeyDedicatedServer")
