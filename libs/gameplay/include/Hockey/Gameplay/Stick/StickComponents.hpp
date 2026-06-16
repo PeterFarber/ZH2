@@ -8,7 +8,7 @@
 namespace Hockey {
 
 struct StickComponent {
-    UUID ownerPlayer;
+    UUID ownerPlayer{0};
     float reach = 1.5f;
     float width = 0.25f;
     glm::vec3 localOffset{0.0f, 0.0f, 1.0f};
@@ -24,7 +24,7 @@ struct ShotComponent {
 };
 
 struct PassComponent {
-    UUID targetPlayer;
+    UUID targetPlayer{0};
     float assistRadius = 2.0f;
 };
 

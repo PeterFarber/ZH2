@@ -19,6 +19,7 @@ public:
     Status Init(Scene& scene, PhysicsWorld* physicsWorld, const GameplaySettings& settings = {});
     void Shutdown();
 
+    void ResetMatch(Scene& scene);
     void PushInput(const GameplayInputFrame& input);
     void FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t tick);
 

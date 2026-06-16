@@ -12,7 +12,7 @@ struct TeamStateComponent {
     GameplayTeam team = GameplayTeam::None;
     uint32_t score = 0;
     std::vector<UUID> players;
-    UUID goalie;
+    UUID goalie{0};
 };
 
 template <> struct ComponentTraits<TeamStateComponent> {

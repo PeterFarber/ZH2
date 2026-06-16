@@ -31,8 +31,8 @@ enum class GameplayEventType {
 
 struct GameplayEvent {
     GameplayEventType type = GameplayEventType::MatchInitialized;
-    UUID primaryEntity;
-    UUID secondaryEntity;
+    UUID primaryEntity{0};
+    UUID secondaryEntity{0};
     GameplayTeam team = GameplayTeam::None;
     glm::vec3 position{0.0f};
     std::string message;

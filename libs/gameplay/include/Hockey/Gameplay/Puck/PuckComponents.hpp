@@ -22,8 +22,8 @@ bool PuckStateFromString(const char* text, PuckState& outState);
 
 struct PuckGameplayComponent {
     PuckState state = PuckState::Loose;
-    UUID possessingPlayer;
-    UUID lastTouchedPlayer;
+    UUID possessingPlayer{0};
+    UUID lastTouchedPlayer{0};
     GameplayTeam lastTouchedTeam = GameplayTeam::None;
     float timeSinceLastTouch = 0.0f;
     bool inPlay = true;
@@ -35,7 +35,7 @@ struct PuckRuntimeComponent {
 };
 
 struct PossessionComponent {
-    UUID possessingPlayer;
+    UUID possessingPlayer{0};
     GameplayTeam team = GameplayTeam::None;
 };
 

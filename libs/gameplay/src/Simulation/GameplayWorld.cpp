@@ -3,6 +3,7 @@
 #include "Hockey/Gameplay/Match/FaceoffSystem.hpp"
 #include "Hockey/Gameplay/Match/MatchClock.hpp"
 #include "Hockey/Gameplay/Match/MatchSystem.hpp"
+#include "Hockey/Gameplay/Match/ResetSystem.hpp"
 
 namespace Hockey {
 
@@ -30,6 +31,15 @@ void GameplayWorld::Shutdown() {
     m_Initialized = false;
 }
 
+void GameplayWorld::ResetMatch(Scene& scene) {
+    if (!m_Initialized) {
+        return;
+    }
+
+    ResetSystem::BeginReset(scene, m_Events);
+    ResetSystem::CompleteReset(scene, m_Events);
+}
+
 void GameplayWorld::PushInput(const GameplayInputFrame& input) {
     m_InputBuffer.PushInput(input);
 }
@@ -41,6 +51,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
 
     FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
     MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
+    ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     m_InputBuffer.ClearForTick(tick);
 }
 

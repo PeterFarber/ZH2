@@ -13,6 +13,7 @@ target_sources(hockey_gameplay
         src/Match/FaceoffSystem.cpp
         src/Match/MatchClock.cpp
         src/Match/MatchSystem.cpp
+        src/Match/ResetSystem.cpp
         src/Simulation/GameplayWorld.cpp
         src/Teams/TeamTypes.cpp
         src/Tuning/GameplayTuning.cpp
