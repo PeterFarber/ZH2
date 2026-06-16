@@ -1,0 +1,67 @@
+---
+description: Phase 5 scope — complete asset pipeline.
+globs: libs/assets/**,tools/**,apps/asset_tools/**,libs/renderer/**,libs/editor/**,data/raw/**,data/cooked/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 5 — Complete Asset Pipeline
+
+Current phase: Phase 5.
+
+This phase builds the complete asset import/loading/cooking system.
+
+## Allowed dependencies
+
+Existing dependencies plus approved asset dependencies such as:
+
+- fastgltf
+- KTX-Software
+- meshoptimizer
+- stb_image if needed
+- basisu if needed
+
+Do not add assimp unless explicitly approved.
+
+## Required library
+
+Create `hockey_assets`.
+
+Dependency:
+
+```text
+hockey_assets -> hockey_core
+```
+
+After this phase, renderer may depend on assets.
+
+## Required systems
+
+Implement asset handle, UUID, metadata, database, registry, raw discovery, cooked folder, import pipeline, cook pipeline, runtime loading, editor asset browser integration, hot reload, dependency tracking, and reference validation.
+
+## Required asset types
+
+Support glTF/GLB models, meshes, materials, textures, cubemaps/environment maps if used, shaders, scenes, and prefabs.
+
+## Required model pipeline
+
+Implement glTF import, mesh/material/texture extraction, tangent generation if needed, bounding boxes, LOD support if available, mesh optimization, and cooked mesh format.
+
+## Required texture pipeline
+
+Implement texture import, mip generation, compression path, KTX/Basis path if chosen, normal map flag, sRGB/linear flag, texture quality metadata, and cooked texture format.
+
+## Required material pipeline
+
+Implement PBR material files, texture references, default parameters, material editor integration, and runtime material loading.
+
+## Required shader pipeline
+
+Implement shader source tracking, shader compilation, include handling, variants if used, error logging, cooked SPIR-V output, and hot reload where possible.
+
+## Required editor integration
+
+Editor must browse assets, import raw assets, display metadata, assign meshes/materials/textures, drag/drop assets into scenes, create material assets, validate missing references, and trigger recook.
+
+## Definition of done
+
+Phase 5 is complete only when asset database/import/cook/runtime load/editor integration/reference validation/hot reload or recook workflow all work on Windows and Linux.

@@ -1,0 +1,128 @@
+---
+description: Phase 1 scope — complete cross-platform foundation/core.
+globs: libs/core/**,apps/game_client/**,apps/map_editor/**,apps/dedicated_server/**,apps/core_tests/**,CMakeLists.txt,CMakePresets.json,vcpkg.json,scripts/**,data/config/**
+alwaysApply: false
+---
+
+# Phase 1 — Complete Cross-Platform Foundation/Core
+
+Current phase: Phase 1.
+
+This phase builds the complete reusable foundation shared by:
+
+- `HockeyGameClient`
+- `HockeyMapEditor`
+- `HockeyDedicatedServer`
+- `HockeyCoreTests`
+
+The phase must support Windows and Linux.
+
+## Allowed dependencies
+
+- C++20
+- CMake
+- Ninja
+- vcpkg
+- SDL3
+- spdlog
+- fmt
+- glm
+- tomlplusplus
+
+## Allowed targets
+
+- `libs/core`
+- `apps/game_client`
+- `apps/map_editor`
+- `apps/dedicated_server`
+- `apps/core_tests`
+- `scripts/windows`
+- `scripts/linux`
+- `data/config`
+
+## Required build system work
+
+Implement:
+
+- root `CMakeLists.txt`
+- `CMakePresets.json`
+- `vcpkg.json`
+- Windows Debug preset
+- Windows Release preset
+- Linux Debug preset
+- Linux Release preset
+- `hockey_core` static library
+- `HockeyGameClient`
+- `HockeyMapEditor`
+- `HockeyDedicatedServer`
+- `HockeyCoreTests`
+
+## Required core modules
+
+Implement:
+
+- `Types.hpp`
+- `Base.hpp`
+- `Result.hpp`
+- `Assert.hpp`
+- `Log.hpp/cpp`
+- `Platform.hpp/cpp`
+- `SignalHandler.hpp/cpp`
+- `CrashHandler.hpp/cpp`
+- `CommandLine.hpp/cpp`
+- `FileSystem.hpp/cpp`
+- `Paths.hpp/cpp`
+- `Config.hpp/cpp`
+- `Time.hpp/cpp`
+- `Timer.hpp/cpp`
+- `FixedTimestep.hpp/cpp`
+- `UUID.hpp/cpp`
+- `Event.hpp`
+- `EventQueue.hpp/cpp`
+- `Window.hpp/cpp`
+- `Input.hpp/cpp`
+- `Keyboard.hpp/cpp`
+- `Mouse.hpp/cpp`
+- `Gamepad.hpp/cpp`
+- `Application.hpp/cpp`
+- `WindowedApplication.hpp/cpp`
+- `HeadlessApplication.hpp/cpp`
+- `ThreadPool.hpp/cpp`
+- `JobSystem.hpp/cpp`
+
+## Phase 1 must not implement
+
+- Vulkan
+- renderer
+- ECS
+- scene system
+- prefabs
+- physics
+- networking
+- GameNetworkingSockets
+- hockey gameplay
+- map editor UI
+- ImGui
+- asset pipeline
+- audio
+- animation
+
+## Definition of done
+
+Phase 1 is complete only when:
+
+- clean clone configures on Windows
+- clean clone configures on Linux
+- Debug/Release builds on Windows and Linux
+- client/editor open SDL3 windows on Windows and Linux
+- server runs headless on Windows and Linux
+- Ctrl+C/SIGTERM shutdown works
+- config loads and saves in tests
+- logs write to console and files
+- paths resolve correctly
+- input works for keyboard/mouse
+- gamepad detection works
+- job system works
+- fixed timestep works
+- core tests pass
+- no renderer/ECS/physics/networking/gameplay code exists

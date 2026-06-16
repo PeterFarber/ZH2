@@ -1,0 +1,65 @@
+---
+description: Phase 8 scope — complete networking, dedicated server, lobbies, replication.
+globs: libs/networking/**,libs/gameplay/**,libs/ecs/**,apps/game_client/**,apps/dedicated_server/**,apps/network_tests/**,data/config/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 8 — Complete Networking, Dedicated Server, Lobbies, and Replication
+
+Current phase: Phase 8.
+
+This phase builds the real-time multiplayer layer using GameNetworkingSockets.
+
+## Allowed dependencies
+
+Existing dependencies plus:
+
+- GameNetworkingSockets
+
+Add protobuf/flatbuffers/msgpack only if explicitly approved.
+
+## Required library
+
+Create `hockey_networking`.
+
+Dependency:
+
+```text
+hockey_networking -> hockey_core, hockey_ecs
+```
+
+Renderer must not be a dependency of networking.
+
+## Required architecture
+
+Implement GameNetworkingSockets init/shutdown, client/server transport, connection manager, reliable/unreliable messages, channels/lanes if used, packet serializer/deserializer, protocol versioning, connection tokens, disconnect/timeout handling, ping, packet loss, bandwidth stats.
+
+## Dedicated server behavior
+
+Server must run headless, host authoritative gameplay, accept clients, validate connections, receive input, run fixed tick, send snapshots, handle disconnects, shut down cleanly, and log network stats.
+
+## Client behavior
+
+Client must connect, send input at fixed input rate, receive snapshots, interpolate remote players, predict local player, reconcile corrections, display network stats if enabled, and handle disconnect/reconnect paths where supported.
+
+## Messages
+
+Implement reliable messages for handshake, join/leave/create lobby, ready, team/role select, match start/end, goal scored, period ended, disconnect reason, and chat if supported.
+
+Implement unreliable messages for client input, server snapshot, puck snapshot, player state snapshot, and animation state hints if used.
+
+## Snapshot/replication
+
+Implement network identity, owner, replicated transform, snapshots, interpolation buffer, prediction, reconciliation, sequence numbers, acks, input history, and correction smoothing.
+
+## Lobby system
+
+Implement create/join/leave lobby, ready up, team/role selection, lobby player list, assign match server, start match, return to lobby.
+
+## Required tests
+
+Create `HockeyNetworkTests` covering network init/shutdown, local client/server connection, reliable/unreliable messages, input/snapshot serialization, version rejection, disconnect handling, lobby create/join, team/role selection, server inputs/snapshots, interpolation, prediction/reconciliation.
+
+## Definition of done
+
+Phase 8 is complete only when clients can create/join lobbies, select team/role, start match, send input, server simulates authoritatively, snapshots replicate, prediction/interpolation/reconciliation work, puck/goals/score replicate, disconnect handling works, server remains headless, and networking has no renderer dependency.

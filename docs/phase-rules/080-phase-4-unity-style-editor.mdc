@@ -1,0 +1,65 @@
+---
+description: Phase 4 scope — complete Unity-style map editor.
+globs: libs/editor/**,apps/map_editor/**,libs/ecs/**,libs/renderer/**,data/editor/**,data/raw/scenes/**,data/raw/prefabs/**,data/config/**,CMakeLists.txt,vcpkg.json
+alwaysApply: false
+---
+
+# Phase 4 — Complete Unity-Style Map Editor
+
+Current phase: Phase 4.
+
+This phase builds the complete map editor application and editor library.
+
+## Allowed dependencies
+
+Existing dependencies plus:
+
+- Dear ImGui
+- ImGuizmo
+- nativefiledialog-extended or equivalent file dialog
+
+## Required library
+
+Create `hockey_editor`.
+
+Dependency:
+
+```text
+hockey_editor -> hockey_core, hockey_ecs, hockey_renderer
+```
+
+Do not put editor UI into core, ecs, renderer, gameplay, networking, or dedicated_server.
+
+## Required layout
+
+Implement Unity-style docked layout with main menu, toolbar, hierarchy, inspector, scene viewport, game viewport if applicable, project/assets panel, console/log panel, settings panel, and stats panel.
+
+## Required features
+
+Implement create/duplicate/delete/rename GameObject, hierarchy parenting, drag/drop reparenting, selection, inspector component display, add/remove component, metadata-driven field editing, transform editing, transform gizmos, snapping, scene new/open/save/save as, validation UI, prefab create/instantiate/override display, editor camera, viewport navigation, play/simulate controls if ready, console log viewer, and editor settings persistence.
+
+## Hockey editor tools
+
+Implement placement tools for rink, play area, goals, puck spawn, team skater/goalie spawns, faceoff spots, gameplay camera rig marker, lights, and debug rink helpers.
+
+## Required viewport behavior
+
+Render scene to editor viewport, resize viewport, support entity picking, transform gizmos, grid, debug draw, camera movement, focus/frame selected entity.
+
+## Required inspector behavior
+
+The inspector must use ECS component metadata and edit bool, int, float, string, vec2/3/4, enum, read-only UUIDs, and asset handle/path fields if available.
+
+## Phase 4 must not implement
+
+- final asset pipeline
+- physics simulation
+- networking
+- GameNetworkingSockets
+- hockey gameplay simulation
+- animation
+- audio
+
+## Definition of done
+
+Phase 4 is complete only when editor launches with full docked layout, hierarchy/inspector/viewport/gizmos/component editing/scene save-load/prefabs/hockey tools/console/settings work on Windows and Linux, and dedicated server remains headless.

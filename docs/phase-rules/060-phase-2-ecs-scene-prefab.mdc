@@ -1,0 +1,137 @@
+---
+description: Phase 2 scope — complete ECS, GameObject model, scene system, prefabs, and component metadata.
+globs: libs/ecs/**,apps/game_client/**,apps/map_editor/**,apps/dedicated_server/**,apps/ecs_tests/**,CMakeLists.txt,vcpkg.json,data/raw/scenes/**,data/raw/prefabs/**,data/config/**
+alwaysApply: false
+---
+
+# Phase 2 — Complete ECS, GameObject Model, Scene System, Prefabs, and Component Metadata
+
+Current phase: Phase 2.
+
+This phase builds the complete entity/component foundation for the game, editor, and server.
+
+## Allowed dependencies
+
+Existing Phase 1 dependencies plus:
+
+- EnTT
+- yaml-cpp
+
+## Allowed targets
+
+- `libs/ecs`
+- `apps/ecs_tests`
+- updates to `apps/game_client`
+- updates to `apps/map_editor`
+- updates to `apps/dedicated_server`
+- updates to config files
+- `data/raw/scenes`
+- `data/raw/prefabs`
+
+## Required library
+
+Create:
+
+- `hockey_ecs`
+
+Dependency:
+
+```text
+hockey_ecs -> hockey_core
+```
+
+`hockey_ecs` must not depend on renderer, Vulkan, SDL windowing, ImGui, physics, networking, gameplay simulation, or GameNetworkingSockets.
+
+## Required ECS modules
+
+Implement:
+
+- `Entity.hpp/cpp`
+- `Scene.hpp/cpp`
+- `SceneMode.hpp`
+- `Components.hpp`
+- `Transform.hpp/cpp`
+- `Hierarchy.hpp/cpp`
+- `ComponentMetadata.hpp/cpp`
+- `ComponentRegistry.hpp/cpp`
+- `ComponentSerializer.hpp/cpp`
+- `SceneSerializer.hpp/cpp`
+- `SceneValidator.hpp/cpp`
+- `Prefab.hpp/cpp`
+- `PrefabSerializer.hpp/cpp`
+- `PrefabOverride.hpp/cpp`
+- `System.hpp/cpp`
+- `SceneEvents.hpp/cpp`
+
+## Required components
+
+Implement and serialize:
+
+- `IDComponent`
+- `NameComponent`
+- `ActiveComponent`
+- `TransformComponent`
+- `ParentComponent`
+- `ChildrenComponent`
+- `PrefabComponent`
+- `TeamComponent`
+- `PlayerRoleComponent`
+- `PuckComponent`
+- `GoalComponent`
+- `SpawnPointComponent`
+- `FaceoffSpotComponent`
+- `RinkComponent`
+- `PlayAreaComponent`
+- `CameraRigMarkerComponent`
+
+Hockey components are marker/data only. Do not implement gameplay simulation in this phase.
+
+## Required behavior
+
+Implement complete:
+
+- entity create/destroy/duplicate/find
+- component add/get/remove/check
+- UUID mapping
+- parent/child hierarchy
+- local/world transform math
+- active state propagation
+- scene lifecycle and scene modes
+- scene events
+- system interface
+- YAML scene save/load
+- scene validation
+- prefab save/load/instantiate
+- UUID remapping
+- prefab overrides
+- component metadata registry for editor
+
+## Required app behavior
+
+`HockeyGameClient` loads a Play-mode startup scene and does not save scenes by default.
+
+`HockeyMapEditor` loads/saves Edit-mode scenes, validates scenes, and logs hierarchy.
+
+`HockeyDedicatedServer` loads Server-mode scenes headlessly and runs scene fixed update.
+
+## Required tests
+
+Create `HockeyECSTests` and test entity creation, destruction, UUID lookup, component API, hierarchy, transforms, active propagation, scene save/load, validation, prefabs, overrides, metadata, scene events, and lifecycle.
+
+## Phase 2 must not implement
+
+- Vulkan
+- renderer
+- physics simulation
+- networking
+- GameNetworkingSockets
+- hockey gameplay simulation
+- editor UI
+- ImGui
+- asset pipeline
+- audio
+- animation
+
+## Definition of done
+
+Phase 2 is complete only when `hockey_ecs` builds, ECS tests pass, client/editor/server link core+ecs, scenes save/load, prefabs work, metadata works, server loads scenes headlessly, and no renderer/physics/networking/gameplay simulation exists.
