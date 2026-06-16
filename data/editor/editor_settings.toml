@@ -18,11 +18,13 @@ show = false
 spacing = 1.0
 
 [scene]
-recent_0 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_lights.scene.yaml'
-recent_1 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_test.scene.yaml'
-recent_2 = '/home/fxs/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
-recent_3 = '/home/fxs/Documents/ZH2/data/raw/scenes/physics_smoke.scene.yaml'
-recent_count = 4
+recent_0 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/render_lights.scene.yaml'
+recent_1 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/physics_smoke.scene.yaml'
+recent_2 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_lights.scene.yaml'
+recent_3 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_test.scene.yaml'
+recent_4 = '/home/fxs/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
+recent_5 = '/home/fxs/Documents/ZH2/data/raw/scenes/physics_smoke.scene.yaml'
+recent_count = 6
 restore_last = true
 
 [snap]
