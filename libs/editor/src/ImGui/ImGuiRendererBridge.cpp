@@ -68,6 +68,11 @@ void ImGuiRendererBridge::Shutdown() {
         return;
     }
     InvalidateViewportTextures();
+    for (const auto& [view, set] : m_AssetTextures) {
+        (void)view;
+        ImGui_ImplVulkan_RemoveTexture(U64ToDescriptorSet(set));
+    }
+    m_AssetTextures.clear();
     ImGui_ImplVulkan_Shutdown();
     m_Initialized = false;
     m_Renderer = nullptr;
@@ -103,6 +108,24 @@ std::uint64_t ImGuiRendererBridge::ViewportTextureId(TextureHandle target) {
     const VkDescriptorSet set = ImGui_ImplVulkan_AddTexture(image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     const std::uint64_t id = HandleToU64(set);
     m_ViewportTextures.emplace(viewKey, id);
+    return id;
+}
+
+std::uint64_t ImGuiRendererBridge::TextureIdForAsset(std::uint64_t textureAssetId) {
+    if (!m_Initialized || m_Renderer == nullptr || textureAssetId == 0) {
+        return 0;
+    }
+    const RendererSampledImage image = RendererImGuiAccess::SampledImageForAsset(*m_Renderer, textureAssetId);
+    if (!image.valid) {
+        return 0;
+    }
+    const std::uint64_t viewKey = HandleToU64(image.view);
+    if (const auto it = m_AssetTextures.find(viewKey); it != m_AssetTextures.end()) {
+        return it->second;
+    }
+    const VkDescriptorSet set = ImGui_ImplVulkan_AddTexture(image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    const std::uint64_t id = HandleToU64(set);
+    m_AssetTextures.emplace(viewKey, id);
     return id;
 }
 

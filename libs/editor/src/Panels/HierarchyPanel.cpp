@@ -1,5 +1,6 @@
 #include "Hockey/Editor/Panels/HierarchyPanel.hpp"
 
+#include <algorithm>
 #include <cfloat>
 #include <cstdint>
 #include <cstdio>
@@ -12,6 +13,7 @@
 #include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
+#include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
@@ -197,6 +199,15 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                 m_PendingKind = PendingKind::Unparent;
                 m_PendingTarget = id;
             }
+            if (ImGui::MenuItem("Focus In Viewport", "F", false, entity.HasComponent<TransformComponent>())) {
+                const glm::mat4 world = scene.GetWorldTransform(entity);
+                const glm::vec3 position{world[3]};
+                const float sx = glm::length(glm::vec3(world[0]));
+                const float sy = glm::length(glm::vec3(world[1]));
+                const float sz = glm::length(glm::vec3(world[2]));
+                const float radius = std::max({sx, sy, sz, 1.0f}) * 0.75f;
+                context.editorCamera.Focus(position, radius);
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Copy")) {
                 context.clipboard.CopyEntities(scene, {id});
@@ -295,11 +306,8 @@ void HierarchyPanel::ApplyPending(EditorContext& context, Scene& scene) {
         if (Entity entity = scene.FindEntityByUUID(target)) {
             const std::filesystem::path dir = Paths::Get().rawAssets / "prefabs";
             const std::filesystem::path path = dir / (entity.GetName() + ".prefab.yaml");
-            if (const Status status = PrefabSerializer::Save(scene, entity, path); status) {
-                HK_EDITOR_INFO("Created prefab '{}'", path.string());
-            } else {
-                HK_EDITOR_ERROR("Create prefab failed: {}", status.error);
-            }
+            context.undoRedo.Execute(EditorCommands::CreatePrefab(entity.GetUUID(), path), context);
+            HK_EDITOR_INFO("Created prefab '{}'", path.string());
         }
         break;
     }

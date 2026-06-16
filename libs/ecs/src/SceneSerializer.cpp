@@ -11,6 +11,7 @@
 #include "Hockey/ECS/ComponentSerializer.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabOverride.hpp"
 #include "Hockey/ECS/Scene.hpp"
 
 namespace Hockey {
@@ -23,6 +24,7 @@ Status SceneSerializer::Serialize(const std::filesystem::path& path) {
 
     out << YAML::Key << "Scene" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Name" << YAML::Value << m_Scene.GetName();
+    out << YAML::Key << "Mode" << YAML::Value << std::string(SceneModeToString(m_Scene.GetMode()));
     out << YAML::Key << "Version" << YAML::Value << kSceneVersion;
     out << YAML::EndMap;
 
@@ -31,6 +33,13 @@ Status SceneSerializer::Serialize(const std::filesystem::path& path) {
         ComponentSerializer::SerializeEntity(out, entity);
     }
     out << YAML::EndSeq;
+
+    // Prefab instance overrides (only written when present, keeping legacy
+    // scene files byte-compatible).
+    if (!m_Scene.PrefabOverrides().Empty()) {
+        out << YAML::Key << "PrefabOverrides" << YAML::Value;
+        m_Scene.PrefabOverrides().Serialize(out);
+    }
 
     out << YAML::EndMap;
 
@@ -81,8 +90,17 @@ Status SceneSerializer::Deserialize(const std::filesystem::path& path) {
 
     m_Scene.Clear();
 
-    if (const auto sceneNode = root["Scene"]; sceneNode && sceneNode["Name"]) {
-        m_Scene.SetName(sceneNode["Name"].as<std::string>());
+    if (const auto sceneNode = root["Scene"]; sceneNode) {
+        if (sceneNode["Name"]) {
+            m_Scene.SetName(sceneNode["Name"].as<std::string>());
+        }
+        // Mode is optional for backward compatibility: scenes written before
+        // mode serialization (or hand-authored without it) load as Edit.
+        if (sceneNode["Mode"]) {
+            m_Scene.SetMode(SceneModeFromString(sceneNode["Mode"].as<std::string>()));
+        } else {
+            m_Scene.SetMode(SceneMode::Edit);
+        }
     }
 
     try {
@@ -121,6 +139,14 @@ Status SceneSerializer::Deserialize(const std::filesystem::path& path) {
     }
 
     m_Scene.RecalculateAllActiveInHierarchy();
+
+    // Restore prefab override records (optional section). Values are already
+    // baked into the entity data above; these track which fields diverge.
+    if (const auto overridesNode = root["PrefabOverrides"]) {
+        m_Scene.PrefabOverrides().Deserialize(overridesNode);
+    } else {
+        m_Scene.PrefabOverrides().Clear();
+    }
 
     HK_CORE_INFO("Loaded scene '{}' ({} entities) from {}", m_Scene.GetName(), m_Scene.EntityCount(), path.string());
     return Status::Ok();

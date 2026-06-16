@@ -831,6 +831,130 @@ private:
     bool m_WasPresent = false;
 };
 
+class CreatePrefabCommand : public EditorCommand {
+public:
+    CreatePrefabCommand(UUID sourceId, std::filesystem::path path)
+        : m_SourceId(sourceId), m_Path(std::move(path)) {}
+
+    void Execute(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr) {
+            return;
+        }
+        Entity entity = scene->FindEntityByUUID(m_SourceId);
+        if (!entity) {
+            return;
+        }
+        if (!m_Saved) {
+            // Capture the prior prefab-instance state so undo can restore it.
+            m_HadPrefab = entity.HasComponent<PrefabComponent>();
+            if (m_HadPrefab) {
+                m_PrevPrefab = entity.GetComponent<PrefabComponent>();
+            }
+            UUID assetId;
+            if (const Status status = PrefabSerializer::Save(*scene, entity, m_Path, assetId); !status) {
+                HK_EDITOR_ERROR("Create prefab failed: {}", status.error);
+                m_Failed = true;
+                return;
+            }
+            m_AssetId = assetId;
+            m_Saved = true;
+        }
+        // Link the source entity to the new prefab (Unity-style instance stamp).
+        scene->Registry().emplace_or_replace<PrefabComponent>(entity.Handle(),
+                                                              PrefabComponent{m_AssetId, m_SourceId, m_Path});
+        context.MarkDirty();
+    }
+
+    void Undo(EditorContext& context) override {
+        if (m_Failed) {
+            return;
+        }
+        Scene* scene = context.activeScene;
+        if (scene == nullptr) {
+            return;
+        }
+        Entity entity = scene->FindEntityByUUID(m_SourceId);
+        if (!entity) {
+            return;
+        }
+        if (m_HadPrefab) {
+            scene->Registry().emplace_or_replace<PrefabComponent>(entity.Handle(), m_PrevPrefab);
+        } else if (entity.HasComponent<PrefabComponent>()) {
+            scene->Registry().remove<PrefabComponent>(entity.Handle());
+        }
+        context.MarkDirty();
+    }
+
+    std::string Name() const override {
+        return "Create Prefab";
+    }
+
+private:
+    UUID m_SourceId;
+    std::filesystem::path m_Path;
+    UUID m_AssetId;
+    PrefabComponent m_PrevPrefab;
+    bool m_HadPrefab = false;
+    bool m_Saved = false;
+    bool m_Failed = false;
+};
+
+class RevertPrefabOverridesCommand : public EditorCommand {
+public:
+    RevertPrefabOverridesCommand(Scene& scene, UUID instanceId) : m_Id(instanceId) {
+        // Snapshot the subtree's current values so undo can restore them.
+        m_Before = EntitySnapshot::CaptureSubtree(scene, instanceId);
+    }
+
+    void Execute(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr) {
+            return;
+        }
+        Entity entity = scene->FindEntityByUUID(m_Id);
+        if (!entity) {
+            return;
+        }
+        if (const Status status = PrefabSerializer::RevertInstanceToPrefab(*scene, entity); !status) {
+            HK_EDITOR_ERROR("Revert prefab overrides failed: {}", status.error);
+            return;
+        }
+        context.selection.Select(m_Id);
+        context.MarkDirty();
+    }
+
+    void Undo(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr || m_Before.empty()) {
+            return;
+        }
+        // Restore the pre-revert field values for each entity in the subtree.
+        try {
+            const YAML::Node seq = YAML::Load(m_Before);
+            if (seq.IsSequence()) {
+                for (const auto node : seq) {
+                    YAML::Emitter out;
+                    out << node;
+                    EntitySnapshot::ApplyEntity(*scene, out.c_str());
+                }
+            }
+        } catch (const std::exception& e) {
+            HK_EDITOR_ERROR("Revert undo failed: {}", e.what());
+        }
+        context.selection.Select(m_Id);
+        context.MarkDirty();
+    }
+
+    std::string Name() const override {
+        return "Revert Prefab Overrides";
+    }
+
+private:
+    UUID m_Id;
+    std::string m_Before;
+};
+
 } // namespace
 
 namespace EditorCommands {
@@ -867,6 +991,38 @@ std::unique_ptr<EditorCommand> InstantiatePrefab(std::filesystem::path prefabPat
         return {rootEntity.GetUUID()};
     };
     return std::make_unique<SpawnEntitiesCommand>("Instantiate Prefab", std::move(builder));
+}
+
+std::unique_ptr<EditorCommand> InstantiatePrefabAt(std::filesystem::path prefabPath, glm::vec3 worldPosition,
+                                                   UUID parentId) {
+    auto builder = [path = std::move(prefabPath), worldPosition, parentId](Scene& scene) -> std::vector<UUID> {
+        Result<Entity> root = PrefabSerializer::Instantiate(scene, path);
+        if (!root) {
+            HK_EDITOR_ERROR("Instantiate prefab '{}' failed: {}", path.string(), root.error);
+            return {};
+        }
+        Entity rootEntity = root.value;
+        if (parentId.IsValid()) {
+            if (Entity parent = scene.FindEntityByUUID(parentId)) {
+                scene.SetParent(rootEntity, parent);
+            }
+        }
+        // Override only the translation so the prefab's authored rotation/scale
+        // survive the placement.
+        glm::mat4 world = scene.GetWorldTransform(rootEntity);
+        world[3] = glm::vec4(worldPosition, 1.0f);
+        scene.SetWorldTransform(rootEntity, world);
+        return {rootEntity.GetUUID()};
+    };
+    return std::make_unique<SpawnEntitiesCommand>("Instantiate Prefab", std::move(builder));
+}
+
+std::unique_ptr<EditorCommand> CreatePrefab(UUID sourceId, std::filesystem::path prefabPath) {
+    return std::make_unique<CreatePrefabCommand>(sourceId, std::move(prefabPath));
+}
+
+std::unique_ptr<EditorCommand> RevertPrefabOverrides(Scene& scene, UUID instanceId) {
+    return std::make_unique<RevertPrefabOverridesCommand>(scene, instanceId);
 }
 
 std::unique_ptr<EditorCommand> RenameEntity(UUID entityId, std::string oldName, std::string newName) {

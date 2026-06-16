@@ -1,0 +1,17 @@
+Asset:
+  ID: 10776435130295672754
+  Type: Scene
+  Name: physics_smoke.scene
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/scenes/physics_smoke.scene.yaml
+  CookedPath: data/cooked/assets/scenes/10776435130295672754.scene.yaml
+  RawFileTimestamp: 13790645465430457998
+  RawFileHash: 15999488130740469350
+  ImportedTimestamp: 1781574096
+  CookedTimestamp: 1781573762
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

@@ -18,6 +18,15 @@ void RunTriggerTests();
 void RunQueryTests();
 void RunDebugDrawTests();
 void RunHeadlessServerPhysicsTests();
+void RunShapeCastTests();
+void RunMaterialCombineModeTests();
+void RunSensorLayerTests();
+void RunPlayerCapsuleValidationTests();
+void RunRaycastAllTests();
+void RunTriggerDetectFlagTests();
+void RunDeterminismTests();
+void RunPhysicsMaterialComponentTests();
+void RunMeshColliderProviderTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -37,6 +46,15 @@ int main(int argc, char** argv) {
     RunQueryTests();
     RunDebugDrawTests();
     RunHeadlessServerPhysicsTests();
+    RunShapeCastTests();
+    RunMaterialCombineModeTests();
+    RunSensorLayerTests();
+    RunPlayerCapsuleValidationTests();
+    RunRaycastAllTests();
+    RunTriggerDetectFlagTests();
+    RunDeterminismTests();
+    RunPhysicsMaterialComponentTests();
+    RunMeshColliderProviderTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Physics tests completed: {} passed, {} failed", stats.passed, stats.failed);

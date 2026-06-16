@@ -8,8 +8,9 @@ DescriptorSetLayoutDesc GlobalSetLayoutDesc() {
     desc.bindings = {
         {0, DescriptorType::UniformBuffer, Stage_AllGraphics, 1},     // camera
         {1, DescriptorType::UniformBuffer, Stage_Fragment, 1},        // scene / lights
-        {2, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // shadow map
+        {2, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // directional shadow map
         {3, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // screen-space AO
+        {4, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // local (spot/point) shadow map
     };
     return desc;
 }

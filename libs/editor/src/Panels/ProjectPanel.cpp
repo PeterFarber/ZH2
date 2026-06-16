@@ -1,5 +1,6 @@
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <system_error>
@@ -15,6 +16,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Editor/Project/EditorAssetPreview.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
@@ -90,9 +92,10 @@ void ProjectPanel::OnImGui(EditorContext& context) {
         DrawToolbar();
         ImGui::Separator();
 
-        const float detailsHeight = 132.0f;
-        const float treeHeight = ImGui::GetContentRegionAvail().y - detailsHeight;
-        if (ImGui::BeginChild("##project-tree", ImVec2(0.0f, treeHeight > 0.0f ? treeHeight : 0.0f), true)) {
+        // Split the panel horizontally: file tree on the left, selected-asset
+        // details on the right. Both panes use the full panel height.
+        const float treeWidth = ImGui::GetContentRegionAvail().x * 0.4f;
+        if (ImGui::BeginChild("##project-tree", ImVec2(treeWidth > 0.0f ? treeWidth : 0.0f, 0.0f), true)) {
             if (m_Browser.SearchActive()) {
                 DrawSearchResults(context);
             } else {
@@ -100,6 +103,8 @@ void ProjectPanel::OnImGui(EditorContext& context) {
             }
         }
         ImGui::EndChild();
+
+        ImGui::SameLine();
 
         DrawDetails(context);
         DrawModals(context);
@@ -312,6 +317,18 @@ void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesyste
     if (imported && ImGui::MenuItem("Copy Asset ID")) {
         ImGui::SetClipboardText(meta->id.ToString().c_str());
     }
+    if (imported && ImGui::MenuItem("Delete Metadata")) {
+        const AssetID id = meta->id;
+        if (const Status status = assets->DeleteMetadata(id); !status) {
+            m_Status = status.error;
+        } else {
+            assets->SaveDatabase();
+            if (context.renderer != nullptr) {
+                context.renderer->InvalidateAsset(id.Value());
+            }
+            m_Status = "Deleted metadata";
+        }
+    }
     if (ImGui::MenuItem("Validate References")) {
         std::vector<AssetValidationIssue> issues;
         const Status status = assets->ValidateReferences(&issues);
@@ -321,30 +338,136 @@ void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesyste
 }
 
 void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path) {
-    // Lazily (re)load the material whenever the selected file changes.
+    // Lazily (re)load the material whenever the selected file changes. Any unsaved
+    // live preview on the previously edited material is discarded so the viewport
+    // reflects what is actually on disk.
     if (m_EditMaterialPath != path) {
+        if (m_MaterialPreviewActive && context.renderer != nullptr && m_EditMaterialId != 0) {
+            context.renderer->InvalidateAsset(m_EditMaterialId);
+        }
         Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
         m_EditMaterial = loaded ? loaded.value : MaterialSource{};
         m_EditMaterialPath = path;
+        const AssetMetadata* meta = FindAssetMeta(context, path);
+        m_EditMaterialId = meta != nullptr ? meta->id.Value() : 0;
+        m_MaterialPreviewActive = false;
     }
 
-    ImGui::Separator();
-    ImGui::TextUnformatted("Material");
+    bool changed = false;
 
+    ImGui::SeparatorText("Material");
     char nameBuf[256];
     std::snprintf(nameBuf, sizeof(nameBuf), "%s", m_EditMaterial.name.c_str());
     if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
         m_EditMaterial.name = nameBuf;
     }
 
-    ImGui::ColorEdit4("Base Color", &m_EditMaterial.baseColor.x);
-    ImGui::DragFloat("Metallic", &m_EditMaterial.metallic, 0.01f, 0.0f, 1.0f);
-    ImGui::DragFloat("Roughness", &m_EditMaterial.roughness, 0.01f, 0.0f, 1.0f);
-    ImGui::DragFloat("Normal Strength", &m_EditMaterial.normalStrength, 0.01f, 0.0f, 4.0f);
-    ImGui::DragFloat("Occlusion", &m_EditMaterial.occlusionStrength, 0.01f, 0.0f, 1.0f);
-    ImGui::ColorEdit3("Emissive", &m_EditMaterial.emissiveColor.x);
-    ImGui::DragFloat("Emissive Strength", &m_EditMaterial.emissiveStrength, 0.01f, 0.0f, 16.0f);
+    ImGui::SeparatorText("Surface");
+    changed |= ImGui::ColorEdit4("Albedo", &m_EditMaterial.baseColor.x);
+    changed |= ImGui::SliderFloat("Metallic", &m_EditMaterial.metallic, 0.0f, 1.0f);
+    changed |= ImGui::SliderFloat("Roughness", &m_EditMaterial.roughness, 0.0f, 1.0f);
+    changed |= ImGui::SliderFloat("Normal Strength", &m_EditMaterial.normalStrength, 0.0f, 4.0f);
+    changed |= ImGui::SliderFloat("Occlusion", &m_EditMaterial.occlusionStrength, 0.0f, 1.0f);
+    changed |= ImGui::ColorEdit3("Emission", &m_EditMaterial.emissiveColor.x,
+                                 ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+    changed |= ImGui::SliderFloat("Emission Strength", &m_EditMaterial.emissiveStrength, 0.0f, 16.0f);
 
+    // Transparency: Opaque ignores alpha, Mask does a hard cutoff at AlphaCutoff,
+    // Blend does order-dependent alpha blending. AlphaCutoff only applies to Mask.
+    {
+        static const char* const kAlphaModes[] = {"Opaque", "Mask", "Blend"};
+        int alphaModeIndex = 0;
+        for (int i = 0; i < 3; ++i) {
+            if (m_EditMaterial.alphaMode == kAlphaModes[i]) {
+                alphaModeIndex = i;
+                break;
+            }
+        }
+        if (ImGui::Combo("Rendering Mode", &alphaModeIndex, kAlphaModes, 3)) {
+            m_EditMaterial.alphaMode = kAlphaModes[alphaModeIndex];
+            changed = true;
+        }
+        ImGui::BeginDisabled(m_EditMaterial.alphaMode != "Mask");
+        changed |= ImGui::SliderFloat("Alpha Cutoff", &m_EditMaterial.alphaCutoff, 0.0f, 1.0f);
+        ImGui::EndDisabled();
+    }
+
+    ImGui::SeparatorText("Maps");
+    ImGui::TextDisabled("Drag a texture asset from the tree onto a slot.");
+
+    // A texture slot: a thumbnail (drop target) + label + filename + clear. The
+    // slot stores a project-relative raw texture path; a texture dropped from the
+    // project tree (kAssetDragDropType) sets it, and save resolves it to an
+    // AssetID via the cooker. Returns true when the slot changed.
+    auto textureSlot = [&](const char* label, std::string& slot) -> bool {
+        bool slotChanged = false;
+        ImGui::PushID(label);
+
+        std::uint64_t thumbId = 0;
+        if (!slot.empty() && context.assetManager != nullptr && context.imguiBridge != nullptr) {
+            if (const AssetMetadata* meta = context.assetManager->Database().FindByRawPath(std::filesystem::path(slot))) {
+                thumbId = context.imguiBridge->TextureIdForAsset(meta->id.Value());
+            }
+        }
+
+        const ImVec2 thumbSize(48.0f, 48.0f);
+        if (thumbId != 0) {
+            ImGui::Image(static_cast<ImTextureID>(thumbId), thumbSize);
+        } else {
+            ImGui::Button("##empty", thumbSize); // empty drop box when no texture / no preview
+        }
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType);
+                payload != nullptr && payload->DataSize == static_cast<int>(sizeof(AssetDragPayload))) {
+                const auto* drag = static_cast<const AssetDragPayload*>(payload->Data);
+                if (drag->type == static_cast<int>(AssetType::Texture) && context.assetManager != nullptr) {
+                    if (const AssetMetadata* meta = context.assetManager->Database().Find(AssetID{drag->id})) {
+                        slot = meta->rawPath;
+                        slotChanged = true;
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::SameLine();
+        ImGui::BeginGroup();
+        ImGui::TextUnformatted(label);
+        if (slot.empty()) {
+            ImGui::TextDisabled("(none)");
+        } else {
+            ImGui::TextDisabled("%s", std::filesystem::path(slot).filename().string().c_str());
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", slot.c_str());
+            }
+            if (ImGui::SmallButton("Clear")) {
+                slot.clear();
+                slotChanged = true;
+            }
+        }
+        ImGui::EndGroup();
+
+        ImGui::PopID();
+        return slotChanged;
+    };
+
+    changed |= textureSlot("Albedo", m_EditMaterial.baseColorTexture);
+    changed |= textureSlot("Normal", m_EditMaterial.normalTexture);
+    changed |= textureSlot("Metallic / Roughness", m_EditMaterial.metallicRoughnessTexture);
+    changed |= textureSlot("Occlusion", m_EditMaterial.occlusionTexture);
+    changed |= textureSlot("Emission", m_EditMaterial.emissiveTexture);
+
+    // UV transform shared by every map: tiling (scale) then offset.
+    changed |= ImGui::DragFloat2("Tiling", &m_EditMaterial.tiling.x, 0.01f, 0.0f, 256.0f);
+    changed |= ImGui::DragFloat2("Offset", &m_EditMaterial.offset.x, 0.005f, -256.0f, 256.0f);
+
+    // Live preview: push edits straight to the renderer (no disk write) so the
+    // scene viewport updates as the user drags sliders / drops textures.
+    if (changed) {
+        ApplyMaterialPreview(context);
+    }
+
+    ImGui::Separator();
     if (ImGui::Button("Save")) {
         if (const Status status = MaterialSerializer::SaveFile(path, m_EditMaterial); !status) {
             m_Status = status.error;
@@ -360,11 +483,60 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
                     context.renderer->InvalidateAsset(id.Value());
                 }
             }
+            m_MaterialPreviewActive = false; // saved state now matches disk
             m_Status = "Saved material";
         } else {
             m_Status = "Saved material (no asset manager to cook)";
         }
     }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!m_MaterialPreviewActive);
+    if (ImGui::Button("Revert")) {
+        Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
+        m_EditMaterial = loaded ? loaded.value : MaterialSource{};
+        if (context.renderer != nullptr && m_EditMaterialId != 0) {
+            context.renderer->InvalidateAsset(m_EditMaterialId); // drop preview, reload from disk
+        }
+        m_MaterialPreviewActive = false;
+        m_Status = "Reverted";
+    }
+    ImGui::EndDisabled();
+}
+
+void ProjectPanel::ApplyMaterialPreview(EditorContext& context) {
+    if (context.renderer == nullptr || context.assetManager == nullptr || m_EditMaterialId == 0) {
+        return;
+    }
+    auto textureId = [&](const std::string& rawPath) -> std::uint64_t {
+        if (rawPath.empty()) {
+            return 0;
+        }
+        const AssetMetadata* meta = context.assetManager->Database().FindByRawPath(std::filesystem::path(rawPath));
+        return meta != nullptr ? meta->id.Value() : 0;
+    };
+
+    MaterialPreviewDesc desc;
+    desc.baseColor = m_EditMaterial.baseColor;
+    desc.metallic = m_EditMaterial.metallic;
+    desc.roughness = m_EditMaterial.roughness;
+    desc.normalStrength = m_EditMaterial.normalStrength;
+    desc.occlusionStrength = m_EditMaterial.occlusionStrength;
+    desc.emissiveColor = m_EditMaterial.emissiveColor;
+    desc.emissiveStrength = m_EditMaterial.emissiveStrength;
+    desc.alphaMode = m_EditMaterial.alphaMode == "Mask"    ? AlphaMode::Mask
+                     : m_EditMaterial.alphaMode == "Blend" ? AlphaMode::Blend
+                                                           : AlphaMode::Opaque;
+    desc.alphaCutoff = m_EditMaterial.alphaCutoff;
+    desc.tiling = m_EditMaterial.tiling;
+    desc.offset = m_EditMaterial.offset;
+    desc.baseColorTexture = textureId(m_EditMaterial.baseColorTexture);
+    desc.normalTexture = textureId(m_EditMaterial.normalTexture);
+    desc.metallicRoughnessTexture = textureId(m_EditMaterial.metallicRoughnessTexture);
+    desc.occlusionTexture = textureId(m_EditMaterial.occlusionTexture);
+    desc.emissiveTexture = textureId(m_EditMaterial.emissiveTexture);
+
+    context.renderer->PreviewMaterial(m_EditMaterialId, desc);
+    m_MaterialPreviewActive = true;
 }
 
 void ProjectPanel::CreateMaterialAsset(EditorContext& context, const std::filesystem::path& directory) {

@@ -16,6 +16,7 @@
 namespace Hockey {
 
 class Entity;
+class PrefabOverrideSet;
 
 class Scene {
 public:
@@ -86,6 +87,12 @@ public:
     void ClearSystems();
     std::size_t SystemCount() const;
 
+    // --- prefab overrides ---------------------------------------------------
+    // Per-instance edits authored on top of instantiated prefabs. Owned by the
+    // scene so they persist through scene save/load.
+    PrefabOverrideSet& PrefabOverrides();
+    const PrefabOverrideSet& PrefabOverrides() const;
+
     // --- events -------------------------------------------------------------
     const std::vector<SceneEvent>& GetPendingEvents() const;
     void ClearPendingEvents();
@@ -113,6 +120,8 @@ private:
 
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
+
+    std::unique_ptr<PrefabOverrideSet> m_PrefabOverrides;
 
     std::vector<std::unique_ptr<System>> m_Systems;
     std::vector<SceneEvent> m_PendingEvents;

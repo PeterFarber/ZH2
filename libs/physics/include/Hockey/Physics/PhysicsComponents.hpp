@@ -93,6 +93,14 @@ struct TriggerComponent {
     bool detectPuck = true;
 };
 
+// Optional per-entity physics-material override. When present on an entity that
+// also has a RigidBodyComponent, this material name takes precedence over
+// RigidBodyComponent.materialName when the body is created. Lets several bodies
+// share one rigid-body setup while overriding friction/restitution per entity.
+struct PhysicsMaterialComponent {
+    std::string materialName = "Default";
+};
+
 struct CharacterControllerComponent {
     float radius = 0.45f;
     float height = 1.8f;
@@ -123,6 +131,9 @@ template <> struct ComponentTraits<MeshColliderComponent> {
 };
 template <> struct ComponentTraits<TriggerComponent> {
     static constexpr const char* Name = "TriggerComponent";
+};
+template <> struct ComponentTraits<PhysicsMaterialComponent> {
+    static constexpr const char* Name = "PhysicsMaterialComponent";
 };
 template <> struct ComponentTraits<CharacterControllerComponent> {
     static constexpr const char* Name = "CharacterControllerComponent";

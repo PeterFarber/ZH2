@@ -21,11 +21,14 @@ struct GpuLight {
     vec4 positionRange; // xyz position, w range (0 => directional)
     vec4 direction;     // xyz direction, w type (0 dir, 1 point, 2 spot)
     vec4 color;         // rgb color, a intensity
-    vec4 spot;          // x cosInner, y cosOuter
+    vec4 spot;          // x cosInner, y cosOuter, z local-shadow base tile (<0 => none)
 };
 
 #define HK_MAX_LIGHTS 16
 #define HK_MAX_CASCADES 4
+// Local (spot/point) shadows share one depth atlas laid out as a grid of
+// perspective tiles. A spot uses 1 tile; a point uses 6 cube-face tiles.
+#define HK_MAX_LOCAL_TILES 16
 
 layout(set = 0, binding = 1) uniform SceneUBO {
     vec4 ambient;        // rgb ambient color, a intensity
@@ -33,12 +36,17 @@ layout(set = 0, binding = 1) uniform SceneUBO {
     vec4 cascadeSplits;  // view-space far distance of each cascade
     mat4 cascadeViewProj[HK_MAX_CASCADES];
     GpuLight lights[HK_MAX_LIGHTS];
+    vec4 localShadowParams;                       // x 1/atlasRes, y pcf radius, z grid dim, w enabled
+    mat4 localShadowViewProj[HK_MAX_LOCAL_TILES]; // per-tile light view-proj
 } uScene;
 
 layout(set = 0, binding = 2) uniform sampler2DShadow uShadowMap;
 
 // Screen-space ambient occlusion (1 = unoccluded). White when SSAO is disabled.
 layout(set = 0, binding = 3) uniform sampler2D uAO;
+
+// Local-light (spot/point) shadow atlas. White when local shadows are disabled.
+layout(set = 0, binding = 4) uniform sampler2DShadow uLocalShadowMap;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -106,6 +114,66 @@ float SampleSunShadow(vec3 worldPos, float NdotL) {
         for (int y = -radius; y <= radius; ++y) {
             vec2 offset = vec2(float(x), float(y)) * texel;
             sum += texture(uShadowMap, vec3(atlasUV + offset, proj.z - bias));
+            taps += 1.0;
+        }
+    }
+    return sum / max(taps, 1.0);
+}
+
+// Returns lit visibility (1 = lit) for a spot/point light from the shared local
+// shadow atlas. Spot lights (type 2) read their single tile; point lights
+// (type 1) select one of six cube-face tiles by the light->fragment direction.
+float SampleLocalShadow(GpuLight light, vec3 worldPos, float NdotL) {
+    if (uScene.localShadowParams.w < 0.5 || light.spot.z < -0.5) {
+        return 1.0;
+    }
+    int baseTile = int(light.spot.z + 0.5);
+    int tile = baseTile;
+    // Point light (type 1, direction.w in [0.5, 1.5]) picks the dominant axis.
+    if (light.direction.w < 1.5) {
+        vec3 d = worldPos - light.positionRange.xyz;
+        vec3 ad = abs(d);
+        if (ad.x >= ad.y && ad.x >= ad.z) {
+            tile = baseTile + (d.x > 0.0 ? 0 : 1);
+        } else if (ad.y >= ad.z) {
+            tile = baseTile + (d.y > 0.0 ? 2 : 3);
+        } else {
+            tile = baseTile + (d.z > 0.0 ? 4 : 5);
+        }
+    }
+
+    vec4 clip = uScene.localShadowViewProj[tile] * vec4(worldPos, 1.0);
+    if (clip.w <= 0.0) {
+        return 1.0;
+    }
+    vec3 proj = clip.xyz / clip.w;
+    if (proj.z > 1.0 || proj.z < 0.0) {
+        return 1.0;
+    }
+    vec2 uv = proj.xy * 0.5 + 0.5;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return 1.0;
+    }
+
+    int grid = int(uScene.localShadowParams.z + 0.5);
+    float invGrid = 1.0 / float(max(grid, 1));
+    vec2 tileCoord = vec2(float(tile % grid), float(tile / grid));
+    vec2 tileMin = tileCoord * invGrid;
+    vec2 atlasUV = tileMin + uv * invGrid;
+
+    float bias = clamp(0.0012 * tan(acos(clamp(NdotL, 0.0, 1.0))), 0.0002, 0.004);
+    float texel = uScene.localShadowParams.x;
+    int radius = int(uScene.localShadowParams.y + 0.5);
+    // Keep PCF taps inside this tile so they cannot bleed into a neighbour.
+    vec2 clampMin = tileMin + vec2(texel);
+    vec2 clampMax = tileMin + vec2(invGrid) - vec2(texel);
+
+    float sum = 0.0;
+    float taps = 0.0;
+    for (int x = -radius; x <= radius; ++x) {
+        for (int y = -radius; y <= radius; ++y) {
+            vec2 s = clamp(atlasUV + vec2(float(x), float(y)) * texel, clampMin, clampMax);
+            sum += texture(uLocalShadowMap, vec3(s, proj.z - bias));
             taps += 1.0;
         }
     }

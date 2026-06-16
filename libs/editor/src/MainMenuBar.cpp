@@ -7,6 +7,8 @@
 
 #include <imgui.h>
 
+#include "Hockey/ECS/ComponentMetadata.hpp"
+#include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
@@ -17,16 +19,6 @@
 #include "Hockey/Editor/PanelManager.hpp"
 
 namespace Hockey {
-
-namespace {
-
-// Renders a menu item that is visible but not yet wired to a backing system.
-// Replaced with real actions as the corresponding Phase 4 steps land.
-void PendingItem(const char* label, const char* shortcut = nullptr) {
-    ImGui::MenuItem(label, shortcut, false, /*enabled=*/false);
-}
-
-} // namespace
 
 void MainMenuBar::Draw(EditorContext& ctx, EditorApp& app) {
     if (ImGui::BeginMenuBar()) {
@@ -91,6 +83,10 @@ void MainMenuBar::DrawFileMenu(EditorContext& ctx, EditorApp& app) {
         app.SaveSceneAs();
     }
     ImGui::Separator();
+    if (ImGui::MenuItem("Import Asset...")) {
+        app.ImportAsset();
+    }
+    ImGui::Separator();
     if (ImGui::MenuItem("Open Autosave Folder")) {
         app.OpenAutosaveFolder();
     }
@@ -136,12 +132,17 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
         app.DeleteSelection();
     }
     ImGui::Separator();
-    PendingItem("Select All", "Ctrl+A");
+    const bool hasScene = ctx.activeScene != nullptr;
+    if (ImGui::MenuItem("Select All", "Ctrl+A", false, hasScene)) {
+        app.SelectAllEntities();
+    }
     if (ImGui::MenuItem("Deselect", "Esc", false, hasSelection)) {
         ctx.selection.Clear();
     }
     ImGui::Separator();
-    PendingItem("Preferences...");
+    if (ImGui::MenuItem("Preferences...")) {
+        app.OpenPreferences();
+    }
 }
 
 void MainMenuBar::DrawGameObjectMenu(EditorContext& ctx, EditorApp& /*app*/) {
@@ -185,10 +186,47 @@ void MainMenuBar::DrawGameObjectMenu(EditorContext& ctx, EditorApp& /*app*/) {
     }
 }
 
-void MainMenuBar::DrawComponentMenu(EditorContext& /*ctx*/, EditorApp& /*app*/) {
-    PendingItem("Add Component");
-    PendingItem("Remove Component");
-    PendingItem("Reset Component");
+void MainMenuBar::DrawComponentMenu(EditorContext& ctx, EditorApp& /*app*/) {
+    const UUID primary = ctx.selection.Primary();
+    if (ctx.activeScene == nullptr || !primary.IsValid()) {
+        ImGui::TextDisabled("Select an entity");
+        return;
+    }
+    Entity entity = ctx.activeScene->FindEntityByUUID(primary);
+    if (!ctx.activeScene->IsValid(entity)) {
+        ImGui::TextDisabled("Select an entity");
+        return;
+    }
+
+    if (ImGui::BeginMenu("Add")) {
+        for (const ComponentMetadata& meta : ComponentRegistry::Get().All()) {
+            if (!meta.addable) {
+                continue;
+            }
+            const bool present = meta.has && meta.has(entity);
+            if (ImGui::MenuItem(meta.displayName.c_str(), nullptr, false, !present) && meta.add) {
+                ctx.undoRedo.Execute(EditorCommands::AddComponent(primary, meta.name), ctx);
+            }
+        }
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Remove")) {
+        bool anyRemovable = false;
+        for (const ComponentMetadata& meta : ComponentRegistry::Get().All()) {
+            if (!meta.removable || !(meta.has && meta.has(entity))) {
+                continue;
+            }
+            anyRemovable = true;
+            if (ImGui::MenuItem(meta.displayName.c_str())) {
+                ctx.undoRedo.Execute(EditorCommands::RemoveComponent(*ctx.activeScene, primary, meta.name), ctx);
+            }
+        }
+        if (!anyRemovable) {
+            ImGui::TextDisabled("No removable components");
+        }
+        ImGui::EndMenu();
+    }
 }
 
 void MainMenuBar::DrawToolsMenu(EditorContext& ctx, EditorApp& app) {

@@ -20,4 +20,16 @@ void RunCommandLineTests() {
     HK_CHECK_EQ(commandLine.GetInt("--missing", 99), 99);
     HK_CHECK_EQ(commandLine.GetString("--missing", "default"), std::string("default"));
     HK_CHECK_EQ(commandLine.GetDouble("--missing", 1.5), 1.5);
+
+    // Path/log overrides, fps limit and the help flag.
+    const char* argv2[] = {
+        "HockeyCoreTests", "--config", "custom/server.toml", "--log", "out/server.log",
+        "--fps-limit", "144", "--help"
+    };
+    CommandLine cl2(8, const_cast<char**>(argv2));
+    HK_CHECK_EQ(cl2.GetString("--config", ""), std::string("custom/server.toml"));
+    HK_CHECK_EQ(cl2.GetString("--log", ""), std::string("out/server.log"));
+    HK_CHECK_EQ(cl2.GetInt("--fps-limit", 0), 144);
+    HK_CHECK(cl2.Has("--help"));
+    HK_CHECK(!cl2.Has("--root"));
 }

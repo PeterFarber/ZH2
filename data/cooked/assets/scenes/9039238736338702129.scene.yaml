@@ -1,7 +1,660 @@
 Scene:
   Name: Main Rink
+  Mode: Edit
   Version: 1
 Entities:
+  - Entity: 100000000000039
+    NameComponent:
+      Name: Away Goal Crossbar
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 1.22, 28]
+      Rotation: [0, 0, 0]
+      Scale: [1.94, 0.1, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000038
+    NameComponent:
+      Name: Away Goal Right Post
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0.92, 0.61, 28]
+      Rotation: [0, 0, 0]
+      Scale: [0.1, 1.22, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000037
+    NameComponent:
+      Name: Away Goal Left Post
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-0.92, 0.61, 28]
+      Rotation: [0, 0, 0]
+      Scale: [0.1, 1.22, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000036
+    NameComponent:
+      Name: Home Goal Net
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.6, -28.55]
+      Rotation: [0, 0, 0]
+      Scale: [1.94, 1.2, 0.05]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.GoalNet
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 100000000000035
+    NameComponent:
+      Name: Home Goal Crossbar
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 1.22, -28]
+      Rotation: [0, 0, 0]
+      Scale: [1.94, 0.1, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000034
+    NameComponent:
+      Name: Home Goal Right Post
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0.92, 0.61, -28]
+      Rotation: [0, 0, 0]
+      Scale: [0.1, 1.22, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000033
+    NameComponent:
+      Name: Home Goal Left Post
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-0.92, 0.61, -28]
+      Rotation: [0, 0, 0]
+      Scale: [0.1, 1.22, 0.1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000032
+    NameComponent:
+      Name: Blue Line South
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.02, -8]
+      Rotation: [0, 0, 0]
+      Scale: [28, 0.02, 0.4]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000031
+    NameComponent:
+      Name: Blue Line North
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.02, 8]
+      Rotation: [0, 0, 0]
+      Scale: [28, 0.02, 0.4]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000030
+    NameComponent:
+      Name: Center Red Line
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.02, 0]
+      Rotation: [0, 0, 0]
+      Scale: [28, 0.02, 0.5]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000029
+    NameComponent:
+      Name: Glass West
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-14.15, 1.95, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.08, 1.5, 60.6]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Glass
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 100000000000028
+    NameComponent:
+      Name: Glass East
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [14.15, 1.95, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.08, 1.5, 60.6]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Glass
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 100000000000027
+    NameComponent:
+      Name: Board South
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.6, -30.15]
+      Rotation: [0, 0, 0]
+      Scale: [28.6, 1.2, 0.3]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Boards
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000026
+    NameComponent:
+      Name: Board North
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.6, 30.15]
+      Rotation: [0, 0, 0]
+      Scale: [28.6, 1.2, 0.3]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Boards
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000025
+    NameComponent:
+      Name: Board West
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-14.15, 0.6, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.3, 1.2, 60.6]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Boards
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000024
+    NameComponent:
+      Name: Board East
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [14.15, 0.6, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.3, 1.2, 60.6]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.Boards
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 100000000000023
+    NameComponent:
+      Name: Ice Surface
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [28, 1, 60]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 589019741743117030
+      MeshName: BuiltIn.Plane
+      MaterialName: ""
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 100000000000022
+    NameComponent:
+      Name: Environment
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    EnvironmentComponent:
+      AmbientColor: [0.12, 0.14, 0.2]
+      AmbientIntensity: 1
+  - Entity: 100000000000021
+    NameComponent:
+      Name: Sun
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 24.4, 0]
+      Rotation: [-62, 89.6, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Directional
+      Color: [1, 0.97, 0.9]
+      Intensity: 3.6
+      Range: 11.5
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 100000000000020
+    NameComponent:
+      Name: Main Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [7.904, 11.8, 15.204]
+      Rotation: [-62.6, 90, 0]
+      Scale: [1, 0.99999964, 0.99999964]
+    ChildrenComponent:
+      Children:
+        []
+    CameraComponent:
+      FovDegrees: 55
+      NearClip: 0.1
+      FarClip: 160
+      Primary: true
+  - Entity: 100000000000040
+    NameComponent:
+      Name: Away Goal Net
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.6, 28.55]
+      Rotation: [0, 0, 0]
+      Scale: [1.94, 1.2, 0.05]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.GoalNet
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 100000000000015
+    NameComponent:
+      Name: Away Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    FaceoffSpotComponent:
+      Index: 2
+  - Entity: 100000000000014
+    NameComponent:
+      Name: Home Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    FaceoffSpotComponent:
+      Index: 1
+  - Entity: 100000000000013
+    NameComponent:
+      Name: Center Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    FaceoffSpotComponent:
+      Index: 0
+  - Entity: 100000000000012
+    NameComponent:
+      Name: Away Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 25]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Goalie
+      Index: 0
+  - Entity: 100000000000011
+    NameComponent:
+      Name: Away Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 2
+  - Entity: 100000000000010
+    NameComponent:
+      Name: Away Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 15]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 1
+  - Entity: 100000000000009
+    NameComponent:
+      Name: Away Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 0
+  - Entity: 100000000000008
+    NameComponent:
+      Name: Home Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -25]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Goalie
+      Index: 0
+  - Entity: 100000000000007
+    NameComponent:
+      Name: Home Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, -10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 2
+  - Entity: 100000000000006
+    NameComponent:
+      Name: Home Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -15]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 1
+  - Entity: 100000000000005
+    NameComponent:
+      Name: Home Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0, -10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 0
+  - Entity: 100000000000004
+    NameComponent:
+      Name: Puck Spawn
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.05, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    PuckComponent:
+      StartsInPlay: true
+  - Entity: 100000000000003
+    NameComponent:
+      Name: Away Goal
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 28]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    GoalComponent:
+      DefendingTeam: Away
+  - Entity: 100000000000002
+    NameComponent:
+      Name: Home Goal
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -28]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 100000000000001
+    ChildrenComponent:
+      Children:
+        []
+    GoalComponent:
+      DefendingTeam: Home
   - Entity: 100000000000001
     NameComponent:
       Name: Main Rink
@@ -27,247 +680,45 @@ Entities:
         - 100000000000013
         - 100000000000014
         - 100000000000015
-        - 100000000000016
     RinkComponent:
-      RinkName: "Main Rink"
-  - Entity: 100000000000002
+      RinkName: Main Rink
+  - Entity: 11881655091935670238
     NameComponent:
-      Name: Home Goal
+      Name: GameObject
+    ActiveComponent:
+      Active: false
+    TransformComponent:
+      Position: [0, 3.5977256, 0.4929483]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Point
+      Color: [0.7, 0.5, 1]
+      Intensity: 3.7
+      Range: 24.7
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 18153614898012003848
+    NameComponent:
+      Name: GameObject
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, -28]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
+      Position: [-0.864, 0, 12.147523]
+      Rotation: [0, -0, 0]
+      Scale: [2.88, 2.88, 2.88]
     ChildrenComponent:
-      Children: []
-    GoalComponent:
-      DefendingTeam: Home
-  - Entity: 100000000000003
-    NameComponent:
-      Name: Away Goal
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 28]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    GoalComponent:
-      DefendingTeam: Away
-  - Entity: 100000000000004
-    NameComponent:
-      Name: Puck Spawn
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.05, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    PuckComponent:
-      StartsInPlay: true
-  - Entity: 100000000000005
-    NameComponent:
-      Name: Home Skater Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-5, 0, -10]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 0
-  - Entity: 100000000000006
-    NameComponent:
-      Name: Home Skater Spawn 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, -15]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 1
-  - Entity: 100000000000007
-    NameComponent:
-      Name: Home Skater Spawn 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [5, 0, -10]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 2
-  - Entity: 100000000000008
-    NameComponent:
-      Name: Home Goalie Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, -25]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Home
-      Role: Goalie
-      Index: 0
-  - Entity: 100000000000009
-    NameComponent:
-      Name: Away Skater Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-5, 0, 10]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 0
-  - Entity: 100000000000010
-    NameComponent:
-      Name: Away Skater Spawn 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 15]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 1
-  - Entity: 100000000000011
-    NameComponent:
-      Name: Away Skater Spawn 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [5, 0, 10]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 2
-  - Entity: 100000000000012
-    NameComponent:
-      Name: Away Goalie Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 25]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    SpawnPointComponent:
-      Team: Away
-      Role: Goalie
-      Index: 0
-  - Entity: 100000000000013
-    NameComponent:
-      Name: Center Faceoff Spot
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    FaceoffSpotComponent:
-      Index: 0
-  - Entity: 100000000000014
-    NameComponent:
-      Name: Home Defensive Faceoff Spot
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, -20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    FaceoffSpotComponent:
-      Index: 1
-  - Entity: 100000000000015
-    NameComponent:
-      Name: Away Defensive Faceoff Spot
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    FaceoffSpotComponent:
-      Index: 2
-  - Entity: 100000000000016
-    NameComponent:
-      Name: Gameplay Camera Rig
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 15, -45]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ParentComponent:
-      Parent: 100000000000001
-    ChildrenComponent:
-      Children: []
-    CameraRigMarkerComponent:
-      Purpose: GameplayCamera
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 160456599279444274
+      MaterialAsset: 8678109575161473379
+      MeshName: ""
+      MaterialName: ""
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

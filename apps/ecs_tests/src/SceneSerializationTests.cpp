@@ -27,6 +27,7 @@ void RunSceneSerializationTests() {
     HockeyTest::BeginSuite("SceneSerializationTests");
 
     Scene scene("Main Rink");
+    scene.SetMode(SceneMode::Server);
 
     Entity rink = scene.CreateEntity("Rink");
     rink.AddComponent<RinkComponent>(RinkComponent{"Test Rink"});
@@ -61,7 +62,13 @@ void RunSceneSerializationTests() {
     HK_CHECK(static_cast<bool>(deserializer.Deserialize(path)));
 
     HK_CHECK_EQ(loaded.GetName(), std::string("Main Rink"));
+    HK_CHECK(loaded.GetMode() == SceneMode::Server);
     HK_CHECK_EQ(loaded.EntityCount(), static_cast<std::size_t>(4));
+
+    // Scene mode token helpers round-trip, and unknown tokens fall back to Edit.
+    HK_CHECK_EQ(std::string(SceneModeToString(SceneMode::ClientPrediction)), std::string("ClientPrediction"));
+    HK_CHECK(SceneModeFromString("Play") == SceneMode::Play);
+    HK_CHECK(SceneModeFromString("nonsense") == SceneMode::Edit);
 
     Entity lr = loaded.FindEntityByUUID(rinkId);
     HK_CHECK(lr.IsValid());

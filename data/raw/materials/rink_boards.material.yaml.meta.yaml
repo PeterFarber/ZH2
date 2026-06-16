@@ -1,0 +1,17 @@
+Asset:
+  ID: 15014011651065445078
+  Type: Material
+  Name: Rink Boards
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/rink_boards.material.yaml
+  CookedPath: data/cooked/assets/materials/15014011651065445078.material.yaml
+  RawFileTimestamp: 13790645465636288025
+  RawFileHash: 7516896831821715032
+  ImportedTimestamp: 1781574089
+  CookedTimestamp: 1781573747
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

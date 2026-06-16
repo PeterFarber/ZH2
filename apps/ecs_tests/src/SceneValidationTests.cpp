@@ -108,4 +108,49 @@ void RunSceneValidationTests() {
         const auto issues = SceneValidator::Validate(scene);
         HK_CHECK(SceneValidator::HasErrors(issues));
     }
+
+    // More than two goals -> warning.
+    {
+        Scene scene("TooManyGoals");
+        for (int i = 0; i < 3; ++i) {
+            Entity g = scene.CreateEntity("Goal" + std::to_string(i));
+            g.AddComponent<GoalComponent>(GoalComponent{Team::Home});
+        }
+        const auto issues = SceneValidator::Validate(scene);
+        HK_CHECK(HasWarningContaining(issues, "more than 2 goals"));
+    }
+
+    // Goal with no defending team -> error.
+    {
+        Scene scene("GoalNoTeam");
+        Entity g = scene.CreateEntity("Goal");
+        g.AddComponent<GoalComponent>(GoalComponent{Team::None});
+        const auto issues = SceneValidator::Validate(scene);
+        HK_CHECK(SceneValidator::HasErrors(issues));
+    }
+
+    // Spawn point with no team -> warning (not an error).
+    {
+        Scene scene("SpawnNoTeam");
+        MakeSpawn(scene, "Spawn", Team::None, PlayerRole::Skater);
+        const auto issues = SceneValidator::Validate(scene);
+        HK_CHECK(HasWarningContaining(issues, "no team"));
+    }
+
+    // Negative faceoff index -> error.
+    {
+        Scene scene("BadFaceoff");
+        Entity f = scene.CreateEntity("Faceoff");
+        f.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{-2});
+        const auto issues = SceneValidator::Validate(scene);
+        HK_CHECK(SceneValidator::HasErrors(issues));
+    }
+
+    // Missing skater/goalie spawn markers -> warnings.
+    {
+        Scene scene("NoSpawns");
+        const auto issues = SceneValidator::Validate(scene);
+        HK_CHECK(HasWarningContaining(issues, "skater spawn"));
+        HK_CHECK(HasWarningContaining(issues, "goalie spawn"));
+    }
 }

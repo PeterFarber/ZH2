@@ -53,6 +53,14 @@ Matrix MakeDefaultMatrix() {
     enable(PhysicsLayer::Stick, PhysicsLayer::Goalie);
     enable(PhysicsLayer::Stick, PhysicsLayer::Rink);
 
+    // Sensor volumes are non-physical detection zones (e.g. crease, offside
+    // lines). Like triggers they overlap the moving actors but never the static
+    // world, so they report enter/exit without affecting the simulation.
+    enable(PhysicsLayer::Sensor, PhysicsLayer::Player);
+    enable(PhysicsLayer::Sensor, PhysicsLayer::Goalie);
+    enable(PhysicsLayer::Sensor, PhysicsLayer::Puck);
+    enable(PhysicsLayer::Sensor, PhysicsLayer::Stick);
+
     return m;
 }
 

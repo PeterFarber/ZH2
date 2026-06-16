@@ -95,6 +95,13 @@ void Window::PollEvents(EventQueue& events) {
             event.key = static_cast<int>(sdlEvent.key.scancode);
             events.Push(event);
             break;
+        case SDL_EVENT_TEXT_INPUT:
+            event.type = EventType::TextInput;
+            if (sdlEvent.text.text != nullptr) {
+                event.text = sdlEvent.text.text;
+            }
+            events.Push(event);
+            break;
         case SDL_EVENT_MOUSE_MOTION:
             event.type = EventType::MouseMoved;
             event.mouseX = sdlEvent.motion.x;
@@ -174,6 +181,21 @@ bool Window::IsMinimized() const {
 }
 bool Window::IsFocused() const {
     return m_Focused;
+}
+void Window::StartTextInput() {
+    if (m_Window != nullptr && !m_TextInputActive) {
+        SDL_StartTextInput(m_Window);
+        m_TextInputActive = true;
+    }
+}
+void Window::StopTextInput() {
+    if (m_Window != nullptr && m_TextInputActive) {
+        SDL_StopTextInput(m_Window);
+        m_TextInputActive = false;
+    }
+}
+bool Window::IsTextInputActive() const {
+    return m_TextInputActive;
 }
 SDL_Window* Window::SDLHandle() const {
     return m_Window;

@@ -1,0 +1,39 @@
+[app]
+name = "Hockey Point Shadow Test"
+target_fps = 60
+
+[window]
+title = "Hockey Point Shadow Test"
+width = 1600
+height = 900
+resizable = true
+maximized = true
+start_centered = true
+
+[input]
+gamepad_enabled = false
+mouse_capture = false
+
+[renderer]
+vsync = true
+preset = "High"
+shadow_quality = "High"
+shadow_distance = 100.0
+ao_quality = "High"
+anti_aliasing = "FXAA"
+tone_mapper = "ACES"
+bloom = true
+brightness = 0.5
+anisotropy = 16
+
+[scene]
+startup_scene = "data/raw/scenes/point_shadow_test.scene.yaml"
+
+[physics]
+enabled = false
+
+[assets]
+auto_discover = false
+auto_import = false
+auto_cook_dirty = false
+hot_reload = false

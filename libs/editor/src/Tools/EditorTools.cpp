@@ -22,6 +22,7 @@ void RegisterEditorTools(ToolManager& tools) {
     // Hockey markers (instant create).
     tools.Register<HockeyRinkTool>();
     tools.Register<HockeySpawnTool>();
+    tools.Register<HockeyPlayerTool>();
     tools.Register<HockeyGoalTool>();
     tools.Register<HockeyPuckTool>();
     tools.Register<HockeyFaceoffTool>();

@@ -95,6 +95,8 @@ CookResult MaterialCooker::Cook(const CookContext& context) {
     asset.emissiveStrength = source.value.emissiveStrength;
     asset.alphaMode = source.value.alphaMode;
     asset.alphaCutoff = source.value.alphaCutoff;
+    asset.tiling = source.value.tiling;
+    asset.offset = source.value.offset;
 
     if (context.database != nullptr) {
         const ResolvedMaterialTextures resolved = MaterialImporter::ResolveTextures(source.value, *context.database);

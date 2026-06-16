@@ -49,7 +49,7 @@ void RunResourceHandleTests() {
     }
 
     // Built-in materials produce stable names.
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < kBuiltInMaterialCount; ++i) {
         const auto material = static_cast<BuiltInMaterial>(i);
         const MaterialDesc desc = MakeBuiltInMaterial(material);
         HK_CHECK(desc.debugName == BuiltInMaterialName(material));

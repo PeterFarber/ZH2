@@ -1,0 +1,13 @@
+Material:
+  Name: Rink Boards
+  Type: PBR
+  BaseColor: [0.95, 0.95, 0.96, 1.0]
+  Metallic: 0
+  Roughness: 0.45
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 0
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Textures: {}

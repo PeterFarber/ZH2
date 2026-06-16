@@ -63,6 +63,14 @@ void AddBoxCollider(Entity entity, const glm::vec3& halfExtents, const glm::vec3
     entity.AddComponent<BoxColliderComponent>(box);
 }
 
+void AddCapsuleCollider(Entity entity, float radius, float halfHeight, const glm::vec3& offset = glm::vec3(0.0f)) {
+    CapsuleColliderComponent capsule;
+    capsule.radius = radius;
+    capsule.halfHeight = halfHeight;
+    capsule.offset = offset;
+    entity.AddComponent<CapsuleColliderComponent>(capsule);
+}
+
 // Adds a static board wall (collision only) as a child of the rink.
 Entity MakeBoardWall(Scene& scene, Entity rink, const char* name, const glm::vec3& position,
                      const glm::vec3& halfExtents) {
@@ -147,6 +155,56 @@ void HockeySpawnTool::OnSelected(EditorContext& context) {
                     spawn.AddComponent<TeamComponent>(TeamComponent{def.team});
                     spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});
                     Reparent(scene, spawn, root);
+                }
+                return {root.GetUUID()};
+            }),
+        context);
+}
+
+void HockeyPlayerTool::OnSelected(EditorContext& context) {
+    if (context.activeScene == nullptr) {
+        return;
+    }
+    context.undoRedo.Execute(
+        EditorCommands::SpawnEntities(
+            "Create Player Bodies",
+            [](Scene& scene) -> std::vector<UUID> {
+                Entity root = MakeEntity(scene, "Players", {0.0f, 0.0f, 0.0f});
+
+                struct PlayerDef {
+                    const char* name;
+                    Team team;
+                    PlayerRole role;
+                    int index;
+                    glm::vec3 position; // capsule center; y so feet rest at ice (y=0)
+                };
+                // Capsule is r=0.4, halfHeight=0.5 -> ~1.8 m tall; center at y=0.9.
+                constexpr float kCenterY = 0.9f;
+                const PlayerDef defs[] = {
+                    {"Home Skater 0", Team::Home, PlayerRole::Skater, 0, {-6.0f, kCenterY, -20.0f}},
+                    {"Home Skater 1", Team::Home, PlayerRole::Skater, 1, {0.0f, kCenterY, -20.0f}},
+                    {"Home Skater 2", Team::Home, PlayerRole::Skater, 2, {6.0f, kCenterY, -20.0f}},
+                    {"Home Goalie", Team::Home, PlayerRole::Goalie, 0, {0.0f, kCenterY, -45.0f}},
+                    {"Away Skater 0", Team::Away, PlayerRole::Skater, 0, {-6.0f, kCenterY, 20.0f}},
+                    {"Away Skater 1", Team::Away, PlayerRole::Skater, 1, {0.0f, kCenterY, 20.0f}},
+                    {"Away Skater 2", Team::Away, PlayerRole::Skater, 2, {6.0f, kCenterY, 20.0f}},
+                    {"Away Goalie", Team::Away, PlayerRole::Goalie, 0, {0.0f, kCenterY, 45.0f}},
+                };
+
+                for (const PlayerDef& def : defs) {
+                    const bool goalie = def.role == PlayerRole::Goalie;
+                    Entity player = MakeEntity(scene, def.name, def.position);
+                    // Dynamic capsule body on the Player/Goalie layer (placeholder
+                    // mass; gameplay tuning happens in a later phase).
+                    AddRigidBody(player, RigidBodyType::Dynamic, goalie ? PhysicsLayer::Goalie : PhysicsLayer::Player,
+                                 goalie ? "GoalieBody" : "PlayerBody", /*mass=*/80.0f, /*useGravity=*/true);
+                    AddCapsuleCollider(player, /*radius=*/0.4f, /*halfHeight=*/0.5f);
+                    player.AddComponent<TeamComponent>(TeamComponent{def.team});
+                    player.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});
+                    // Visible placeholder body so authors can see the capsule.
+                    AddMesh(player, "BuiltIn.Cube", "BuiltIn.Boards");
+                    player.GetComponent<TransformComponent>().localScale = {0.8f, 1.8f, 0.8f};
+                    Reparent(scene, player, root);
                 }
                 return {root.GetUUID()};
             }),

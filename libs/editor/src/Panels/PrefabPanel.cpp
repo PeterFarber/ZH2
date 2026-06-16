@@ -6,9 +6,11 @@
 
 #include <imgui.h>
 
+#include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabOverride.hpp"
 #include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
@@ -37,6 +39,20 @@ std::string SanitizeFileStem(std::string name) {
 } // namespace
 
 PrefabPanel::PrefabPanel() : Panel(EditorPanelNames::kPrefab, /*openByDefault=*/false) {}
+
+void PrefabPanel::RefreshOverrides(EditorContext& context, Entity entity) {
+    m_OverrideEntityId = entity.GetUUID();
+    m_OverrideCount = 0;
+    m_OverrideValid = false;
+    if (context.activeScene == nullptr || !entity.HasComponent<PrefabComponent>()) {
+        return;
+    }
+    PrefabOverrideSet set;
+    if (const Result<int> diff = PrefabSerializer::ComputeOverrides(*context.activeScene, entity, set); diff) {
+        m_OverrideCount = diff.value;
+        m_OverrideValid = true;
+    }
+}
 
 void PrefabPanel::OnImGui(EditorContext& context) {
     if (BeginWindow()) {
@@ -92,13 +108,55 @@ void PrefabPanel::OnImGui(EditorContext& context) {
             }
 
             ImGui::Spacing();
-            ImGui::BeginDisabled(true);
-            ImGui::Button("Apply Overrides");
+
+            // Refresh the cached override diff when the inspected instance
+            // changes (avoids re-reading the prefab file every frame).
+            if (m_OverrideEntityId != entity.GetUUID()) {
+                RefreshOverrides(context, entity);
+            }
+            if (m_OverrideValid) {
+                if (m_OverrideCount == 0) {
+                    ImGui::TextColored(ImVec4(0.55f, 0.85f, 0.55f, 1.0f), "No overrides (matches prefab)");
+                } else {
+                    ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.45f, 1.0f), "%d field(s) differ from prefab",
+                                       m_OverrideCount);
+                }
+            } else {
+                ImGui::TextDisabled("Override status unavailable (source missing?)");
+            }
             ImGui::SameLine();
-            ImGui::Button("Revert Overrides");
+            if (ImGui::SmallButton("Refresh")) {
+                RefreshOverrides(context, entity);
+            }
+
+            ImGui::BeginDisabled(!sourceExists);
+            if (ImGui::Button("Apply Overrides")) {
+                if (const Status status = PrefabSerializer::ApplyInstanceToPrefab(*scene, entity); !status) {
+                    m_Status = status.error;
+                    m_StatusError = true;
+                } else {
+                    // Reimport so the asset database hash tracks the rewritten file
+                    // (keeps hot-reload from flagging it as an external change).
+                    if (context.assetManager != nullptr) {
+                        context.assetManager->ImportAsset(prefab.sourcePath);
+                        context.assetManager->SaveDatabase();
+                    }
+                    m_Status = "Applied overrides to " + prefab.sourcePath.filename().string();
+                    m_StatusError = false;
+                    context.MarkDirty();
+                }
+                RefreshOverrides(context, entity);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Revert Overrides")) {
+                context.undoRedo.Execute(EditorCommands::RevertPrefabOverrides(*scene, entity.GetUUID()), context);
+                m_Status = "Reverted to prefab";
+                m_StatusError = false;
+                RefreshOverrides(context, entity);
+            }
             ImGui::EndDisabled();
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                ImGui::SetTooltip("Prefab override tracking is not implemented in the ECS yet.");
+            if (!sourceExists) {
+                ImGui::TextDisabled("Apply/Revert need the prefab source file.");
             }
         } else {
             ImGui::TextDisabled("Not a prefab instance.");
@@ -115,12 +173,12 @@ void PrefabPanel::OnImGui(EditorContext& context) {
         if (ImGui::Button("Create Prefab")) {
             const std::string stem = SanitizeFileStem(m_NameBuffer);
             const std::filesystem::path path = Paths::Get().rawAssets / "prefabs" / (stem + ".prefab.yaml");
-            const Status status = PrefabSerializer::Save(*scene, entity, path);
-            if (status) {
+            context.undoRedo.Execute(EditorCommands::CreatePrefab(entity.GetUUID(), path), context);
+            if (std::filesystem::exists(path)) {
                 m_Status = "Saved " + path.filename().string();
                 m_StatusError = false;
             } else {
-                m_Status = status.error;
+                m_Status = "Create prefab failed (see Console)";
                 m_StatusError = true;
             }
         }

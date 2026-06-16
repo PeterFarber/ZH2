@@ -21,10 +21,14 @@ struct InputState {
     float scrollY = 0.0f;
 
     std::unordered_map<int, SDL_Gamepad*> gamepads;
+    bool gamepadEnabled = true;
 };
 InputState g_State;
 
 void OpenGamepad(int instanceId) {
+    if (!g_State.gamepadEnabled) {
+        return;
+    }
     if (g_State.gamepads.find(instanceId) != g_State.gamepads.end()) {
         return;
     }
@@ -146,4 +150,15 @@ std::vector<Gamepad> Input::ConnectedGamepads() {
     }
     return result;
 }
+void Input::SetGamepadEnabled(bool enabled) {
+    g_State.gamepadEnabled = enabled;
+    if (!enabled) {
+        // Drop any gamepads opened before the config was applied.
+        for (auto& entry : g_State.gamepads) {
+            SDL_CloseGamepad(entry.second);
+        }
+        g_State.gamepads.clear();
+    }
+}
+bool Input::IsGamepadEnabled() { return g_State.gamepadEnabled; }
 }

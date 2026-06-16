@@ -141,6 +141,23 @@ void ValidatePhysicsScene(const Scene& scene, std::vector<SceneValidationIssue>&
                 AddIssue(issues, Severity::Warning, "Puck entity has no valid physics material", id);
             }
         }
+
+        // Players and goalies should be represented by a capsule. Only flag
+        // entities already set up as physics actors so pure spawn markers stay
+        // quiet (this phase builds physics, not the gameplay spawn system).
+        if (const auto* role = registry.try_get<PlayerRoleComponent>(handle)) {
+            const char* roleName = role->role == PlayerRole::Goalie ? "Goalie" : "Skater";
+            const auto* capsule = registry.try_get<CapsuleColliderComponent>(handle);
+            if (capsule != nullptr) {
+                if (capsule->radius <= 0.0f || capsule->halfHeight <= 0.0f) {
+                    AddIssue(issues, Severity::Warning,
+                             std::string(roleName) + " capsule has invalid (zero/negative) dimensions", id);
+                }
+            } else if (rigidBody != nullptr || hasCollider) {
+                AddIssue(issues, Severity::Warning,
+                         std::string(roleName) + " physics body should use a CapsuleCollider", id);
+            }
+        }
     }
 }
 

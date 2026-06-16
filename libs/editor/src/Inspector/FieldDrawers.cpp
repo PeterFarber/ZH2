@@ -77,9 +77,14 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
         }
     }
 
+    // A point-and-click picker is only useful when we know the category and have
+    // a database to enumerate; otherwise fall back to the button + drag-drop.
+    const bool canPick = assetManager != nullptr && expected != AssetType::Unknown;
+
     const float clearWidth = ImGui::GetFrameHeight();
     const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-    const float buttonWidth = ImGui::CalcItemWidth() - clearWidth - spacing;
+    const float pickWidth = canPick ? clearWidth + spacing : 0.0f;
+    const float buttonWidth = ImGui::CalcItemWidth() - clearWidth - spacing - pickWidth;
     ImGui::Button(label.c_str(), ImVec2(buttonWidth > 0.0f ? buttonWidth : 0.0f, 0.0f));
 
     if (ImGui::BeginDragDropTarget()) {
@@ -92,6 +97,34 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
             }
         }
         ImGui::EndDragDropTarget();
+    }
+
+    // Dropdown that lists every asset of the expected category so a reference can
+    // be assigned without dragging from the project tree.
+    if (canPick) {
+        ImGui::SameLine(0.0f, spacing);
+        if (ImGui::Button("v", ImVec2(clearWidth, 0.0f))) {
+            ImGui::OpenPopup("##assetpick");
+        }
+        if (ImGui::BeginPopup("##assetpick")) {
+            if (ImGui::Selectable("(none)", *id == 0) && *id != 0) {
+                *id = 0;
+                changed = true;
+            }
+            for (const AssetMetadata* meta : assetManager->Database().FindByType(expected)) {
+                if (meta == nullptr) {
+                    continue;
+                }
+                const std::string name = !meta->name.empty() ? meta->name : meta->rawPath.filename().string();
+                ImGui::PushID(static_cast<const void*>(meta));
+                if (ImGui::Selectable(name.c_str(), *id == meta->id.Value()) && *id != meta->id.Value()) {
+                    *id = meta->id.Value();
+                    changed = true;
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndPopup();
+        }
     }
 
     ImGui::SameLine(0.0f, spacing);

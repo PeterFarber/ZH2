@@ -1,5 +1,6 @@
 #include "Hockey/Editor/Inspector/ComponentInspector.hpp"
 
+#include <cstdint>
 #include <string>
 
 #include <imgui.h>
@@ -11,6 +12,7 @@
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/Inspector/FieldDrawers.hpp"
+#include "Hockey/Editor/Inspector/MaterialPicker.hpp"
 
 namespace Hockey {
 
@@ -75,9 +77,40 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
 
         if (open) {
             void* data = metadata.getData ? metadata.getData(entity) : nullptr;
+
+            // MeshRendererComponent stores its material as an asset id plus a
+            // built-in name fallback. Fold both into one material picker instead
+            // of drawing the raw fields, which is easy to set inconsistently.
+            const bool meshRenderer = metadata.name == "MeshRendererComponent";
+            const FieldMetadata* materialNameField = nullptr;
+            if (meshRenderer) {
+                for (const FieldMetadata& field : metadata.fields) {
+                    if (field.name == "MaterialName") {
+                        materialNameField = &field;
+                        break;
+                    }
+                }
+            }
+
             for (const FieldMetadata& field : metadata.fields) {
+                // The MaterialName field is presented inside the MaterialAsset
+                // picker below, so skip drawing it on its own.
+                if (meshRenderer && field.name == "MaterialName") {
+                    continue;
+                }
+
                 ImGui::PushID(field.name.c_str());
-                const FieldDrawers::FieldEdit edit = FieldDrawers::Draw(field, data, context.assetManager);
+                FieldDrawers::FieldEdit edit;
+                if (meshRenderer && field.name == "MaterialAsset" && data != nullptr && materialNameField != nullptr) {
+                    auto* materialAsset = static_cast<std::uint64_t*>(FieldDrawers::FieldPointer(data, field));
+                    auto* materialName = static_cast<std::string*>(FieldDrawers::FieldPointer(data, *materialNameField));
+                    const MaterialPicker::Result picked =
+                        MaterialPicker::Draw("Material", *materialAsset, *materialName, context.assetManager);
+                    edit.changed = picked.changed;
+                    edit.committed = picked.committed;
+                } else {
+                    edit = FieldDrawers::Draw(field, data, context.assetManager);
+                }
                 if (edit.started) {
                     m_Editing = true;
                 }

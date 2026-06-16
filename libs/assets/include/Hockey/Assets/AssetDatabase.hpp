@@ -50,6 +50,15 @@ public:
     // `dependencies`. Safe to call repeatedly.
     void RebuildDependencyGraph();
 
+    // Returns one dependency cycle as an ordered id list (the path repeats its
+    // first id at the end), or an empty vector when the graph is acyclic. A
+    // self-dependency counts as a cycle. Used to reject invalid asset graphs
+    // before cooking, which would otherwise recurse/order incorrectly.
+    std::vector<AssetID> DetectCycle() const;
+    bool HasCycle() const {
+        return !DetectCycle().empty();
+    }
+
     size_t Count() const {
         return m_Assets.size();
     }

@@ -1,6 +1,7 @@
 #include "MapEditorApp.hpp"
 #include "Hockey/Core/CrashHandler.hpp"
 #include "Hockey/Core/FileSystem.hpp"
+#include "Hockey/Core/Input.hpp"
 #include "Hockey/Core/JobSystem.hpp"
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
@@ -11,12 +12,18 @@
 #include "Hockey/Renderer/RendererSettings.hpp"
 
 bool MapEditorApp::OnInit() {
-    const auto root = GetCommandLine().GetString("--root", ".");
+    const auto& cmd = GetCommandLine();
+    const auto root = cmd.GetString("--root", ".");
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
-    Hockey::Log::Init(Hockey::Paths::LogFile("editor.log"));
+    const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
+                                          : Hockey::Paths::LogFile("editor.log");
+    Hockey::Log::Init(logPath);
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
-    m_Config.Load(Hockey::Paths::ConfigFile("editor.toml"));
+    const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
+                                                : Hockey::Paths::ConfigFile("editor.toml");
+    m_Config.Load(configPath);
+    Hockey::Input::SetGamepadEnabled(m_Config.GetBool("input.gamepad_enabled", true));
 
     if (!CreateAppWindowFromConfig(m_Config)) {
         HK_CORE_ERROR("Failed to create map editor window");
@@ -56,15 +63,30 @@ bool MapEditorApp::OnInit() {
     // Content pipeline: discover/import/cook raw assets up front so the editor
     // and renderer can resolve AssetIDs, then watch for hot-reload changes. The
     // renderer borrows the manager to upload cooked meshes/materials/textures.
-    if (const Hockey::Status status =
-            m_AssetManager.Init(Hockey::AssetManager::DefaultCreateInfo(Hockey::Paths::Get().root));
-        !status) {
+    // The raw/cooked roots default to the standard data/ layout but can be
+    // redirected via the [assets] config keys.
+    Hockey::AssetManagerCreateInfo assetInfo =
+        Hockey::AssetManager::DefaultCreateInfo(Hockey::Paths::Get().root);
+    if (const std::string rawOverride = m_Config.GetString("assets.raw_path", ""); !rawOverride.empty()) {
+        assetInfo.rawRoot = Hockey::Paths::Resolve(rawOverride);
+    }
+    if (const std::string cookedOverride = m_Config.GetString("assets.cooked_path", ""); !cookedOverride.empty()) {
+        assetInfo.cookedRoot = Hockey::Paths::Resolve(cookedOverride);
+    }
+    if (const Hockey::Status status = m_AssetManager.Init(assetInfo); !status) {
         HK_CORE_ERROR("Asset manager init failed: {}", status.error);
         return false;
     }
-    m_AssetManager.DiscoverRawAssets();
-    m_AssetManager.ImportAll();
-    m_AssetManager.CookAllDirty();
+    // Honor the [assets] auto-pipeline config keys (mirrored by EditorSettings).
+    if (m_Config.GetBool("assets.auto_discover", true)) {
+        m_AssetManager.DiscoverRawAssets();
+    }
+    if (m_Config.GetBool("assets.auto_import", true)) {
+        m_AssetManager.ImportAll();
+    }
+    if (m_Config.GetBool("assets.auto_cook_dirty", true)) {
+        m_AssetManager.CookAllDirty();
+    }
     m_AssetManager.SaveDatabase();
     m_AssetManager.StartWatching();
     m_Renderer.SetAssetManager(&m_AssetManager);
@@ -91,15 +113,29 @@ bool MapEditorApp::OnInit() {
 }
 
 void MapEditorApp::LoadStartupScene() {
-    std::string startupScene = m_Config.GetString("scene.startup_scene", "");
-    if (GetCommandLine().Has("--scene")) {
-        startupScene = GetCommandLine().GetString("--scene", startupScene);
+    const auto& cmd = GetCommandLine();
+    const Hockey::EditorSettings& settings = m_Editor.Context().settings;
+
+    // Precedence: explicit --scene > restore-last-scene (most recent) > config.
+    std::filesystem::path path;
+    if (cmd.Has("--scene")) {
+        path = Hockey::Paths::Resolve(cmd.GetString("--scene", ""));
+    } else if (settings.restoreLastScene && !settings.recentScenes.empty()) {
+        const std::filesystem::path recent = Hockey::Paths::Resolve(settings.recentScenes.front());
+        if (Hockey::FileSystem::Exists(recent)) {
+            path = recent;
+            HK_EDITOR_INFO("Restoring last scene '{}'", path.string());
+        }
     }
-    if (startupScene.empty()) {
+    if (path.empty()) {
+        const std::string startupScene = m_Config.GetString("scene.startup_scene", "");
+        if (!startupScene.empty()) {
+            path = Hockey::Paths::Resolve(startupScene);
+        }
+    }
+    if (path.empty()) {
         return;
     }
-
-    const std::filesystem::path path = Hockey::Paths::Get().root / startupScene;
     if (!Hockey::FileSystem::Exists(path)) {
         HK_EDITOR_INFO("Startup scene '{}' not found; using empty Edit scene", path.string());
         return;
@@ -133,6 +169,7 @@ void MapEditorApp::OnShutdown() {
         m_PhysicsReady = false;
     }
     Hockey::JobSystem::Shutdown();
+    Hockey::CrashHandler::Shutdown();
     Hockey::Log::Shutdown();
 }
 

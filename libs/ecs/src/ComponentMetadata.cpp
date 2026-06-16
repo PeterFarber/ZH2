@@ -24,6 +24,8 @@ const char* FieldTypeToString(FieldType type) {
         return "UUID";
     case FieldType::Path:
         return "Path";
+    case FieldType::AssetRef:
+        return "AssetRef";
     }
     return "Unknown";
 }

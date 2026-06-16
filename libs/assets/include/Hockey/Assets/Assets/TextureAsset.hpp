@@ -29,7 +29,10 @@ struct TextureImportSettings {
     bool generateMipmaps = true;
     bool compress = true;
     bool normalMap = false;
-    int maxSize = 4096;
+    // Largest cooked dimension. Cooked textures are uncompressed RGBA8 with a
+    // full mip chain and no streaming, so an oversized source would balloon both
+    // disk and VRAM; clamp to a real-time-friendly budget by default.
+    int maxSize = 1024;
 };
 
 // Runtime, CPU-side texture. `data` holds tightly packed RGBA8 pixels for the

@@ -134,6 +134,15 @@ Status JoltPhysicsWorld::Init(const PhysicsSettings& settings) {
                    m_Layers.broadPhase, m_Layers.objectVsBroadPhase, m_Layers.objectPair);
     m_System->SetGravity(ToJolt(settings.gravity));
 
+    // Apply tunables that map onto Jolt's own PhysicsSettings. deterministicMode
+    // controls reproducibility (required for the authoritative server);
+    // integrationSubsteps is applied per-Step (see Step()).
+    {
+        JPH::PhysicsSettings joltSettings = m_System->GetPhysicsSettings();
+        joltSettings.mDeterministicSimulation = settings.deterministicMode;
+        m_System->SetPhysicsSettings(joltSettings);
+    }
+
     m_ContactListener = std::make_unique<JoltContactListener>();
     m_System->SetContactListener(m_ContactListener.get());
 
@@ -201,7 +210,12 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBodyForEntity(const Entity& entity) {
     }
 
     const auto& rb = entity.GetComponent<RigidBodyComponent>();
-    const PhysicsMaterial& material = PhysicsMaterialRegistry::Get().FindOrDefault(rb.materialName);
+    // A PhysicsMaterialComponent, when present, overrides the rigid body's
+    // material name (lets entities share a rigid-body setup but tune surface).
+    const std::string& materialName = entity.template HasComponent<PhysicsMaterialComponent>()
+                                          ? entity.template GetComponent<PhysicsMaterialComponent>().materialName
+                                          : rb.materialName;
+    const PhysicsMaterial& material = PhysicsMaterialRegistry::Get().FindOrDefault(materialName);
 
     glm::vec3 pos;
     glm::quat rot;
@@ -224,6 +238,10 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBodyForEntity(const Entity& entity) {
     m_EntityToBody.emplace(uuid, id);
     m_BodyToEntity.emplace(id, uuid);
     m_BodyDebug.emplace(id, CaptureDebugColliders(entity));
+    if (m_ContactListener) {
+        // Let the contact callbacks resolve the surface combine modes.
+        m_ContactListener->RegisterBodyMaterial(id, material);
+    }
     return MakeHandle(id);
 }
 
@@ -273,7 +291,13 @@ void JoltPhysicsWorld::Step(float fixedDeltaSeconds) {
         return;
     }
     const int collisionSteps = static_cast<int>(m_Settings.collisionSteps > 0 ? m_Settings.collisionSteps : 1);
-    m_System->Update(fixedDeltaSeconds, collisionSteps, m_TempAllocator.get(), m_JobSystem.get());
+    // integrationSubsteps divides the fixed step into N equal Jolt updates. A
+    // value of 1 (default) reproduces the original single-update behaviour.
+    const int substeps = static_cast<int>(m_Settings.integrationSubsteps > 0 ? m_Settings.integrationSubsteps : 1);
+    const float subDelta = fixedDeltaSeconds / static_cast<float>(substeps);
+    for (int i = 0; i < substeps; ++i) {
+        m_System->Update(subDelta, collisionSteps, m_TempAllocator.get(), m_JobSystem.get());
+    }
 }
 
 PhysicsBodyHandle JoltPhysicsWorld::CreateBody(Entity entity) {

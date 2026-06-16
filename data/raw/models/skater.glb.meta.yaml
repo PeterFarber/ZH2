@@ -1,0 +1,17 @@
+Asset:
+  ID: 6891371314753133998
+  Type: Model
+  Name: skater
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/skater.glb
+  CookedPath: data/cooked/assets/models/6891371314753133998.model.bin
+  RawFileTimestamp: 13790645171171662778
+  RawFileHash: 6061227441565028799
+  ImportedTimestamp: 1781574096
+  CookedTimestamp: 1781573763
+  Dependencies: [8678109575161473379, 160456599279444274]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

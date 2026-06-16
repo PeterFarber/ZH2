@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 13233840974595180099
+  Name: Away Jersey
+  BaseColor: [0.92, 0.93, 0.96, 1]
+  Metallic: 0
+  Roughness: 0.6
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 0
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 0
+    Normal: 0
+    MetallicRoughness: 0
+    Occlusion: 0
+    Emissive: 0

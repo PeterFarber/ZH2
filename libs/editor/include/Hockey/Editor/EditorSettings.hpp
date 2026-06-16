@@ -7,6 +7,8 @@
 
 namespace Hockey {
 
+class Config;
+
 // Persistent editor preferences. Stored as TOML under data/editor and loaded on
 // startup / saved on shutdown or whenever a value changes.
 struct EditorSettings {
@@ -43,6 +45,11 @@ struct EditorSettings {
 
     // Default on-disk location: <root>/data/editor/editor_settings.toml.
     static std::filesystem::path DefaultPath();
+
+    // Seeds settings from the project-level config (editor.toml): the
+    // [scene] autosave keys and the [assets] section. Intended to run BEFORE
+    // Load() so the user's editor_settings.toml still wins where it overrides.
+    void ApplyProjectConfig(const Config& projectConfig);
 
     // Loads settings from a TOML file, leaving defaults for any missing keys.
     // Returns failure only when the file exists but cannot be parsed.

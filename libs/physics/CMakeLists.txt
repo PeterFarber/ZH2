@@ -8,6 +8,7 @@ target_sources(hockey_physics
         src/PhysicsSettings.cpp
         src/PhysicsLayer.cpp
         src/PhysicsMaterial.cpp
+        src/PhysicsMeshProvider.cpp
         src/PhysicsComponents.cpp
         src/PhysicsValidation.cpp
         src/PhysicsShape.cpp

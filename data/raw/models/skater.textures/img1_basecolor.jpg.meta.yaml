@@ -1,0 +1,17 @@
+Asset:
+  ID: 6808874477926388448
+  Type: Texture
+  Name: img1_basecolor
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/models/skater.textures/img1_basecolor.jpg
+  CookedPath: data/cooked/assets/textures/6808874477926388448.tex.bin
+  RawFileTimestamp: 13790647345975526970
+  RawFileHash: 15724671125073224106
+  ImportedTimestamp: 1781574096
+  CookedTimestamp: 1781573762
+  Dependencies: []
+  Dependents: [8678109575161473379]
+  Dirty: true
+  Missing: false
+  Cooked: true

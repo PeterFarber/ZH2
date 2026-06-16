@@ -52,6 +52,12 @@ struct RendererImGuiAccess {
     // Current frame's sampleable color image for an offscreen target.
     static RendererSampledImage SampledImage(Renderer& renderer, TextureHandle target);
 
+    // Sampleable image for a cooked texture asset (by AssetID), uploading it
+    // through the renderer's asset texture cache on first use. Used to draw
+    // material/texture thumbnails in the editor. valid == false for id 0, a
+    // missing asset manager, or an unloadable texture.
+    static RendererSampledImage SampledImageForAsset(Renderer& renderer, uint64_t textureAssetId);
+
     // Begins a dynamic-rendering pass on the acquired swapchain image (clearing
     // it to the editor background), invokes record(commandBuffer) to record the
     // ImGui draw data, ends the pass, and marks the frame so EndFrame presents
