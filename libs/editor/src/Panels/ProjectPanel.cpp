@@ -422,7 +422,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
                 const auto* drag = static_cast<const AssetDragPayload*>(payload->Data);
                 if (drag->type == static_cast<int>(AssetType::Texture) && context.assetManager != nullptr) {
                     if (const AssetMetadata* meta = context.assetManager->Database().Find(AssetID{drag->id})) {
-                        slot = meta->rawPath;
+                        slot = meta->rawPath.generic_string();
                         slotChanged = true;
                     }
                 }

@@ -6,10 +6,10 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/home_jersey.material.yaml
   CookedPath: data/cooked/assets/materials/8879349669488183669.material.yaml
-  RawFileTimestamp: 13790645465636288025
-  RawFileHash: 17628468971909197919
-  ImportedTimestamp: 1781574096
-  CookedTimestamp: 1781573762
+  RawFileTimestamp: 134260507679353443
+  RawFileHash: 10285542203074552994
+  ImportedTimestamp: 1781581180
+  CookedTimestamp: 1781574102
   Dependencies: []
   Dependents: []
   Dirty: true

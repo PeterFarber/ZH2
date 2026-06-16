@@ -6,10 +6,10 @@ Asset:
   CookerVersion: TextureCooker_v1
   RawPath: data/raw/models/skater.textures/img2_metallicroughness.png
   CookedPath: data/cooked/assets/textures/3556386577061109251.tex.bin
-  RawFileTimestamp: 13790647345976527000
+  RawFileTimestamp: 134260507681194081
   RawFileHash: 6939033967925733483
-  ImportedTimestamp: 1781574095
-  CookedTimestamp: 1781573761
+  ImportedTimestamp: 1781581181
+  CookedTimestamp: 1781574100
   Dependencies: []
   Dependents: [8678109575161473379]
   Dirty: true

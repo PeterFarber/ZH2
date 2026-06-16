@@ -6,10 +6,10 @@ Asset:
   CookerVersion: TextureCooker_v1
   RawPath: data/raw/models/goal.textures/img1_basecolor.jpg
   CookedPath: data/cooked/assets/textures/3843043349790172651.tex.bin
-  RawFileTimestamp: 13790647343776459835
+  RawFileTimestamp: 134260507680495129
   RawFileHash: 458676966701351098
-  ImportedTimestamp: 1781574091
-  CookedTimestamp: 1781573752
+  ImportedTimestamp: 1781581182
+  CookedTimestamp: 1781574090
   Dependencies: []
   Dependents: [2871279154214157765]
   Dirty: true
