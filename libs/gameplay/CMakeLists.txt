@@ -10,9 +10,11 @@ target_sources(hockey_gameplay
         src/GameplayComponents.cpp
         src/GameplayInput.cpp
         src/GameplayEvents.cpp
+        src/Match/MatchSystem.cpp
         src/Teams/TeamTypes.cpp
         src/Tuning/GameplayTuning.cpp
         src/Tuning/TuningSerializer.cpp
+        src/Validation/GameplayValidation.cpp
 )
 
 target_include_directories(hockey_gameplay

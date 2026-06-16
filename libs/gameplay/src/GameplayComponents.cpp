@@ -9,6 +9,7 @@
 #include "Hockey/ECS/ComponentSerializer.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/YAML.hpp"
+#include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
 
 namespace Hockey {
 namespace {
@@ -564,6 +565,8 @@ void RegisterGameplayComponents() {
         ComponentSerializer::RegisterExternal(SerializeGameplay, DeserializeGameplay);
         s_SerializationRegistered = true;
     }
+
+    RegisterGameplayValidation();
 }
 
 } // namespace Hockey
