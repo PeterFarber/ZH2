@@ -1,0 +1,17 @@
+Asset:
+  ID: 7078849729660824672
+  Type: Texture
+  Name: ice_basecolor
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/ice/ice_basecolor.jpg
+  CookedPath: data/cooked/assets/textures/7078849729660824672.tex.bin
+  RawFileTimestamp: 13790646579095661423
+  RawFileHash: 7572275322328671716
+  ImportedTimestamp: 1781574091
+  CookedTimestamp: 1781573753
+  Dependencies: []
+  Dependents: [589019741743117030]
+  Dirty: true
+  Missing: false
+  Cooked: true

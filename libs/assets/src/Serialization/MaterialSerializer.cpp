@@ -32,6 +32,10 @@ std::string MaterialSerializer::Serialize(const MaterialSource& source) {
     out << YAML::Key << "EmissiveStrength" << YAML::Value << source.emissiveStrength;
     out << YAML::Key << "AlphaMode" << YAML::Value << source.alphaMode;
     out << YAML::Key << "AlphaCutoff" << YAML::Value << source.alphaCutoff;
+    out << YAML::Key << "Tiling" << YAML::Value << YAML::Flow << YAML::BeginSeq << source.tiling.x << source.tiling.y
+        << YAML::EndSeq;
+    out << YAML::Key << "Offset" << YAML::Value << YAML::Flow << YAML::BeginSeq << source.offset.x << source.offset.y
+        << YAML::EndSeq;
 
     out << YAML::Key << "Textures" << YAML::Value << YAML::BeginMap;
     EmitTexture(out, "BaseColor", source.baseColorTexture);
@@ -84,6 +88,12 @@ Result<MaterialSource> MaterialSerializer::Deserialize(const std::string& text) 
         source.alphaMode = node["AlphaMode"].as<std::string>();
     if (node["AlphaCutoff"])
         source.alphaCutoff = node["AlphaCutoff"].as<float>();
+    if (node["Tiling"] && node["Tiling"].size() == 2) {
+        source.tiling = {node["Tiling"][0].as<float>(), node["Tiling"][1].as<float>()};
+    }
+    if (node["Offset"] && node["Offset"].size() == 2) {
+        source.offset = {node["Offset"][0].as<float>(), node["Offset"][1].as<float>()};
+    }
 
     if (const YAML::Node textures = node["Textures"]) {
         auto read = [&](const char* key) -> std::string {

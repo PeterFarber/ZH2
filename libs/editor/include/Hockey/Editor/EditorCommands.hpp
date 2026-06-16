@@ -75,6 +75,22 @@ std::unique_ptr<EditorCommand> SpawnEntities(std::string actionName, SpawnBuilde
 // selected; the whole instancing is one undo/redo step.
 std::unique_ptr<EditorCommand> InstantiatePrefab(std::filesystem::path prefabPath, UUID parentId = UUID(0));
 
+// Instantiates a prefab and moves its root to a world position (used by the
+// scene viewport's drag-and-drop placement). Preserves the prefab root's
+// authored rotation/scale; only the translation is overridden.
+std::unique_ptr<EditorCommand> InstantiatePrefabAt(std::filesystem::path prefabPath, glm::vec3 worldPosition,
+                                                   UUID parentId = UUID(0));
+
+// Saves the subtree rooted at 'sourceId' as a .prefab.yaml and links the source
+// entity to it (stamps a PrefabComponent, Unity-style). Undo removes the link;
+// the on-disk asset is left in place. One undo/redo step.
+std::unique_ptr<EditorCommand> CreatePrefab(UUID sourceId, std::filesystem::path prefabPath);
+
+// Reverts a prefab instance's subtree to its linked prefab's authored values
+// ("Revert Overrides"). Undo restores the pre-revert component values from a
+// snapshot. One undo/redo step.
+std::unique_ptr<EditorCommand> RevertPrefabOverrides(Scene& scene, UUID instanceId);
+
 std::unique_ptr<EditorCommand> RenameEntity(UUID entityId, std::string oldName, std::string newName);
 std::unique_ptr<EditorCommand> SetActive(UUID entityId, bool oldValue, bool newValue);
 std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newParentId);

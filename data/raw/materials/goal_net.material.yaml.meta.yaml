@@ -1,0 +1,17 @@
+Asset:
+  ID: 17935261401580367734
+  Type: Material
+  Name: Goal Net
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/goal_net.material.yaml
+  CookedPath: data/cooked/assets/materials/17935261401580367734.material.yaml
+  RawFileTimestamp: 13790645465631287880
+  RawFileHash: 15715850904484899129
+  ImportedTimestamp: 1781574089
+  CookedTimestamp: 1781573747
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

@@ -31,6 +31,12 @@ public:
     // ImGui::Image. Returns 0 when the target is unavailable.
     std::uint64_t ViewportTextureId(TextureHandle target);
 
+    // Returns an ImTextureID for a cooked texture asset (by AssetID), uploading
+    // it through the renderer on first use, for material/texture thumbnails.
+    // Descriptors are cached by image view so a recooked texture (new view)
+    // produces a fresh thumbnail. Returns 0 when the asset is unavailable.
+    std::uint64_t TextureIdForAsset(std::uint64_t textureAssetId);
+
     // Releases all cached viewport descriptor sets. Call after the renderer has
     // rebuilt offscreen targets (e.g. on resize) so stale image views are not
     // referenced.
@@ -45,6 +51,8 @@ private:
     bool m_Initialized = false;
     // VkImageView (as u64) -> VkDescriptorSet (as u64).
     std::unordered_map<std::uint64_t, std::uint64_t> m_ViewportTextures;
+    // VkImageView (as u64) -> VkDescriptorSet (as u64) for asset thumbnails.
+    std::unordered_map<std::uint64_t, std::uint64_t> m_AssetTextures;
 };
 
 } // namespace Hockey

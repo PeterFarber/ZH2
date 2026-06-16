@@ -7,6 +7,7 @@
 
 // Pure unit tests (no GPU required).
 void RunRendererSettingsTests();
+void RunShadowQualityTests();
 void RunResourceHandleTests();
 void RunHeadlessServerLinkTests();
 void RunShaderCompileTests();
@@ -21,6 +22,7 @@ int main(int argc, char** argv) {
     Hockey::Log::Init(Hockey::Paths::LogFile("renderer_tests.log"));
 
     RunRendererSettingsTests();
+    RunShadowQualityTests();
     RunResourceHandleTests();
     RunHeadlessServerLinkTests();
     RunShaderCompileTests();

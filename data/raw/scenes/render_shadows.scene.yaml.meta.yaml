@@ -1,0 +1,17 @@
+Asset:
+  ID: 4783489174757999427
+  Type: Scene
+  Name: render_shadows.scene
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/scenes/render_shadows.scene.yaml
+  CookedPath: ""
+  RawFileTimestamp: 13790654680081013889
+  RawFileHash: 8629745265033417643
+  ImportedTimestamp: 1781574606
+  CookedTimestamp: 0
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

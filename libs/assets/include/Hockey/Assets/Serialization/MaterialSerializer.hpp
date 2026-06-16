@@ -28,6 +28,10 @@ struct MaterialSource {
     std::string alphaMode = "Opaque"; // Opaque | Mask | Blend
     float alphaCutoff = 0.5f;
 
+    // UV transform applied to all texture lookups: scale (tiling) then offset.
+    glm::vec2 tiling{1.0f, 1.0f};
+    glm::vec2 offset{0.0f, 0.0f};
+
     // Project-relative raw texture paths (empty == no texture for that slot).
     std::string baseColorTexture;
     std::string normalTexture;

@@ -1,2 +1,12 @@
+entt
+fastgltf
+imgui
+imguizmo
+joltphysics
+meshoptimizer
+nativefiledialog
+shaderc
 spirv
 Submesh
+tomlplusplus
+volk

@@ -35,6 +35,10 @@ std::string MaterialLoader::EncodeCooked(const MaterialAsset& material) {
     out << YAML::Key << "EmissiveStrength" << YAML::Value << material.emissiveStrength;
     out << YAML::Key << "AlphaMode" << YAML::Value << material.alphaMode;
     out << YAML::Key << "AlphaCutoff" << YAML::Value << material.alphaCutoff;
+    out << YAML::Key << "Tiling" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.tiling.x << material.tiling.y
+        << YAML::EndSeq;
+    out << YAML::Key << "Offset" << YAML::Value << YAML::Flow << YAML::BeginSeq << material.offset.x << material.offset.y
+        << YAML::EndSeq;
     out << YAML::Key << "Textures" << YAML::Value << YAML::BeginMap;
     EmitId(out, "BaseColor", material.baseColorTexture);
     EmitId(out, "Normal", material.normalTexture);
@@ -87,6 +91,12 @@ Result<MaterialAsset> MaterialLoader::DecodeCooked(const std::string& text) {
         material.alphaMode = node["AlphaMode"].as<std::string>();
     if (node["AlphaCutoff"])
         material.alphaCutoff = node["AlphaCutoff"].as<float>();
+    if (node["Tiling"] && node["Tiling"].size() == 2) {
+        material.tiling = {node["Tiling"][0].as<float>(), node["Tiling"][1].as<float>()};
+    }
+    if (node["Offset"] && node["Offset"].size() == 2) {
+        material.offset = {node["Offset"][0].as<float>(), node["Offset"][1].as<float>()};
+    }
 
     if (const YAML::Node textures = node["Textures"]) {
         material.baseColorTexture = ReadId(textures["BaseColor"]);

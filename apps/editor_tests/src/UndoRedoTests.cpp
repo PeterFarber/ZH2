@@ -1,11 +1,13 @@
 #include "Test.hpp"
 
+#include <filesystem>
 #include <string>
 
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
@@ -282,5 +284,69 @@ void RunUndoRedoTests() {
         fix.context.undoRedo.Undo(fix.context);
         HK_CHECK_MSG(!fix.scene.FindEntityByUUID(targetId).HasComponent<MeshRendererComponent>(),
                      "undo removes the pasted component that was not present before");
+    }
+
+    // --- create prefab links the source entity, undo unlinks it -------------
+    {
+        CommandFixture fix;
+        Entity entity = fix.scene.CreateEntity("PrefabSource");
+        entity.AddComponent<MeshRendererComponent>().meshName = "puck.mesh";
+        const UUID id = entity.GetUUID();
+        const std::filesystem::path path =
+            std::filesystem::temp_directory_path() / "hk_create_prefab_test.prefab.yaml";
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+
+        fix.context.undoRedo.Execute(EditorCommands::CreatePrefab(id, path), fix.context);
+        HK_CHECK_MSG(std::filesystem::exists(path), "create prefab writes the asset file");
+        Entity stamped = fix.scene.FindEntityByUUID(id);
+        HK_CHECK_MSG(stamped.HasComponent<PrefabComponent>(), "create prefab stamps the source entity");
+        if (stamped.HasComponent<PrefabComponent>()) {
+            HK_CHECK_MSG(stamped.GetComponent<PrefabComponent>().sourcePath == path,
+                         "prefab component records the asset path");
+        }
+
+        fix.context.undoRedo.Undo(fix.context);
+        HK_CHECK_MSG(!fix.scene.FindEntityByUUID(id).HasComponent<PrefabComponent>(),
+                     "undo unlinks the source entity from the prefab");
+
+        fix.context.undoRedo.Redo(fix.context);
+        HK_CHECK_MSG(fix.scene.FindEntityByUUID(id).HasComponent<PrefabComponent>(),
+                     "redo re-links the source entity to the prefab");
+
+        std::filesystem::remove(path, ec);
+    }
+
+    // --- revert prefab overrides restores authored values; undo brings them back -
+    {
+        CommandFixture fix;
+        Entity source = fix.scene.CreateEntity("RevertSource");
+        const std::filesystem::path path =
+            std::filesystem::temp_directory_path() / "hk_revert_prefab_test.prefab.yaml";
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+
+        // Author the prefab from the source entity, then instantiate a fresh copy.
+        HK_CHECK_MSG(static_cast<bool>(PrefabSerializer::Save(fix.scene, source, path)), "revert test prefab saves");
+        Result<Entity> inst = PrefabSerializer::Instantiate(fix.scene, path);
+        HK_CHECK_MSG(static_cast<bool>(inst), "revert test prefab instantiates");
+        if (inst) {
+            Entity instance = inst.value;
+            const UUID instanceId = instance.GetUUID();
+            instance.SetName("RevertEdited");
+
+            fix.context.undoRedo.Execute(EditorCommands::RevertPrefabOverrides(fix.scene, instanceId), fix.context);
+            HK_CHECK_MSG(fix.scene.FindEntityByUUID(instanceId).GetName() == "RevertSource",
+                         "revert restores the authored name");
+
+            fix.context.undoRedo.Undo(fix.context);
+            HK_CHECK_MSG(fix.scene.FindEntityByUUID(instanceId).GetName() == "RevertEdited",
+                         "undo restores the edited name");
+
+            fix.context.undoRedo.Redo(fix.context);
+            HK_CHECK_MSG(fix.scene.FindEntityByUUID(instanceId).GetName() == "RevertSource",
+                         "redo re-applies the revert");
+        }
+        std::filesystem::remove(path, ec);
     }
 }

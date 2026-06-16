@@ -19,6 +19,28 @@ class Scene;
 class DebugDraw;
 class AssetManager;
 
+// Parameters for a live material preview (see Renderer::PreviewMaterial). Mirrors
+// MaterialDesc but references textures by AssetID (0 == none) instead of GPU
+// handles, so the editor can drive it without touching renderer internals.
+struct MaterialPreviewDesc {
+    glm::vec4 baseColor{1.0f, 1.0f, 1.0f, 1.0f};
+    float metallic = 0.0f;
+    float roughness = 0.5f;
+    float normalStrength = 1.0f;
+    float occlusionStrength = 1.0f;
+    glm::vec3 emissiveColor{0.0f};
+    float emissiveStrength = 0.0f;
+    AlphaMode alphaMode = AlphaMode::Opaque;
+    float alphaCutoff = 0.5f;
+    glm::vec2 tiling{1.0f, 1.0f};
+    glm::vec2 offset{0.0f, 0.0f};
+    uint64_t baseColorTexture = 0;
+    uint64_t normalTexture = 0;
+    uint64_t metallicRoughnessTexture = 0;
+    uint64_t occlusionTexture = 0;
+    uint64_t emissiveTexture = 0;
+};
+
 // The shared Vulkan renderer. Owns all GPU resources behind opaque handles;
 // no Vulkan types appear in this interface. Used by the game client and map
 // editor; never linked by the dedicated server.
@@ -73,6 +95,14 @@ public:
     void InvalidateAsset(uint64_t assetId);
     // Drops all cached asset-backed GPU resources.
     void ClearAssetCache();
+
+    // Live-edits the cached GPU material for `materialAssetId` without touching
+    // the cooked asset on disk: refills its uniform buffer and (only when a
+    // texture slot changed) rebinds its descriptor set. Resolves the cached
+    // material first if needed. Texture fields are texture AssetIDs (0 == none).
+    // The edit reverts on the next InvalidateAsset/ClearAssetCache (e.g. when the
+    // editor saves + recooks). No-op if the material cannot be resolved.
+    void PreviewMaterial(uint64_t materialAssetId, const MaterialPreviewDesc& preview);
 
     // ----- Settings / stats -----
     const RendererSettings& GetSettings() const;

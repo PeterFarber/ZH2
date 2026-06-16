@@ -19,6 +19,31 @@ std::vector<unsigned char> ReadAllBytes(const fs::path& path) {
     }
     return std::vector<unsigned char>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 }
+
+// Box-filtered 2x downsample of an RGBA8 buffer. Mirrors the mip generator's
+// filter so a clamped (maxSize) texture matches the look of its own mips.
+std::vector<std::byte> HalveRGBA(const std::byte* src, uint32_t width, uint32_t height, uint32_t& outWidth,
+                                 uint32_t& outHeight) {
+    outWidth = width > 1 ? width / 2 : 1;
+    outHeight = height > 1 ? height / 2 : 1;
+    std::vector<std::byte> dst(static_cast<size_t>(outWidth) * outHeight * 4u);
+    const auto* s = reinterpret_cast<const unsigned char*>(src);
+    auto* d = reinterpret_cast<unsigned char*>(dst.data());
+    for (uint32_t y = 0; y < outHeight; ++y) {
+        for (uint32_t x = 0; x < outWidth; ++x) {
+            for (uint32_t ch = 0; ch < 4; ++ch) {
+                const uint32_t x0 = x * 2;
+                const uint32_t y0 = y * 2;
+                const uint32_t x1 = (x0 + 1 < width) ? x0 + 1 : x0;
+                const uint32_t y1 = (y0 + 1 < height) ? y0 + 1 : y0;
+                const uint32_t sum = s[(y0 * width + x0) * 4 + ch] + s[(y0 * width + x1) * 4 + ch] +
+                                     s[(y1 * width + x0) * 4 + ch] + s[(y1 * width + x1) * 4 + ch];
+                d[(y * outWidth + x) * 4 + ch] = static_cast<unsigned char>(sum / 4);
+            }
+        }
+    }
+    return dst;
+}
 } // namespace
 
 bool TextureLoader::ReadDimensions(const fs::path& rawPath, uint32_t& width, uint32_t& height, uint32_t& channels) {
@@ -62,6 +87,19 @@ Result<TextureAsset> TextureLoader::LoadRaw(const fs::path& rawPath, const Textu
     asset.data.resize(byteCount);
     std::memcpy(asset.data.data(), pixels, byteCount);
     stbi_image_free(pixels);
+
+    // Clamp the largest dimension to settings.maxSize by repeated halving before
+    // mips are generated, keeping cooked textures within the configured budget.
+    if (settings.maxSize > 0) {
+        const auto maxDim = static_cast<uint32_t>(settings.maxSize);
+        while (asset.width > maxDim || asset.height > maxDim) {
+            uint32_t nextWidth = 0;
+            uint32_t nextHeight = 0;
+            asset.data = HalveRGBA(asset.data.data(), asset.width, asset.height, nextWidth, nextHeight);
+            asset.width = nextWidth;
+            asset.height = nextHeight;
+        }
+    }
 
     if (settings.generateMipmaps && asset.width > 0 && asset.height > 0) {
         GenerateMipChain(asset);

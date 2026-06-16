@@ -27,7 +27,7 @@ brightness = 1.0
 anisotropy = 16
 
 [scene]
-startup_scene = "data/raw/scenes/main_rink.scene.yaml"
+startup_scene = "data/raw/scenes/physics_smoke.scene.yaml"
 autosave_enabled = true
 autosave_interval_seconds = 120
 

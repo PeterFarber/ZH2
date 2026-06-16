@@ -1,0 +1,17 @@
+Asset:
+  ID: 3090027327201878838
+  Type: Material
+  Name: Line Paint Blue
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/line_paint_blue.material.yaml
+  CookedPath: data/cooked/assets/materials/3090027327201878838.material.yaml
+  RawFileTimestamp: 13790645465625287705
+  RawFileHash: 2160509420746594799
+  ImportedTimestamp: 1781574095
+  CookedTimestamp: 1781573760
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

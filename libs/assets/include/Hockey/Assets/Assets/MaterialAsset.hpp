@@ -29,6 +29,8 @@ struct MaterialAsset {
 
     std::string alphaMode = "Opaque"; // Opaque | Mask | Blend
     float alphaCutoff = 0.5f;
+    glm::vec2 tiling{1.0f, 1.0f};
+    glm::vec2 offset{0.0f, 0.0f};
 };
 
 } // namespace Hockey

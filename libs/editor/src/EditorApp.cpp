@@ -6,7 +6,11 @@
 #include <imgui.h>
 
 #include "Hockey/Assets/AssetEvent.hpp"
+#include "Hockey/Assets/AssetID.hpp"
 #include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Assets/AssetPath.hpp"
+#include "Hockey/Assets/AssetType.hpp"
+#include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Log.hpp"
@@ -25,6 +29,7 @@
 #include "Hockey/Editor/Panels/InspectorPanel.hpp"
 #include "Hockey/Editor/Panels/PhysicsPanel.hpp"
 #include "Hockey/Editor/Panels/PrefabPanel.hpp"
+#include "Hockey/Editor/Panels/PreferencesPanel.hpp"
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
 #include "Hockey/Editor/Panels/PropertiesPanel.hpp"
 #include "Hockey/Editor/Panels/SceneValidationPanel.hpp"
@@ -34,10 +39,36 @@
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
+#include "Hockey/Physics/PhysicsMeshProvider.hpp"
 #include "Hockey/Physics/PhysicsSettings.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 namespace Hockey {
+
+namespace {
+
+// Returns a path inside 'dir' for 'fileName' that does not collide with an
+// existing file, inserting "_N" before the first '.' so compound extensions
+// (e.g. ".material.yaml") stay intact: "puck.material.yaml" -> "puck_1.material.yaml".
+std::filesystem::path UniqueDestination(const std::filesystem::path& dir, const std::string& fileName) {
+    std::filesystem::path candidate = dir / fileName;
+    std::error_code ec;
+    if (!std::filesystem::exists(candidate, ec)) {
+        return candidate;
+    }
+    const std::size_t dot = fileName.find('.');
+    const std::string stem = dot == std::string::npos ? fileName : fileName.substr(0, dot);
+    const std::string exts = dot == std::string::npos ? std::string{} : fileName.substr(dot);
+    for (int n = 1; n < 10000; ++n) {
+        candidate = dir / (stem + "_" + std::to_string(n) + exts);
+        if (!std::filesystem::exists(candidate, ec)) {
+            return candidate;
+        }
+    }
+    return candidate;
+}
+
+} // namespace
 
 const char* EditorVersionString() {
     return "HockeyEditor 0.4.0";
@@ -60,6 +91,11 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     m_Context.activeScene = info.scene;
     m_Context.config = info.config;
     m_Context.assetManager = info.assetManager;
+    // Seed autosave/asset defaults from editor.toml, then let the user's
+    // editor_settings.toml override where present.
+    if (m_Context.config != nullptr) {
+        m_Context.settings.ApplyProjectConfig(*m_Context.config);
+    }
     m_Context.settings.Load(EditorSettings::DefaultPath());
 
     // Mirror engine log output into the Console panel.
@@ -80,6 +116,28 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     // inspector dropdown and validation.
     RegisterPhysicsComponents();
     PhysicsMaterialRegistry::Get().RegisterBuiltIns();
+
+    // hockey_physics cannot load mesh assets itself (it must not depend on
+    // hockey_assets). Install a provider that resolves MeshColliderComponent
+    // geometry from the editor's AssetManager so the physics preview can build
+    // mesh-collider shapes. Positions/indices are taken from the cooked mesh.
+    if (m_Context.assetManager != nullptr) {
+        AssetManager* assets = m_Context.assetManager;
+        PhysicsMeshRegistry::Get().SetProvider([assets](std::uint64_t meshAsset, PhysicsMeshData& out) -> bool {
+            Result<std::shared_ptr<MeshAsset>> loaded = assets->Load<MeshAsset>(AssetID{meshAsset});
+            if (!loaded || !loaded.value) {
+                return false;
+            }
+            const MeshAsset& mesh = *loaded.value;
+            out.vertices.clear();
+            out.vertices.reserve(mesh.vertices.size());
+            for (const MeshVertex& v : mesh.vertices) {
+                out.vertices.push_back(v.position);
+            }
+            out.indices = mesh.indices;
+            return !out.vertices.empty();
+        });
+    }
 
     // Wire the non-destructive physics preview (Edit mode never auto-simulates).
     PhysicsSettings physicsSettings;
@@ -112,6 +170,7 @@ void EditorApp::RegisterPanels() {
     panels.AddPanel<SceneValidationPanel>();
     panels.AddPanel<PrefabPanel>();
     panels.AddPanel<PhysicsPanel>();
+    panels.AddPanel<PreferencesPanel>();
 }
 
 void EditorApp::RegisterTools() {
@@ -129,6 +188,8 @@ void EditorApp::Shutdown() {
         m_PhysicsPreview.Stop(*m_Context.activeScene);
     }
     m_Context.physicsPreview = nullptr;
+    // Drop the mesh-collider provider so it can't outlive the AssetManager.
+    PhysicsMeshRegistry::Get().Clear();
     m_Context.settings.Save(EditorSettings::DefaultPath());
     m_ImGuiLayer.Shutdown();
     m_Initialized = false;
@@ -370,6 +431,24 @@ void EditorApp::DeleteSelection() {
     }
 }
 
+void EditorApp::SelectAllEntities() {
+    if (m_Context.activeScene == nullptr) {
+        return;
+    }
+    m_Context.selection.SelectAll(*m_Context.activeScene);
+}
+
+void EditorApp::DeselectAll() {
+    m_Context.selection.Clear();
+}
+
+void EditorApp::OpenPreferences() {
+    m_Context.panelManager.SetPanelOpen(EditorPanelNames::kPreferences, true);
+    if (Panel* panel = m_Context.panelManager.FindPanel(EditorPanelNames::kPreferences)) {
+        panel->SetOpen(true);
+    }
+}
+
 std::filesystem::path EditorApp::DefaultSceneDirectory() const {
     if (!m_Context.activeScenePath.empty()) {
         return m_Context.activeScenePath.parent_path();
@@ -487,6 +566,90 @@ void EditorApp::OpenAutosaveFolder() {
     ProjectBrowser::Reveal(dir);
 }
 
+void EditorApp::ImportAsset() {
+    if (m_Context.assetManager == nullptr) {
+        HK_EDITOR_ERROR("Import asset: no asset manager is available");
+        return;
+    }
+    // One combined filter (so any importable file is selectable) plus per-type
+    // filters for convenience. Extensions are dot-less, comma-separated.
+    const auto chosen = FileDialog::OpenFile(
+        {
+            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp"},
+            {"Models", "gltf,glb"},
+            {"Textures", "png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2"},
+            {"Materials / Scenes / Prefabs", "yaml"},
+            {"Shaders", "glsl,vert,frag,comp"},
+        },
+        {});
+    if (!chosen) {
+        return; // user cancelled (or no native dialog available)
+    }
+    DoImportAsset(*chosen);
+}
+
+void EditorApp::DoImportAsset(const std::filesystem::path& source) {
+    AssetManager* assets = m_Context.assetManager;
+    if (assets == nullptr) {
+        return;
+    }
+
+    std::error_code ec;
+    if (!std::filesystem::exists(source, ec)) {
+        HK_EDITOR_ERROR("Import asset: file not found '{}'", source.string());
+        return;
+    }
+
+    const AssetType type = AssetManager::ClassifyExtension(source);
+    if (type == AssetType::Unknown) {
+        HK_EDITOR_ERROR("Import asset: unsupported file type '{}'", source.filename().string());
+        return;
+    }
+
+    // Place the file under data/raw/<type> using the same folder names the cooker
+    // uses (materials/models/textures/...). DiscoverRawAssets scans recursively,
+    // so the exact subfolder is convention, but keeping it tidy helps the user.
+    const std::filesystem::path destDir = assets->Info().rawRoot / AssetPath::CookedSubdirectory(type);
+    if (const Status created = FileSystem::CreateDirectories(destDir); !created) {
+        HK_EDITOR_ERROR("Import asset: cannot create '{}': {}", destDir.string(), created.error);
+        return;
+    }
+
+    const std::filesystem::path dest = UniqueDestination(destDir, source.filename().string());
+    std::filesystem::copy_file(source, dest, std::filesystem::copy_options::none, ec);
+    if (ec) {
+        HK_EDITOR_ERROR("Import asset: failed to copy '{}' -> '{}': {}", source.string(), dest.string(),
+                        ec.message());
+        return;
+    }
+
+    // Import the new file, then discover so any sibling files an importer wrote
+    // (e.g. textures unpacked from a GLB) are registered, then cook just the dirty
+    // assets (the new file, its sub-assets and those textures) in dependency order.
+    if (const Status status = assets->ImportAsset(dest); !status) {
+        HK_EDITOR_ERROR("Import asset: import of '{}' failed: {}", dest.filename().string(), status.error);
+        std::filesystem::remove(dest, ec);
+        return;
+    }
+    assets->DiscoverRawAssets();
+    if (const Status status = assets->CookAllDirty(); !status) {
+        HK_EDITOR_WARN("Import asset: cook reported issues: {}", status.error);
+    }
+    assets->SaveDatabase();
+
+    // Drop any renderer caches for assets that were (re)cooked so they appear
+    // immediately, regardless of whether hot reload is enabled.
+    if (m_Context.renderer != nullptr) {
+        const std::vector<AssetEvent>& events = assets->PollEvents();
+        for (const AssetEvent& event : events) {
+            m_Context.renderer->InvalidateAsset(event.id.Value());
+        }
+    }
+
+    HK_EDITOR_INFO("Imported '{}' into '{}'", source.filename().string(),
+                   AssetPath::CookedSubdirectory(type));
+}
+
 void EditorApp::DrawUnsavedPrompt() {
     constexpr const char* kPopupId = "Unsaved Changes##editor";
     if (m_OpenUnsavedPopup) {
@@ -569,8 +732,17 @@ void EditorApp::ProcessShortcuts() {
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
         DuplicateSelection();
     }
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
+        SelectAllEntities();
+    }
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_P, false)) {
+        TogglePlayMode();
+    }
     if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
         DeleteSelection();
+    }
+    if (!m_Context.selection.Empty() && ImGui::IsKeyPressed(ImGuiKey_Escape, false)) {
+        DeselectAll();
     }
 }
 

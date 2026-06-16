@@ -35,6 +35,13 @@ public:
     bool IsMinimized() const;
     bool IsFocused() const;
 
+    // Text input is off by default. While active, the platform emits
+    // EventType::TextInput events carrying committed UTF-8 text (IME aware).
+    // Game UI / text fields enable this only while a field has focus.
+    void StartTextInput();
+    void StopTextInput();
+    bool IsTextInputActive() const;
+
     SDL_Window* SDLHandle() const;
 
     // Registers an observer invoked with each raw SDL_Event (passed as a const
@@ -51,6 +58,7 @@ private:
     bool m_ShouldClose = false;
     bool m_Minimized = false;
     bool m_Focused = true;
+    bool m_TextInputActive = false;
     RawEventObserver m_RawEventObserver;
 };
 } // namespace Hockey

@@ -102,6 +102,7 @@ public:
     std::vector<RaycastHit> RaycastAll(const RaycastRequest& request) const;
     bool OverlapSphere(const OverlapSphereRequest& request, std::vector<OverlapHit>& outHits) const;
     bool OverlapBox(const OverlapBoxRequest& request, std::vector<OverlapHit>& outHits) const;
+    bool ShapeCast(const ShapeCastRequest& request, ShapeCastHit& outHit) const;
 
     void CollectDebugDraw(PhysicsDebugDrawList& outDrawList) const;
 

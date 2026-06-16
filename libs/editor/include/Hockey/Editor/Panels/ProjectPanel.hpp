@@ -44,6 +44,9 @@ private:
     // PBR material editor shown in the details pane for a selected .material.yaml,
     // with save (reimport + recook) support.
     void DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path);
+    // Pushes the in-progress material edits to the renderer as a live preview
+    // (no disk write/recook) so the viewport updates while editing.
+    void ApplyMaterialPreview(EditorContext& context);
     // Creates a new default material asset under `directory` and imports it.
     void CreateMaterialAsset(EditorContext& context, const std::filesystem::path& directory);
     void HandleFileActivation(EditorContext& context, const ProjectEntry& entry);
@@ -61,9 +64,13 @@ private:
     std::string m_Status;
 
     // Cached material being edited in the details pane (loaded lazily when the
-    // selected .material.yaml changes), plus its on-disk path.
+    // selected .material.yaml changes), plus its on-disk path and AssetID. While
+    // editing, changes are pushed to the renderer as a live preview; switching
+    // away (or Revert) discards an unsaved preview via InvalidateAsset.
     MaterialSource m_EditMaterial;
     std::filesystem::path m_EditMaterialPath;
+    uint64_t m_EditMaterialId = 0;
+    bool m_MaterialPreviewActive = false;
 };
 
 } // namespace Hockey

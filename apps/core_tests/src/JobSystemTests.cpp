@@ -2,6 +2,7 @@
 #include "Hockey/Core/JobSystem.hpp"
 #include <atomic>
 #include <cstddef>
+#include <stdexcept>
 #include <vector>
 using namespace Hockey;
 void RunJobSystemTests() {
@@ -31,4 +32,17 @@ void RunJobSystemTests() {
 
     JobSystem::Shutdown();
     HK_CHECK_EQ(JobSystem::WorkerCount(), static_cast<uint32_t>(0));
+
+    // Init(0) picks a sensible default worker count (>= 1).
+    JobSystem::Init(0);
+    HK_CHECK(JobSystem::WorkerCount() >= 1);
+
+    // A job that throws must not crash the pool; later jobs still run.
+    std::atomic<int> ran{0};
+    JobSystem::Submit([] { throw std::runtime_error("intentional test failure"); });
+    JobSystem::Submit([&ran] { ran.fetch_add(1, std::memory_order_relaxed); });
+    JobSystem::WaitIdle();
+    HK_CHECK_EQ(ran.load(), 1);
+
+    JobSystem::Shutdown();
 }

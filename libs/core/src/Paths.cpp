@@ -49,4 +49,10 @@ fs::path Paths::DataFile(const std::string& relative) { return g_Paths.data / re
 fs::path Paths::RawAsset(const std::string& relative) { return g_Paths.rawAssets / relative; }
 fs::path Paths::CookedAsset(const std::string& relative) { return g_Paths.cookedAssets / relative; }
 fs::path Paths::TempFile(const std::string& filename) { return g_Paths.temp / filename; }
+fs::path Paths::Resolve(const fs::path& pathOrRelative) {
+    if (pathOrRelative.is_absolute()) {
+        return pathOrRelative.lexically_normal();
+    }
+    return (g_Paths.root / pathOrRelative).lexically_normal();
+}
 }

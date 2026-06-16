@@ -3,8 +3,11 @@
 #include "Gltf/GltfLoader.hpp"
 #include "Hockey/Assets/AssetDatabase.hpp"
 #include "Hockey/Assets/AssetPath.hpp"
+#include "Hockey/Core/Log.hpp"
 
 #include <algorithm>
+#include <fstream>
+#include <system_error>
 
 namespace Hockey {
 namespace fs = std::filesystem;
@@ -13,6 +16,32 @@ namespace {
 void AddDependency(std::vector<AssetID>& deps, AssetID id) {
     if (id.IsValid() && std::find(deps.begin(), deps.end(), id) == deps.end()) {
         deps.push_back(id);
+    }
+}
+
+// Writes images embedded in a glTF/GLB to sibling files (relative to the model)
+// so the standard texture pipeline can discover and cook them. Idempotent: a
+// file is only (re)written when missing or a different size.
+void WriteEmbeddedTextures(const fs::path& modelDir, const std::vector<GltfEmbeddedTexture>& textures) {
+    for (const GltfEmbeddedTexture& texture : textures) {
+        const fs::path outPath = modelDir / texture.relativePath;
+        std::error_code ec;
+        fs::create_directories(outPath.parent_path(), ec);
+
+        if (fs::exists(outPath, ec)) {
+            const auto existingSize = fs::file_size(outPath, ec);
+            if (!ec && existingSize == texture.bytes.size()) {
+                continue;
+            }
+        }
+
+        std::ofstream out(outPath, std::ios::binary | std::ios::trunc);
+        if (!out) {
+            HK_CORE_WARN("GltfImporter: failed to write embedded texture {}", outPath.string());
+            continue;
+        }
+        out.write(reinterpret_cast<const char*>(texture.bytes.data()),
+                  static_cast<std::streamsize>(texture.bytes.size()));
     }
 }
 } // namespace
@@ -85,6 +114,10 @@ ImportResult GltfImporter::Import(const ImportContext& context) {
     }
 
     const fs::path modelRawPath = AssetPath::ToProjectRelative(context.projectRoot, context.rawPath);
+
+    // Externalize images packed inside the model so the texture pipeline can
+    // discover and cook them; material slots already reference these paths.
+    WriteEmbeddedTextures(context.rawPath.parent_path(), scene.value.embeddedTextures);
 
     result.success = true;
     result.metadata.id = context.existingId;

@@ -68,6 +68,23 @@ uint32_t ShadowCascadeCount(ShadowQuality quality) {
     return 4;
 }
 
+uint32_t LocalShadowAtlasResolution(ShadowQuality quality) {
+    // 4x4 grid of tiles; per-tile resolution is this divided by 4.
+    switch (quality) {
+    case ShadowQuality::Off:
+        return 1;
+    case ShadowQuality::Low:
+        return 1024; // 256/tile
+    case ShadowQuality::Medium:
+        return 2048; // 512/tile
+    case ShadowQuality::High:
+        return 2048; // 512/tile
+    case ShadowQuality::Ultra:
+        return 4096; // 1024/tile
+    }
+    return 2048;
+}
+
 Status VulkanFrameTargets::Create(const RenderDevice& device, const VulkanCommand& command) {
     m_Device = &device;
     m_Command = &command;
@@ -112,6 +129,7 @@ Status VulkanFrameTargets::Build(uint32_t width, uint32_t height, VkFormat /*swa
     m_Extent = {width, height};
     m_ShadowCascades = ShadowCascadeCount(settings.shadowQuality);
     m_ShadowResolution = ShadowAtlasResolution(settings.shadowQuality);
+    m_LocalShadowResolution = LocalShadowAtlasResolution(settings.shadowQuality);
 
     // Bloom chain: half-res then halving until small, capped by preset quality.
     const uint32_t maxMips = MaxBloomMips(settings.preset);
@@ -145,9 +163,12 @@ Status VulkanFrameTargets::Build(uint32_t width, uint32_t height, VkFormat /*swa
 
         frame.shadowAtlas = MakeTarget(device, command, m_ShadowResolution, m_ShadowResolution, TextureFormat::Depth32F,
                                        TextureUsage_Sampled | TextureUsage_DepthStencil, "ShadowAtlas");
+        frame.localShadowAtlas =
+            MakeTarget(device, command, m_LocalShadowResolution, m_LocalShadowResolution, TextureFormat::Depth32F,
+                       TextureUsage_Sampled | TextureUsage_DepthStencil, "LocalShadowAtlas");
 
         if (!frame.hdrColor.IsValid() || !frame.ldrColor.IsValid() || !frame.aoRaw.IsValid() ||
-            !frame.aoBlur.IsValid() || !frame.shadowAtlas.IsValid()) {
+            !frame.aoBlur.IsValid() || !frame.shadowAtlas.IsValid() || !frame.localShadowAtlas.IsValid()) {
             return Status::Fail("Failed to create offscreen frame targets");
         }
         for (const VulkanTexture& mip : frame.bloomMips) {
@@ -156,6 +177,18 @@ Status VulkanFrameTargets::Build(uint32_t width, uint32_t height, VkFormat /*swa
             }
         }
     }
+
+    // The local shadow atlas is bound (binding 4) and statically referenced by
+    // the PBR shader every frame, but its render pass only runs when a spot/point
+    // light actually casts a shadow. Put it in a sampleable layout up front so
+    // skipped frames never leave it UNDEFINED under a bound descriptor.
+    VkCommandBuffer cmd = command.BeginSingleTimeCommands();
+    for (PostTargets& frame : m_Frames) {
+        TransitionImage(cmd, frame.localShadowAtlas.image, VK_IMAGE_LAYOUT_UNDEFINED,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+        frame.localShadowAtlas.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    command.EndSingleTimeCommands(cmd);
 
     return Status::Ok();
 }
@@ -174,6 +207,7 @@ void VulkanFrameTargets::DestroyFrames() {
         }
         frame.bloomMips.clear();
         DestroyTexture(*m_Device, frame.shadowAtlas);
+        DestroyTexture(*m_Device, frame.localShadowAtlas);
     }
 }
 

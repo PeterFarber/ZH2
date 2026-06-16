@@ -10,6 +10,7 @@ namespace {
 constexpr int kMaxTicksPerFrame = 250;
 }
 void HeadlessApplication::SetTickRate(double tickRate) { m_Timestep.SetTickRate(tickRate); }
+void HeadlessApplication::SetSleepWhenIdle(bool sleepWhenIdle) { m_SleepWhenIdle = sleepWhenIdle; }
 int HeadlessApplication::Run() {
     SignalHandler::Install();
     if (!OnInit()) {
@@ -31,7 +32,11 @@ int HeadlessApplication::Run() {
             OnFixedUpdate(m_Timestep.GetFixedDeltaSeconds());
             m_Timestep.AdvanceTick();
         }
-        Platform::SleepMilliseconds(1);
+        if (m_SleepWhenIdle) {
+            Platform::SleepMilliseconds(1);
+        } else {
+            Platform::YieldThread();
+        }
     }
     OnShutdown();
     return 0;

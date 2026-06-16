@@ -111,6 +111,32 @@ void ComponentRegistry::RegisterPhase2Components() {
     }
 
     {
+        // Hierarchy is edited through Scene::SetParent/RemoveParent (which keep
+        // the parent/children lists and world transforms consistent), so the
+        // inspector shows these read-only rather than letting raw UUID edits
+        // break the invariants. ChildrenComponent has no scalar field to expose
+        // (it is a UUID vector), so it registers as a presence-only entry.
+        ComponentMetadata md;
+        md.name = "ParentComponent";
+        md.displayName = "Parent";
+        md.addable = false;
+        md.removable = false;
+        FieldMetadata parentField = MakeField("Parent", FieldType::UUID, offsetof(ParentComponent, parentId));
+        parentField.readOnly = true;
+        md.fields.push_back(parentField);
+        RegisterComponent<ParentComponent>(std::move(md));
+    }
+
+    {
+        ComponentMetadata md;
+        md.name = "ChildrenComponent";
+        md.displayName = "Children";
+        md.addable = false;
+        md.removable = false;
+        RegisterComponent<ChildrenComponent>(std::move(md));
+    }
+
+    {
         ComponentMetadata md;
         md.name = "TeamComponent";
         md.displayName = "Team";

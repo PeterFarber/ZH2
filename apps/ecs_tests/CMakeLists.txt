@@ -11,6 +11,8 @@ add_executable(HockeyECSTests
     src/SceneLifecycleTests.cpp
     src/SceneEventTests.cpp
     src/RenderComponentTests.cpp
+    src/Phase2GapTests.cpp
+    src/Phase2AuditTests.cpp
 )
 
 target_link_libraries(HockeyECSTests PRIVATE hockey_core hockey_ecs)

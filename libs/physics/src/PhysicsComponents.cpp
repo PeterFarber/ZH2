@@ -135,6 +135,13 @@ void SerializePhysics(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "MaxSlopeDegrees" << YAML::Value << c.maxSlopeDegrees;
         out << YAML::EndMap;
     }
+
+    if (entity.HasComponent<PhysicsMaterialComponent>()) {
+        const auto& c = entity.GetComponent<PhysicsMaterialComponent>();
+        out << YAML::Key << "PhysicsMaterialComponent" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Material" << YAML::Value << c.materialName;
+        out << YAML::EndMap;
+    }
 }
 
 void DeserializePhysics(Entity entity, const YAML::Node& node) {
@@ -289,6 +296,14 @@ void DeserializePhysics(Entity entity, const YAML::Node& node) {
         }
         entity.AddOrReplaceComponent<CharacterControllerComponent>(c);
     }
+
+    if (const auto n = node["PhysicsMaterialComponent"]) {
+        PhysicsMaterialComponent c;
+        if (n["Material"]) {
+            c.materialName = n["Material"].as<std::string>();
+        }
+        entity.AddOrReplaceComponent<PhysicsMaterialComponent>(c);
+    }
 }
 
 // -------------------------------------------------------------- metadata ----
@@ -434,6 +449,14 @@ void RegisterMetadata() {
         md.fields.push_back(
             MakeField("MaxSlopeDegrees", FieldType::Float, offsetof(CharacterControllerComponent, maxSlopeDegrees)));
         registry.RegisterComponent<CharacterControllerComponent>(std::move(md));
+    }
+
+    {
+        ComponentMetadata md;
+        md.name = "PhysicsMaterialComponent";
+        md.displayName = "Physics Material";
+        md.fields.push_back(MakeField("Material", FieldType::String, offsetof(PhysicsMaterialComponent, materialName)));
+        registry.RegisterComponent<PhysicsMaterialComponent>(std::move(md));
     }
 }
 

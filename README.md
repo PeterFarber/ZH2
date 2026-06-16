@@ -149,7 +149,7 @@ Work proceeds in ordered phases. Each phase should fully complete its subsystem 
 
 - [x] **Phase 3 — Vulkan Renderer**
   - Full Vulkan stack: instance, validation, surface, device, swapchain, VMA, Volk
-  - HDR offscreen pipeline: PBR forward, cascaded directional shadows, transparent pass
+  - HDR offscreen pipeline: PBR forward, cascaded directional shadows, spot/point local-light shadow atlas (tiled depth + PCF), transparent pass
   - Post-processing: SSAO + blur, bloom, tone mapping (Linear/Reinhard/ACES), FXAA
   - Procedural built-in meshes and hockey materials; asset-backed mesh/material resolve
   - ECS camera/mesh/light/environment components consumed at render time
@@ -208,75 +208,99 @@ Work proceeds in ordered phases. Each phase should fully complete its subsystem 
 
 ### Known gaps within completed phases
 
-These are carry-over items within Phases 1–6. They do not block starting Phase 7, but should be tracked.
+These are carry-over items within Phases 1–6. They do not block starting Phase 7, but should be tracked. Two gap-closing passes resolved the small/medium items in each phase (the `*(closed)*` bullets); each remaining open bullet is annotated with **_depends on:_** the concrete blocker that keeps it open. The blockers fall into a few recurring categories:
+
+- **GPU verification** — code is writable, but correctness can only be confirmed on a real GPU/display (this CI/headless environment has neither), so shipping it unverified is riskier than tracking the gap.
+- **Phase 7/8/9** — the item is a future-phase system; per phase discipline it is intentionally not implemented early.
+- **New dependency / large subsystem** — requires a new third-party library or a multi-feature subsystem, not a gap-closer.
+- **In-scope now** — genuinely doable within Phases 1–6 today; called out explicitly.
 
 #### Phase 1 — Core
 
-- `SignalHandler::Install()` only wired in `HeadlessApplication`; windowed client/editor do not hook Ctrl+C/SIGTERM
-- `TextInput` event type declared but never emitted from the window layer
-- `glm` linked in `hockey_core` but unused there
-- **Untested:** window/SDL lifecycle, keyboard/mouse/gamepad input, signal handling, crash handler, logging output, `WindowedApplication`/`HeadlessApplication` loops, `Platform`, `Timer`, `ThreadPool` (direct)
+- *(closed)* `SignalHandler::Install()` now wired in `WindowedApplication` as well as `HeadlessApplication`; the windowed client/editor honor Ctrl+C/SIGTERM
+- *(closed)* `TextInput` events are emitted from the window layer; `Window::StartTextInput()/StopTextInput()` gate SDL text input
+- *(closed)* `glm` removed from `hockey_core` (now linked directly by `hockey_ecs`, which uses it in public headers)
+- *(closed)* Added direct tests for `Platform`, `Timer`, `ThreadPool`, and `SignalHandler`
+- *(closed)* `--config` / `--log` / `--help` command-line flags wired in the client, editor and server (`Paths::Resolve` anchors relative overrides at the project root)
+- *(closed)* `app.sleep_when_idle` honored by `HeadlessApplication`; `input.gamepad_enabled` applied at startup (closes pads opened before config load)
+- *(closed)* `CrashHandler::Shutdown()` called on app teardown; added `Time`, `Paths`, `JobSystem` and `CommandLine` tests
+- **Untested:** window/SDL lifecycle, keyboard/mouse/gamepad input, crash handler, logging output, windowed app loop (require a display/GPU)
 
 #### Phase 2 — ECS
 
-- `ParentComponent` / `ChildrenComponent` not registered in component metadata (inspector can't edit them directly)
-- Prefab overrides are apply-only in memory — no save/load persistence in scene/prefab YAML
-- `SceneMode` is runtime-only; not serialized in scene files
-- **Untested:** active-in-hierarchy propagation, per-component serialization for all 16 components, prefab override round-trip, `Scene::Clear`, `SceneMode` transitions
+- *(closed)* `ParentComponent` / `ChildrenComponent` registered in component metadata (read-only, non-addable/removable)
+- *(closed)* Prefab overrides persist to scene YAML (`PrefabOverrideSet` owned by `Scene`, round-trip serialized)
+- *(closed)* `SceneMode` is serialized in scene files (with safe fallback to `Edit`)
+- *(closed)* Added active-in-hierarchy propagation, `Scene::Clear`, marker round-trip, and prefab-override persistence tests
 
 #### Phase 3 — Renderer
 
-- Frame graph is hard-coded in `Renderer.cpp`; `RenderGraph` exists but is not the production path
-- Anti-aliasing: only FXAA is implemented; TAA and MSAA are settings/preset values only
-- Spot-light cone falloff not applied in PBR shader; point/spot shadow maps not implemented
-- `MeshRendererComponent::castsShadows` / `receivesShadows` unused; `contactShadows` setting unused
-- `ReflectionProbeComponent` and `DecalComponent` serialize but renderer ignores them
-- Most `RendererSettings` fields are persisted only (render scale, upscalers, texture/material quality, hockey visual quality knobs, motion blur, DOF, debug overlays, etc.)
-- Hockey-specific visuals (ice reflections, skate spray, puck trail) are material/settings names only — no rendering systems
-- `cpuFrameMs` / `gpuFrameMs` stats never populated; no Tracy profiling integration
-- **Untested:** minimize behavior, VMA directly, TAA/MSAA paths, pixel-correct rendering, spot cones, point shadows
+- *(closed)* Spot-light cone falloff applied in the PBR shader
+- *(closed)* `MeshRendererComponent::castsShadows` honored by the shadow pass
+- *(closed)* Spot/point local-light shadows: tiled depth atlas (4×4 grid), per-light view-proj matrices, PCF sampling in `pbr.frag` (`spot_shadow_test` / `point_shadow_test` scenes)
+- *(closed)* `cpuFrameMs` populated from a CPU frame timer
+- Frame graph is hard-coded in `Renderer.cpp`; `RenderGraph` exists but is not the production path — _depends on:_ large renderer refactor to route all passes through `RenderGraph` + GPU verification
+- Anti-aliasing: only FXAA is implemented; TAA and MSAA are settings/preset values only — _depends on:_ motion-vector + history-buffer plumbing (TAA) and render-pass/pipeline multisample changes (MSAA); GPU verification
+- `MeshRendererComponent::receivesShadows` and `contactShadows` still unused — _depends on:_ shadow-sampling push-constant/descriptor layout change; GPU verification
+- `ReflectionProbeComponent` and `DecalComponent` serialize but renderer ignores them — _depends on:_ IBL probe capture + decal projection renderer systems; GPU verification
+- Most `RendererSettings` fields are persisted only; live anisotropy re-apply deferred — _depends on:_ runtime sampler/descriptor recreation; GPU verification
+- Hockey-specific visuals (ice reflections, skate spray, puck trail) are material/settings names only — no rendering systems — _depends on:_ Phase 9 (visual polish) + gameplay state to drive them
+- `gpuFrameMs` not populated; no Tracy profiling integration — _depends on:_ GPU timestamp queries (GPU verification) + Tracy integration
+- **Untested:** minimize behavior, VMA directly, TAA/MSAA paths, pixel-correct rendering, spot/point shadow atlas correctness — _depends on:_ a GPU/display in the test environment
 
 #### Phase 4 — Editor
 
-- No dedicated Settings/Preferences panel; most editor prefs (snap values, camera speed, autosave) persist to TOML but aren't editable in UI (toolbar only exposes snap/grid toggles)
-- Toolbar Play/Simulate only flip `SceneMode` and call lifecycle hooks — no systems or physics attached; Pause/Step disabled
-- Physics simulation lives in the separate Physics panel preview, not in Play/Simulate modes
-- Prefab override apply/revert UI disabled ("not implemented in the ECS yet")
-- Viewport prefab drop spawns at origin only
-- Component menu and Edit → Select All are stubbed
-- `PropertiesPanel` is a placeholder and not in the default dock layout
-- **Untested:** all panel UI, viewport/gizmo/picking, play/simulate modes, physics preview panel, file dialogs, game viewport
+- *(closed)* Dedicated **Preferences** panel edits the persisted `EditorSettings` (autosave, validation, grid/snap, camera, asset pipeline) and saves on change; opened from Edit → Preferences
+- *(closed)* **Component** menu wires Add/Remove against the primary selection from the component registry
+- *(closed)* Edit → **Select All** (and Ctrl+A / Esc deselect) implemented over `Selection::SelectAll`
+- *(closed)* Viewport prefab drop places the instance at the cursor's ground-plane (y=0) intersection
+- *(closed)* `PropertiesPanel` shows live scene properties (name, mode, entity/system counts, file path)
+- *(closed)* Startup scene precedence: explicit `--scene` > restore-last-scene (`restoreLastScene`) > `scene.startup_scene` config
+- *(closed)* "Create Prefab" is now an undoable `EditorCommand` that stamps the source entity as a prefab instance; Ctrl+P toggles Play mode; hierarchy context menu adds "Focus In Viewport"
+- Toolbar Play/Simulate only flip `SceneMode` and call lifecycle hooks — no systems or physics attached; Pause/Step disabled — _depends on:_ Phase 7 gameplay/sim runtime wired into Play mode (Pause/Step is meaningless until something simulates)
+- Physics simulation lives in the separate Physics panel preview, not in Play/Simulate modes — _depends on:_ Phase 7 (attaching the `PhysicsWorld` to Play mode)
+- *(closed)* Prefab override **apply/revert** implemented: `PrefabSerializer::ComputeOverrides` diffs an instance against its prefab (populating `PrefabOverrideSet`), `ApplyInstanceToPrefab` merges instance edits back into the prefab file (preserving its asset id), and `RevertInstanceToPrefab` restores authored values. The Prefab panel shows the override count and wires Apply (direct) / Revert (undoable `RevertPrefabOverrides` command)
+- **Untested:** all panel UI, viewport/gizmo/picking, play/simulate modes, physics preview panel, file dialogs, game viewport — _depends on:_ a display/GPU in the test environment
 
 #### Phase 5 — Assets
 
-- No KTX/Basis compression path; `.ktx/.ktx2` classified but not truly supported
-- `TextureImportSettings.compress` and `maxSize` unused; no cubemap/environment map pipeline
-- `Audio` and `Animation` asset types are enum placeholders only
-- No tangent generation when glTF omits tangents; no LOD pipeline
-- Scene/prefab import and cook work, but no runtime `Load<SceneAsset>` / `Load<PrefabAsset>`
-- No shader variant system; asset IDs are stable uint64, not `Hockey::UUID`
-- Material editor is scalar PBR fields only — no texture-slot drag-drop in UI
-- Hot-reload `Reloaded` event type exists but is not emitted on recook
-- **Untested:** scene/prefab import/cook, KTX/HDR cook, tangent generation, asset tool CLI, editor browser integration, cross-platform E2E workflow
+- *(closed)* Tangents are generated (Lengyel's method) when a glTF primitive omits them
+- *(closed)* `TextureImportSettings.maxSize` clamps texture dimensions (box-filtered downsample) at cook time
+- *(closed)* Runtime `Load<SceneAsset>` / `Load<PrefabAsset>` return lightweight descriptors (id, name, source path, dependency ids) with type-checked caching
+- *(closed)* Hot-reload emits a `Reloaded` event and evicts the stale runtime instance from the registry on recook
+- *(closed)* `AssetDatabase::DetectCycle` flags circular dependency graphs; `ValidateReferences` reports them as an error
+- *(closed)* Hot-reload move detection: a renamed/moved raw file emits a `Moved` event and keeps its asset id (and dependents) instead of being deleted + re-imported
+- *(closed)* Editor host honors `assets.raw_path` / `assets.cooked_path` and the `assets.auto_discover/auto_import/auto_cook_dirty` config keys
+- *(closed)* Project browser "Delete Metadata" action (`AssetManager::DeleteMetadata`) removes the sidecar + database record while leaving raw/cooked files intact
+- No KTX/Basis compression path; `.ktx/.ktx2` classified but not truly supported — _depends on:_ a new third-party lib (libktx/basisu) + cooked-format plumbing
+- `TextureImportSettings.compress` unused; no cubemap/environment map pipeline — _depends on:_ a GPU block-compression encoder + renderer cubemap/IBL pipeline; GPU verification
+- `Audio` and `Animation` asset types are enum placeholders only — _depends on:_ Phase 9 (audio) / the animation system
+- No LOD pipeline; no shader variant system; asset IDs are stable uint64, not `Hockey::UUID` — _depends on:_ large new subsystems (LOD/variants); the uint64 id is a deliberate design choice, not a defect
+- *(closed)* Material editor exposes the five PBR texture slots (base color, normal, metallic/roughness, occlusion, emissive) with `AssetDragPayload` drop targets — dropping a texture asset sets the slot to its raw path; a Clear button empties it
+- **Untested:** KTX/HDR cook, asset tool CLI, editor browser integration, cross-platform E2E workflow — _depends on:_ a display/GPU + a packaged cross-platform CI harness
 
 #### Phase 6 — Physics
 
-- No `PhysicsMaterialComponent` — materials selected via `RigidBodyComponent.materialName` + registry
-- No shape casts
-- `CharacterControllerComponent` serializes but has no Jolt controller or simulation
-- `MeshColliderComponent` validates/serializes but cannot build shapes at runtime (no mesh asset bridge)
-- `TriggerComponent` detect flags (`detectPlayers`, `detectGoalies`, `detectPuck`) not enforced — layer matrix only
-- `deterministicMode` and `integrationSubsteps` config fields stored but not applied to Jolt
-- `SceneMode::ClientPrediction` unused; client runs `Play` with no prediction/reconciliation
-- No player/goalie capsule spawn tooling or default physics bodies (materials/layers exist)
-- Editor `PhysicsGizmo` skips mesh collider visualization
-- **Untested:** puck bounce/friction simulation sanity, `RaycastAll`, fixed-timestep accumulator multi-step, trigger detect flags at runtime, integrated rink+puck+goal sim
+- *(closed)* Optional `PhysicsMaterialComponent` overrides the rigid body's material (serialized + metadata)
+- *(closed)* Sphere/box `ShapeCast` query added (Jolt narrow-phase)
+- *(closed)* `TriggerComponent` detect flags enforced by `PhysicsWorld::DrainTriggerEvents(Scene&)`
+- *(closed)* `deterministicMode` and `integrationSubsteps` applied to the Jolt world (substep loop + deterministic settings)
+- *(closed)* `HockeyPlayerTool` spawns player/goalie capsule bodies (RigidBody + CapsuleCollider + layer/material/markers)
+- *(closed)* Editor `PhysicsGizmo` draws a placeholder box for mesh colliders
+- *(closed)* Added `RaycastAll`, friction/bounce, substep, trigger detect-flag, and determinism tests
+- *(closed)* Capsule `ShapeCast` shape (player-shaped sweeps) added alongside sphere/box
+- *(closed)* Material combine modes (`CombineFriction` / `CombineRestitution`) applied at contacts via the Jolt contact listener; built-ins keep the historical max-restitution behaviour
+- *(closed)* `Sensor` layer now collides with players/goalies/puck/stick (and never static geometry) so it works as a non-physical detection zone
+- *(closed)* Validation warns when a player/goalie physics body omits a capsule collider or uses invalid capsule dimensions
+- `CharacterControllerComponent` serializes but has no Jolt controller or simulation — _depends on:_ Phase 7 (Jolt `CharacterVirtual` integration + movement logic)
+- *(closed)* `MeshColliderComponent` builds runtime shapes via an injected `PhysicsMeshRegistry` provider (convex → `ConvexHullShape`, concave → `MeshShape`); the editor installs a provider backed by its `AssetManager`, keeping `physics` independent of `assets`
+- `SceneMode::ClientPrediction` unused; client runs `Play` with no prediction/reconciliation — _depends on:_ Phase 8 networking
 
 #### Cross-cutting
 
-- No `libs/gameplay` or `libs/networking` libraries yet (correct for current phase)
+- No `libs/gameplay` or `libs/networking` libraries yet — _depends on:_ Phases 7/8 (correct for the current phase)
 - CMake architectural guards enforce headless server and dependency boundaries
-- Automated tests are strong on library logic; weak on SDL/GPU/UI integration and cross-platform smoke
+- Automated tests are strong on library logic (`Phase2GapTests`, `Phase5GapTests`, `Phase6GapTests`, plus new core coverage for `Platform`, `Time`, `ThreadPool`); weak on SDL/GPU/UI integration and cross-platform smoke — _depends on:_ a display/GPU + a cross-platform CI harness
 
 ## License
 

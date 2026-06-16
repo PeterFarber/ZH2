@@ -70,6 +70,11 @@ public:
     Status RecookAll();
     Status SaveDatabase();
 
+    // Removes an asset's metadata sidecar and database record (and any live
+    // runtime instance). The raw and cooked files are left untouched, so the
+    // asset can be re-discovered/re-imported with a fresh id afterwards.
+    Status DeleteMetadata(AssetID id);
+
     // Returns aggregated validation issues; the Status is failed if any error
     // (not just warning) was found.
     Status ValidateReferences(std::vector<AssetValidationIssue>* issues = nullptr);
@@ -139,11 +144,18 @@ struct MeshAsset;
 struct MaterialAsset;
 struct ModelAsset;
 struct ShaderAsset;
+struct SceneAsset;
+struct PrefabAsset;
 
 template <> Result<std::shared_ptr<TextureAsset>> AssetManager::Load<TextureAsset>(AssetID id);
 template <> Result<std::shared_ptr<MeshAsset>> AssetManager::Load<MeshAsset>(AssetID id);
 template <> Result<std::shared_ptr<ModelAsset>> AssetManager::Load<ModelAsset>(AssetID id);
 template <> Result<std::shared_ptr<MaterialAsset>> AssetManager::Load<MaterialAsset>(AssetID id);
 template <> Result<std::shared_ptr<ShaderAsset>> AssetManager::Load<ShaderAsset>(AssetID id);
+// Scene/prefab assets are lightweight descriptors (id, name, source path,
+// dependency ids). ECS owns the runtime scene; these let gameplay/editor code
+// resolve a scene/prefab asset id to its cooked metadata + dependency list.
+template <> Result<std::shared_ptr<SceneAsset>> AssetManager::Load<SceneAsset>(AssetID id);
+template <> Result<std::shared_ptr<PrefabAsset>> AssetManager::Load<PrefabAsset>(AssetID id);
 
 } // namespace Hockey

@@ -73,6 +73,26 @@ MaterialDesc MakeBuiltInMaterial(BuiltInMaterial material) {
         desc.emissiveStrength = 0.5f;
         desc.debugName = "DebugTrigger";
         break;
+    case BuiltInMaterial::SolidRed:
+        desc.baseColor = {0.8f, 0.08f, 0.08f, 1.0f};
+        desc.roughness = 0.9f;
+        desc.debugName = "SolidRed";
+        break;
+    case BuiltInMaterial::SolidGreen:
+        desc.baseColor = {0.1f, 0.65f, 0.18f, 1.0f};
+        desc.roughness = 0.9f;
+        desc.debugName = "SolidGreen";
+        break;
+    case BuiltInMaterial::SolidBlue:
+        desc.baseColor = {0.1f, 0.3f, 0.85f, 1.0f};
+        desc.roughness = 0.9f;
+        desc.debugName = "SolidBlue";
+        break;
+    case BuiltInMaterial::SolidAmber:
+        desc.baseColor = {0.9f, 0.62f, 0.08f, 1.0f};
+        desc.roughness = 0.9f;
+        desc.debugName = "SolidAmber";
+        break;
     }
     return desc;
 }
@@ -101,6 +121,14 @@ const char* BuiltInMaterialName(BuiltInMaterial material) {
         return "DebugCollider";
     case BuiltInMaterial::DebugTrigger:
         return "DebugTrigger";
+    case BuiltInMaterial::SolidRed:
+        return "SolidRed";
+    case BuiltInMaterial::SolidGreen:
+        return "SolidGreen";
+    case BuiltInMaterial::SolidBlue:
+        return "SolidBlue";
+    case BuiltInMaterial::SolidAmber:
+        return "SolidAmber";
     }
     return "Unknown";
 }

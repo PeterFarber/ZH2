@@ -12,6 +12,11 @@ void RunJobSystemTests();
 void RunFixedTickTests();
 void RunCommandLineTests();
 void RunEventQueueTests();
+void RunPlatformTests();
+void RunTimerTests();
+void RunTimeTests();
+void RunSignalHandlerTests();
+void RunThreadPoolTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -26,6 +31,11 @@ int main(int argc, char** argv) {
     RunFixedTickTests();
     RunCommandLineTests();
     RunEventQueueTests();
+    RunPlatformTests();
+    RunTimerTests();
+    RunTimeTests();
+    RunSignalHandlerTests();
+    RunThreadPoolTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Core tests completed: {} passed, {} failed", stats.passed, stats.failed);

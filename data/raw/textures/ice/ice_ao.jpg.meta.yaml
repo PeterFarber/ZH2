@@ -1,0 +1,17 @@
+Asset:
+  ID: 17073435024746253433
+  Type: Texture
+  Name: ice_ao
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/ice/ice_ao.jpg
+  CookedPath: data/cooked/assets/textures/17073435024746253433.tex.bin
+  RawFileTimestamp: 13790646584528854273
+  RawFileHash: 8009982183101315591
+  ImportedTimestamp: 1781574089
+  CookedTimestamp: 1781573747
+  Dependencies: []
+  Dependents: [589019741743117030]
+  Dirty: true
+  Missing: false
+  Cooked: true

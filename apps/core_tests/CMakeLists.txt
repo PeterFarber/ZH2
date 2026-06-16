@@ -8,6 +8,9 @@ add_executable(HockeyCoreTests
     src/FixedTickTests.cpp
     src/CommandLineTests.cpp
     src/EventQueueTests.cpp
+    src/PlatformTests.cpp
+    src/ThreadPoolTests.cpp
+    src/TimeTests.cpp
 )
 
 target_link_libraries(HockeyCoreTests PRIVATE hockey_core)

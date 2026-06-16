@@ -21,6 +21,45 @@ const std::vector<PrefabOverride>& PrefabOverrideSet::Overrides() const {
     return m_Overrides;
 }
 
+void PrefabOverrideSet::Clear() {
+    m_Overrides.clear();
+}
+
+bool PrefabOverrideSet::Empty() const {
+    return m_Overrides.empty();
+}
+
+void PrefabOverrideSet::Serialize(YAML::Emitter& out) const {
+    out << YAML::BeginSeq;
+    for (const PrefabOverride& ov : m_Overrides) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "Entity" << YAML::Value << ov.entityId.Value();
+        out << YAML::Key << "Component" << YAML::Value << ov.componentName;
+        out << YAML::Key << "Field" << YAML::Value << ov.fieldName;
+        out << YAML::Key << "Value" << YAML::Value << ov.value;
+        out << YAML::EndMap;
+    }
+    out << YAML::EndSeq;
+}
+
+void PrefabOverrideSet::Deserialize(const YAML::Node& node) {
+    m_Overrides.clear();
+    if (!node || !node.IsSequence()) {
+        return;
+    }
+    for (const auto& item : node) {
+        if (!item["Entity"] || !item["Component"] || !item["Field"]) {
+            continue;
+        }
+        PrefabOverride ov;
+        ov.entityId = UUID(item["Entity"].as<std::uint64_t>());
+        ov.componentName = item["Component"].as<std::string>();
+        ov.fieldName = item["Field"].as<std::string>();
+        ov.value = item["Value"];
+        m_Overrides.push_back(std::move(ov));
+    }
+}
+
 namespace {
 
 Status Fail(const std::string& message) {

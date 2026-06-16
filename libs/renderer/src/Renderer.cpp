@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <deque>
 #include <filesystem>
 #include <unordered_map>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
+#include "Hockey/Core/Timer.hpp"
 #include "Hockey/Core/Window.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -98,12 +100,20 @@ struct GpuLight {
 
 constexpr uint32_t kMaxCascades = 4;
 
+// Local (spot/point) light shadows share one depth atlas laid out as a square
+// grid of perspective tiles. A spot light uses 1 tile; a point light uses 6
+// cube-face tiles. Must match HK_MAX_LOCAL_TILES in common.glsl.
+constexpr uint32_t kLocalShadowGrid = 4;
+constexpr uint32_t kMaxLocalShadowTiles = kLocalShadowGrid * kLocalShadowGrid;
+
 struct SceneGPU {
     glm::vec4 ambient{0.03f, 0.03f, 0.03f, 1.0f};
     glm::vec4 params{0.0f};        // x light count, y cascade count, z 1/atlasRes, w pcf radius
     glm::vec4 cascadeSplits{0.0f}; // view-space far distance of each cascade
     glm::mat4 cascadeViewProj[kMaxCascades];
     GpuLight lights[kMaxLights];
+    glm::vec4 localShadowParams{0.0f}; // x 1/atlasRes, y pcf radius, z grid dim, w enabled
+    glm::mat4 localShadowViewProj[kMaxLocalShadowTiles];
 };
 
 struct MaterialGPU {
@@ -111,6 +121,7 @@ struct MaterialGPU {
     glm::vec4 mrno{0.0f, 0.5f, 1.0f, 1.0f};
     glm::vec4 emissive{0.0f};
     glm::vec4 alpha{0.0f, 0.5f, 0.0f, 0.0f};
+    glm::vec4 uvXform{1.0f, 1.0f, 0.0f, 0.0f}; // xy tiling, zw offset
 };
 
 GpuLight PackLight(const LightRenderData& light) {
@@ -118,7 +129,8 @@ GpuLight PackLight(const LightRenderData& light) {
     out.positionRange = glm::vec4(light.position, light.range);
     out.direction = glm::vec4(light.direction, static_cast<float>(light.type));
     out.color = glm::vec4(light.color, light.intensity);
-    out.spot = glm::vec4(light.cosInner, light.cosOuter, 0.0f, 0.0f);
+    // spot.z holds the local-shadow base tile; -1 means this light casts none.
+    out.spot = glm::vec4(light.cosInner, light.cosOuter, -1.0f, 0.0f);
     return out;
 }
 
@@ -145,7 +157,7 @@ bool ParseBuiltInMaterial(const std::string& name, BuiltInMaterial& out) {
         return false;
     }
     const std::string suffix = name.substr(8);
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < kBuiltInMaterialCount; ++i) {
         const auto material = static_cast<BuiltInMaterial>(i);
         if (suffix == BuiltInMaterialName(material)) {
             out = material;
@@ -169,8 +181,8 @@ struct BloomUpPush {
     glm::vec4 params{0.0f}; // x = filter radius (uv)
 };
 struct SsaoPush {
-    glm::vec4 params{0.1f, 1000.0f, 0.05f, 1.0f}; // near, far, radius(uv), intensity
-    glm::vec4 params2{16.0f, 0.02f, 0.0f, 0.0f};  // sampleCount, bias
+    glm::vec4 params{0.1f, 1000.0f, 0.5f, 1.0f};       // near, far, world radius, intensity
+    glm::vec4 params2{16.0f, 0.025f, 1.0f, 1.0f};      // sampleCount, normal bias, proj00, proj11
 };
 struct SsaoBlurPush {
     glm::vec4 texel{0.0f}; // xy = 1/size
@@ -255,6 +267,51 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
     return result;
 }
 
+// View-projection for a spot light's single shadow tile. A perspective frustum
+// looking along the light direction, opened slightly wider than the outer cone
+// so the penumbra near the cone edge still has depth data to compare against.
+glm::mat4 ComputeSpotShadowMatrix(const LightRenderData& light) {
+    glm::vec3 dir = light.direction;
+    if (glm::length(dir) < 1e-5f) {
+        dir = glm::vec3(0.0f, -1.0f, 0.0f);
+    }
+    dir = glm::normalize(dir);
+    const glm::vec3 up = std::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+    const glm::mat4 view = glm::lookAtRH(light.position, light.position + dir, up);
+    const float outerAngle = std::acos(glm::clamp(light.cosOuter, -1.0f, 1.0f));
+    const float fov = glm::clamp(2.0f * outerAngle * 1.1f, glm::radians(1.0f), glm::radians(175.0f));
+    const float farClip = std::max(light.range, 0.2f);
+    // A range-scaled near plane: a tiny fixed near (e.g. 0.05) collapses almost
+    // all perspective depth precision onto the near plane, so distant occluders
+    // and receivers map to near-identical depths and the shadow vanishes under
+    // the comparison bias. Scaling near with range keeps usable precision.
+    const float nearClip = glm::clamp(farClip * 0.02f, 0.2f, farClip * 0.5f);
+    const glm::mat4 proj = glm::perspectiveRH_ZO(fov, 1.0f, nearClip, farClip);
+    return proj * view;
+}
+
+// Six 90-degree perspective view-projections (one per cube face) for a point
+// light. Face order is +X,-X,+Y,-Y,+Z,-Z to match the axis selection done in
+// SampleLocalShadow (common.glsl).
+void ComputePointShadowMatrices(const LightRenderData& light, std::array<glm::mat4, 6>& out) {
+    const float farClip = std::max(light.range, 0.2f);
+    // Range-scaled near plane for usable perspective depth precision (see the
+    // note in ComputeSpotShadowMatrix).
+    const float nearClip = glm::clamp(farClip * 0.02f, 0.2f, farClip * 0.5f);
+    const glm::mat4 proj = glm::perspectiveRH_ZO(glm::radians(90.0f), 1.0f, nearClip, farClip);
+    static const glm::vec3 dirs[6] = {
+        {1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+        {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, -1.0f},
+    };
+    static const glm::vec3 ups[6] = {
+        {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+        {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
+    };
+    for (int f = 0; f < 6; ++f) {
+        out[static_cast<size_t>(f)] = proj * glm::lookAtRH(light.position, light.position + dirs[f], ups[f]);
+    }
+}
+
 uint32_t AoSampleCount(AmbientOcclusionQuality quality) {
     switch (quality) {
     case AmbientOcclusionQuality::Off:
@@ -329,6 +386,7 @@ void BeginRenderingScope(VkCommandBuffer cmd, VkExtent2D extent, VkImageView col
 struct Renderer::Impl {
     RendererSettings settings;
     RendererStats stats;
+    Timer frameCpuTimer; // measures CPU time from BeginFrame to EndFrame
     Window* window = nullptr;
 
     VulkanInstance instance;
@@ -358,14 +416,18 @@ struct Renderer::Impl {
         const VulkanMesh* mesh = nullptr;
         const GpuMaterial* material = nullptr;
         glm::mat4 model{1.0f};
-        float viewDepth = 0.0f; // distance from camera, for transparent sort
+        float viewDepth = 0.0f;     // distance from camera, for transparent sort
+        bool castsShadows = true;   // skipped by the shadow cascade pass when false
     };
 
     // Descriptor system (Step 7). Standard layouts + a growable allocator. A
-    // 1x1 default texture stands in for any texture a material omits.
+    // 1x1 default texture stands in for any texture a material omits. White is
+    // the identity for the multiplicative slots (base/MR/occlusion/emissive); the
+    // normal slot needs a flat tangent-space normal instead.
     VulkanDescriptorLayouts descriptorLayouts;
     VulkanDescriptorAllocator descriptorAllocator;
     VulkanTexture defaultTexture;
+    VulkanTexture defaultNormalTexture;
 
     // Per-frame-in-flight global uniforms + descriptor sets (camera + scene).
     std::array<VulkanBuffer, kFramesInFlight> cameraUBOs;
@@ -373,14 +435,19 @@ struct Renderer::Impl {
     std::array<VkDescriptorSet, kFramesInFlight> globalSets{};
 
     // Resource pools. Handle id == index + 1 (0 == invalid).
+    // meshes/materials use std::deque because DrawItem caches raw pointers into
+    // them while GatherScene resolves entities, and resolving an asset mesh or
+    // material can create a new entry mid-gather. std::deque::push_back never
+    // invalidates pointers to existing elements (std::vector would reallocate
+    // and dangle every previously captured DrawItem pointer).
     std::vector<VulkanTexture> textures;
     std::vector<VulkanBuffer> buffers;
-    std::vector<VulkanMesh> meshes;
-    std::vector<GpuMaterial> materials;
+    std::deque<VulkanMesh> meshes;
+    std::deque<GpuMaterial> materials;
 
     // Built-in resource handles, populated once during Init.
     std::array<MeshHandle, 8> builtInMeshes{};
-    std::array<MaterialHandle, 11> builtInMaterials{};
+    std::array<MaterialHandle, kBuiltInMaterialCount> builtInMaterials{};
 
     // Forward PBR pipelines (shared layout: set0 global, set1 material, push
     // constant model matrix). The debug-line pipeline is built for Step 13.
@@ -401,9 +468,15 @@ struct Renderer::Impl {
     std::vector<DrawItem> frameOpaque;
     std::vector<DrawItem> frameTransparent;
     SceneGPU frameScene;
+    // Number of local-shadow atlas tiles in use this frame (spot=1, point=6).
+    uint32_t frameLocalShadowTiles = 0;
     glm::mat4 frameViewProj{1.0f};
     float frameNear = 0.1f;
     float frameFar = 1000.0f;
+    // Projection diagonal terms (signed) so the SSAO pass can reconstruct
+    // view-space positions from depth without the full matrix.
+    float frameProj00 = 1.0f;
+    float frameProj11 = 1.0f;
 
     // Per-frame-in-flight depth targets, sized to the swapchain and recreated on
     // resize. One per frame avoids a hazard between concurrent in-flight frames.
@@ -486,9 +559,11 @@ struct Renderer::Impl {
     MeshHandle ResolveAssetMesh(uint64_t assetId);
     MaterialHandle ResolveAssetMaterial(uint64_t assetId);
     TextureHandle ResolveAssetTexture(uint64_t assetId);
+    void PreviewMaterial(uint64_t materialAssetId, const MaterialPreviewDesc& preview);
     void GatherScene(Scene& scene, const CameraRenderData& camera);
     void RecordSceneDrawsInPass(VkCommandBuffer cmd);
     void RecordShadowPass(VkCommandBuffer cmd);
+    void RecordLocalShadowPass(VkCommandBuffer cmd);
     void RecordAmbientOcclusion(VkCommandBuffer cmd, VulkanTexture& depth);
     void RecordBloom(VkCommandBuffer cmd, VulkanTexture& hdr);
     void RecordDebugLines(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent);
@@ -542,6 +617,7 @@ uint32_t Renderer::Impl::CreateMaterialInternal(const MaterialDesc& desc) {
     gpu.emissive = glm::vec4(desc.emissiveColor, desc.emissiveStrength);
     const float mode = desc.alphaMode == AlphaMode::Opaque ? 0.0f : (desc.alphaMode == AlphaMode::Mask ? 1.0f : 2.0f);
     gpu.alpha = {mode, desc.alphaCutoff, 0.0f, 0.0f};
+    gpu.uvXform = {desc.tiling.x, desc.tiling.y, desc.offset.x, desc.offset.y};
     if (mat.ubo.mapped != nullptr) {
         std::memcpy(mat.ubo.mapped, &gpu, sizeof(gpu));
     }
@@ -552,8 +628,9 @@ uint32_t Renderer::Impl::CreateMaterialInternal(const MaterialDesc& desc) {
     writer.WriteBuffer(0, mat.ubo.buffer, mat.ubo.size, 0, DescriptorType::UniformBuffer)
         .WriteImage(1, ResolveTextureView(desc.baseColorTexture), sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     DescriptorType::CombinedImageSampler)
-        .WriteImage(2, ResolveTextureView(desc.normalTexture), sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    DescriptorType::CombinedImageSampler)
+        .WriteImage(2,
+                    desc.normalTexture.IsValid() ? ResolveTextureView(desc.normalTexture) : defaultNormalTexture.view,
+                    sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
         .WriteImage(3, ResolveTextureView(desc.metallicRoughnessTexture), sampler,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
         .WriteImage(4, ResolveTextureView(desc.occlusionTexture), sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -565,6 +642,85 @@ uint32_t Renderer::Impl::CreateMaterialInternal(const MaterialDesc& desc) {
     materials.push_back(mat);
     stats.materialCount = static_cast<uint32_t>(materials.size());
     return static_cast<uint32_t>(materials.size());
+}
+
+void Renderer::Impl::PreviewMaterial(uint64_t materialAssetId, const MaterialPreviewDesc& preview) {
+    // Ensure the GPU material exists and is cached (creates it from the cooked
+    // asset on first touch), then mutate it in place.
+    const MaterialHandle handle = ResolveAssetMaterial(materialAssetId);
+    if (!handle.IsValid() || handle.id > materials.size()) {
+        return;
+    }
+    GpuMaterial& mat = materials[handle.id - 1];
+
+    // Resolve texture slots up front so we can detect binding changes.
+    const TextureHandle baseColorTex = ResolveAssetTexture(preview.baseColorTexture);
+    const TextureHandle normalTex = ResolveAssetTexture(preview.normalTexture);
+    const TextureHandle mrTex = ResolveAssetTexture(preview.metallicRoughnessTexture);
+    const TextureHandle occlusionTex = ResolveAssetTexture(preview.occlusionTexture);
+    const TextureHandle emissiveTex = ResolveAssetTexture(preview.emissiveTexture);
+
+    const bool texturesChanged = mat.desc.baseColorTexture.id != baseColorTex.id ||
+                                 mat.desc.normalTexture.id != normalTex.id ||
+                                 mat.desc.metallicRoughnessTexture.id != mrTex.id ||
+                                 mat.desc.occlusionTexture.id != occlusionTex.id ||
+                                 mat.desc.emissiveTexture.id != emissiveTex.id;
+
+    mat.desc.baseColor = preview.baseColor;
+    mat.desc.metallic = preview.metallic;
+    mat.desc.roughness = preview.roughness;
+    mat.desc.normalStrength = preview.normalStrength;
+    mat.desc.occlusionStrength = preview.occlusionStrength;
+    mat.desc.emissiveColor = preview.emissiveColor;
+    mat.desc.emissiveStrength = preview.emissiveStrength;
+    mat.desc.alphaMode = preview.alphaMode;
+    mat.desc.alphaCutoff = preview.alphaCutoff;
+    mat.desc.tiling = preview.tiling;
+    mat.desc.offset = preview.offset;
+    mat.desc.baseColorTexture = baseColorTex;
+    mat.desc.normalTexture = normalTex;
+    mat.desc.metallicRoughnessTexture = mrTex;
+    mat.desc.occlusionTexture = occlusionTex;
+    mat.desc.emissiveTexture = emissiveTex;
+
+    // Refill the uniform buffer (host-visible; safe to overwrite for an editor
+    // preview - a torn read self-corrects on the next frame).
+    MaterialGPU gpu;
+    gpu.baseColor = mat.desc.baseColor;
+    gpu.mrno = {mat.desc.metallic, mat.desc.roughness, mat.desc.normalStrength, mat.desc.occlusionStrength};
+    gpu.emissive = glm::vec4(mat.desc.emissiveColor, mat.desc.emissiveStrength);
+    const float mode =
+        mat.desc.alphaMode == AlphaMode::Opaque ? 0.0f : (mat.desc.alphaMode == AlphaMode::Mask ? 1.0f : 2.0f);
+    gpu.alpha = {mode, mat.desc.alphaCutoff, 0.0f, 0.0f};
+    gpu.uvXform = {mat.desc.tiling.x, mat.desc.tiling.y, mat.desc.offset.x, mat.desc.offset.y};
+    if (mat.ubo.mapped != nullptr) {
+        std::memcpy(mat.ubo.mapped, &gpu, sizeof(gpu));
+    }
+
+    // Only rebind images when a texture slot actually changed. We allocate a
+    // fresh descriptor set rather than rewriting the existing one (which a prior
+    // frame's draw may still reference); the old set leaks until shutdown, which
+    // matches InvalidateAsset's bounded-leak policy and only happens on a drop.
+    if (texturesChanged) {
+        const VkDescriptorSet newSet = descriptorAllocator.Allocate(descriptorLayouts.material);
+        const VkSampler sampler = samplers.Linear();
+        DescriptorWriter writer;
+        writer.WriteBuffer(0, mat.ubo.buffer, mat.ubo.size, 0, DescriptorType::UniformBuffer)
+            .WriteImage(1, ResolveTextureView(mat.desc.baseColorTexture), sampler,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
+            .WriteImage(2,
+                        mat.desc.normalTexture.IsValid() ? ResolveTextureView(mat.desc.normalTexture)
+                                                          : defaultNormalTexture.view,
+                        sampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
+            .WriteImage(3, ResolveTextureView(mat.desc.metallicRoughnessTexture), sampler,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
+            .WriteImage(4, ResolveTextureView(mat.desc.occlusionTexture), sampler,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler)
+            .WriteImage(5, ResolveTextureView(mat.desc.emissiveTexture), sampler,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, DescriptorType::CombinedImageSampler);
+        writer.Update(device, newSet);
+        mat.set = newSet;
+    }
 }
 
 MeshHandle Renderer::Impl::ResolveMesh(const std::string& name) const {
@@ -679,6 +835,8 @@ MaterialHandle Renderer::Impl::ResolveAssetMaterial(uint64_t assetId) {
         desc.emissiveStrength = asset.emissiveStrength;
         desc.alphaMode = AlphaModeFromString(asset.alphaMode);
         desc.alphaCutoff = asset.alphaCutoff;
+        desc.tiling = asset.tiling;
+        desc.offset = asset.offset;
         desc.baseColorTexture = ResolveAssetTexture(asset.baseColorTexture.Value());
         desc.normalTexture = ResolveAssetTexture(asset.normalTexture.Value());
         desc.metallicRoughnessTexture = ResolveAssetTexture(asset.metallicRoughnessTexture.Value());
@@ -712,6 +870,16 @@ Status Renderer::Impl::SetupDescriptors() {
     defaultTexture = ::Hockey::CreateTexture(device, command, texDesc);
     if (!defaultTexture.IsValid()) {
         return Status::Fail("Failed to create default texture");
+    }
+
+    // 1x1 flat tangent-space normal (0.5, 0.5, 1.0) so materials without a normal
+    // map keep their geometric normal. Bytes are R,G,B,A => 0x80,0x80,0xFF,0xFF.
+    const uint32_t flatNormalPixel = 0xFFFF8080u;
+    texDesc.initialData = &flatNormalPixel;
+    texDesc.debugName = "DefaultNormalTexture";
+    defaultNormalTexture = ::Hockey::CreateTexture(device, command, texDesc);
+    if (!defaultNormalTexture.IsValid()) {
+        return Status::Fail("Failed to create default normal texture");
     }
 
     // Per-frame-in-flight camera/scene UBOs + global descriptor sets. Each set
@@ -763,6 +931,11 @@ void Renderer::Impl::WriteGlobalSet(VkDescriptorSet set, uint32_t frame, VulkanF
     if (shadowsOn && setTargets.IsValid() && setTargets.Frame(frame).shadowAtlas.IsValid()) {
         shadowView = setTargets.Frame(frame).shadowAtlas.view;
     }
+    // Binding 4: local (spot/point) shadow atlas (placeholder when shadows off).
+    VkImageView localShadowView = setTargets.ShadowPlaceholder().view;
+    if (shadowsOn && setTargets.IsValid() && setTargets.Frame(frame).localShadowAtlas.IsValid()) {
+        localShadowView = setTargets.Frame(frame).localShadowAtlas.view;
+    }
     // Binding 3: blurred SSAO (white when AO is disabled).
     const bool aoOn = settings.aoQuality != AmbientOcclusionQuality::Off && setTargets.IsValid();
     VkImageView aoView = defaultTexture.view;
@@ -773,6 +946,8 @@ void Renderer::Impl::WriteGlobalSet(VkDescriptorSet set, uint32_t frame, VulkanF
     writer.WriteImage(2, shadowView, samplers.Shadow(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                       DescriptorType::CombinedImageSampler);
     writer.WriteImage(3, aoView, samplers.LinearClamp(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                      DescriptorType::CombinedImageSampler);
+    writer.WriteImage(4, localShadowView, samplers.Shadow(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                       DescriptorType::CombinedImageSampler);
     writer.Update(device, set);
 }
@@ -941,10 +1116,23 @@ Status Renderer::Impl::BuildMeshPipelines() {
     transparent.debugName = "TransparentPBRPipeline";
     transparentPipeline = CreateGraphicsPipeline(device, transparent);
 
+    // Depth prepass (for SSAO): reuse the mesh vertex shader and layout with no
+    // fragment stage so the depth it writes is bit-identical to the main opaque
+    // pass. Using a separate transform (e.g. a CPU-computed MVP) would diverge by
+    // a few ULPs and reject coplanar fragments, leaking the clear color through.
+    GraphicsPipelineDesc prepass = opaque;
+    prepass.fragmentShader = VK_NULL_HANDLE; // depth-only
+    prepass.colorFormats = {};               // no color attachment
+    prepass.depthTest = true;
+    prepass.depthWrite = true;
+    prepass.blend = BlendMode::Opaque;
+    prepass.debugName = "DepthPrepassPipeline";
+    depthPrepassPipeline = CreateGraphicsPipeline(device, prepass);
+
     DestroyShaderModule(device, vs.value.module);
     DestroyShaderModule(device, fs.value.module);
 
-    if (!opaquePipeline.IsValid() || !transparentPipeline.IsValid()) {
+    if (!opaquePipeline.IsValid() || !transparentPipeline.IsValid() || !depthPrepassPipeline.IsValid()) {
         return Status::Fail("Failed to build PBR pipelines");
     }
 
@@ -986,18 +1174,11 @@ Status Renderer::Impl::BuildMeshPipelines() {
     shadow.debugName = "ShadowPipeline";
     shadowPipeline = CreateGraphicsPipeline(device, shadow);
 
-    // Depth prepass (for SSAO): same depth-only path, no bias so the depth it
-    // writes matches the main opaque pass exactly.
-    GraphicsPipelineDesc prepass = shadow;
-    prepass.depthBias = false;
-    prepass.debugName = "DepthPrepassPipeline";
-    depthPrepassPipeline = CreateGraphicsPipeline(device, prepass);
-
     DestroyShaderModule(device, shadowVs.value.module);
     DestroyShaderModule(device, shadowFs.value.module);
 
-    if (shadowPipelineLayout == VK_NULL_HANDLE || !shadowPipeline.IsValid() || !depthPrepassPipeline.IsValid()) {
-        return Status::Fail("Failed to build shadow/prepass pipelines");
+    if (shadowPipelineLayout == VK_NULL_HANDLE || !shadowPipeline.IsValid()) {
+        return Status::Fail("Failed to build shadow pipeline");
     }
     return Status::Ok();
 }
@@ -1160,6 +1341,7 @@ void Renderer::Shutdown() {
         DestroyTexture(r.device, depth);
     }
     DestroyTexture(r.device, r.defaultTexture);
+    DestroyTexture(r.device, r.defaultNormalTexture);
     r.samplers.Destroy();
     r.frames.Destroy();
     r.swapchain.Destroy();
@@ -1236,6 +1418,7 @@ void Renderer::BeginFrame() {
     }
 
     r.stats.ResetPerFrame();
+    r.frameCpuTimer.Reset();                        // start CPU frame timing
     r.post.BeginFrame(r.frameIndex);               // recycle this frame's transient post sets
     r.swapchainLayout = VK_IMAGE_LAYOUT_UNDEFINED; // freshly acquired image
 
@@ -1249,6 +1432,8 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     frameViewProj = camera.projection * camera.view;
     frameNear = camera.nearClip;
     frameFar = camera.farClip;
+    frameProj00 = camera.projection[0][0];
+    frameProj11 = camera.projection[1][1];
 
     // --- Per-frame camera UBO -----------------------------------------------
     CameraGPU cameraGpu;
@@ -1267,8 +1452,20 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     for (glm::mat4& matrix : frameScene.cascadeViewProj) {
         matrix = glm::mat4(1.0f);
     }
+    for (glm::mat4& matrix : frameScene.localShadowViewProj) {
+        matrix = glm::mat4(1.0f);
+    }
+    frameLocalShadowTiles = 0;
     bool hasSun = false;
     glm::vec3 sunDir(0.0f, -1.0f, 0.0f);
+    // Shadow-casting spot/point lights, captured so we can assign atlas tiles
+    // and build their view-projections after the light loop.
+    struct LocalCaster {
+        uint32_t lightIndex = 0;
+        LightRenderData data;
+    };
+    std::array<LocalCaster, kMaxLights> localCasters{};
+    uint32_t localCasterCount = 0;
     {
         const auto envView = scene.Registry().view<EnvironmentComponent>();
         for (const entt::entity handle : envView) {
@@ -1299,6 +1496,11 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
                 hasSun = true;
                 sunDir = data.direction;
             }
+            // Queue spot (type 2) / point (type 1) shadow casters for tiling.
+            if (data.castsShadows && (data.type == 1 || data.type == 2) && localCasterCount < kMaxLights) {
+                localCasters[localCasterCount] = {lightCount, data};
+                ++localCasterCount;
+            }
             ++lightCount;
         }
         frameScene.params = glm::vec4(static_cast<float>(lightCount), 0.0f, 0.0f, 0.0f);
@@ -1317,6 +1519,39 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         frameScene.params.y = static_cast<float>(cascades.count);
         frameScene.params.z = 1.0f / static_cast<float>(std::max(atlasRes, 1u));
         frameScene.params.w = pcfRadius;
+    }
+
+    // --- Local (spot/point) light shadows -----------------------------------
+    // Pack each shadow-casting spot light into one atlas tile and each point
+    // light into six cube-face tiles, greedily until the atlas is full.
+    const uint32_t localAtlasRes = curTargets->LocalShadowResolution();
+    if (settings.shadowQuality != ShadowQuality::Off && localCasterCount > 0 && curTargets->IsValid() &&
+        localAtlasRes > 1) {
+        uint32_t tileCursor = 0;
+        for (uint32_t i = 0; i < localCasterCount; ++i) {
+            const LightRenderData& data = localCasters[i].data;
+            const uint32_t needed = data.type == 1 ? 6u : 1u;
+            if (tileCursor + needed > kMaxLocalShadowTiles) {
+                break; // atlas full; remaining casters fall back to no shadow
+            }
+            if (data.type == 2) {
+                frameScene.localShadowViewProj[tileCursor] = ComputeSpotShadowMatrix(data);
+            } else {
+                std::array<glm::mat4, 6> faces;
+                ComputePointShadowMatrices(data, faces);
+                for (uint32_t f = 0; f < 6; ++f) {
+                    frameScene.localShadowViewProj[tileCursor + f] = faces[f];
+                }
+            }
+            frameScene.lights[localCasters[i].lightIndex].spot.z = static_cast<float>(tileCursor);
+            tileCursor += needed;
+        }
+        frameLocalShadowTiles = tileCursor;
+        if (tileCursor > 0) {
+            const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
+            frameScene.localShadowParams = glm::vec4(1.0f / static_cast<float>(localAtlasRes), pcfRadius,
+                                                     static_cast<float>(kLocalShadowGrid), 1.0f);
+        }
     }
 
     // --- Renderables, resolving names to handles + fallbacks ----------------
@@ -1359,6 +1594,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         item.material = &materials[materialHandle.id - 1];
         item.model = scene.GetWorldTransform(entity);
         item.viewDepth = glm::length(glm::vec3(item.model[3]) - camera.position);
+        item.castsShadows = mr.castsShadows;
         if (!item.mesh->IsValid()) {
             continue;
         }
@@ -1452,7 +1688,81 @@ void Renderer::Impl::RecordShadowPass(VkCommandBuffer cmd) {
         vkCmdSetScissor(cmd, 0, 1, &scissor);
 
         for (const DrawItem& item : frameOpaque) {
+            if (!item.castsShadows) {
+                continue; // MeshRendererComponent.castsShadows == false
+            }
             const glm::mat4 mvp = frameScene.cascadeViewProj[c] * item.model;
+            vkCmdPushConstants(cmd, shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
+            const VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
+            vkCmdBindIndexBuffer(cmd, item.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdDrawIndexed(cmd, item.mesh->indexCount, 1, 0, 0, 0);
+            ++stats.shadowDrawCalls;
+        }
+    }
+    vkCmdEndRendering(cmd);
+    EndDebugLabel(cmd);
+
+    TransitionImage(cmd, atlas.image, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+    atlas.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
+
+// Renders depth for every active local-shadow tile (spot frusta + point cube
+// faces) into the shared local atlas. Mirrors RecordShadowPass but iterates the
+// grid tiles assigned in GatherScene instead of directional cascades.
+void Renderer::Impl::RecordLocalShadowPass(VkCommandBuffer cmd) {
+    if (frameLocalShadowTiles == 0 || !shadowPipeline.IsValid()) {
+        return;
+    }
+    VulkanTexture& atlas = curTargets->Frame(frameIndex).localShadowAtlas;
+    if (!atlas.IsValid()) {
+        return;
+    }
+    const uint32_t atlasRes = curTargets->LocalShadowResolution();
+    const float tileSize = static_cast<float>(atlasRes) / static_cast<float>(kLocalShadowGrid);
+
+    TransitionImage(cmd, atlas.image, atlas.currentLayout, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_ASPECT_DEPTH_BIT);
+    atlas.currentLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+
+    BeginDebugLabel(cmd, "LocalShadowPass");
+    VkRenderingAttachmentInfo depthAttachment{};
+    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    depthAttachment.imageView = atlas.view;
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depthAttachment.clearValue.depthStencil = {1.0f, 0};
+
+    VkRenderingInfo rendering{};
+    rendering.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    rendering.renderArea = {{0, 0}, {atlasRes, atlasRes}};
+    rendering.layerCount = 1;
+    rendering.colorAttachmentCount = 0;
+    rendering.pDepthAttachment = &depthAttachment;
+    vkCmdBeginRendering(cmd, &rendering);
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);
+    for (uint32_t tile = 0; tile < frameLocalShadowTiles; ++tile) {
+        VkViewport viewport{};
+        viewport.x = static_cast<float>(tile % kLocalShadowGrid) * tileSize;
+        viewport.y = static_cast<float>(tile / kLocalShadowGrid) * tileSize;
+        viewport.width = tileSize;
+        viewport.height = tileSize;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(cmd, 0, 1, &viewport);
+        VkRect2D scissor{{static_cast<int32_t>(viewport.x), static_cast<int32_t>(viewport.y)},
+                         {static_cast<uint32_t>(tileSize), static_cast<uint32_t>(tileSize)}};
+        vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+        const glm::mat4& tileViewProj = frameScene.localShadowViewProj[tile];
+        for (const DrawItem& item : frameOpaque) {
+            if (!item.castsShadows) {
+                continue;
+            }
+            const glm::mat4 mvp = tileViewProj * item.model;
             vkCmdPushConstants(cmd, shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
@@ -1503,9 +1813,12 @@ void Renderer::Impl::RecordAmbientOcclusion(VkCommandBuffer cmd, VulkanTexture& 
         VkRect2D scissor{{0, 0}, extent};
         vkCmdSetScissor(cmd, 0, 1, &scissor);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, depthPrepassPipeline.pipeline);
+        // Same transform path as the main opaque pass (mesh.vert + camera UBO +
+        // pushed model) so the written depth matches it exactly.
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 0, 1,
+                                &(*curGlobalSets)[frameIndex], 0, nullptr);
         for (const DrawItem& item : frameOpaque) {
-            const glm::mat4 mvp = frameViewProj * item.model;
-            vkCmdPushConstants(cmd, shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
+            vkCmdPushConstants(cmd, meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &item.model);
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
             vkCmdBindIndexBuffer(cmd, item.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -1527,8 +1840,11 @@ void Renderer::Impl::RecordAmbientOcclusion(VkCommandBuffer cmd, VulkanTexture& 
     BeginDebugLabel(cmd, "SSAOPass");
     BeginRenderingScope(cmd, extent, aoRaw.view, VK_ATTACHMENT_LOAD_OP_DONT_CARE, noClear, VK_NULL_HANDLE, false);
     SsaoPush ssao;
-    ssao.params = glm::vec4(frameNear, frameFar, 0.04f, 1.0f);
-    ssao.params2 = glm::vec4(static_cast<float>(AoSampleCount(settings.aoQuality)), 0.05f, 0.0f, 0.0f);
+    // params:  near, far, world-space sample radius, intensity
+    // params2: sample count, normal bias, proj[0][0], proj[1][1]
+    ssao.params = glm::vec4(frameNear, frameFar, 0.3f, 1.0f);
+    ssao.params2 =
+        glm::vec4(static_cast<float>(AoSampleCount(settings.aoQuality)), 0.03f, frameProj00, frameProj11);
     post.Draw(cmd, frameIndex, post.Ssao(), depth.view, samplers.Nearest(), &ssao, sizeof(ssao));
     vkCmdEndRendering(cmd);
     EndDebugLabel(cmd);
@@ -1688,6 +2004,8 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
 
     // --- Shadow pass: render cascades into the depth atlas ------------------
     RecordShadowPass(cmd);
+    // --- Local shadow pass: spot/point depth into the local atlas -----------
+    RecordLocalShadowPass(cmd);
 
     // --- Ambient occlusion: depth prepass + SSAO (fills the depth target) ---
     const bool aoEnabled = settings.aoQuality != AmbientOcclusionQuality::Off && depth.IsValid();
@@ -1743,8 +2061,13 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
     BeginRenderingScope(cmd, outputExtent, outputColor, VK_ATTACHMENT_LOAD_OP_DONT_CARE, clearColor, VK_NULL_HANDLE,
                         false);
     FxaaPush fxaa;
+    // FXAA is currently the only implemented AA technique. TAA and MSAA* are
+    // declared settings but not yet implemented, so they fall back to FXAA
+    // rather than silently dropping anti-aliasing (which would make higher
+    // presets look worse than lower ones). Only an explicit "Off" disables AA.
+    const float fxaaEnabled = settings.antiAliasing != AntiAliasing::Off ? 1.0f : 0.0f;
     fxaa.params = glm::vec4(1.0f / static_cast<float>(extent.width), 1.0f / static_cast<float>(extent.height),
-                            settings.antiAliasing == AntiAliasing::FXAA ? 1.0f : 0.0f, 0.0f);
+                            fxaaEnabled, 0.0f);
     post.Draw(cmd, frameIndex, post.Fxaa(), ldr.view, samplers.LinearClamp(), &fxaa, sizeof(fxaa));
     vkCmdEndRendering(cmd);
     EndDebugLabel(cmd);
@@ -1843,6 +2166,9 @@ void Renderer::EndFrame() {
     r.allocator.QueryMemory(r.stats.usedVRAMBytes, r.stats.budgetVRAMBytes);
 
     r.debugDraw.Clear();
+    // CPU time spent producing this frame (record/submit/present). GPU timing
+    // (gpuFrameMs) still requires timestamp queries and is left unpopulated.
+    r.stats.cpuFrameMs = static_cast<float>(r.frameCpuTimer.ElapsedMilliseconds());
     r.frameIndex = (r.frameIndex + 1) % kFramesInFlight;
     r.frameActive = false;
 }
@@ -2116,6 +2442,9 @@ void Renderer::ClearAssetCache() {
     m_Impl->assetMaterialCache.clear();
     m_Impl->assetTextureCache.clear();
 }
+void Renderer::PreviewMaterial(uint64_t materialAssetId, const MaterialPreviewDesc& preview) {
+    m_Impl->PreviewMaterial(materialAssetId, preview);
+}
 
 const RendererSettings& Renderer::GetSettings() const {
     return m_Impl->settings;
@@ -2184,6 +2513,23 @@ RendererSampledImage RendererImGuiAccess::SampledImage(Renderer& renderer, Textu
     }
     image.view = color.view;
     image.sampler = r.samplers.LinearClamp();
+    image.valid = image.view != VK_NULL_HANDLE && image.sampler != VK_NULL_HANDLE;
+    return image;
+}
+
+RendererSampledImage RendererImGuiAccess::SampledImageForAsset(Renderer& renderer, uint64_t textureAssetId) {
+    Renderer::Impl& r = *renderer.m_Impl;
+    RendererSampledImage image;
+    const TextureHandle handle = r.ResolveAssetTexture(textureAssetId);
+    if (!handle.IsValid() || handle.id > r.textures.size()) {
+        return image;
+    }
+    const VulkanTexture& tex = r.textures[handle.id - 1];
+    if (!tex.IsValid()) {
+        return image;
+    }
+    image.view = tex.view;
+    image.sampler = r.samplers.Linear();
     image.valid = image.view != VK_NULL_HANDLE && image.sampler != VK_NULL_HANDLE;
     return image;
 }

@@ -75,4 +75,24 @@ void RunComponentMetadataTests() {
         HK_CHECK(!id->addable);
         HK_CHECK(!id->removable);
     }
+
+    // Hierarchy components are registered read-only and not user-addable.
+    const ComponentMetadata* parent = registry.FindByName("ParentComponent");
+    HK_CHECK(parent != nullptr);
+    if (parent != nullptr) {
+        HK_CHECK(!parent->addable);
+        HK_CHECK(!parent->removable);
+        HK_CHECK(HasField(*parent, "Parent"));
+        HK_CHECK(!parent->fields.empty() && parent->fields[0].readOnly);
+    }
+
+    const ComponentMetadata* children = registry.FindByName("ChildrenComponent");
+    HK_CHECK(children != nullptr);
+    if (children != nullptr) {
+        HK_CHECK(!children->addable);
+        HK_CHECK(!children->removable);
+    }
+
+    // AssetRef field type now stringifies (previously fell through to Unknown).
+    HK_CHECK_EQ(std::string(FieldTypeToString(FieldType::AssetRef)), std::string("AssetRef"));
 }

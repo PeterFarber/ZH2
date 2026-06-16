@@ -5,6 +5,7 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -15,11 +16,25 @@
 #include "Hockey/ECS/ComponentSerializer.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabOverride.hpp"
 #include "Hockey/ECS/Scene.hpp"
 
 namespace Hockey {
 
-Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::path& path) {
+namespace {
+
+// Depth-first collection of an entity and all of its descendants.
+void CollectSubtree(Scene& scene, Entity root, std::vector<Entity>& out) {
+    out.push_back(root);
+    for (Entity child : scene.GetChildren(root)) {
+        CollectSubtree(scene, child, out);
+    }
+}
+
+// Emits a prefab file for the subtree rooted at `root`, stamping it with the
+// given asset id. Used by both Save (fresh id) and ApplyInstanceToPrefab
+// (preserves the existing prefab id so live instances stay linked).
+Status WritePrefabFile(Scene& scene, Entity root, const std::filesystem::path& path, const UUID& assetId) {
     if (!scene.IsValid(root)) {
         return Status::Fail("Prefab save: invalid root entity");
     }
@@ -28,13 +43,7 @@ Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::
     const entt::entity rootHandle = root.Handle();
 
     std::vector<Entity> entities;
-    std::function<void(Entity)> collect = [&](Entity entity) {
-        entities.push_back(entity);
-        for (Entity child : scene.GetChildren(entity)) {
-            collect(child);
-        }
-    };
-    collect(root);
+    CollectSubtree(scene, root, entities);
 
     // A prefab root is parentless by definition; temporarily drop any external
     // parent link so the saved file does not reference entities outside the tree.
@@ -45,14 +54,12 @@ Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::
         registry.remove<ParentComponent>(rootHandle);
     }
 
-    const UUID assetId;
-
     YAML::Emitter out;
     out << YAML::BeginMap;
 
     out << YAML::Key << "Prefab" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Name" << YAML::Value << root.GetName();
-    out << YAML::Key << "Version" << YAML::Value << kPrefabVersion;
+    out << YAML::Key << "Version" << YAML::Value << PrefabSerializer::kPrefabVersion;
     out << YAML::Key << "AssetId" << YAML::Value << assetId.Value();
     out << YAML::EndMap;
 
@@ -91,6 +98,66 @@ Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::
 
     HK_CORE_INFO("Saved prefab '{}' ({} entities) to {}", root.GetName(), entities.size(), path.string());
     return Status::Ok();
+}
+
+// Parsed prefab file indexed by each entity's stored ("source") id. The owning
+// `root` node keeps the per-entity nodes alive.
+struct LoadedPrefab {
+    YAML::Node root;
+    std::unordered_map<std::uint64_t, YAML::Node> byId;
+};
+
+Result<LoadedPrefab> LoadPrefabNodes(const std::filesystem::path& path) {
+    const Result<std::string> text = FileSystem::ReadTextFile(path);
+    if (!text) {
+        return Result<LoadedPrefab>::Fail("Failed to read prefab file: " + path.string());
+    }
+    LoadedPrefab loaded;
+    try {
+        loaded.root = YAML::Load(text.value);
+    } catch (const std::exception& e) {
+        return Result<LoadedPrefab>::Fail(std::string("Prefab YAML parse error: ") + e.what());
+    }
+    if (!loaded.root["Entities"]) {
+        return Result<LoadedPrefab>::Fail("Prefab file missing 'Entities' section");
+    }
+    for (const auto node : loaded.root["Entities"]) {
+        if (node["Entity"]) {
+            loaded.byId.emplace(node["Entity"].as<std::uint64_t>(), node);
+        }
+    }
+    return Result<LoadedPrefab>::Ok(std::move(loaded));
+}
+
+// Components whose fields PrefabOverrideSet::Apply can re-apply. Restricting the
+// diff to these keeps every recorded override round-trippable.
+const std::unordered_set<std::string>& OverridableComponents() {
+    static const std::unordered_set<std::string> kComponents = {
+        "TransformComponent",   "NameComponent",        "ActiveComponent",  "TeamComponent",
+        "PlayerRoleComponent",  "GoalComponent",        "PuckComponent",    "SpawnPointComponent",
+        "FaceoffSpotComponent", "RinkComponent",        "PlayAreaComponent", "CameraRigMarkerComponent"};
+    return kComponents;
+}
+
+// Serializes a live entity to a standalone YAML map node (matching the prefab
+// file's per-entity layout) so it can be diffed against the authored node.
+YAML::Node EntityToNode(Entity entity) {
+    YAML::Emitter out;
+    ComponentSerializer::SerializeEntity(out, entity);
+    return YAML::Load(out.c_str());
+}
+
+} // namespace
+
+Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::path& path) {
+    UUID ignored;
+    return Save(scene, root, path, ignored);
+}
+
+Status PrefabSerializer::Save(Scene& scene, Entity root, const std::filesystem::path& path, UUID& outAssetId) {
+    const UUID assetId;
+    outAssetId = assetId;
+    return WritePrefabFile(scene, root, path, assetId);
 }
 
 Result<Entity> PrefabSerializer::Instantiate(Scene& targetScene, const std::filesystem::path& path) {
@@ -188,6 +255,140 @@ Result<Entity> PrefabSerializer::Instantiate(Scene& targetScene, const std::file
     Entity rootEntity = targetScene.FindEntityByUUID(UUID(rootIt->second));
     HK_CORE_INFO("Instantiated prefab '{}' from {}", rootEntity.GetName(), path.string());
     return Result<Entity>::Ok(rootEntity);
+}
+
+Result<int> PrefabSerializer::ComputeOverrides(Scene& scene, Entity instanceRoot, PrefabOverrideSet& outSet) {
+    outSet.Clear();
+    if (!scene.IsValid(instanceRoot) || !instanceRoot.HasComponent<PrefabComponent>()) {
+        return Result<int>::Fail("ComputeOverrides: entity is not a prefab instance");
+    }
+    const std::filesystem::path source = instanceRoot.GetComponent<PrefabComponent>().sourcePath;
+    Result<LoadedPrefab> prefab = LoadPrefabNodes(source);
+    if (!prefab) {
+        return Result<int>::Fail(prefab.error);
+    }
+
+    std::vector<Entity> entities;
+    CollectSubtree(scene, instanceRoot, entities);
+
+    int count = 0;
+    for (Entity entity : entities) {
+        if (!entity.HasComponent<PrefabComponent>()) {
+            continue; // entity added to the instance: nothing to diff against
+        }
+        const auto fileIt = prefab.value.byId.find(entity.GetComponent<PrefabComponent>().sourceEntityId.Value());
+        if (fileIt == prefab.value.byId.end()) {
+            continue;
+        }
+        const YAML::Node& fileNode = fileIt->second;
+        const YAML::Node instNode = EntityToNode(entity);
+        const UUID entityId = entity.GetUUID();
+
+        for (const std::string& component : OverridableComponents()) {
+            const YAML::Node instComp = instNode[component];
+            if (!instComp || !instComp.IsMap()) {
+                continue;
+            }
+            const YAML::Node fileComp = fileNode[component];
+            for (const auto field : instComp) {
+                const std::string fieldName = field.first.as<std::string>();
+                const YAML::Node fileValue = fileComp ? fileComp[fieldName] : YAML::Node();
+                if (!fileValue || YAML::Dump(field.second) != YAML::Dump(fileValue)) {
+                    outSet.AddOverride({entityId, component, fieldName, field.second});
+                    ++count;
+                }
+            }
+        }
+    }
+    return Result<int>::Ok(count);
+}
+
+Status PrefabSerializer::ApplyInstanceToPrefab(Scene& scene, Entity instanceRoot) {
+    if (!scene.IsValid(instanceRoot) || !instanceRoot.HasComponent<PrefabComponent>()) {
+        return Status::Fail("Apply prefab: entity is not a prefab instance");
+    }
+    const PrefabComponent prefab = instanceRoot.GetComponent<PrefabComponent>();
+    if (prefab.sourcePath.empty()) {
+        return Status::Fail("Apply prefab: instance has no source path");
+    }
+
+    // Write the instance subtree back to the prefab, preserving its asset id so
+    // other instances keep their link.
+    if (const Status status = WritePrefabFile(scene, instanceRoot, prefab.sourcePath, prefab.prefabAssetId); !status) {
+        return status;
+    }
+
+    // The file now keys entities by their current instance ids, so refresh each
+    // instance entity's source id to match (keeps later reverts aligned).
+    entt::registry& registry = scene.Registry();
+    std::vector<Entity> entities;
+    CollectSubtree(scene, instanceRoot, entities);
+    for (Entity entity : entities) {
+        if (auto* component = registry.try_get<PrefabComponent>(entity.Handle())) {
+            component->sourceEntityId = entity.GetUUID();
+        }
+    }
+    HK_CORE_INFO("Applied prefab instance '{}' to {}", instanceRoot.GetName(), prefab.sourcePath.string());
+    return Status::Ok();
+}
+
+Status PrefabSerializer::RevertInstanceToPrefab(Scene& scene, Entity instanceRoot) {
+    if (!scene.IsValid(instanceRoot) || !instanceRoot.HasComponent<PrefabComponent>()) {
+        return Status::Fail("Revert prefab: entity is not a prefab instance");
+    }
+    const std::filesystem::path source = instanceRoot.GetComponent<PrefabComponent>().sourcePath;
+    Result<LoadedPrefab> prefab = LoadPrefabNodes(source);
+    if (!prefab) {
+        return Status::Fail(prefab.error);
+    }
+
+    entt::registry& registry = scene.Registry();
+    std::vector<Entity> entities;
+    CollectSubtree(scene, instanceRoot, entities);
+
+    int reverted = 0;
+    for (Entity entity : entities) {
+        if (!entity.HasComponent<PrefabComponent>()) {
+            continue;
+        }
+        const auto fileIt = prefab.value.byId.find(entity.GetComponent<PrefabComponent>().sourceEntityId.Value());
+        if (fileIt == prefab.value.byId.end()) {
+            continue;
+        }
+        const YAML::Node& node = fileIt->second;
+        const entt::entity handle = entity.Handle();
+
+        // Preserve identity, hierarchy and the prefab link; only authored
+        // component *values* are restored.
+        const bool hadParent = registry.all_of<ParentComponent>(handle);
+        ParentComponent parentBackup;
+        if (hadParent) {
+            parentBackup = registry.get<ParentComponent>(handle);
+        }
+        const ChildrenComponent childrenBackup = registry.get<ChildrenComponent>(handle);
+        const PrefabComponent prefabBackup = registry.get<PrefabComponent>(handle);
+
+        ComponentSerializer::DeserializeCoreComponents(entity, node);
+        ComponentSerializer::DeserializeHockeyMarkerComponents(entity, node);
+        ComponentSerializer::DeserializeRenderComponents(entity, node);
+        ComponentSerializer::DeserializeExternalComponents(entity, node);
+
+        if (hadParent) {
+            registry.emplace_or_replace<ParentComponent>(handle, parentBackup);
+        } else if (registry.all_of<ParentComponent>(handle)) {
+            registry.remove<ParentComponent>(handle);
+        }
+        registry.get<ChildrenComponent>(handle).children = childrenBackup.children;
+        registry.emplace_or_replace<PrefabComponent>(handle, prefabBackup);
+        ++reverted;
+    }
+
+    scene.RecalculateAllActiveInHierarchy();
+    // The instance now matches the prefab, so any recorded divergence is stale.
+    scene.PrefabOverrides().Clear();
+    HK_CORE_INFO("Reverted prefab instance '{}' ({} entities) to {}", instanceRoot.GetName(), reverted,
+                 source.string());
+    return Status::Ok();
 }
 
 } // namespace Hockey

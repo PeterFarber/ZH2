@@ -1,0 +1,17 @@
+Asset:
+  ID: 8403497455647703792
+  Type: Scene
+  Name: spot_shadow_test.scene
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/scenes/spot_shadow_test.scene.yaml
+  CookedPath: data/cooked/assets/scenes/8403497455647703792.scene.yaml
+  RawFileTimestamp: 13790652704455529784
+  RawFileHash: 1855794253704457534
+  ImportedTimestamp: 1781574091
+  CookedTimestamp: 1781573753
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

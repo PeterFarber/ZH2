@@ -24,5 +24,10 @@ public:
     static std::filesystem::path RawAsset(const std::string& relative);
     static std::filesystem::path CookedAsset(const std::string& relative);
     static std::filesystem::path TempFile(const std::string& filename);
+
+    // Resolve a path that may be absolute or relative. Absolute paths are
+    // returned unchanged; relative paths are anchored at the project root. Used
+    // for command-line overrides such as --config / --log.
+    static std::filesystem::path Resolve(const std::filesystem::path& pathOrRelative);
 };
 }

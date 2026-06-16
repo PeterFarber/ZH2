@@ -1,6 +1,24 @@
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 namespace Hockey {
+
+float CombineFriction(const PhysicsMaterial& a, const PhysicsMaterial& b) {
+    const float product = a.friction * b.friction;
+    if (a.combineFrictionMultiply || b.combineFrictionMultiply) {
+        return product;
+    }
+    return std::sqrt(std::max(0.0f, product)); // geometric mean (Jolt default)
+}
+
+float CombineRestitution(const PhysicsMaterial& a, const PhysicsMaterial& b) {
+    if (a.combineRestitutionMax || b.combineRestitutionMax) {
+        return std::max(a.restitution, b.restitution); // Jolt default
+    }
+    return 0.5f * (a.restitution + b.restitution);
+}
 
 std::vector<PhysicsMaterial> MakeBuiltInMaterials() {
     std::vector<PhysicsMaterial> materials;
@@ -13,6 +31,10 @@ std::vector<PhysicsMaterial> MakeBuiltInMaterials() {
         m.restitution = restitution;
         m.linearDamping = linearDamping;
         m.angularDamping = angularDamping;
+        // Built-ins keep Jolt's default max-restitution combine, so the contact
+        // listener reproduces the engine's historical bounce behaviour. Custom
+        // materials can clear this to request an averaged response.
+        m.combineRestitutionMax = true;
         materials.push_back(m);
     };
 

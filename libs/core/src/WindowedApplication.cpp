@@ -1,6 +1,7 @@
 #include "Hockey/Core/WindowedApplication.hpp"
 #include "Hockey/Core/Input.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/SignalHandler.hpp"
 #include "Hockey/Core/Time.hpp"
 #include "Hockey/Core/Timer.hpp"
 #include <SDL3/SDL.h>
@@ -27,6 +28,10 @@ int WindowedApplication::Run() {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         return 1;
     }
+    // Hook Ctrl+C / SIGTERM (and the Windows console close events) so the
+    // windowed client/editor shut down cleanly when signalled, matching the
+    // headless server's behaviour.
+    SignalHandler::Install();
     Input::Init();
     if (!OnInit()) {
         OnShutdown();
@@ -39,7 +44,7 @@ int WindowedApplication::Run() {
         SetTargetFps(GetCommandLine().GetInt("--fps-limit", m_TargetFps));
     }
     Timer timer;
-    while (IsRunning() && !m_Window.ShouldClose()) {
+    while (IsRunning() && !m_Window.ShouldClose() && !SignalHandler::ShutdownRequested()) {
         const double frameStart = Time::NowSeconds();
         const float deltaTime = static_cast<float>(timer.ElapsedSeconds());
         timer.Reset();
