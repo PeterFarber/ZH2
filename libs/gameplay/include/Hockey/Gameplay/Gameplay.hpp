@@ -5,6 +5,7 @@
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/GameplayTypes.hpp"
+#include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Teams/TeamTypes.hpp"
 #include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 

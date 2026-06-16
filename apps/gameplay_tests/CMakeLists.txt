@@ -6,6 +6,7 @@ add_executable(HockeyGameplayTests
     src/TeamTypesTests.cpp
     src/GameplayComponentTests.cpp
     src/MatchSetupTests.cpp
+    src/GameplayWorldTests.cpp
 )
 
 target_link_libraries(HockeyGameplayTests PRIVATE hockey_core hockey_ecs hockey_physics hockey_gameplay)

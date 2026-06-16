@@ -10,7 +10,10 @@ target_sources(hockey_gameplay
         src/GameplayComponents.cpp
         src/GameplayInput.cpp
         src/GameplayEvents.cpp
+        src/Match/FaceoffSystem.cpp
+        src/Match/MatchClock.cpp
         src/Match/MatchSystem.cpp
+        src/Simulation/GameplayWorld.cpp
         src/Teams/TeamTypes.cpp
         src/Tuning/GameplayTuning.cpp
         src/Tuning/TuningSerializer.cpp
