@@ -241,13 +241,26 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
     }
     const bool imageHovered = ImGui::IsItemHovered();
 
-    // Dropping a prefab onto the viewport instantiates it at the scene root
-    // (origin); world-position placement is a later refinement.
+    // Dropping a prefab onto the viewport instantiates it where the cursor ray
+    // meets the ground plane (y = 0), falling back to the origin when the ray is
+    // parallel to or points away from the plane.
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
             const std::filesystem::path prefabPath(static_cast<const char*>(payload->Data));
             if (context.activeScene != nullptr) {
-                context.undoRedo.Execute(EditorCommands::InstantiatePrefab(prefabPath), context);
+                const ImVec2 mouse = ImGui::GetIO().MousePos;
+                const glm::vec2 dropUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
+                glm::vec3 rayOrigin;
+                glm::vec3 rayDir;
+                context.editorCamera.Ray(dropUV, aspect, rayOrigin, rayDir);
+                glm::vec3 dropPoint(0.0f);
+                if (std::abs(rayDir.y) > 1e-5f) {
+                    const float t = -rayOrigin.y / rayDir.y;
+                    if (t > 0.0f) {
+                        dropPoint = rayOrigin + t * rayDir;
+                    }
+                }
+                context.undoRedo.Execute(EditorCommands::InstantiatePrefabAt(prefabPath, dropPoint), context);
             }
         }
         ImGui::EndDragDropTarget();

@@ -1,0 +1,17 @@
+Asset:
+  ID: 3094564343776955364
+  Type: Material
+  Name: Puck Rubber
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/puck_rubber.material.yaml
+  CookedPath: data/cooked/assets/materials/3094564343776955364.material.yaml
+  RawFileTimestamp: 13790645465636288025
+  RawFileHash: 3112200684477575963
+  ImportedTimestamp: 1781574091
+  CookedTimestamp: 1781573752
+  Dependencies: []
+  Dependents: [9039238736338702129]
+  Dirty: true
+  Missing: false
+  Cooked: true

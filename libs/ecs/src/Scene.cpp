@@ -5,6 +5,7 @@
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabOverride.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Transform.hpp"
 
@@ -21,8 +22,16 @@ template <typename T> void CopyComponent(entt::registry& registry, entt::entity 
 
 } // namespace
 
-Scene::Scene(std::string name) : m_Name(std::move(name)) {}
+Scene::Scene(std::string name)
+    : m_Name(std::move(name)), m_PrefabOverrides(std::make_unique<PrefabOverrideSet>()) {}
 Scene::~Scene() = default;
+
+PrefabOverrideSet& Scene::PrefabOverrides() {
+    return *m_PrefabOverrides;
+}
+const PrefabOverrideSet& Scene::PrefabOverrides() const {
+    return *m_PrefabOverrides;
+}
 
 const std::string& Scene::GetName() const {
     return m_Name;
@@ -205,6 +214,7 @@ void Scene::DestroyEntityRecursive(Entity entity) {
 void Scene::Clear() {
     m_Registry.clear();
     m_EntityMap.clear();
+    m_PrefabOverrides->Clear();
 }
 
 Entity Scene::FindEntityByUUID(UUID id) {

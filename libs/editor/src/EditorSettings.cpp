@@ -12,6 +12,18 @@ std::filesystem::path EditorSettings::DefaultPath() {
     return Paths::DataFile("editor/editor_settings.toml");
 }
 
+void EditorSettings::ApplyProjectConfig(const Config& projectConfig) {
+    // editor.toml [scene]
+    autosaveEnabled = projectConfig.GetBool("scene.autosave_enabled", autosaveEnabled);
+    autosaveIntervalSeconds = projectConfig.GetInt("scene.autosave_interval_seconds", autosaveIntervalSeconds);
+
+    // editor.toml [assets]
+    assetsAutoDiscover = projectConfig.GetBool("assets.auto_discover", assetsAutoDiscover);
+    assetsAutoImport = projectConfig.GetBool("assets.auto_import", assetsAutoImport);
+    assetsAutoCookDirty = projectConfig.GetBool("assets.auto_cook_dirty", assetsAutoCookDirty);
+    assetsHotReload = projectConfig.GetBool("assets.hot_reload", assetsHotReload);
+}
+
 Status EditorSettings::Load(const std::filesystem::path& path) {
     Config config;
     if (std::filesystem::exists(path)) {

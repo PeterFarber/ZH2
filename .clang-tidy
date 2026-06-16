@@ -1,4 +1,60 @@
-Checks: '-*,bugprone-*,performance-*,readability-*,modernize-*'
-WarningsAsErrors: ''
-HeaderFilterRegex: '.*'
+---
+Checks: >
+  -*,
+
+  clang-analyzer-*,
+
+  bugprone-*,
+  performance-*,
+  portability-*,
+  misc-*,
+
+  readability-braces-around-statements,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-duplicate-include,
+  readability-inconsistent-declaration-parameter-name,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-member-init,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-simplify-boolean-expr,
+  readability-static-accessed-through-instance,
+  readability-suspicious-call-argument,
+
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-reserved-identifier,
+  -bugprone-macro-parentheses,
+  -bugprone-sizeof-expression,
+
+  -misc-non-private-member-variables-in-classes,
+  -misc-use-anonymous-namespace
+
+WarningsAsErrors: ""
+
+HeaderFilterRegex: '^(.*[/\\])?(libs|apps)[/\\].*'
+ExcludeHeaderFilterRegex: '.*[/\\](third_party|external|vendor|build|out|cmake-build-debug|cmake-build-release)[/\\].*'
+
+SystemHeaders: false
 FormatStyle: file
+UseColor: true
+
+HeaderFileExtensions:
+  - h
+  - hh
+  - hpp
+  - hxx
+  - inc
+
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+  - c++
+
+CheckOptions:
+  readability-braces-around-statements.ShortStatementLines: "0"

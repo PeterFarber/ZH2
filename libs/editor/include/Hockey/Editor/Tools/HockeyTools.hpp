@@ -36,6 +36,20 @@ public:
     void OnSelected(EditorContext& context) override;
 };
 
+class HockeyPlayerTool : public EditorTool {
+public:
+    const char* Name() const override {
+        return "Hockey Players";
+    }
+    const char* Category() const override {
+        return "Hockey";
+    }
+    bool IsInstant() const override {
+        return true;
+    }
+    void OnSelected(EditorContext& context) override;
+};
+
 class HockeyGoalTool : public EditorTool {
 public:
     const char* Name() const override {

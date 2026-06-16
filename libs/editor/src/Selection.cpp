@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 
 namespace Hockey {
@@ -13,6 +14,18 @@ void Selection::Select(UUID entityId) {
         m_Primary = entityId;
     } else {
         m_Primary = UUID(0);
+    }
+}
+
+void Selection::SelectAll(Scene& scene) {
+    m_Selected.clear();
+    m_Primary = UUID(0);
+    for (Entity entity : scene.GetAllEntities()) {
+        const UUID id = entity.GetUUID();
+        if (id.IsValid()) {
+            m_Selected.push_back(id);
+            m_Primary = id;
+        }
     }
 }
 

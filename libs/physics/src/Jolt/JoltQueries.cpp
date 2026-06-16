@@ -11,7 +11,9 @@
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/ShapeCast.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 
 #include "Hockey/Physics/Jolt/JoltTypeConversions.hpp"
@@ -194,6 +196,80 @@ bool JoltPhysicsWorld::OverlapBox(const OverlapBoxRequest& request, std::vector<
         outHits.push_back(hit);
     }
     return !outHits.empty();
+}
+
+bool JoltPhysicsWorld::ShapeCast(const ShapeCastRequest& request, ShapeCastHit& outHit) const {
+    if (!m_Initialized) {
+        return false;
+    }
+    glm::vec3 direction;
+    if (!NormalizedDirection(request.direction, direction)) {
+        return false;
+    }
+
+    JPH::Ref<JPH::Shape> shape;
+    if (request.shape == ShapeCastRequest::Shape::Box) {
+        if (request.halfExtents.x <= 0.0f || request.halfExtents.y <= 0.0f || request.halfExtents.z <= 0.0f) {
+            return false;
+        }
+        JPH::BoxShapeSettings settings(ToJolt(request.halfExtents), 0.0f);
+        const JPH::ShapeSettings::ShapeResult result = settings.Create();
+        if (result.HasError()) {
+            return false;
+        }
+        shape = result.Get();
+    } else if (request.shape == ShapeCastRequest::Shape::Capsule) {
+        if (request.radius <= 0.0f || request.halfHeight <= 0.0f) {
+            return false;
+        }
+        JPH::CapsuleShapeSettings settings(request.halfHeight, request.radius);
+        const JPH::ShapeSettings::ShapeResult result = settings.Create();
+        if (result.HasError()) {
+            return false;
+        }
+        shape = result.Get();
+    } else {
+        if (request.radius <= 0.0f) {
+            return false;
+        }
+        JPH::SphereShapeSettings settings(request.radius);
+        const JPH::ShapeSettings::ShapeResult result = settings.Create();
+        if (result.HasError()) {
+            return false;
+        }
+        shape = result.Get();
+    }
+
+    // Sphere casts ignore orientation; box and capsule honor it.
+    const glm::quat rotation = request.shape == ShapeCastRequest::Shape::Sphere
+                                   ? glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+                                   : request.rotation;
+    const JPH::RMat44 start = JPH::RMat44::sRotationTranslation(ToJolt(rotation), ToJoltR(request.origin));
+    const JPH::Vec3 sweep = ToJolt(direction * request.maxDistance);
+    const JPH::RShapeCast shapeCast =
+        JPH::RShapeCast::sFromWorldTransform(shape, JPH::Vec3::sReplicate(1.0f), start, sweep);
+
+    JPH::ShapeCastSettings settings;
+    const LayerMaskFilter layerFilter(request.layerMask);
+    const TriggerBodyFilter bodyFilter(request.includeTriggers);
+
+    JPH::ClosestHitCollisionCollector<JPH::CastShapeCollector> collector;
+    m_System->GetNarrowPhaseQuery().CastShape(shapeCast, settings, ToJoltR(request.origin), collector, {}, layerFilter,
+                                              bodyFilter);
+    if (!collector.HadHit()) {
+        return false;
+    }
+
+    const JPH::ShapeCastResult& hit = collector.mHit;
+    ResolveEntity(hit.mBodyID2, outHit.entity);
+    outHit.distance = hit.mFraction * request.maxDistance;
+    // Contact points are reported relative to the supplied base offset (origin).
+    outHit.point = request.origin + ToGlm(hit.mContactPointOn2);
+    const JPH::Vec3 axis = hit.mPenetrationAxis;
+    if (axis.LengthSq() > 1e-12f) {
+        outHit.normal = -ToGlm(axis.Normalized());
+    }
+    return true;
 }
 
 } // namespace Hockey::JoltDetail

@@ -27,8 +27,19 @@ void JoltContactListener::EmitContact(const JPH::Body& body1, const JPH::Body& b
     m_Contacts.push_back(event);
 }
 
+void JoltContactListener::ApplyCombineModesLocked(const JPH::Body& body1, const JPH::Body& body2,
+                                                  JPH::ContactSettings& settings) const {
+    const auto it1 = m_BodyMaterials.find(body1.GetID());
+    const auto it2 = m_BodyMaterials.find(body2.GetID());
+    if (it1 == m_BodyMaterials.end() || it2 == m_BodyMaterials.end()) {
+        return; // unknown material: leave Jolt's default combine in place
+    }
+    settings.mCombinedFriction = CombineFriction(it1->second, it2->second);
+    settings.mCombinedRestitution = CombineRestitution(it1->second, it2->second);
+}
+
 void JoltContactListener::OnContactAdded(const JPH::Body& body1, const JPH::Body& body2,
-                                         const JPH::ContactManifold& manifold, JPH::ContactSettings&) {
+                                         const JPH::ContactManifold& manifold, JPH::ContactSettings& settings) {
     std::lock_guard<std::mutex> lock(m_Mutex);
     RecordLocked(body1);
     RecordLocked(body2);
@@ -41,16 +52,18 @@ void JoltContactListener::OnContactAdded(const JPH::Body& body1, const JPH::Body
         return;
     }
 
+    ApplyCombineModesLocked(body1, body2, settings);
     EmitContact(body1, body2, manifold, PhysicsContactEvent::Type::Started);
 }
 
 void JoltContactListener::OnContactPersisted(const JPH::Body& body1, const JPH::Body& body2,
-                                             const JPH::ContactManifold& manifold, JPH::ContactSettings&) {
+                                             const JPH::ContactManifold& manifold, JPH::ContactSettings& settings) {
     if (body1.IsSensor() || body2.IsSensor()) {
         // Triggers only report enter/exit, not persistence.
         return;
     }
     std::lock_guard<std::mutex> lock(m_Mutex);
+    ApplyCombineModesLocked(body1, body2, settings);
     EmitContact(body1, body2, manifold, PhysicsContactEvent::Type::Persisted);
 }
 
@@ -93,9 +106,15 @@ std::vector<PhysicsTriggerEvent> JoltContactListener::DrainTriggers() {
     return out;
 }
 
+void JoltContactListener::RegisterBodyMaterial(const JPH::BodyID& bodyId, const PhysicsMaterial& material) {
+    std::lock_guard<std::mutex> lock(m_Mutex);
+    m_BodyMaterials[bodyId] = material;
+}
+
 void JoltContactListener::ForgetBody(const JPH::BodyID& bodyId) {
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_BodyInfo.erase(bodyId);
+    m_BodyMaterials.erase(bodyId);
 }
 
 void JoltContactListener::Clear() {
@@ -103,6 +122,7 @@ void JoltContactListener::Clear() {
     m_Contacts.clear();
     m_Triggers.clear();
     m_BodyInfo.clear();
+    m_BodyMaterials.clear();
 }
 
 } // namespace Hockey::JoltDetail

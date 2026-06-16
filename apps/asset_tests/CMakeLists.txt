@@ -10,6 +10,7 @@ add_executable(HockeyAssetTests
     src/ShaderCookTests.cpp
     src/DependencyTests.cpp
     src/HotReloadTests.cpp
+    src/Phase5GapTests.cpp
 )
 
 target_link_libraries(HockeyAssetTests PRIVATE hockey_core hockey_assets)

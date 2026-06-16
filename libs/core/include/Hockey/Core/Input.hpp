@@ -36,5 +36,11 @@ public:
 
     // Gamepads
     static std::vector<Gamepad> ConnectedGamepads();
+
+    // Enable/disable gamepad support (honors the `input.gamepad_enabled` config
+    // key). Disabling closes any currently-open gamepads and ignores future
+    // connection events until re-enabled.
+    static void SetGamepadEnabled(bool enabled);
+    static bool IsGamepadEnabled();
 };
 }

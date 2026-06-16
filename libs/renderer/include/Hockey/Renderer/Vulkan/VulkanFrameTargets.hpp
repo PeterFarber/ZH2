@@ -21,12 +21,15 @@ struct PostTargets {
     VulkanTexture aoRaw;                  // R8 raw SSAO
     VulkanTexture aoBlur;                 // R8 blurred SSAO
     std::vector<VulkanTexture> bloomMips; // RGBA16F half-res downsample chain
-    VulkanTexture shadowAtlas;            // Depth32F cascaded-shadow atlas
+    VulkanTexture shadowAtlas;            // Depth32F cascaded-shadow atlas (directional sun)
+    VulkanTexture localShadowAtlas;       // Depth32F grid atlas for spot/point lights
 };
 
 // Maps the shadow quality setting to an atlas resolution / cascade count.
 uint32_t ShadowAtlasResolution(ShadowQuality quality);
 uint32_t ShadowCascadeCount(ShadowQuality quality);
+// Resolution of the shared spot/point-light shadow atlas (a grid of tiles).
+uint32_t LocalShadowAtlasResolution(ShadowQuality quality);
 
 class VulkanFrameTargets {
 public:
@@ -43,6 +46,9 @@ public:
     }
     uint32_t ShadowResolution() const {
         return m_ShadowResolution;
+    }
+    uint32_t LocalShadowResolution() const {
+        return m_LocalShadowResolution;
     }
     uint32_t ShadowCascades() const {
         return m_ShadowCascades;
@@ -66,6 +72,7 @@ private:
     VulkanTexture m_ShadowPlaceholder; // 1x1 depth cleared to 1.0 (fully lit)
     VkExtent2D m_Extent{0, 0};
     uint32_t m_ShadowResolution = 0;
+    uint32_t m_LocalShadowResolution = 0;
     uint32_t m_ShadowCascades = 0;
     uint32_t m_BloomMipCount = 0;
 };

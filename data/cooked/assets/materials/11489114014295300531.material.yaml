@@ -1,0 +1,18 @@
+CookedMaterial:
+  ID: 11489114014295300531
+  Name: tripo_mat_67828d52-6784-411a-8dba-461d7aab0d24
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Textures:
+    BaseColor: 1890634104279904633
+    Normal: 6418512465138068802
+    MetallicRoughness: 9330932718851233356
+    Occlusion: 0
+    Emissive: 0

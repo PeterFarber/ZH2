@@ -16,6 +16,16 @@ void RunComponentMetadataTests();
 void RunSceneLifecycleTests();
 void RunSceneEventTests();
 void RunRenderComponentTests();
+void RunActiveHierarchyTests();
+void RunSceneClearTests();
+void RunMarkerSerializationTests();
+void RunPrefabOverridePersistenceTests();
+void RunMainRinkLoadTests();
+void RunDestroyWorldTransformTests();
+void RunPrefabOverrideApplyTests();
+void RunPrefabApplyRevertTests();
+void RunDuplicateEventTests();
+void RunSetParentIdempotencyTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -33,6 +43,16 @@ int main(int argc, char** argv) {
     RunSceneLifecycleTests();
     RunSceneEventTests();
     RunRenderComponentTests();
+    RunActiveHierarchyTests();
+    RunSceneClearTests();
+    RunMarkerSerializationTests();
+    RunPrefabOverridePersistenceTests();
+    RunMainRinkLoadTests();
+    RunDestroyWorldTransformTests();
+    RunPrefabOverrideApplyTests();
+    RunPrefabApplyRevertTests();
+    RunDuplicateEventTests();
+    RunSetParentIdempotencyTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("ECS tests completed: {} passed, {} failed", stats.passed, stats.failed);

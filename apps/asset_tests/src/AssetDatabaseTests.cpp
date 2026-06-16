@@ -89,5 +89,46 @@ void RunAssetDatabaseTests() {
     HK_CHECK_MSG(!reloaded.ContainsPath("data/raw/materials/ice.material.yaml"),
                  "removed path gone");
 
+    // --- cyclic dependency detection ---
+    {
+        AssetDatabase cyclic;
+        auto make = [&](const char* path, AssetType type, std::vector<AssetID> deps) {
+            AssetMetadata m;
+            m.id = AssetID::Generate();
+            m.type = type;
+            m.rawPath = path;
+            m.name = path;
+            m.dependencies = std::move(deps);
+            cyclic.AddOrUpdate(m);
+            return m.id;
+        };
+        // Acyclic chain A -> B -> C is clean.
+        const AssetID a = make("a.mat", AssetType::Material, {});
+        const AssetID b = make("b.mat", AssetType::Material, {a});
+        const AssetID c = make("c.mat", AssetType::Material, {b});
+        cyclic.RebuildDependencyGraph();
+        HK_CHECK_MSG(!cyclic.HasCycle(), "acyclic graph reports no cycle");
+
+        // Close the loop: A now depends on C, forming A -> B -> C -> A.
+        if (AssetMetadata* am = cyclic.Find(a)) {
+            am->dependencies = {c};
+        }
+        cyclic.RebuildDependencyGraph();
+        HK_CHECK_MSG(cyclic.HasCycle(), "3-node cycle detected");
+        const std::vector<AssetID> cycle = cyclic.DetectCycle();
+        HK_CHECK_MSG(!cycle.empty() && cycle.front() == cycle.back(), "cycle path is closed");
+
+        // A self-dependency is also a cycle.
+        AssetDatabase selfDep;
+        AssetMetadata sm;
+        sm.id = AssetID::Generate();
+        sm.type = AssetType::Material;
+        sm.rawPath = "self.mat";
+        sm.name = "self";
+        sm.dependencies = {sm.id};
+        selfDep.AddOrUpdate(sm);
+        HK_CHECK_MSG(selfDep.HasCycle(), "self-dependency detected as cycle");
+    }
+
     FileSystem::Remove(dbPath);
 }

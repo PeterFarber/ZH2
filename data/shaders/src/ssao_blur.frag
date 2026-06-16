@@ -1,6 +1,8 @@
 #version 450
 
-// 5x5 box blur of the raw SSAO buffer to remove the per-pixel sampling noise.
+// 9x9 box blur of the raw SSAO buffer to remove the per-pixel sampling noise.
+// A wider kernel smooths the hemisphere kernel's rotated-noise so contact AO
+// reads as a soft gradient instead of hatching near edges.
 
 layout(location = 0) in vec2 vUV;
 layout(location = 0) out vec4 outColor;
@@ -14,10 +16,10 @@ layout(push_constant) uniform PushConstants {
 void main() {
     vec2 t = uPush.texel.xy;
     float sum = 0.0;
-    for (int x = -2; x <= 2; ++x) {
-        for (int y = -2; y <= 2; ++y) {
+    for (int x = -4; x <= 4; ++x) {
+        for (int y = -4; y <= 4; ++y) {
             sum += texture(uAO, vUV + vec2(float(x), float(y)) * t).r;
         }
     }
-    outColor = vec4(sum / 25.0);
+    outColor = vec4(sum / 81.0);
 }

@@ -1,11 +1,98 @@
+---
+Language: Cpp
 BasedOnStyle: LLVM
+Standard: c++20
+
+# Layout
+ColumnLimit: 100
 IndentWidth: 4
-ColumnLimit: 120
-NamespaceIndentation: None
-AccessModifierOffset: -4
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# LLVM-style braces: compact/attached
 BreakBeforeBraces: Attach
+
+# Access modifiers
+AccessModifierOffset: -4
+
+# Namespaces
+NamespaceIndentation: None
+CompactNamespaces: false
+FixNamespaceComments: true
+
+# Short statements
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+
+# Function calls / parameters
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+BinPackArguments: false
+BinPackParameters: false
+ExperimentalAutoDetectBinPacking: false
+
+# Pointers / references
+DerivePointerAlignment: false
 PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Includes
 SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Precompiled header, if you use one later.
+  - Regex: '^"pch\.hpp"'
+    Priority: -1
+
+  # Project headers.
+  - Regex: '^"Hockey/'
+    Priority: 1
+
+  # Other local quoted headers.
+  - Regex: '^"'
+    Priority: 2
+
+  # External libraries.
+  - Regex: "^<vulkan/"
+    Priority: 3
+
+  - Regex: "^<SDL3/"
+    Priority: 4
+
+  - Regex: "^<GameNetworkingSockets/"
+    Priority: 5
+
+  - Regex: "^<steam/"
+    Priority: 5
+
+  - Regex: "^<glm/"
+    Priority: 6
+
+  # Standard library / fallback.
+  - Regex: "^<"
+    Priority: 7
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceInEmptyParentheses: false
+Cpp11BracedListStyle: true
+
+# Switch/case
+IndentCaseLabels: true
+IndentCaseBlocks: false
+
+# Comments / empty lines
+ReflowComments: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# Misc
+SortUsingDeclarations: true

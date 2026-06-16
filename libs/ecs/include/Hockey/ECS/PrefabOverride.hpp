@@ -26,7 +26,17 @@ public:
     void AddOverride(const PrefabOverride& override);
     const std::vector<PrefabOverride>& Overrides() const;
 
+    void Clear();
+    bool Empty() const;
+
     Status Apply(Scene& scene);
+
+    // Persistence. The override records are stored alongside the scene (the
+    // edited component values are already baked into the entity data, so these
+    // records track *which* fields diverge from the prefab for display/revert).
+    // Serialize emits a YAML sequence; Deserialize replaces the current set.
+    void Serialize(YAML::Emitter& out) const;
+    void Deserialize(const YAML::Node& node);
 
 private:
     std::vector<PrefabOverride> m_Overrides;

@@ -27,9 +27,14 @@ struct PhysicsSettings {
     glm::vec3 gravity{0.0f, -9.81f, 0.0f};
 
     std::uint32_t collisionSteps = 1;
+    // Each fixed step is divided into this many Jolt sub-updates (>=1). Higher
+    // values trade performance for stability of fast bodies (e.g. the puck).
     std::uint32_t integrationSubsteps = 1;
 
-    bool deterministicMode = false;
+    // Mirrors Jolt's PhysicsSettings::mDeterministicSimulation (which also
+    // defaults to true). Kept on for the authoritative server so simulation is
+    // reproducible; can be disabled for a small single-player perf gain.
+    bool deterministicMode = true;
     bool enableSleeping = true;
     bool enableDebugDraw = false;
 

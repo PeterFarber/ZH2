@@ -79,6 +79,31 @@ void RunHotReloadTests() {
     shader = manager.Database().FindByRawPath("data/raw/shaders/watch_test.frag");
     HK_CHECK_MSG(shader != nullptr && shader->dirty, "asset marked dirty after change");
 
+    // Move detection: renaming the raw file (identical content) should keep the
+    // asset id and surface a single Moved event instead of Deleted + Imported.
+    const AssetID movedFromId = shader->id;
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    const fs::path renamed = rawRoot / "shaders" / "watch_test_renamed.frag";
+    fs::rename(watched, renamed);
+    fs::last_write_time(renamed, fs::file_time_type::clock::now());
+    const int moveCount = manager.PollHotReload(/*autoImport=*/false, /*autoCookDirty=*/false);
+    HK_CHECK_MSG(moveCount >= 2, "poll observes both sides of the rename");
+
+    bool sawMoved = false;
+    AssetID movedId;
+    for (const AssetEvent& event : manager.PollEvents()) {
+        if (event.type == AssetEventType::Moved) {
+            sawMoved = true;
+            movedId = event.id;
+        }
+    }
+    HK_CHECK_MSG(sawMoved, "moved event emitted on rename");
+    HK_CHECK_MSG(movedId == movedFromId, "moved asset keeps its id");
+    HK_CHECK_MSG(manager.Database().FindByRawPath("data/raw/shaders/watch_test_renamed.frag") != nullptr,
+                 "database repointed to the new path");
+    HK_CHECK_MSG(manager.Database().FindByRawPath("data/raw/shaders/watch_test.frag") == nullptr,
+                 "old path dropped from the database");
+
     manager.Shutdown();
     FileSystem::Remove(workspace);
 }

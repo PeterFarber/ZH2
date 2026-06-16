@@ -16,6 +16,8 @@ class Selection {
 public:
     // Replaces the selection with a single entity (clears when id is invalid).
     void Select(UUID entityId);
+    // Selects every entity in the scene; the last one becomes primary.
+    void SelectAll(Scene& scene);
     // Adds an entity and makes it primary (no-op for invalid/duplicate ids).
     void Add(UUID entityId);
     void Remove(UUID entityId);

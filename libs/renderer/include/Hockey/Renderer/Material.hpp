@@ -23,6 +23,10 @@ struct MaterialDesc {
     AlphaMode alphaMode = AlphaMode::Opaque;
     float alphaCutoff = 0.5f;
 
+    // UV transform applied to all texture lookups: scale (tiling) then offset.
+    glm::vec2 tiling{1.0f, 1.0f};
+    glm::vec2 offset{0.0f, 0.0f};
+
     TextureHandle baseColorTexture;
     TextureHandle normalTexture;
     TextureHandle metallicRoughnessTexture;
@@ -43,8 +47,16 @@ enum class BuiltInMaterial {
     Glass,
     GoalNet,
     DebugCollider,
-    DebugTrigger
+    DebugTrigger,
+    // Opaque solid colors, handy for prototyping and distinguishing objects.
+    SolidRed,
+    SolidGreen,
+    SolidBlue,
+    SolidAmber
 };
+
+// Number of built-in materials; keep in sync with the enum above.
+inline constexpr int kBuiltInMaterialCount = 15;
 
 MaterialDesc MakeBuiltInMaterial(BuiltInMaterial material);
 const char* BuiltInMaterialName(BuiltInMaterial material);

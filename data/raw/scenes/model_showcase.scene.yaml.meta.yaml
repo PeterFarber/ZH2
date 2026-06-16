@@ -1,0 +1,17 @@
+Asset:
+  ID: 11284226548572360889
+  Type: Scene
+  Name: model_showcase.scene
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/scenes/model_showcase.scene.yaml
+  CookedPath: data/cooked/assets/scenes/11284226548572360889.scene.yaml
+  RawFileTimestamp: 13790648146359380580
+  RawFileHash: 14035944483333146886
+  ImportedTimestamp: 1781574089
+  CookedTimestamp: 1781573763
+  Dependencies: [589019741743117030, 160456599279444274, 8678109575161473379, 14497894292417252792, 2871279154214157765]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

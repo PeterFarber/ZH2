@@ -5,6 +5,8 @@
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Assets/Assets/ModelAsset.hpp"
+#include "Hockey/Assets/Assets/PrefabAsset.hpp"
+#include "Hockey/Assets/Assets/SceneAsset.hpp"
 #include "Hockey/Assets/Assets/ShaderAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
 #include "Hockey/Assets/Cookers/MaterialCooker.hpp"
@@ -527,7 +529,48 @@ Status AssetManager::ValidateReferences(std::vector<AssetValidationIssue>* issue
             }
         }
     }
+
+    // A dependency cycle would make cook ordering ill-defined; report it once
+    // against the asset where the cycle was detected.
+    if (const std::vector<AssetID> cycle = m_Database.DetectCycle(); !cycle.empty()) {
+        std::string chain;
+        for (const AssetID id : cycle) {
+            if (!chain.empty()) {
+                chain += " -> ";
+            }
+            const AssetMetadata* meta = m_Database.Find(id);
+            chain += meta != nullptr ? meta->name : id.ToString();
+        }
+        if (const AssetMetadata* head = m_Database.Find(cycle.front()); head != nullptr) {
+            report(*head, "cyclic dependency: " + chain, true);
+        } else {
+            HK_CORE_ERROR("[asset validate] cyclic dependency: {}", chain);
+        }
+        anyError = true;
+    }
+
     return anyError ? Status::Fail("asset validation found errors") : Status::Ok();
+}
+
+Status AssetManager::DeleteMetadata(AssetID id) {
+    AssetMetadata* metadata = m_Database.Find(id);
+    if (metadata == nullptr) {
+        return Status::Fail("unknown asset id: " + id.ToString());
+    }
+    // Capture details before the record (and pointer) are invalidated.
+    const fs::path rawPath = metadata->rawPath;
+    const fs::path sidecar = metadata->metadataPath.empty() ? fs::path{} : AbsoluteRaw(metadata->metadataPath);
+
+    if (m_Registry.IsLoaded(id)) {
+        m_Registry.Unload(id);
+    }
+    if (!sidecar.empty() && FileSystem::Exists(sidecar)) {
+        FileSystem::Remove(sidecar);
+    }
+    m_Database.Remove(id);
+    m_Database.RebuildDependencyGraph();
+    PushEvent({AssetEventType::Deleted, id, rawPath, "metadata deleted"});
+    return SaveDatabase();
 }
 
 void AssetManager::StartWatching() {
@@ -542,12 +585,79 @@ int AssetManager::PollHotReload(bool autoImport, bool autoCookDirty) {
     if (changed.empty()) {
         return 0;
     }
+    // Assets whose raw source changed this poll. After a recook these are
+    // invalidated in the runtime registry so the next Load re-reads fresh data.
+    std::vector<std::pair<AssetID, fs::path>> reloadCandidates;
+
+    // --- Move detection -----------------------------------------------------
+    // A rename/move surfaces as a vanished file plus a brand-new file in the
+    // same poll. Correlate them by content hash so the asset keeps its id (and
+    // therefore its dependents) instead of being deleted + re-imported fresh.
+    std::vector<fs::path> vanished; // had metadata, file gone
+    std::vector<fs::path> appeared; // known type, no metadata yet, file present
+    for (const fs::path& absolute : changed) {
+        if (ClassifyExtension(absolute) == AssetType::Unknown) {
+            continue;
+        }
+        const fs::path projectRel = ToProjectRelative(absolute);
+        if (!FileSystem::Exists(absolute)) {
+            if (m_Database.FindByRawPath(projectRel) != nullptr) {
+                vanished.push_back(absolute);
+            }
+        } else if (m_Database.FindByRawPath(projectRel) == nullptr) {
+            appeared.push_back(absolute);
+        }
+    }
+    std::unordered_set<std::string> resolvedMoves; // project-relative keys handled here
+    for (const fs::path& newAbs : appeared) {
+        if (vanished.empty()) {
+            break;
+        }
+        const uint64_t newHash = AssetHash::HashFile(newAbs);
+        if (newHash == 0) {
+            continue;
+        }
+        for (auto it = vanished.begin(); it != vanished.end(); ++it) {
+            const fs::path oldRel = ToProjectRelative(*it);
+            AssetMetadata* oldMeta = m_Database.FindByRawPath(oldRel);
+            if (oldMeta == nullptr || oldMeta->rawFileHash == 0 || oldMeta->rawFileHash != newHash) {
+                continue;
+            }
+            const fs::path newRel = ToProjectRelative(newAbs);
+            // Relocate the record: keep id/dependencies, repoint the paths, and
+            // drop the now-orphaned sidecar next to the old location.
+            AssetMetadata moved = *oldMeta;
+            const fs::path oldSidecar = AbsoluteRaw(oldMeta->metadataPath);
+            m_Database.Remove(oldMeta->id);
+            moved.rawPath = newRel.lexically_normal().generic_string();
+            moved.metadataPath = ToProjectRelative(AssetPath::MetadataSidecar(newAbs));
+            moved.rawFileTimestamp = FileTimestamp(newAbs);
+            moved.missing = false;
+            m_Database.AddOrUpdate(moved);
+            if (!oldMeta->metadataPath.empty()) {
+                FileSystem::Remove(oldSidecar);
+            }
+            AssetMetadataSerializer::SaveSidecar(AbsoluteRaw(moved.metadataPath), moved);
+            m_Database.RebuildDependencyGraph();
+            m_Database.MarkDirtyWithDependents(moved.id);
+            PushEvent({AssetEventType::Moved, moved.id, newRel, oldRel.generic_string()});
+            reloadCandidates.emplace_back(moved.id, newRel);
+            resolvedMoves.insert(oldRel.generic_string());
+            resolvedMoves.insert(newRel.generic_string());
+            vanished.erase(it);
+            break;
+        }
+    }
+
     for (const fs::path& absolute : changed) {
         const AssetType type = ClassifyExtension(absolute);
         if (type == AssetType::Unknown) {
             continue;
         }
         const fs::path projectRel = ToProjectRelative(absolute);
+        if (resolvedMoves.find(projectRel.generic_string()) != resolvedMoves.end()) {
+            continue; // already handled as a move
+        }
         if (!FileSystem::Exists(absolute)) {
             if (AssetMetadata* metadata = m_Database.FindByRawPath(projectRel)) {
                 metadata->missing = true;
@@ -560,18 +670,27 @@ int AssetManager::PollHotReload(bool autoImport, bool autoCookDirty) {
             if (AssetMetadata* metadata = m_Database.FindByRawPath(projectRel)) {
                 m_Database.MarkDirtyWithDependents(metadata->id);
                 PushEvent({AssetEventType::Modified, metadata->id, projectRel, {}});
+                reloadCandidates.emplace_back(metadata->id, projectRel);
             }
         } else if (AssetMetadata* metadata = m_Database.FindByRawPath(projectRel)) {
             metadata->rawFileHash = AssetHash::HashFile(absolute);
             // A changed dependency must force its dependents to recook too.
             m_Database.MarkDirtyWithDependents(metadata->id);
             PushEvent({AssetEventType::Modified, metadata->id, projectRel, {}});
+            reloadCandidates.emplace_back(metadata->id, projectRel);
         }
     }
     if (autoCookDirty) {
         CookAllDirty();
-        // A successful recook surfaces a reload event per cooked asset (already
-        // emitted as Cooked); also emit Reloaded for clarity.
+        // After recooking, drop any stale runtime instance from the registry so
+        // the next Load() picks up the freshly cooked bytes, and surface a
+        // Reloaded event for each asset that was actually live.
+        for (const auto& [id, projectRel] : reloadCandidates) {
+            if (m_Registry.IsLoaded(id)) {
+                m_Registry.Unload(id);
+                PushEvent({AssetEventType::Reloaded, id, projectRel, {}});
+            }
+        }
     }
     return static_cast<int>(changed.size());
 }
@@ -676,6 +795,56 @@ template <> Result<std::shared_ptr<MaterialAsset>> AssetManager::Load<MaterialAs
     }
     m_Registry.Store<MaterialAsset>(id, loaded.value);
     return loaded;
+}
+
+template <> Result<std::shared_ptr<SceneAsset>> AssetManager::Load<SceneAsset>(AssetID id) {
+    // Validate the type before consulting the (type-erased) registry cache so a
+    // wrong-type id can never alias another asset's cached pointer.
+    if (const AssetMetadata* known = m_Database.Find(id); known != nullptr && known->type != AssetType::Scene) {
+        return Result<std::shared_ptr<SceneAsset>>::Fail("asset is not a scene: " + id.ToString());
+    }
+    if (auto cached = m_Registry.Get<SceneAsset>(id)) {
+        return Result<std::shared_ptr<SceneAsset>>::Ok(std::move(cached));
+    }
+    Status status;
+    AssetMetadata* metadata = EnsureCooked(id, status);
+    if (metadata == nullptr) {
+        return Result<std::shared_ptr<SceneAsset>>::Fail(status.error);
+    }
+    if (metadata->type != AssetType::Scene) {
+        return Result<std::shared_ptr<SceneAsset>>::Fail("asset is not a scene: " + id.ToString());
+    }
+    auto asset = std::make_shared<SceneAsset>();
+    asset->id = id;
+    asset->name = metadata->name.empty() ? metadata->rawPath.stem().string() : metadata->name;
+    asset->sourcePath = metadata->rawPath;
+    asset->dependencies = metadata->dependencies;
+    m_Registry.Store<SceneAsset>(id, asset);
+    return Result<std::shared_ptr<SceneAsset>>::Ok(std::move(asset));
+}
+
+template <> Result<std::shared_ptr<PrefabAsset>> AssetManager::Load<PrefabAsset>(AssetID id) {
+    if (const AssetMetadata* known = m_Database.Find(id); known != nullptr && known->type != AssetType::Prefab) {
+        return Result<std::shared_ptr<PrefabAsset>>::Fail("asset is not a prefab: " + id.ToString());
+    }
+    if (auto cached = m_Registry.Get<PrefabAsset>(id)) {
+        return Result<std::shared_ptr<PrefabAsset>>::Ok(std::move(cached));
+    }
+    Status status;
+    AssetMetadata* metadata = EnsureCooked(id, status);
+    if (metadata == nullptr) {
+        return Result<std::shared_ptr<PrefabAsset>>::Fail(status.error);
+    }
+    if (metadata->type != AssetType::Prefab) {
+        return Result<std::shared_ptr<PrefabAsset>>::Fail("asset is not a prefab: " + id.ToString());
+    }
+    auto asset = std::make_shared<PrefabAsset>();
+    asset->id = id;
+    asset->name = metadata->name.empty() ? metadata->rawPath.stem().string() : metadata->name;
+    asset->sourcePath = metadata->rawPath;
+    asset->dependencies = metadata->dependencies;
+    m_Registry.Store<PrefabAsset>(id, asset);
+    return Result<std::shared_ptr<PrefabAsset>>::Ok(std::move(asset));
 }
 
 template <> Result<std::shared_ptr<ShaderAsset>> AssetManager::Load<ShaderAsset>(AssetID id) {

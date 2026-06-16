@@ -18,12 +18,18 @@
 #include <memory>
 
 bool DedicatedServerApp::OnInit() {
-    auto root = GetCommandLine().GetString("--root", ".");
+    const auto& cmd = GetCommandLine();
+    auto root = cmd.GetString("--root", ".");
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
-    Hockey::Log::Init(Hockey::Paths::LogFile("server.log"));
+    const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
+                                          : Hockey::Paths::LogFile("server.log");
+    Hockey::Log::Init(logPath);
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
-    m_Config.Load(Hockey::Paths::ConfigFile("server.toml"));
+    const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
+                                                : Hockey::Paths::ConfigFile("server.toml");
+    m_Config.Load(configPath);
+    SetSleepWhenIdle(m_Config.GetBool("app.sleep_when_idle", true));
 
     double tickRate = m_Config.GetDouble("server.tick_rate", 60.0);
     if (GetCommandLine().Has("--tick-rate")) {
@@ -108,6 +114,7 @@ void DedicatedServerApp::OnShutdown() {
         Hockey::Physics::Shutdown();
     }
     Hockey::JobSystem::Shutdown();
+    Hockey::CrashHandler::Shutdown();
     Hockey::Log::Shutdown();
 }
 

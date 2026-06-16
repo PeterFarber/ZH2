@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -10,9 +11,20 @@
 
 namespace Hockey {
 
+// An image stored inside the glTF/GLB itself (a buffer-view or data-URI source)
+// rather than referenced as an external file. The loader rewrites the owning
+// material slot to point at relativePath; the importer is responsible for
+// writing these bytes to disk (relative to the model file's directory) so the
+// standard texture pipeline can discover and cook them.
+struct GltfEmbeddedTexture {
+    std::string relativePath;       // relative to the glTF file's directory
+    std::vector<std::byte> bytes;   // encoded image bytes (png/jpg/...) as authored
+};
+
 // CPU-side material description extracted from a glTF material. Texture slots
 // hold the raw texture URI exactly as authored (relative to the glTF file's
-// directory); resolution to AssetIDs happens in the importer/cooker.
+// directory); resolution to AssetIDs happens in the importer/cooker. Embedded
+// images are externalized to deterministic sibling paths (see embeddedTextures).
 struct GltfMaterialData {
     std::string name;
     glm::vec4 baseColor{1.0f};
@@ -48,6 +60,9 @@ struct GltfMeshData {
 struct GltfScene {
     std::vector<GltfMeshData> meshes;
     std::vector<GltfMaterialData> materials;
+    // Images embedded in the file that the importer should write to disk so the
+    // texture pipeline can cook them. Paths are referenced by material slots.
+    std::vector<GltfEmbeddedTexture> embeddedTextures;
 };
 
 // Parses a .gltf/.glb file into engine-side CPU structures using fastgltf.

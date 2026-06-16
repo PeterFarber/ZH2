@@ -46,6 +46,7 @@ target_sources(hockey_editor
         src/Inspector/FieldDrawers.cpp
         src/Inspector/ComponentInspector.cpp
         src/Inspector/ComponentAddMenu.cpp
+        src/Inspector/MaterialPicker.cpp
         src/Panels/HierarchyPanel.cpp
         src/Panels/InspectorPanel.cpp
         src/Panels/SceneViewportPanel.cpp
@@ -57,6 +58,7 @@ target_sources(hockey_editor
         src/Panels/SceneValidationPanel.cpp
         src/Panels/PrefabPanel.cpp
         src/Panels/PhysicsPanel.cpp
+        src/Panels/PreferencesPanel.cpp
         src/ImGui/EditorTheme.cpp
         src/ImGui/ImGuiRendererBridge.cpp
         src/ImGui/ImGuiLayer.cpp

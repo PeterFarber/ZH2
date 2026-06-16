@@ -25,6 +25,16 @@ struct PhysicsMaterial {
     bool combineRestitutionMax = false;
 };
 
+// Combines the friction of two contacting surfaces. Defaults to Jolt's
+// geometric mean (sqrt(f1*f2)); if either material opts into
+// combineFrictionMultiply the product (f1*f2, a "lower wins" feel) is used.
+float CombineFriction(const PhysicsMaterial& a, const PhysicsMaterial& b);
+
+// Combines the restitution (bounciness) of two contacting surfaces. Defaults to
+// Jolt's max(r1,r2) (the bouncier surface wins); if neither material requests
+// combineRestitutionMax the average is used for a softer response.
+float CombineRestitution(const PhysicsMaterial& a, const PhysicsMaterial& b);
+
 // Built-in materials, in a deterministic order. Always contains a "Default".
 std::vector<PhysicsMaterial> MakeBuiltInMaterials();
 

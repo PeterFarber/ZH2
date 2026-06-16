@@ -101,4 +101,33 @@ void RunSelectionTests() {
         HK_CHECK_MSG(!selection.IsSelected(id2), "deleted entity dropped from selection");
         HK_CHECK_MSG(selection.Primary() == id1, "primary repaired to a valid entity");
     }
+
+    // --- select all entities in a scene -------------------------------------
+    {
+        Scene scene("SelectAllScene");
+        Entity e1 = scene.CreateEntity("E1");
+        Entity e2 = scene.CreateEntity("E2");
+        Entity e3 = scene.CreateEntity("E3");
+
+        Selection selection;
+        selection.Add(e1.GetUUID()); // existing selection is replaced
+        selection.SelectAll(scene);
+
+        HK_CHECK_EQ(selection.Count(), static_cast<std::size_t>(3));
+        HK_CHECK_MSG(selection.IsSelected(e1.GetUUID()) && selection.IsSelected(e2.GetUUID()) &&
+                         selection.IsSelected(e3.GetUUID()),
+                     "select all selects every entity");
+        HK_CHECK_MSG(selection.Primary().IsValid() && scene.ContainsUUID(selection.Primary()),
+                     "select all leaves a valid primary");
+    }
+
+    // --- select all on an empty scene clears --------------------------------
+    {
+        Scene scene("EmptySelectAllScene");
+        Selection selection;
+        selection.Add(a);
+        selection.SelectAll(scene);
+        HK_CHECK_MSG(selection.Empty(), "select all on empty scene clears selection");
+        HK_CHECK_MSG(!selection.Primary().IsValid(), "empty select all has no primary");
+    }
 }

@@ -1,0 +1,107 @@
+Scene:
+  Name: Spot Shadow Test
+  Version: 1
+Entities:
+  - Entity: 210000000000001
+    NameComponent:
+      Name: Main Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 12, 12]
+      Rotation: [-42, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      FovDegrees: 60
+      NearClip: 0.1
+      FarClip: 100
+      Primary: true
+  - Entity: 210000000000002
+    NameComponent:
+      Name: Environment
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    EnvironmentComponent:
+      AmbientColor: [0.04, 0.05, 0.07]
+      AmbientIntensity: 0.6
+  - Entity: 210000000000003
+    NameComponent:
+      Name: Spot Light
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 9, -7]
+      Rotation: [-135, 0, 0]
+      Scale: [1, 1, 1]
+    LightComponent:
+      Type: Spot
+      Color: [1.0, 0.96, 0.88]
+      Intensity: 5.0
+      Range: 60
+      InnerConeDegrees: 26
+      OuterConeDegrees: 40
+      CastsShadows: true
+  - Entity: 210000000000004
+    NameComponent:
+      Name: Ground
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [24, 1, 24]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Plane"
+      MaterialName: "BuiltIn.DefaultWhite"
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 210000000000005
+    NameComponent:
+      Name: Pillar A
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3.5, 1.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 3, 1]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidRed"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 210000000000006
+    NameComponent:
+      Name: Sphere
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 1, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 2]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Sphere"
+      MaterialName: "BuiltIn.SolidGreen"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 210000000000007
+    NameComponent:
+      Name: Pillar B
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3.5, 1.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 3, 1]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidBlue"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

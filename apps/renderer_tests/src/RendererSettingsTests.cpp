@@ -5,6 +5,13 @@
 
 using namespace Hockey;
 
+namespace Hockey {
+// Declared in Vulkan/VulkanFrameTargets.hpp; forward-declared here so the test
+// avoids pulling in the Vulkan/volk headers just to exercise the pure mapping.
+uint32_t ShadowAtlasResolution(ShadowQuality quality);
+uint32_t ShadowCascadeCount(ShadowQuality quality);
+} // namespace Hockey
+
 void RunRendererSettingsTests() {
     HockeyTest::BeginSuite("RendererSettingsTests");
 
@@ -69,4 +76,26 @@ void RunRendererSettingsTests() {
     HK_CHECK(loaded.bloom == false);
     HK_CHECK(loaded.shadowQuality == ShadowQuality::Ultra);
     HK_CHECK(loaded.toneMapper == saved.toneMapper);
+}
+
+void RunShadowQualityTests() {
+    HockeyTest::BeginSuite("ShadowQualityTests");
+
+    // Atlas resolution scales monotonically with quality; Off is a 1x1 stub.
+    HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Off), 1u);
+    HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Low), 1024u);
+    HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Medium), 2048u);
+    HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::High), 4096u);
+    HK_CHECK(ShadowAtlasResolution(ShadowQuality::Ultra) >= ShadowAtlasResolution(ShadowQuality::High));
+
+    // Cascade count: Off disables shadows (0), increasing with quality.
+    HK_CHECK_EQ(ShadowCascadeCount(ShadowQuality::Off), 0u);
+    HK_CHECK_EQ(ShadowCascadeCount(ShadowQuality::Low), 2u);
+    HK_CHECK_EQ(ShadowCascadeCount(ShadowQuality::Medium), 3u);
+    HK_CHECK_EQ(ShadowCascadeCount(ShadowQuality::High), 4u);
+    HK_CHECK(ShadowCascadeCount(ShadowQuality::Ultra) >= ShadowCascadeCount(ShadowQuality::High));
+
+    // Higher quality never reduces resolution or cascade count.
+    HK_CHECK(ShadowAtlasResolution(ShadowQuality::Medium) > ShadowAtlasResolution(ShadowQuality::Low));
+    HK_CHECK(ShadowCascadeCount(ShadowQuality::High) > ShadowCascadeCount(ShadowQuality::Low));
 }

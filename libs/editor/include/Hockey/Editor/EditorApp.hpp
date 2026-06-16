@@ -65,6 +65,11 @@ public:
     bool SaveScene();                                  // save to active path (else Save As)
     bool SaveSceneAs();                                // native save dialog
     void OpenAutosaveFolder();
+
+    // Imports an external asset (model/texture/material/shader/...) selected via a
+    // native open dialog: copies it into the matching data/raw/<type> folder and
+    // cooks it (plus any sub-assets / embedded textures) so it is usable at once.
+    void ImportAsset();
     // Runs the scene validator and reports the result (Console panel later; logs
     // for now). Returns the number of issues found.
     int ValidateActiveScene();
@@ -80,6 +85,11 @@ public:
     void PasteFromClipboard(bool asChildOfSelection);
     void DuplicateSelection();
     void DeleteSelection();
+    void SelectAllEntities();
+    void DeselectAll();
+
+    // Opens (and focuses) the Preferences panel from the Edit menu.
+    void OpenPreferences();
 
 private:
     // A scene-switching action that must be deferred until the unsaved-changes
@@ -107,6 +117,8 @@ private:
     bool DoSaveScene();   // save to active path, falling back to Save As
     bool DoSaveSceneAs(); // native dialog + serialize
     void DoOpenScene(const std::filesystem::path& path);
+    // Copies 'source' into data/raw/<type> and runs import + cook on it.
+    void DoImportAsset(const std::filesystem::path& source);
     std::filesystem::path DefaultSceneDirectory() const;
 
     EditorContext m_Context;

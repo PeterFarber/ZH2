@@ -77,11 +77,18 @@ public:
     std::vector<PhysicsContactEvent> DrainContactEvents();
     std::vector<PhysicsTriggerEvent> DrainTriggerEvents();
 
+    // Drains trigger events and drops those rejected by the trigger's
+    // TriggerComponent detect flags (detectPlayers/detectGoalies/detectPuck),
+    // matched against the other body's RigidBodyComponent layer. Events whose
+    // trigger entity has no TriggerComponent are passed through unchanged.
+    std::vector<PhysicsTriggerEvent> DrainTriggerEvents(Scene& scene);
+
     // --- queries (Step 8) ---------------------------------------------------
     bool Raycast(const RaycastRequest& request, RaycastHit& outHit) const;
     std::vector<RaycastHit> RaycastAll(const RaycastRequest& request) const;
     bool OverlapSphere(const OverlapSphereRequest& request, std::vector<OverlapHit>& outHits) const;
     bool OverlapBox(const OverlapBoxRequest& request, std::vector<OverlapHit>& outHits) const;
+    bool ShapeCast(const ShapeCastRequest& request, ShapeCastHit& outHit) const;
 
     // --- debug draw (Step 9) ------------------------------------------------
     void CollectDebugDraw(PhysicsDebugDrawList& outDrawList) const;

@@ -37,7 +37,7 @@ MeshDesc MakeCubeMesh(float size) {
         const glm::vec3 n = f[0];
         const glm::vec3 u = f[1];
         const glm::vec3 v = f[2];
-        AddQuad(mesh, n * half, u, v, n, size);
+        AddQuad(mesh, n * half, u, v, n, half);
     }
     return mesh;
 }

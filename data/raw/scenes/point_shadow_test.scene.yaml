@@ -1,0 +1,120 @@
+Scene:
+  Name: Point Shadow Test
+  Version: 1
+Entities:
+  - Entity: 220000000000001
+    NameComponent:
+      Name: Main Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 7, 15]
+      Rotation: [-22, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      FovDegrees: 60
+      NearClip: 0.1
+      FarClip: 100
+      Primary: true
+  - Entity: 220000000000002
+    NameComponent:
+      Name: Environment
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    EnvironmentComponent:
+      AmbientColor: [0.04, 0.05, 0.07]
+      AmbientIntensity: 1.0
+  - Entity: 220000000000003
+    NameComponent:
+      Name: Point Light
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 5.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    LightComponent:
+      Type: Point
+      Color: [1.0, 0.95, 0.9]
+      Intensity: 40.0
+      Range: 40
+      CastsShadows: true
+  - Entity: 220000000000004
+    NameComponent:
+      Name: Ground
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [30, 1, 30]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Plane"
+      MaterialName: "BuiltIn.DefaultWhite"
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 220000000000005
+    NameComponent:
+      Name: Box North
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 1, -4.5]
+      Rotation: [0, 0, 0]
+      Scale: [1.4, 2, 1.4]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidRed"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 220000000000006
+    NameComponent:
+      Name: Box East
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [4.5, 1, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1.4, 2, 1.4]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidGreen"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 220000000000007
+    NameComponent:
+      Name: Box South
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 1, 4.5]
+      Rotation: [0, 0, 0]
+      Scale: [1.4, 2, 1.4]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidBlue"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 220000000000008
+    NameComponent:
+      Name: Box West
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-4.5, 1, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1.4, 2, 1.4]
+    MeshRendererComponent:
+      MeshName: "BuiltIn.Cube"
+      MaterialName: "BuiltIn.SolidAmber"
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

@@ -1,5 +1,6 @@
 find_package(EnTT CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 add_library(hockey_ecs STATIC)
 
@@ -32,6 +33,7 @@ target_link_libraries(hockey_ecs
         hockey_core
         EnTT::EnTT
         yaml-cpp::yaml-cpp
+        glm::glm
 )
 
 if(MSVC)

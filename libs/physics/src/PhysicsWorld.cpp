@@ -1,9 +1,42 @@
 #include "Hockey/Physics/PhysicsWorld.hpp"
 
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Physics/Jolt/JoltPhysicsWorld.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
 
 namespace Hockey {
+
+namespace {
+
+// Returns true if the trigger's detect flags accept a body on the given layer.
+bool TriggerAcceptsLayer(const TriggerComponent& trigger, PhysicsLayer layer) {
+    switch (layer) {
+    case PhysicsLayer::Player:
+        return trigger.detectPlayers;
+    case PhysicsLayer::Goalie:
+        return trigger.detectGoalies;
+    case PhysicsLayer::Puck:
+        return trigger.detectPuck;
+    default:
+        return true; // Other layers are not governed by the detect flags.
+    }
+}
+
+bool TriggerAcceptsEvent(Scene& scene, const PhysicsTriggerEvent& event) {
+    Entity trigger = scene.FindEntityByUUID(event.triggerEntity);
+    if (!trigger.IsValid() || !trigger.HasComponent<TriggerComponent>()) {
+        return true;
+    }
+    Entity other = scene.FindEntityByUUID(event.otherEntity);
+    if (!other.IsValid() || !other.HasComponent<RigidBodyComponent>()) {
+        return true;
+    }
+    return TriggerAcceptsLayer(trigger.GetComponent<TriggerComponent>(),
+                               other.GetComponent<RigidBodyComponent>().layer);
+}
+
+} // namespace
 
 PhysicsWorld::PhysicsWorld() : m_Impl(std::make_unique<JoltDetail::JoltPhysicsWorld>()) {}
 
@@ -116,6 +149,18 @@ std::vector<PhysicsTriggerEvent> PhysicsWorld::DrainTriggerEvents() {
     return m_Impl->DrainTriggerEvents();
 }
 
+std::vector<PhysicsTriggerEvent> PhysicsWorld::DrainTriggerEvents(Scene& scene) {
+    std::vector<PhysicsTriggerEvent> raw = m_Impl->DrainTriggerEvents();
+    std::vector<PhysicsTriggerEvent> filtered;
+    filtered.reserve(raw.size());
+    for (const PhysicsTriggerEvent& event : raw) {
+        if (TriggerAcceptsEvent(scene, event)) {
+            filtered.push_back(event);
+        }
+    }
+    return filtered;
+}
+
 bool PhysicsWorld::Raycast(const RaycastRequest& request, RaycastHit& outHit) const {
     return m_Impl->Raycast(request, outHit);
 }
@@ -130,6 +175,10 @@ bool PhysicsWorld::OverlapSphere(const OverlapSphereRequest& request, std::vecto
 
 bool PhysicsWorld::OverlapBox(const OverlapBoxRequest& request, std::vector<OverlapHit>& outHits) const {
     return m_Impl->OverlapBox(request, outHits);
+}
+
+bool PhysicsWorld::ShapeCast(const ShapeCastRequest& request, ShapeCastHit& outHit) const {
+    return m_Impl->ShapeCast(request, outHit);
 }
 
 void PhysicsWorld::CollectDebugDraw(PhysicsDebugDrawList& outDrawList) const {

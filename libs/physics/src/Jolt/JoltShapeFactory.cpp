@@ -1,16 +1,21 @@
 #include "Hockey/Physics/Jolt/JoltShapeFactory.hpp"
 
+#include <string>
 #include <vector>
 
+#include <Jolt/Geometry/IndexedTriangle.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/Physics/Jolt/JoltTypeConversions.hpp"
+#include "Hockey/Physics/PhysicsMeshProvider.hpp"
 
 namespace Hockey::JoltDetail {
 
@@ -73,15 +78,55 @@ JPH::Ref<JPH::Shape> CreateCylinderShape(const CylinderColliderComponent& c, std
 }
 
 JPH::Ref<JPH::Shape> CreateMeshShape(const MeshColliderComponent& c, std::string& outError) {
-    // hockey_physics does not depend on hockey_assets, so it cannot load mesh
-    // vertex data here. We fail gracefully; gameplay/editor code that has asset
-    // access can supply baked collision geometry in a later phase.
     if (c.meshAsset == 0) {
         outError = "mesh collider has no mesh asset assigned";
-    } else {
-        outError = "mesh collider geometry is not available to the physics library";
+        return {};
     }
-    return {};
+
+    // hockey_physics does not depend on hockey_assets, so the app installs a
+    // provider (PhysicsMeshRegistry) that resolves the mesh id into geometry.
+    const PhysicsMeshRegistry& registry = PhysicsMeshRegistry::Get();
+    PhysicsMeshData data;
+    if (!registry.Resolve(c.meshAsset, data)) {
+        outError = registry.HasProvider()
+                       ? "mesh collider geometry unavailable for asset " + std::to_string(c.meshAsset)
+                       : "no mesh-data provider installed for mesh colliders";
+        return {};
+    }
+    if (data.vertices.empty()) {
+        outError = "mesh collider resolved to an empty vertex set";
+        return {};
+    }
+
+    if (c.convex) {
+        // A convex hull works for dynamic bodies and is cheap to evaluate.
+        JPH::Array<JPH::Vec3> points;
+        points.reserve(data.vertices.size());
+        for (const glm::vec3& v : data.vertices) {
+            points.push_back(ToJolt(v));
+        }
+        JPH::ConvexHullShapeSettings settings(points);
+        return Finalize(settings.Create(), outError);
+    }
+
+    // Concave triangle mesh. Jolt restricts MeshShape to static/kinematic
+    // bodies; the scene validator already flags dynamic non-convex colliders.
+    if (data.indices.size() < 3) {
+        outError = "mesh collider resolved to no triangles";
+        return {};
+    }
+    JPH::VertexList vertices;
+    vertices.reserve(static_cast<JPH::uint>(data.vertices.size()));
+    for (const glm::vec3& v : data.vertices) {
+        vertices.push_back(JPH::Float3(v.x, v.y, v.z));
+    }
+    JPH::IndexedTriangleList triangles;
+    triangles.reserve(static_cast<JPH::uint>(data.indices.size() / 3));
+    for (std::size_t i = 0; i + 2 < data.indices.size(); i += 3) {
+        triangles.push_back(JPH::IndexedTriangle(data.indices[i], data.indices[i + 1], data.indices[i + 2], 0));
+    }
+    JPH::MeshShapeSettings settings(vertices, triangles);
+    return Finalize(settings.Create(), outError);
 }
 
 JPH::Ref<JPH::Shape> ApplyOffset(const JPH::Ref<JPH::Shape>& shape, const glm::vec3& offset,
@@ -134,8 +179,8 @@ JPH::Ref<JPH::Shape> CreateEntityShape(const Entity& entity, std::string& outErr
     }
     if (entity.HasComponent<MeshColliderComponent>()) {
         const auto& c = entity.GetComponent<MeshColliderComponent>();
-        // Mesh shapes are not resolvable here; record the reason but continue.
-        CreateMeshShape(c, err);
+        // Mesh geometry is local to the asset, so it carries no offset/rotation.
+        tryAdd(CreateMeshShape(c, err), glm::vec3(0.0f), glm::vec3(0.0f), c.isTrigger);
     }
 
     if (subShapes.empty()) {

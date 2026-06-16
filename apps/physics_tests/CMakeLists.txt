@@ -13,6 +13,7 @@ add_executable(HockeyPhysicsTests
     src/QueryTests.cpp
     src/DebugDrawTests.cpp
     src/HeadlessServerPhysicsTests.cpp
+    src/Phase6GapTests.cpp
 )
 
 target_link_libraries(HockeyPhysicsTests PRIVATE hockey_core hockey_ecs hockey_physics)

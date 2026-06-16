@@ -39,6 +39,21 @@ void LogValidation(const Scene& scene) {
     }
 }
 
+void LogHierarchyNode(const Scene& scene, Entity entity, int depth) {
+    const std::string indent(static_cast<std::size_t>(depth) * 2, ' ');
+    HK_EDITOR_INFO("  {}- {} [{}]", indent, entity.GetName(), entity.GetUUID().ToString());
+    for (Entity child : scene.GetChildren(entity)) {
+        LogHierarchyNode(scene, child, depth + 1);
+    }
+}
+
+void LogHierarchy(const Scene& scene) {
+    HK_EDITOR_INFO("Scene '{}' hierarchy ({} entities):", scene.GetName(), scene.EntityCount());
+    for (Entity root : scene.GetRootEntities()) {
+        LogHierarchyNode(scene, root, 0);
+    }
+}
+
 } // namespace
 
 std::filesystem::path SceneWorkflow::AutosaveDirectory() {
@@ -104,6 +119,7 @@ Status SceneWorkflow::OpenScene(EditorContext& context, const std::filesystem::p
     context.settings.AddRecentScene(path);
     ResetAutosaveTimer();
 
+    LogHierarchy(*context.activeScene);
     if (context.settings.validateAfterLoad) {
         LogValidation(*context.activeScene);
     }

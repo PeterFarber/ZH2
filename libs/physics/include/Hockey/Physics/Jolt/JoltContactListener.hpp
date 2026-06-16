@@ -11,6 +11,7 @@
 
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/Physics/PhysicsEvents.hpp"
+#include "Hockey/Physics/PhysicsMaterial.hpp"
 
 namespace Hockey::JoltDetail {
 
@@ -32,6 +33,11 @@ public:
     std::vector<PhysicsContactEvent> DrainContacts();
     std::vector<PhysicsTriggerEvent> DrainTriggers();
 
+    // Associates a body with the surface material it was built from so the
+    // contact callbacks can apply the material combine modes. Called by the
+    // world right after the body is created.
+    void RegisterBodyMaterial(const JPH::BodyID& bodyId, const PhysicsMaterial& material);
+
     // Drops cached info for a destroyed body so the cache stays bounded.
     void ForgetBody(const JPH::BodyID& bodyId);
     void Clear();
@@ -50,10 +56,15 @@ private:
     void EmitContact(const JPH::Body& body1, const JPH::Body& body2, const JPH::ContactManifold& manifold,
                      PhysicsContactEvent::Type type);
 
+    // Applies the per-body material combine modes to a contact, if both bodies'
+    // materials are known. Caller must hold m_Mutex.
+    void ApplyCombineModesLocked(const JPH::Body& body1, const JPH::Body& body2, JPH::ContactSettings& settings) const;
+
     std::mutex m_Mutex;
     std::vector<PhysicsContactEvent> m_Contacts;
     std::vector<PhysicsTriggerEvent> m_Triggers;
     std::unordered_map<JPH::BodyID, BodyInfo, BodyIDHash> m_BodyInfo;
+    std::unordered_map<JPH::BodyID, PhysicsMaterial, BodyIDHash> m_BodyMaterials;
 };
 
 } // namespace Hockey::JoltDetail

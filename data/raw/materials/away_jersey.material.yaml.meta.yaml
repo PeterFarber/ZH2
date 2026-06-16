@@ -1,0 +1,17 @@
+Asset:
+  ID: 13233840974595180099
+  Type: Material
+  Name: Away Jersey
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/away_jersey.material.yaml
+  CookedPath: data/cooked/assets/materials/13233840974595180099.material.yaml
+  RawFileTimestamp: 13790645465636288025
+  RawFileHash: 17297756360453334505
+  ImportedTimestamp: 1781574091
+  CookedTimestamp: 1781573752
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

@@ -1,0 +1,17 @@
+Asset:
+  ID: 11395449678300773843
+  Type: Texture
+  Name: ice_roughness
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/ice/ice_roughness.jpg
+  CookedPath: data/cooked/assets/textures/11395449678300773843.tex.bin
+  RawFileTimestamp: 13790646583946833632
+  RawFileHash: 13776648050345805364
+  ImportedTimestamp: 1781574089
+  CookedTimestamp: 1781573748
+  Dependencies: []
+  Dependents: [589019741743117030]
+  Dirty: true
+  Missing: false
+  Cooked: true

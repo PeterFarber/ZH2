@@ -1,7 +1,6 @@
 find_package(SDL3 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
 find_package(tomlplusplus CONFIG REQUIRED)
 
 add_library(hockey_core STATIC)
@@ -40,7 +39,6 @@ target_link_libraries(hockey_core
         SDL3::SDL3
         spdlog::spdlog
         fmt::fmt
-        glm::glm
         tomlplusplus::tomlplusplus
 )
 

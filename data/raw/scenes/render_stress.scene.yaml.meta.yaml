@@ -1,0 +1,17 @@
+Asset:
+  ID: 4632069077375506637
+  Type: Scene
+  Name: render_stress.scene
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/scenes/render_stress.scene.yaml
+  CookedPath: ""
+  RawFileTimestamp: 13790654680190674300
+  RawFileHash: 4848486725990479308
+  ImportedTimestamp: 1781574606
+  CookedTimestamp: 0
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

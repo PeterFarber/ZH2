@@ -100,6 +100,17 @@ void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
             }
         }
 
+        if (entity.HasComponent<MeshColliderComponent>()) {
+            const MeshColliderComponent& meshCol = entity.GetComponent<MeshColliderComponent>();
+            if (wanted(meshCol.isTrigger)) {
+                // The true mesh hull is built outside hockey_physics (asset bridge,
+                // deferred), so the gizmo can't draw real geometry yet. Mark the
+                // entity with a unit placeholder box so authors can see the mesh
+                // collider exists and where it sits.
+                AppendWireBox(list, worldPos, glm::vec3(0.5f), worldRot, ColliderColor(meshCol.isTrigger));
+            }
+        }
+
         if (view.showBodyCenters && entity.HasComponent<RigidBodyComponent>()) {
             AppendCross(list, worldPos, 0.25f, PhysicsDebugColors::kBodyCenter);
         }

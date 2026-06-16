@@ -74,12 +74,19 @@ void EnsureRenderables(Hockey::Scene& scene) {
 } // namespace
 
 bool GameClientApp::OnInit() {
-    auto root = GetCommandLine().GetString("--root", ".");
+    const auto& cmd = GetCommandLine();
+    auto root = cmd.GetString("--root", ".");
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
-    Hockey::Log::Init(Hockey::Paths::LogFile("client.log"));
+    const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
+                                          : Hockey::Paths::LogFile("client.log");
+    Hockey::Log::Init(logPath);
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
-    m_Config.Load(Hockey::Paths::ConfigFile("client.toml"));
+    const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
+                                                : Hockey::Paths::ConfigFile("client.toml");
+    m_Config.Load(configPath);
+    // Honor the input.gamepad_enabled config key (closes pads opened at init).
+    Hockey::Input::SetGamepadEnabled(m_Config.GetBool("input.gamepad_enabled", true));
     if (!CreateAppWindowFromConfig(m_Config)) {
         HK_CORE_ERROR("Failed to create game client window");
         return false;
@@ -130,6 +137,10 @@ bool GameClientApp::OnInit() {
             auto physicsSystem = std::make_unique<Hockey::PhysicsSystem>(physicsSettings);
             m_PhysicsSystem = physicsSystem.get();
             m_Scene.AddSystem(std::move(physicsSystem));
+            // The client plays scenes rather than editing them; switch out of Edit
+            // mode so the physics system actually simulates (ShouldSimulate gates
+            // on SceneMode::Edit).
+            m_Scene.SetMode(Hockey::SceneMode::Play);
             m_Scene.OnSimulationStart();
             m_PhysicsReady = true;
             HK_CLIENT_INFO("Physics enabled ({} bodies, debug draw {})", m_PhysicsSystem->World().BodyCount(),
@@ -186,6 +197,7 @@ void GameClientApp::OnShutdown() {
     m_Renderer.Shutdown();
     m_RendererReady = false;
     Hockey::JobSystem::Shutdown();
+    Hockey::CrashHandler::Shutdown();
     Hockey::Log::Shutdown();
 }
 
@@ -232,12 +244,14 @@ void GameClientApp::OnUpdate(float deltaTime) {
     }
 
     m_Renderer.BeginFrame();
+    // Debug lines must be submitted BEFORE RenderScene: the scene pass records
+    // the overlay from the accumulated line buffer, and EndFrame clears it.
+    SubmitPhysicsDebugDraw();
     const float aspect = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
     Hockey::CameraRenderData camera;
     if (Hockey::FindActiveCamera(m_Scene, aspect, camera)) {
         m_Renderer.RenderScene(m_Scene, camera);
     }
-    SubmitPhysicsDebugDraw();
     m_Renderer.EndFrame();
 }
 

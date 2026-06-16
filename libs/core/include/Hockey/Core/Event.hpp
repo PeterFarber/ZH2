@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 namespace Hockey {
 enum class EventType {
     None,
@@ -31,5 +32,7 @@ struct Event {
     float mouseX = 0, mouseY = 0, mouseDeltaX = 0, mouseDeltaY = 0, scrollX = 0, scrollY = 0;
     int gamepadId = -1, gamepadButton = 0, gamepadAxis = 0;
     float gamepadAxisValue = 0.0f;
+    // UTF-8 text for EventType::TextInput (committed text from the IME / keyboard).
+    std::string text;
 };
 } // namespace Hockey

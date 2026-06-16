@@ -1,0 +1,17 @@
+Asset:
+  ID: 13559518062791891881
+  Type: Material
+  Name: Line Paint Red
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/line_paint_red.material.yaml
+  CookedPath: data/cooked/assets/materials/13559518062791891881.material.yaml
+  RawFileTimestamp: 13790645465625287705
+  RawFileHash: 311786214991644395
+  ImportedTimestamp: 1781574091
+  CookedTimestamp: 1781573753
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

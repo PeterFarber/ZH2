@@ -14,12 +14,15 @@ mouse_sensitivity = 0.15000000596046448
 move_speed = 10.0
 
 [grid]
-show = true
+show = false
 spacing = 1.0
 
 [scene]
-recent_0 = '/home/fxs/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
-recent_count = 1
+recent_0 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_lights.scene.yaml'
+recent_1 = '/home/fxs/Documents/ZH2/data/raw/scenes/render_test.scene.yaml'
+recent_2 = '/home/fxs/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
+recent_3 = '/home/fxs/Documents/ZH2/data/raw/scenes/physics_smoke.scene.yaml'
+recent_count = 4
 restore_last = true
 
 [snap]
