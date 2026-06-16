@@ -2,6 +2,7 @@
 
 #include "Hockey/Gameplay/GameplayEvents.hpp"
 #include "Hockey/Gameplay/GameplayInput.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/GameplayTypes.hpp"
 #include "Hockey/Gameplay/Teams/TeamTypes.hpp"

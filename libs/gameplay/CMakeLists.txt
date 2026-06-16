@@ -7,6 +7,7 @@ target_sources(hockey_gameplay
         src/Gameplay.cpp
         src/GameplaySettings.cpp
         src/GameplayTypes.cpp
+        src/GameplayComponents.cpp
         src/GameplayInput.cpp
         src/GameplayEvents.cpp
         src/Teams/TeamTypes.cpp
