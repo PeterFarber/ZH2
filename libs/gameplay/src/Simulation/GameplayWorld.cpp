@@ -6,6 +6,7 @@
 #include "Hockey/Gameplay/Match/ResetSystem.hpp"
 #include "Hockey/Gameplay/Player/PlayerMovement.hpp"
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
+#include "Hockey/Gameplay/Stick/ShootingSystem.hpp"
 
 namespace Hockey {
 
@@ -54,6 +55,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
     PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds);
     PuckPossession::FixedUpdate(scene, m_Events);
+    ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
     MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
     ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     m_InputBuffer.ClearForTick(tick);
