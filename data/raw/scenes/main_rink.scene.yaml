@@ -682,6 +682,8 @@ Entities:
         - 100000000000015
     RinkComponent:
       RinkName: Main Rink
+    PlayAreaComponent:
+      HalfExtents: [14, 5, 30]
   - Entity: 11881655091935670238
     NameComponent:
       Name: GameObject
