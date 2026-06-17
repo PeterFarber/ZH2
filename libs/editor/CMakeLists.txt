@@ -91,6 +91,7 @@ target_link_libraries(hockey_editor
         hockey_renderer
         hockey_assets
         hockey_physics
+        hockey_gameplay
         imgui::imgui
     PRIVATE
         imguizmo::imguizmo

@@ -40,6 +40,11 @@ enable_debug_draw = true
 enable_sleeping = true
 preview_simulation = false
 
+[gameplay]
+preview_enabled = false
+validate_on_load = true
+debug_draw_gameplay = true
+
 [assets]
 auto_discover = true
 auto_import = true

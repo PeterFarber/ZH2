@@ -11,6 +11,7 @@
 #include "Hockey/Editor/Gizmos/GizmoOperation.hpp"
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Editor/Tools/ToolManager.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 
 using namespace Hockey;
 
@@ -37,6 +38,7 @@ void RunToolTests() {
     HockeyTest::BeginSuite("ToolTests");
 
     ComponentRegistry::Get().RegisterPhase2Components();
+    RegisterGameplayComponents();
 
     // --- transform tools drive the gizmo mode and stay active ----------------
     {
@@ -79,6 +81,7 @@ void RunToolTests() {
         ctx.toolManager.Activate("Hockey Rink", ctx);
         HK_CHECK_MSG(HasNamed<RinkComponent>(fix.scene, "Rink"), "rink has RinkComponent");
         HK_CHECK_MSG(HasNamed<PlayAreaComponent>(fix.scene, "Rink"), "rink has PlayAreaComponent");
+        HK_CHECK_MSG(HasNamed<OutOfPlayComponent>(fix.scene, "Rink"), "rink has OutOfPlayComponent");
         HK_CHECK_MSG(fix.scene.FindEntityByName("Ice"), "rink creates Ice child");
         HK_CHECK_MSG(fix.scene.FindEntityByName("Boards"), "rink creates Boards child");
         // Rink, Ice, Boards (visual) + 4 board-wall colliders.
@@ -125,6 +128,8 @@ void RunToolTests() {
         Entity away = fix.scene.FindEntityByName("Away Goal");
         HK_CHECK_MSG(home && home.HasComponent<GoalComponent>(), "home goal has GoalComponent");
         HK_CHECK_MSG(away && away.HasComponent<GoalComponent>(), "away goal has GoalComponent");
+        HK_CHECK_MSG(home && home.HasComponent<GoalGameplayComponent>(), "home goal has gameplay goal component");
+        HK_CHECK_MSG(away && away.HasComponent<GoalGameplayComponent>(), "away goal has gameplay goal component");
         if (home && away) {
             HK_CHECK_MSG(home.GetComponent<GoalComponent>().defendingTeam == Team::Home, "home goal team");
             HK_CHECK_MSG(away.GetComponent<GoalComponent>().defendingTeam == Team::Away, "away goal team");
@@ -133,12 +138,35 @@ void RunToolTests() {
         HK_CHECK_EQ(fix.scene.EntityCount(), before);
     }
 
+    // --- HockeyPlayerTool: player bodies are gameplay-ready ------------------
+    {
+        ToolFixture fix;
+        EditorContext& ctx = fix.context;
+        ctx.toolManager.Activate("Hockey Players", ctx);
+        Entity homeSkater = fix.scene.FindEntityByName("Home Skater 0");
+        Entity homeGoalie = fix.scene.FindEntityByName("Home Goalie");
+        HK_CHECK_MSG(homeSkater && homeSkater.HasComponent<PlayerComponent>(), "skater has PlayerComponent");
+        HK_CHECK_MSG(homeSkater && homeSkater.HasComponent<SkaterComponent>(), "skater has SkaterComponent");
+        HK_CHECK_MSG(homeSkater && homeSkater.HasComponent<StickComponent>(), "skater has StickComponent");
+        HK_CHECK_MSG(homeSkater && homeSkater.HasComponent<ShotComponent>(), "skater has ShotComponent");
+        HK_CHECK_MSG(homeGoalie && homeGoalie.HasComponent<PlayerComponent>(), "goalie has PlayerComponent");
+        HK_CHECK_MSG(homeGoalie && homeGoalie.HasComponent<GoalieComponent>(), "goalie has GoalieComponent");
+        if (homeSkater) {
+            const PlayerComponent& player = homeSkater.GetComponent<PlayerComponent>();
+            HK_CHECK_EQ(player.playerIndex, 0u);
+            HK_CHECK_EQ(player.slot, PlayerSlot::HomeSkater0);
+            HK_CHECK_MSG(player.controlledByLocalInput, "home skater 0 receives local input");
+        }
+    }
+
     // --- HockeyPuckTool ------------------------------------------------------
     {
         ToolFixture fix;
         EditorContext& ctx = fix.context;
         ctx.toolManager.Activate("Hockey Puck", ctx);
         HK_CHECK_MSG(HasNamed<PuckComponent>(fix.scene, "Puck Spawn"), "puck has PuckComponent");
+        HK_CHECK_MSG(HasNamed<PuckGameplayComponent>(fix.scene, "Puck Spawn"), "puck has PuckGameplayComponent");
+        HK_CHECK_MSG(HasNamed<PuckRuntimeComponent>(fix.scene, "Puck Spawn"), "puck has PuckRuntimeComponent");
     }
 
     // --- HockeyFaceoffTool: three spots --------------------------------------
@@ -149,6 +177,7 @@ void RunToolTests() {
         ctx.toolManager.Activate("Hockey Faceoff Spots", ctx);
         HK_CHECK_EQ(fix.scene.EntityCount(), before + 3);
         HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Center Faceoff Spot"), "center faceoff spot");
+        HK_CHECK_MSG(HasNamed<FaceoffGameplayComponent>(fix.scene, "Center Faceoff Spot"), "center gameplay faceoff");
         HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Home Defensive Faceoff Spot"), "home faceoff spot");
         HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Away Defensive Faceoff Spot"), "away faceoff spot");
     }

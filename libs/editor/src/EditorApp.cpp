@@ -37,6 +37,7 @@
 #include "Hockey/Editor/Panels/StatsPanel.hpp"
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
 #include "Hockey/Editor/Tools/EditorTools.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 #include "Hockey/Physics/PhysicsMeshProvider.hpp"
@@ -115,6 +116,7 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     // registration (which clears the registry first). Materials back the
     // inspector dropdown and validation.
     RegisterPhysicsComponents();
+    RegisterGameplayComponents();
     PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     // hockey_physics cannot load mesh assets itself (it must not depend on
