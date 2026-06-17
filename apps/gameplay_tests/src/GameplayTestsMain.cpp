@@ -13,6 +13,8 @@ void RunGameplayComponentTests();
 void RunMatchSetupTests();
 void RunGameplayWorldTests();
 void RunResetSystemTests();
+void RunSkaterMovementTests();
+void RunGoalieMovementTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -27,6 +29,8 @@ int main(int argc, char** argv) {
     RunMatchSetupTests();
     RunGameplayWorldTests();
     RunResetSystemTests();
+    RunSkaterMovementTests();
+    RunGoalieMovementTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Gameplay tests completed: {} passed, {} failed", stats.passed, stats.failed);
