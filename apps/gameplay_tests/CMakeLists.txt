@@ -17,6 +17,7 @@ add_executable(HockeyGameplayTests
     src/GoalDetectionTests.cpp
     src/OutOfPlayTests.cpp
     src/GameplaySnapshotTests.cpp
+    src/MainRinkGameplayTests.cpp
     src/HeadlessServerGameplayTests.cpp
 )
 

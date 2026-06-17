@@ -25,6 +25,7 @@ void RunGoalDetectionTests();
 void RunScoreTests();
 void RunOutOfPlayTests();
 void RunGameplaySnapshotTests();
+void RunMainRinkGameplayTests();
 void RunHeadlessServerGameplayTests();
 
 int main(int argc, char** argv) {
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
     RunScoreTests();
     RunOutOfPlayTests();
     RunGameplaySnapshotTests();
+    RunMainRinkGameplayTests();
     RunHeadlessServerGameplayTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
