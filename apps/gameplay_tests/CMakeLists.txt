@@ -15,6 +15,7 @@ add_executable(HockeyGameplayTests
     src/CheckingTests.cpp
     src/GoalDetectionTests.cpp
     src/OutOfPlayTests.cpp
+    src/GameplaySnapshotTests.cpp
 )
 
 target_link_libraries(HockeyGameplayTests PRIVATE hockey_core hockey_ecs hockey_physics hockey_gameplay)
