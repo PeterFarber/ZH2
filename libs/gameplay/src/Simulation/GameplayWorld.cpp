@@ -7,6 +7,7 @@
 #include "Hockey/Gameplay/Player/PlayerMovement.hpp"
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Rink/GoalDetection.hpp"
+#include "Hockey/Gameplay/Rink/OutOfPlaySystem.hpp"
 #include "Hockey/Gameplay/Stick/CheckingSystem.hpp"
 #include "Hockey/Gameplay/Stick/PassingSystem.hpp"
 #include "Hockey/Gameplay/Stick/ShootingSystem.hpp"
@@ -62,6 +63,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     PassingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, m_Events);
     CheckingSystem::FixedUpdate(scene, m_InputBuffer, m_Settings, m_Tuning, fixedDeltaSeconds, m_Events);
     GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
+    OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);
     MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
     ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     m_InputBuffer.ClearForTick(tick);
