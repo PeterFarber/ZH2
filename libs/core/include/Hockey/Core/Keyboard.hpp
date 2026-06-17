@@ -8,6 +8,7 @@ enum class KeyCode {
     A,
     S,
     D,
+    R,
     Up,
     Down,
     Left,

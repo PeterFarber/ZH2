@@ -9,6 +9,7 @@ int Keyboard::ToScancode(KeyCode key) {
         case KeyCode::A: return SDL_SCANCODE_A;
         case KeyCode::S: return SDL_SCANCODE_S;
         case KeyCode::D: return SDL_SCANCODE_D;
+        case KeyCode::R: return SDL_SCANCODE_R;
         case KeyCode::Up: return SDL_SCANCODE_UP;
         case KeyCode::Down: return SDL_SCANCODE_DOWN;
         case KeyCode::Left: return SDL_SCANCODE_LEFT;
@@ -26,6 +27,7 @@ KeyCode Keyboard::FromScancode(int scancode) {
         case SDL_SCANCODE_A: return KeyCode::A;
         case SDL_SCANCODE_S: return KeyCode::S;
         case SDL_SCANCODE_D: return KeyCode::D;
+        case SDL_SCANCODE_R: return KeyCode::R;
         case SDL_SCANCODE_UP: return KeyCode::Up;
         case SDL_SCANCODE_DOWN: return KeyCode::Down;
         case SDL_SCANCODE_LEFT: return KeyCode::Left;

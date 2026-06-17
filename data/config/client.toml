@@ -37,6 +37,12 @@ gravity_z = 0.0
 enable_debug_draw = false
 enable_sleeping = true
 
+[gameplay]
+enabled = true
+local_play = true
+debug_draw_gameplay = false
+log_gameplay_events = false
+
 [assets]
 # The client loads cooked assets only; cooking is owned by the editor/asset tool.
 auto_discover = false
