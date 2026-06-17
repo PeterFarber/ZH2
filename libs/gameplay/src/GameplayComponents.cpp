@@ -168,9 +168,11 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "PlayerRuntimeComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Velocity" << YAML::Value << c.velocity;
         out << YAML::Key << "FacingDirection" << YAML::Value << c.facingDirection;
+        out << YAML::Key << "MoveTarget" << YAML::Value << c.moveTarget;
         out << YAML::Key << "SprintEnergy" << YAML::Value << c.sprintEnergy;
         out << YAML::Key << "CheckCooldown" << YAML::Value << c.checkCooldown;
         out << YAML::Key << "PokeCheckCooldown" << YAML::Value << c.pokeCheckCooldown;
+        out << YAML::Key << "HasMoveTarget" << YAML::Value << c.hasMoveTarget;
         out << YAML::Key << "InputEnabled" << YAML::Value << c.inputEnabled;
         out << YAML::Key << "MovementEnabled" << YAML::Value << c.movementEnabled;
         out << YAML::EndMap;
@@ -335,9 +337,11 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         PlayerRuntimeComponent c;
         ReadVec3(n["Velocity"], c.velocity);
         ReadVec3(n["FacingDirection"], c.facingDirection);
+        ReadVec3(n["MoveTarget"], c.moveTarget);
         if (n["SprintEnergy"]) c.sprintEnergy = n["SprintEnergy"].as<float>();
         if (n["CheckCooldown"]) c.checkCooldown = n["CheckCooldown"].as<float>();
         if (n["PokeCheckCooldown"]) c.pokeCheckCooldown = n["PokeCheckCooldown"].as<float>();
+        if (n["HasMoveTarget"]) c.hasMoveTarget = n["HasMoveTarget"].as<bool>();
         if (n["InputEnabled"]) c.inputEnabled = n["InputEnabled"].as<bool>();
         if (n["MovementEnabled"]) c.movementEnabled = n["MovementEnabled"].as<bool>();
         entity.AddOrReplaceComponent<PlayerRuntimeComponent>(c);

@@ -37,9 +37,11 @@ struct GoalieComponent {
 struct PlayerRuntimeComponent {
     glm::vec3 velocity{0.0f};
     glm::vec3 facingDirection{0.0f, 0.0f, 1.0f};
+    glm::vec3 moveTarget{0.0f};
     float sprintEnergy = 1.0f;
     float checkCooldown = 0.0f;
     float pokeCheckCooldown = 0.0f;
+    bool hasMoveTarget = false;
     bool inputEnabled = true;
     bool movementEnabled = true;
 };

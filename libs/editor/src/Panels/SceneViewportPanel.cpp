@@ -16,6 +16,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/EditorGameplayPreview.hpp"
 #include "Hockey/Editor/Gizmos/GridGizmo.hpp"
 #include "Hockey/Editor/Gizmos/PhysicsGizmo.hpp"
 #include "Hockey/Editor/Gizmos/SelectionOutline.hpp"
@@ -56,6 +57,18 @@ bool RayUnitBox(const glm::vec3& origin, const glm::vec3& dir, float& outDistanc
     }
     outDistance = (tMin >= 0.0f) ? tMin : tMax;
     return outDistance >= 0.0f;
+}
+
+bool RayIcePlane(const glm::vec3& origin, const glm::vec3& dir, glm::vec3& outPoint) {
+    if (std::abs(dir.y) < 1e-5f) {
+        return false;
+    }
+    const float t = -origin.y / dir.y;
+    if (t < 0.0f) {
+        return false;
+    }
+    outPoint = origin + dir * t;
+    return true;
 }
 
 } // namespace
@@ -277,10 +290,24 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
     const bool gizmoActive = m_Gizmo.Manipulate(context, context.gizmoOperation, view, gizmoProj, imagePos.x,
                                                 imagePos.y, imageSize.x, imageSize.y);
 
-    if (imageHovered && !gizmoActive && !m_Navigating && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+    if (!context.gameplayView.previewEnabled && imageHovered && !gizmoActive && !m_Navigating &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         const ImVec2 mouse = ImGui::GetIO().MousePos;
         const glm::vec2 viewportUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
         Pick(context, viewportUV, aspect, ImGui::GetIO().KeyCtrl);
+    }
+
+    if (context.gameplayView.previewEnabled && context.gameplayPreview != nullptr && imageHovered &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        const ImVec2 mouse = ImGui::GetIO().MousePos;
+        const glm::vec2 viewportUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
+        glm::vec3 rayOrigin;
+        glm::vec3 rayDir;
+        context.editorCamera.Ray(viewportUV, aspect, rayOrigin, rayDir);
+        glm::vec3 target;
+        if (RayIcePlane(rayOrigin, rayDir, target)) {
+            context.gameplayPreview->SetMoveTarget(target);
+        }
     }
 }
 

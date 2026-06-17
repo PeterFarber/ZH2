@@ -13,7 +13,12 @@ void RunInputModelTests() {
     input.simulationTick = 42;
     input.move = {0.5f, -1.0f};
     input.aim = {1.0f, 0.0f};
+    input.moveTarget = {4.0f, 0.0f, 8.0f};
+    input.hasMoveTarget = true;
     input.sprint = true;
+    input.boostForward = true;
+    input.brake = true;
+    input.quickTurnPressed = true;
     input.shootPressed = true;
     input.passReleased = true;
 
@@ -26,7 +31,12 @@ void RunInputModelTests() {
     HK_CHECK_EQ(out.inputSequence, 10ull);
     HK_CHECK_EQ(out.simulationTick, 42ull);
     HK_CHECK_NEAR(out.move.y, -1.0f, 0.0001f);
+    HK_CHECK(out.hasMoveTarget);
+    HK_CHECK_NEAR(out.moveTarget.z, 8.0f, 0.0001f);
     HK_CHECK(out.sprint);
+    HK_CHECK(out.boostForward);
+    HK_CHECK(out.brake);
+    HK_CHECK(out.quickTurnPressed);
     HK_CHECK(out.shootPressed);
     HK_CHECK(out.passReleased);
 

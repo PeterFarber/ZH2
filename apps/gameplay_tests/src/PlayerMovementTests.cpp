@@ -80,6 +80,25 @@ void PushMove(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, const g
     world.PushInput(input);
 }
 
+void PushWaypoint(GameplayWorld& world,
+                  uint32_t playerIndex,
+                  uint64_t tick,
+                  const glm::vec3& target,
+                  bool boost = false,
+                  bool brake = false,
+                  bool quickTurn = false) {
+    GameplayInputFrame input;
+    input.playerIndex = playerIndex;
+    input.inputSequence = tick;
+    input.simulationTick = tick;
+    input.moveTarget = target;
+    input.hasMoveTarget = true;
+    input.boostForward = boost;
+    input.brake = brake;
+    input.quickTurnPressed = quickTurn;
+    world.PushInput(input);
+}
+
 } // namespace
 
 void RunSkaterMovementTests() {
@@ -105,12 +124,26 @@ void RunSkaterMovementTests() {
     HK_CHECK(skater.GetComponent<TransformComponent>().localPosition.x > -3.0f);
     HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
 
-    const float speedAfterInput = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+    skater.GetComponent<TransformComponent>().localPosition = {-3.0f, 0.0f, -5.0f};
+    PushWaypoint(world, playerIndex, 2, {3.0f, 0.0f, -5.0f});
     world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x > 0.0f);
+    HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
+
+    const float speedAfterInput = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
+    GameplayInputFrame brakeInput;
+    brakeInput.playerIndex = playerIndex;
+    brakeInput.inputSequence = 3;
+    brakeInput.simulationTick = 3;
+    brakeInput.brake = true;
+    world.PushInput(brakeInput);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 3);
     const float speedAfterNoInput = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
     HK_CHECK(speedAfterNoInput < speedAfterInput);
 
-    for (uint64_t tick = 3; tick < 90; ++tick) {
+    for (uint64_t tick = 4; tick < 90; ++tick) {
         PushMove(world, playerIndex, tick, {1.0f, 0.0f});
         world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
     }
@@ -124,6 +157,14 @@ void RunSkaterMovementTests() {
     }
     const float sprintSpeed = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
     HK_CHECK(sprintSpeed > skater.GetComponent<SkaterComponent>().maxSpeed);
+
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{4.0f, 0.0f, 0.0f};
+    skater.GetComponent<PlayerRuntimeComponent>().facingDirection = glm::vec3{1.0f, 0.0f, 0.0f};
+    PushWaypoint(world, playerIndex, 150, {10.0f, 0.0f, -5.0f}, false, false, true);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 150);
+    HK_CHECK(!skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x < 0.0f);
+    HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, -1.0f, 0.001);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
     skater.GetComponent<PlayerRuntimeComponent>().movementEnabled = false;

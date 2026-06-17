@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <filesystem>
 
+#include <glm/glm.hpp>
+
 #include "Hockey/Core/FixedTimestep.hpp"
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Gameplay/GameplayInput.hpp"
@@ -36,6 +38,7 @@ public:
     void StepOnce(Scene& scene, EditorPhysicsPreview& physicsPreview);
     void Reset(Scene& scene, EditorPhysicsPreview& physicsPreview);
     void Update(Scene& scene, EditorPhysicsPreview& physicsPreview, float deltaTime);
+    void SetMoveTarget(const glm::vec3& target);
 
     void SetDebugDrawEnabled(bool enabled) {
         m_Settings.debugDrawGameplay = enabled;
@@ -57,9 +60,11 @@ private:
     std::filesystem::path m_SnapshotPath;
     std::uint64_t m_LocalInputSequence = 0;
     std::uint64_t m_Tick = 0;
+    glm::vec3 m_MoveTarget{0.0f};
     bool m_Active = false;
     bool m_Running = false;
     bool m_StartedPhysicsPreview = false;
+    bool m_HasMoveTarget = false;
 };
 
 } // namespace Hockey

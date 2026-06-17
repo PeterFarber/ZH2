@@ -14,8 +14,13 @@ struct GameplayInputFrame {
 
     glm::vec2 move{0.0f};
     glm::vec2 aim{0.0f};
+    glm::vec3 moveTarget{0.0f};
 
     bool sprint = false;
+    bool boostForward = false;
+    bool brake = false;
+    bool quickTurnPressed = false;
+    bool hasMoveTarget = false;
     bool shootPressed = false;
     bool shootHeld = false;
     bool shootReleased = false;

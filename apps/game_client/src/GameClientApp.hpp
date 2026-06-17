@@ -10,6 +10,7 @@
 #include "Hockey/Renderer/Renderer.hpp"
 
 #include <cstdint>
+#include <glm/glm.hpp>
 
 namespace Hockey {
 class PhysicsSystem;
@@ -42,7 +43,9 @@ private:
     Hockey::PhysicsSystem* m_PhysicsSystem = nullptr; // owned by m_Scene
     Hockey::FixedTimestep m_SimulationTimestep{60.0};
     uint64_t m_LocalInputSequence = 0;
+    glm::vec3 m_LocalMoveTarget{0.0f};
     bool m_LocalGameplayEnabled = false;
+    bool m_HasLocalMoveTarget = false;
     bool m_PhysicsReady = false;
     bool m_PhysicsDebug = false;
 

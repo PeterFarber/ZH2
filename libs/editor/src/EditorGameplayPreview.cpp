@@ -55,6 +55,7 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
     m_Timestep.Reset();
     m_LocalInputSequence = 0;
     m_Tick = 0;
+    m_HasMoveTarget = false;
     m_Active = true;
     m_Running = false;
     return Status::Ok();
@@ -110,6 +111,7 @@ void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPre
     m_Timestep.Reset();
     m_LocalInputSequence = 0;
     m_Tick = 0;
+    m_HasMoveTarget = false;
     if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings); !initialized) {
         m_Active = false;
         ClearSnapshot();
@@ -127,6 +129,11 @@ void EditorGameplayPreview::Update(Scene& scene, EditorPhysicsPreview& physicsPr
         StepFixed(scene, physicsPreview, fixedDelta);
         m_Timestep.AdvanceTick();
     }
+}
+
+void EditorGameplayPreview::SetMoveTarget(const glm::vec3& target) {
+    m_MoveTarget = target;
+    m_HasMoveTarget = true;
 }
 
 Status EditorGameplayPreview::SaveAuthoringSnapshot(Scene& scene) {
@@ -163,10 +170,9 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulati
         return input;
     }
 
-    input.move.x = (Input::IsKeyDown(KeyCode::D) ? 1.0f : 0.0f) - (Input::IsKeyDown(KeyCode::A) ? 1.0f : 0.0f);
-    input.move.y = (Input::IsKeyDown(KeyCode::W) ? 1.0f : 0.0f) - (Input::IsKeyDown(KeyCode::S) ? 1.0f : 0.0f);
-    if (glm::dot(input.move, input.move) > 1.0f) {
-        input.move = glm::normalize(input.move);
+    if (m_HasMoveTarget) {
+        input.moveTarget = m_MoveTarget;
+        input.hasMoveTarget = true;
     }
 
     input.aim.x = (Input::IsKeyDown(KeyCode::Right) ? 1.0f : 0.0f) -
@@ -177,14 +183,12 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulati
         input.aim = glm::normalize(input.aim);
     }
 
-    input.sprint = Input::IsMouseButtonDown(MouseButton::Right);
-    input.shootPressed = Input::WasKeyPressed(KeyCode::Space);
-    input.shootHeld = Input::IsKeyDown(KeyCode::Space);
-    input.shootReleased = Input::WasKeyReleased(KeyCode::Space);
-    input.passPressed = Input::WasMouseButtonPressed(MouseButton::Left);
-    input.passHeld = Input::IsMouseButtonDown(MouseButton::Left);
-    input.passReleased = Input::WasMouseButtonReleased(MouseButton::Left);
-    input.checkPressed = Input::WasMouseButtonPressed(MouseButton::Right);
+    input.boostForward = Input::IsKeyDown(KeyCode::Z);
+    input.brake = Input::IsKeyDown(KeyCode::S);
+    input.quickTurnPressed = Input::WasKeyPressed(KeyCode::X);
+    input.shootPressed = Input::WasMouseButtonPressed(MouseButton::Left);
+    input.shootHeld = Input::IsMouseButtonDown(MouseButton::Left);
+    input.shootReleased = Input::WasMouseButtonReleased(MouseButton::Left);
     input.pokeCheckPressed = Input::WasMouseButtonPressed(MouseButton::Middle);
 
     return input;

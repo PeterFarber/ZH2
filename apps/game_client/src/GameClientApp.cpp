@@ -23,10 +23,13 @@
 #include "Hockey/Renderer/DebugDraw.hpp"
 #include "Hockey/Renderer/RendererInitInfo.hpp"
 #include "Hockey/Renderer/RendererSettings.hpp"
+#include <cmath>
 #include <filesystem>
 #include <memory>
 
 #include <glm/geometric.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 
 namespace {
 
@@ -72,6 +75,36 @@ void EnsureRenderables(Hockey::Scene& scene) {
         environment.ambientColor = {0.05f, 0.06f, 0.08f};
         environment.ambientIntensity = 1.0f;
     }
+}
+
+bool ProjectMouseToIcePlane(Hockey::Scene& scene, std::uint32_t width, std::uint32_t height, glm::vec3& outPoint) {
+    if (width == 0 || height == 0) {
+        return false;
+    }
+
+    Hockey::CameraRenderData camera;
+    const float aspect = static_cast<float>(width) / static_cast<float>(height);
+    if (!Hockey::FindActiveCamera(scene, aspect, camera)) {
+        return false;
+    }
+
+    const float x = (Hockey::Input::MouseX() / static_cast<float>(width)) * 2.0f - 1.0f;
+    const float y = (Hockey::Input::MouseY() / static_cast<float>(height)) * 2.0f - 1.0f;
+    const glm::mat4 invViewProj = glm::inverse(camera.projection * camera.view);
+    const glm::vec4 nearClip = invViewProj * glm::vec4{x, y, 0.0f, 1.0f};
+    const glm::vec4 farClip = invViewProj * glm::vec4{x, y, 1.0f, 1.0f};
+    const glm::vec3 nearWorld = glm::vec3(nearClip) / nearClip.w;
+    const glm::vec3 farWorld = glm::vec3(farClip) / farClip.w;
+    const glm::vec3 dir = glm::normalize(farWorld - nearWorld);
+    if (std::abs(dir.y) < 1e-5f) {
+        return false;
+    }
+    const float t = -nearWorld.y / dir.y;
+    if (t < 0.0f) {
+        return false;
+    }
+    outPoint = nearWorld + dir * t;
+    return true;
 }
 
 } // namespace
@@ -231,12 +264,17 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
 
-    input.move.x = (Hockey::Input::IsKeyDown(Hockey::KeyCode::D) ? 1.0f : 0.0f) -
-                   (Hockey::Input::IsKeyDown(Hockey::KeyCode::A) ? 1.0f : 0.0f);
-    input.move.y = (Hockey::Input::IsKeyDown(Hockey::KeyCode::W) ? 1.0f : 0.0f) -
-                   (Hockey::Input::IsKeyDown(Hockey::KeyCode::S) ? 1.0f : 0.0f);
-    if (glm::dot(input.move, input.move) > 1.0f) {
-        input.move = glm::normalize(input.move);
+    if (Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Right)) {
+        glm::vec3 target{0.0f};
+        if (ProjectMouseToIcePlane(m_Scene, GetWindow().Width(), GetWindow().Height(), target)) {
+            m_LocalMoveTarget = target;
+            m_HasLocalMoveTarget = true;
+        }
+    }
+
+    if (m_HasLocalMoveTarget) {
+        input.moveTarget = m_LocalMoveTarget;
+        input.hasMoveTarget = true;
     }
 
     input.aim.x = (Hockey::Input::IsKeyDown(Hockey::KeyCode::Right) ? 1.0f : 0.0f) -
@@ -247,14 +285,12 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
         input.aim = glm::normalize(input.aim);
     }
 
-    input.sprint = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Right);
-    input.shootPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::Space);
-    input.shootHeld = Hockey::Input::IsKeyDown(Hockey::KeyCode::Space);
-    input.shootReleased = Hockey::Input::WasKeyReleased(Hockey::KeyCode::Space);
-    input.passPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Left);
-    input.passHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
-    input.passReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
-    input.checkPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Right);
+    input.boostForward = Hockey::Input::IsKeyDown(Hockey::KeyCode::Z);
+    input.brake = Hockey::Input::IsKeyDown(Hockey::KeyCode::S);
+    input.quickTurnPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::X);
+    input.shootPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Left);
+    input.shootHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
+    input.shootReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
     input.pokeCheckPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Middle);
 
     return input;
