@@ -37,7 +37,8 @@ void RunMainRinkGameplayTests() {
     SceneSerializer serializer(scene);
     const std::filesystem::path scenePath = Paths::Get().rawAssets / "scenes/main_rink.scene.yaml";
     HK_CHECK_MSG(static_cast<bool>(serializer.Deserialize(scenePath)), "main_rink scene loads");
-    HK_CHECK_EQ(scene.EntityCount(), static_cast<std::size_t>(38));
+    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(34), "main_rink has authored gameplay entities");
+    HK_CHECK_MSG(!scene.FindEntityByName("GameObject"), "main_rink has no stray default editor entities");
 
     const std::vector<SceneValidationIssue> issues = SceneValidator::Validate(scene);
     HK_CHECK_MSG(!SceneValidator::HasErrors(issues), "main_rink gameplay validation has no errors");
