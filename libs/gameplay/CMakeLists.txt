@@ -16,6 +16,8 @@ target_sources(hockey_gameplay
         src/Match/ResetSystem.cpp
         src/Player/PlayerMovement.cpp
         src/Puck/PuckPossession.cpp
+        src/Rink/GoalDetection.cpp
+        src/Match/ScoreSystem.cpp
         src/Simulation/GameplayWorld.cpp
         src/Stick/CheckingSystem.cpp
         src/Stick/PassingSystem.cpp
