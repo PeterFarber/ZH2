@@ -41,9 +41,15 @@ bool DedicatedServerApp::OnInit() {
     }
     SetTickRate(tickRate);
     m_TicksPerLog = static_cast<uint64_t>(std::max(1.0, tickRate));
+    m_MaxTicks = GetCommandLine().Has("--max-ticks")
+                     ? static_cast<uint64_t>(std::max(0, GetCommandLine().GetInt("--max-ticks", 0)))
+                     : 0;
 
     HK_SERVER_INFO("Dedicated server started on {} at {} Hz (port {})", Hockey::Platform::OSName(), tickRate,
                    m_Config.GetInt("server.port", 27020));
+    if (m_MaxTicks > 0) {
+        HK_SERVER_INFO("Dedicated server will exit after {} ticks", m_MaxTicks);
+    }
 
     // Register physics component serialization/validation + materials before
     // loading any scene so physics components deserialize and validate.
@@ -161,5 +167,10 @@ void DedicatedServerApp::OnFixedUpdate(double fixedDeltaSeconds) {
 
     if (m_Tick % m_TicksPerLog == 0) {
         HK_SERVER_INFO("Server tick {}", m_Tick);
+    }
+
+    if (m_MaxTicks > 0 && m_Tick >= m_MaxTicks) {
+        HK_SERVER_INFO("Reached max tick count {}; requesting shutdown", m_MaxTicks);
+        RequestQuit();
     }
 }

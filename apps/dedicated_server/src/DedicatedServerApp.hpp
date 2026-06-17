@@ -29,4 +29,5 @@ private:
     bool m_PhysicsDebug = false;
     uint64_t m_Tick = 0;
     uint64_t m_TicksPerLog = 60;
+    uint64_t m_MaxTicks = 0;
 };
