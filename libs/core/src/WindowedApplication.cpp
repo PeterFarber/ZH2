@@ -43,6 +43,11 @@ int WindowedApplication::Run() {
     if (GetCommandLine().Has("--fps-limit")) {
         SetTargetFps(GetCommandLine().GetInt("--fps-limit", m_TargetFps));
     }
+    m_MaxFrames = GetCommandLine().GetInt("--max-frames", GetCommandLine().GetInt("--frames", 0));
+    if (m_MaxFrames < 0) {
+        m_MaxFrames = 0;
+    }
+    int frameCount = 0;
     Timer timer;
     while (IsRunning() && !m_Window.ShouldClose() && !SignalHandler::ShutdownRequested()) {
         const double frameStart = Time::NowSeconds();
@@ -68,6 +73,9 @@ int WindowedApplication::Run() {
             if (remaining > 0.0) {
                 Platform::SleepMicroseconds(static_cast<uint64_t>(remaining * 1'000'000.0));
             }
+        }
+        if (m_MaxFrames > 0 && ++frameCount >= m_MaxFrames) {
+            RequestQuit();
         }
     }
     OnShutdown();

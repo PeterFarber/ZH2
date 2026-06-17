@@ -13,7 +13,8 @@ int main(int argc, char** argv) {
             "  --config <file>   Override editor config TOML path\n"
             "  --log <file>      Override editor log file path\n"
             "  --scene <file>    Open the given scene on startup\n"
-            "  --frames <n>      Auto-quit after N rendered frames (testing)\n"
+            "  --max-frames <n>  Auto-quit after n rendered frames (testing)\n"
+            "  --frames <n>      Alias for --max-frames\n"
             "  --vk-validation   Enable Vulkan validation layers\n"
             "  --help, -h        Print this message and exit\n");
         return 0;

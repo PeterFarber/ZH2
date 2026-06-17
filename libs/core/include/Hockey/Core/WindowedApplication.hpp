@@ -22,5 +22,6 @@ private:
     Window m_Window;
     EventQueue m_EventQueue;
     int m_TargetFps = 0;
+    int m_MaxFrames = 0;
 };
 } // namespace Hockey
