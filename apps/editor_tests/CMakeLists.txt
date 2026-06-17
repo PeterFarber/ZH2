@@ -7,6 +7,7 @@ add_executable(HockeyEditorTests
     src/UndoRedoTests.cpp
     src/ToolTests.cpp
     src/HockeyPhysicsSetupTests.cpp
+    src/EditorGameplayPreviewTests.cpp
     src/SceneWorkflowTests.cpp
     src/ProjectBrowserTests.cpp
 )

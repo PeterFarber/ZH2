@@ -24,6 +24,7 @@ class Config;
 class ImGuiRendererBridge;
 class AssetManager;
 class EditorPhysicsPreview;
+class EditorGameplayPreview;
 
 // Parameters used to wire the editor to the host application's subsystems.
 struct EditorContextCreateInfo {
@@ -54,6 +55,12 @@ struct PhysicsViewState {
     // Contact points captured during the last preview step (world space), filled
     // by EditorApp when showContacts is on. Drawn as crosses by the PhysicsGizmo.
     std::vector<glm::vec3> contactPoints;
+};
+
+struct GameplayPreviewState {
+    bool previewEnabled = false;
+    bool previewRunning = false;
+    bool showDebug = false;
 };
 
 // Central editor state shared by every panel, tool, command and gizmo. The
@@ -95,10 +102,12 @@ public:
 
     // Physics collider/trigger overlay + preview toggles (see PhysicsViewState).
     PhysicsViewState physicsView;
+    GameplayPreviewState gameplayView;
 
     // Owned by EditorApp; null in headless tests without physics. The Physics
     // panel drives it (start/stop/step/reset) and EditorApp ticks it each frame.
     EditorPhysicsPreview* physicsPreview = nullptr;
+    EditorGameplayPreview* gameplayPreview = nullptr;
 
     // Set by panels (e.g. double-clicking a scene in the Project panel) to ask
     // the host to open a scene file. EditorApp drains this each frame, running

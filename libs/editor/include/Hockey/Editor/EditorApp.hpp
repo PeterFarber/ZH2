@@ -6,6 +6,7 @@
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/EditorGameplayPreview.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 #include "Hockey/Editor/ImGui/ImGuiLayer.hpp"
 #include "Hockey/Editor/MainMenuBar.hpp"
@@ -128,6 +129,7 @@ private:
     Toolbar m_Toolbar;
     SceneWorkflow m_SceneWorkflow;
     EditorPhysicsPreview m_PhysicsPreview;
+    EditorGameplayPreview m_GameplayPreview;
 
     PendingAction m_PendingAction = PendingAction::None;
     std::filesystem::path m_PendingScenePath;

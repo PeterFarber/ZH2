@@ -13,6 +13,7 @@ void RunInspectorFieldTests();
 void RunUndoRedoTests();
 void RunToolTests();
 void RunHockeyPhysicsSetupTests();
+void RunEditorGameplayPreviewTests();
 void RunSceneWorkflowTests();
 void RunProjectBrowserTests();
 
@@ -28,6 +29,7 @@ int main(int argc, char** argv) {
     RunUndoRedoTests();
     RunToolTests();
     RunHockeyPhysicsSetupTests();
+    RunEditorGameplayPreviewTests();
     RunSceneWorkflowTests();
     RunProjectBrowserTests();
 

@@ -16,6 +16,7 @@ target_sources(hockey_editor
     PRIVATE
         src/EditorApp.cpp
         src/EditorCamera.cpp
+        src/EditorGameplayPreview.cpp
         src/EditorPhysicsPreview.cpp
         src/EditorSettings.cpp
         src/SceneWorkflow.cpp

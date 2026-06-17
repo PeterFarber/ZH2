@@ -38,6 +38,7 @@
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 #include "Hockey/Physics/PhysicsMeshProvider.hpp"
@@ -149,6 +150,13 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     m_PhysicsPreview.Configure(physicsSettings);
     m_Context.physicsPreview = &m_PhysicsPreview;
 
+    GameplaySettings gameplaySettings;
+    if (m_Context.config != nullptr) {
+        gameplaySettings = LoadGameplaySettings(*m_Context.config);
+    }
+    m_GameplayPreview.Configure(gameplaySettings);
+    m_Context.gameplayPreview = &m_GameplayPreview;
+
     RegisterPanels();
     RegisterTools();
 
@@ -187,8 +195,10 @@ void EditorApp::Shutdown() {
     }
     // Tear down any active physics preview, restoring the authored transforms.
     if (m_Context.activeScene != nullptr) {
+        m_GameplayPreview.Stop(*m_Context.activeScene, m_PhysicsPreview);
         m_PhysicsPreview.Stop(*m_Context.activeScene);
     }
+    m_Context.gameplayPreview = nullptr;
     m_Context.physicsPreview = nullptr;
     // Drop the mesh-collider provider so it can't outlive the AssetManager.
     PhysicsMeshRegistry::Get().Clear();
@@ -240,7 +250,12 @@ void EditorApp::Update(float deltaTime) {
 
     // Advance the physics preview (no-op unless the user enabled + is playing).
     if (m_Context.activeScene != nullptr) {
-        m_PhysicsPreview.Update(*m_Context.activeScene, deltaTime);
+        if (m_GameplayPreview.IsActive()) {
+            m_GameplayPreview.Update(*m_Context.activeScene, m_PhysicsPreview, deltaTime);
+        } else {
+            m_PhysicsPreview.Update(*m_Context.activeScene, deltaTime);
+        }
+        m_Context.gameplayView.previewRunning = m_GameplayPreview.IsRunning();
         m_Context.physicsView.previewRunning = m_PhysicsPreview.IsRunning();
         m_Context.physicsView.contactPoints.clear();
         if (m_Context.physicsView.showContacts && m_PhysicsPreview.IsRunning()) {
@@ -478,6 +493,9 @@ void EditorApp::PerformPendingAction() {
     // Any scene switch must end the preview first so its bodies/snapshot don't
     // outlive the scene they were built from.
     if (action != PendingAction::None && action != PendingAction::Quit && m_Context.activeScene != nullptr) {
+        m_GameplayPreview.Stop(*m_Context.activeScene, m_PhysicsPreview);
+        m_Context.gameplayView.previewEnabled = false;
+        m_Context.gameplayView.previewRunning = false;
         m_PhysicsPreview.Stop(*m_Context.activeScene);
         m_Context.physicsView.previewEnabled = false;
         m_Context.physicsView.previewRunning = false;
