@@ -5,6 +5,7 @@
 
 #include "Hockey/Core/FixedTimestep.hpp"
 #include "Hockey/Core/Result.hpp"
+#include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 
@@ -47,12 +48,14 @@ private:
     Status SaveAuthoringSnapshot(Scene& scene);
     Status RestoreAuthoringSnapshot(Scene& scene);
     void ClearSnapshot();
+    GameplayInputFrame BuildLocalInput(std::uint64_t simulationTick);
     void StepFixed(Scene& scene, EditorPhysicsPreview& physicsPreview, float fixedDeltaSeconds);
 
     GameplaySettings m_Settings{};
     GameplayWorld m_World;
     FixedTimestep m_Timestep{60.0};
     std::filesystem::path m_SnapshotPath;
+    std::uint64_t m_LocalInputSequence = 0;
     std::uint64_t m_Tick = 0;
     bool m_Active = false;
     bool m_Running = false;

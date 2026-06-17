@@ -97,6 +97,12 @@ void SceneViewportPanel::EnsureTarget(EditorContext& context, std::uint32_t widt
 void SceneViewportPanel::UpdateCamera(EditorContext& context, bool hovered) {
     const ImGuiIO& io = ImGui::GetIO();
 
+    if (context.gameplayView.previewEnabled) {
+        m_Navigating = false;
+        context.editorCamera.Update({}, io.DeltaTime, context.settings);
+        return;
+    }
+
     const bool look = ImGui::IsMouseDown(ImGuiMouseButton_Right);
     const bool pan = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
     const bool orbit = io.KeyAlt && ImGui::IsMouseDown(ImGuiMouseButton_Left);
@@ -131,7 +137,7 @@ void SceneViewportPanel::UpdateCamera(EditorContext& context, bool hovered) {
 
 void SceneViewportPanel::ProcessHotkeys(EditorContext& context, bool hovered) {
     const ImGuiIO& io = ImGui::GetIO();
-    if (!hovered || io.WantTextInput || m_Navigating) {
+    if (!hovered || io.WantTextInput || m_Navigating || context.gameplayView.previewEnabled) {
         return;
     }
     // Transform-tool shortcuts route through the ToolManager so the toolbar/menu

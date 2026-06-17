@@ -3,10 +3,15 @@
 #include <filesystem>
 
 #include "Hockey/Core/FileSystem.hpp"
+#include "Hockey/Core/Input.hpp"
+#include "Hockey/Core/Keyboard.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
+
+#include <glm/geometric.hpp>
+#include <imgui.h>
 
 namespace Hockey {
 
@@ -48,6 +53,7 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
     }
 
     m_Timestep.Reset();
+    m_LocalInputSequence = 0;
     m_Tick = 0;
     m_Active = true;
     m_Running = false;
@@ -102,6 +108,7 @@ void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPre
         physicsPreview.Reset(scene);
     }
     m_Timestep.Reset();
+    m_LocalInputSequence = 0;
     m_Tick = 0;
     if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings); !initialized) {
         m_Active = false;
@@ -146,10 +153,48 @@ void EditorGameplayPreview::ClearSnapshot() {
     }
 }
 
+GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulationTick) {
+    GameplayInputFrame input;
+    input.playerIndex = 0;
+    input.inputSequence = ++m_LocalInputSequence;
+    input.simulationTick = simulationTick;
+
+    if (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput) {
+        return input;
+    }
+
+    input.move.x = (Input::IsKeyDown(KeyCode::D) ? 1.0f : 0.0f) - (Input::IsKeyDown(KeyCode::A) ? 1.0f : 0.0f);
+    input.move.y = (Input::IsKeyDown(KeyCode::W) ? 1.0f : 0.0f) - (Input::IsKeyDown(KeyCode::S) ? 1.0f : 0.0f);
+    if (glm::dot(input.move, input.move) > 1.0f) {
+        input.move = glm::normalize(input.move);
+    }
+
+    input.aim.x = (Input::IsKeyDown(KeyCode::Right) ? 1.0f : 0.0f) -
+                  (Input::IsKeyDown(KeyCode::Left) ? 1.0f : 0.0f);
+    input.aim.y = (Input::IsKeyDown(KeyCode::Up) ? 1.0f : 0.0f) -
+                  (Input::IsKeyDown(KeyCode::Down) ? 1.0f : 0.0f);
+    if (glm::dot(input.aim, input.aim) > 1.0f) {
+        input.aim = glm::normalize(input.aim);
+    }
+
+    input.sprint = Input::IsMouseButtonDown(MouseButton::Right);
+    input.shootPressed = Input::WasKeyPressed(KeyCode::Space);
+    input.shootHeld = Input::IsKeyDown(KeyCode::Space);
+    input.shootReleased = Input::WasKeyReleased(KeyCode::Space);
+    input.passPressed = Input::WasMouseButtonPressed(MouseButton::Left);
+    input.passHeld = Input::IsMouseButtonDown(MouseButton::Left);
+    input.passReleased = Input::WasMouseButtonReleased(MouseButton::Left);
+    input.checkPressed = Input::WasMouseButtonPressed(MouseButton::Right);
+    input.pokeCheckPressed = Input::WasMouseButtonPressed(MouseButton::Middle);
+
+    return input;
+}
+
 void EditorGameplayPreview::StepFixed(Scene& scene, EditorPhysicsPreview& physicsPreview, float fixedDeltaSeconds) {
     if (!m_World.IsInitialized() || !physicsPreview.IsActive()) {
         return;
     }
+    m_World.PushInput(BuildLocalInput(m_Tick));
     m_World.FixedUpdate(scene, fixedDeltaSeconds, m_Tick);
     physicsPreview.World().OnFixedUpdate(scene, fixedDeltaSeconds);
     ++m_Tick;
