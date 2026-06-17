@@ -5,6 +5,7 @@
 #include "Hockey/Gameplay/Match/MatchSystem.hpp"
 #include "Hockey/Gameplay/Match/ResetSystem.hpp"
 #include "Hockey/Gameplay/Player/PlayerMovement.hpp"
+#include "Hockey/Gameplay/Puck/PuckController.hpp"
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Rink/GoalDetection.hpp"
 #include "Hockey/Gameplay/Rink/OutOfPlaySystem.hpp"
@@ -62,6 +63,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
     PassingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, m_Events);
     CheckingSystem::FixedUpdate(scene, m_InputBuffer, m_Settings, m_Tuning, fixedDeltaSeconds, m_Events);
+    PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);
     GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
     OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);
     MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Events);

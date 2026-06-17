@@ -10,6 +10,7 @@ add_executable(HockeyGameplayTests
     src/ResetSystemTests.cpp
     src/PlayerMovementTests.cpp
     src/PuckInteractionTests.cpp
+    src/PuckControllerTests.cpp
     src/ShootingTests.cpp
     src/PassingTests.cpp
     src/CheckingTests.cpp

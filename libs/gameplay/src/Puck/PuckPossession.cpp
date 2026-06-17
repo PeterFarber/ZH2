@@ -28,6 +28,10 @@ void ClearSkaterPossession(Scene& scene) {
     }
 }
 
+bool CanAcquireState(PuckState state) {
+    return state == PuckState::Loose || state == PuckState::Shot || state == PuckState::Passed;
+}
+
 void FollowPossessingPlayer(Scene& scene, Entity puck, const PuckGameplayComponent& gameplay) {
     Entity player = FindEntity(scene, gameplay.possessingPlayer);
     if (!player.IsValid() || !player.HasComponent<TransformComponent>() || !puck.HasComponent<TransformComponent>()) {
@@ -51,7 +55,7 @@ bool PuckPossession::TryAcquire(Scene& scene, Entity player, Entity puck, Gamepl
     }
 
     PuckGameplayComponent& gameplay = puck.GetComponent<PuckGameplayComponent>();
-    if (gameplay.state != PuckState::Loose || gameplay.possessingPlayer.IsValid()) {
+    if (!CanAcquireState(gameplay.state) || gameplay.possessingPlayer.IsValid()) {
         return false;
     }
 
@@ -110,7 +114,7 @@ void PuckPossession::FixedUpdate(Scene& scene, GameplayEventQueue& events) {
         return;
     }
 
-    if (gameplay.state != PuckState::Loose) {
+    if (!CanAcquireState(gameplay.state)) {
         return;
     }
 

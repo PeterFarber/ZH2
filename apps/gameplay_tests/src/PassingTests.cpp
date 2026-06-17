@@ -129,7 +129,9 @@ void RunPassingTests() {
     HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Passed);
     HK_CHECK(!puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid());
     HK_CHECK_EQ(passer.GetComponent<PassComponent>().targetPlayer, teammate.GetUUID());
-    HK_CHECK_NEAR(glm::length(puck.GetComponent<PuckRuntimeComponent>().velocity), world.GetTuning().pass.power, 0.001);
+    const float expectedPassSpeed =
+        world.GetTuning().pass.power * (1.0f - world.GetTuning().puck.loosePuckDrag * settings.fixedDeltaSeconds);
+    HK_CHECK_NEAR(glm::length(puck.GetComponent<PuckRuntimeComponent>().velocity), expectedPassSpeed, 0.001);
     HK_CHECK_NEAR(glm::normalize(puck.GetComponent<PuckRuntimeComponent>().velocity).z, 1.0f, 0.001);
     HK_CHECK(SawEvent(passEvents, GameplayEventType::PuckPassed));
 }

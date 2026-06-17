@@ -138,7 +138,9 @@ void RunShootingTests() {
     HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Shot);
     HK_CHECK(!puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid());
     HK_CHECK(!skater.GetComponent<SkaterComponent>().hasPuck);
-    HK_CHECK_NEAR(glm::length(puck.GetComponent<PuckRuntimeComponent>().velocity), world.GetTuning().shot.maxPower, 0.001);
+    const float expectedShotSpeed =
+        world.GetTuning().shot.maxPower * (1.0f - world.GetTuning().puck.loosePuckDrag * settings.fixedDeltaSeconds);
+    HK_CHECK_NEAR(glm::length(puck.GetComponent<PuckRuntimeComponent>().velocity), expectedShotSpeed, 0.001);
     HK_CHECK_NEAR(glm::normalize(puck.GetComponent<PuckRuntimeComponent>().velocity).x, 1.0f, 0.001);
     HK_CHECK(!skater.GetComponent<ShotComponent>().charging);
     HK_CHECK_NEAR(skater.GetComponent<ShotComponent>().charge, 0.0f, 0.001);

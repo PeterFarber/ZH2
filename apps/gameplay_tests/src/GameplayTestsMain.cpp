@@ -17,6 +17,7 @@ void RunSkaterMovementTests();
 void RunGoalieMovementTests();
 void RunStickHandlingTests();
 void RunPuckInteractionTests();
+void RunPuckControllerTests();
 void RunShootingTests();
 void RunPassingTests();
 void RunCheckingTests();
@@ -43,6 +44,7 @@ int main(int argc, char** argv) {
     RunGoalieMovementTests();
     RunStickHandlingTests();
     RunPuckInteractionTests();
+    RunPuckControllerTests();
     RunShootingTests();
     RunPassingTests();
     RunCheckingTests();
