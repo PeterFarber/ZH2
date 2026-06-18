@@ -11,6 +11,8 @@ void RunEditorSettingsTests();
 void RunSelectionTests();
 void RunInspectorFieldTests();
 void RunUndoRedoTests();
+void RunCameraLightGizmoTests();
+void RunSceneViewOverlayTests();
 void RunToolTests();
 void RunHockeyPhysicsSetupTests();
 void RunEditorGameplayPreviewTests();
@@ -27,6 +29,8 @@ int main(int argc, char** argv) {
     RunSelectionTests();
     RunInspectorFieldTests();
     RunUndoRedoTests();
+    RunCameraLightGizmoTests();
+    RunSceneViewOverlayTests();
     RunToolTests();
     RunHockeyPhysicsSetupTests();
     RunEditorGameplayPreviewTests();

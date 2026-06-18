@@ -5,6 +5,8 @@ add_executable(HockeyEditorTests
     src/SelectionTests.cpp
     src/InspectorFieldTests.cpp
     src/UndoRedoTests.cpp
+    src/CameraLightGizmoTests.cpp
+    src/SceneViewOverlayTests.cpp
     src/ToolTests.cpp
     src/HockeyPhysicsSetupTests.cpp
     src/EditorGameplayPreviewTests.cpp

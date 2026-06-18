@@ -36,7 +36,6 @@ void RunEditorSettingsTests() {
         out.cameraMoveSpeed = 22.0f;
         out.cameraFastMultiplier = 6.0f;
         out.cameraMouseSensitivity = 0.3f;
-        out.restoreLastScene = false;
         out.AddRecentScene("data/raw/scenes/a.scene.yaml");
         out.AddRecentScene("data/raw/scenes/b.scene.yaml");
 
