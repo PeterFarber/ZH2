@@ -1,0 +1,45 @@
+---
+description: How AI agents should read and update phase status checklists.
+globs:
+alwaysApply: true
+---
+
+# Phase Status Interpretation
+
+Phase status lives in `docs/phase_status/`.
+
+Before editing:
+
+- Read `docs/phase_status/README.md`.
+- Read the phase status file that owns the requested subsystem.
+- Read `docs/project-structure-and-status.md` for current target/app state.
+- Prefer current source and CMake truth if docs disagree.
+
+Checkbox meaning:
+
+- `[x]` means implemented or verified enough to treat as current repo state.
+- `[ ]` under `Started / Partial` means known partial work or known verification
+  gap.
+- `[ ]` under `Not Started` means planned but not implemented.
+- `[ ]` under `Left To Do` means remaining work.
+- `Finished Prerequisites From Earlier Phases` means prerequisites exist; it
+  does not mean the future phase feature is implemented.
+
+Phase discipline:
+
+- Phases 1 through 7 are implemented in this checkout.
+- Phase 8 networking/lobbies is next, but only when explicitly requested.
+- Phase 9 polish/animation/audio/UI is future work, only when explicitly
+  requested.
+- Do not implement unchecked future-phase items just because they appear in a
+  status file.
+
+When completing work:
+
+- Update the matching phase status file if the work changes phase status.
+- Only change `[ ]` to `[x]` when implementation and relevant verification are
+  complete, or when current source/CMake truth proves the item was already done.
+- If verification could not be performed, keep the item unchecked or document
+  the verification gap.
+- Do not remove unchecked items unless the plan or architecture intentionally
+  changed.
