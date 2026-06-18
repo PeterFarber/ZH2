@@ -38,6 +38,7 @@ add_subdirectory(apps/game_client)
 add_subdirectory(apps/map_editor)
 add_subdirectory(apps/dedicated_server)
 add_subdirectory(apps/asset_tool)
+add_subdirectory(apps/shader_tool)
 
 if(HOCKEY_BUILD_TESTS)
     add_subdirectory(apps/core_tests)
