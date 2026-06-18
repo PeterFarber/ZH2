@@ -3,6 +3,7 @@
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
@@ -37,7 +38,7 @@ void RunMainRinkGameplayTests() {
     SceneSerializer serializer(scene);
     const std::filesystem::path scenePath = Paths::Get().rawAssets / "scenes/main_rink.scene.yaml";
     HK_CHECK_MSG(static_cast<bool>(serializer.Deserialize(scenePath)), "main_rink scene loads");
-    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(34), "main_rink has authored gameplay entities");
+    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(26), "main_rink has authored gameplay markers");
     HK_CHECK_MSG(!scene.FindEntityByName("GameObject"), "main_rink has no stray default editor entities");
 
     const std::vector<SceneValidationIssue> issues = SceneValidator::Validate(scene);
@@ -53,6 +54,16 @@ void RunMainRinkGameplayTests() {
 
     GameplaySnapshot snapshot = BuildGameplaySnapshot(scene, 1);
     HK_CHECK_EQ(snapshot.players.size(), static_cast<std::size_t>(8));
+    for (const PlayerGameplaySnapshot& player : snapshot.players) {
+        Entity playerEntity = scene.FindEntityByUUID(player.entity);
+        HK_CHECK(playerEntity.IsValid());
+        if (playerEntity.IsValid()) {
+            HK_CHECK(playerEntity.HasComponent<MeshRendererComponent>());
+            if (playerEntity.HasComponent<MeshRendererComponent>()) {
+                HK_CHECK(playerEntity.GetComponent<MeshRendererComponent>().castsShadows);
+            }
+        }
+    }
     HK_CHECK(snapshot.puck.entity.IsValid());
     HK_CHECK_EQ(snapshot.match.phase, MatchPhase::FaceoffSetup);
 

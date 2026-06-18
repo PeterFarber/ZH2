@@ -2,8 +2,10 @@
 
 #include <entt/entt.hpp>
 
+#include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
@@ -20,12 +22,18 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
     return entity;
 }
 
-void AddSpawn(Scene& scene, Team team, PlayerRole role, int index, const glm::vec3& position) {
+void AddSpawn(Scene& scene,
+              Team team,
+              PlayerRole role,
+              int index,
+              const glm::vec3& position,
+              const std::filesystem::path& prefabPath = {}) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
     component.role = role;
     component.index = index;
+    component.playerPrefabPath = prefabPath;
     spawn.AddComponent<SpawnPointComponent>(component);
 }
 
@@ -51,6 +59,38 @@ void BuildValidGameplayScene(Scene& scene) {
     }
     AddSpawn(scene, Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -24.0f});
     AddSpawn(scene, Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 24.0f});
+}
+
+Entity FindPlayer(Scene& scene, PlayerSlot slot) {
+    auto view = scene.Registry().view<PlayerComponent>();
+    for (const entt::entity handle : view) {
+        Entity player(handle, &scene);
+        if (player.GetComponent<PlayerComponent>().slot == slot) {
+            return player;
+        }
+    }
+    return {};
+}
+
+Entity FindSpawn(Scene& scene, Team team, PlayerRole role, int index) {
+    auto view = scene.Registry().view<SpawnPointComponent>();
+    for (const entt::entity handle : view) {
+        Entity spawn(handle, &scene);
+        const SpawnPointComponent& component = spawn.GetComponent<SpawnPointComponent>();
+        if (component.team == team && component.role == role && component.index == index) {
+            return spawn;
+        }
+    }
+    return {};
+}
+
+std::filesystem::path SavePlayerPrefab() {
+    Scene prefabScene("PlayerPrefab");
+    Entity root = prefabScene.CreateEntity("Authored Player Prefab");
+    root.AddComponent<CameraRigMarkerComponent>().purpose = "PrefabSpawnMarker";
+    const std::filesystem::path path = Paths::TempFile("spawn_player.prefab.yaml");
+    HK_CHECK(static_cast<bool>(PrefabSerializer::Save(prefabScene, root, path)));
+    return path;
 }
 
 } // namespace
@@ -127,4 +167,32 @@ void RunMatchSetupTests() {
     HK_CHECK_EQ(homeGoal.GetComponent<GoalGameplayComponent>().scoringTeam, GameplayTeam::Away);
     HK_CHECK_EQ(awayGoal.GetComponent<GoalGameplayComponent>().defendingTeam, GameplayTeam::Away);
     HK_CHECK_EQ(awayGoal.GetComponent<GoalGameplayComponent>().scoringTeam, GameplayTeam::Home);
+
+    {
+        Scene prefabSpawnScene("PrefabSpawnScene");
+        BuildValidGameplayScene(prefabSpawnScene);
+        Entity homeSpawn = FindSpawn(prefabSpawnScene, Team::Home, PlayerRole::Skater, 0);
+        HK_CHECK(homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>());
+        const std::filesystem::path prefabPath = SavePlayerPrefab();
+        if (homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>()) {
+            homeSpawn.GetComponent<SpawnPointComponent>().playerPrefabPath = prefabPath;
+        }
+
+        HK_CHECK(static_cast<bool>(MatchSystem::InitializeMatch(prefabSpawnScene, settings)));
+        Entity prefabPlayer = FindPlayer(prefabSpawnScene, PlayerSlot::HomeSkater0);
+        HK_CHECK(prefabPlayer.IsValid());
+        if (prefabPlayer.IsValid()) {
+            HK_CHECK(prefabPlayer.HasComponent<PrefabComponent>());
+            HK_CHECK(prefabPlayer.HasComponent<CameraRigMarkerComponent>());
+            if (prefabPlayer.HasComponent<CameraRigMarkerComponent>()) {
+                HK_CHECK_EQ(prefabPlayer.GetComponent<CameraRigMarkerComponent>().purpose,
+                            std::string("PrefabSpawnMarker"));
+            }
+            HK_CHECK_EQ(prefabPlayer.GetComponent<NameComponent>().name, std::string("HomeSkater0"));
+            HK_CHECK_NEAR(prefabPlayer.GetComponent<TransformComponent>().localPosition.z, -4.0f, 0.001f);
+            HK_CHECK(prefabPlayer.HasComponent<PlayerRuntimeComponent>());
+            HK_CHECK(prefabPlayer.HasComponent<SkaterComponent>());
+            HK_CHECK(prefabPlayer.HasComponent<StickComponent>());
+        }
+    }
 }

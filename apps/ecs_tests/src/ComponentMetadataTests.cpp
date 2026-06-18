@@ -52,6 +52,12 @@ void RunComponentMetadataTests() {
         HK_CHECK(role->fields[0].type == FieldType::Enum);
     }
 
+    const ComponentMetadata* spawn = registry.FindByName("SpawnPointComponent");
+    HK_CHECK(spawn != nullptr);
+    if (spawn != nullptr) {
+        HK_CHECK(HasField(*spawn, "PlayerPrefabPath"));
+    }
+
     // has/add/remove callbacks.
     Scene scene("Test");
     Entity e = scene.CreateEntity("E");

@@ -76,7 +76,8 @@ void RunMarkerSerializationTests() {
     Scene scene("Markers");
 
     Entity spawn = scene.CreateEntity("Spawn");
-    spawn.AddComponent<SpawnPointComponent>(SpawnPointComponent{Team::Away, PlayerRole::Goalie, 2});
+    spawn.AddComponent<SpawnPointComponent>(
+        SpawnPointComponent{Team::Away, PlayerRole::Goalie, 2, "data/raw/prefabs/goalie.prefab.yaml"});
     spawn.AddComponent<TeamComponent>(TeamComponent{Team::Away});
     spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{PlayerRole::Goalie});
 
@@ -109,6 +110,7 @@ void RunMarkerSerializationTests() {
         HK_CHECK(sp.team == Team::Away);
         HK_CHECK(sp.role == PlayerRole::Goalie);
         HK_CHECK_EQ(sp.index, 2);
+        HK_CHECK_EQ(sp.playerPrefabPath.generic_string(), std::string("data/raw/prefabs/goalie.prefab.yaml"));
     }
     HK_CHECK(ls.HasComponent<TeamComponent>() && ls.GetComponent<TeamComponent>().team == Team::Away);
     HK_CHECK(ls.HasComponent<PlayerRoleComponent>() &&
