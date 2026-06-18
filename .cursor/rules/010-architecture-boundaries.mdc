@@ -6,21 +6,28 @@ alwaysApply: true
 
 # Architecture Boundaries
 
-Respect this dependency direction:
+Respect the current implemented dependency direction:
 
 ```text
 core
 ecs        -> core
 assets     -> core
-renderer   -> core, ecs, assets
+renderer   -> core, ecs       (privately consumes assets)
 physics    -> core, ecs
-networking -> core, ecs
-gameplay   -> core, ecs, physics, networking
-editor     -> core, ecs, renderer, assets, gameplay
+gameplay   -> core, ecs, physics
+editor     -> core, ecs, renderer, assets, physics, gameplay
 
-game_client       -> core, ecs, renderer, assets, gameplay, networking
-map_editor        -> core, ecs, renderer, assets, editor
-dedicated_server  -> core, ecs, gameplay, networking, physics
+game_client       -> core, ecs, renderer, assets, physics, gameplay
+map_editor        -> core, ecs, renderer, assets, editor, physics, gameplay
+dedicated_server  -> core, ecs, physics, gameplay
+```
+
+Future Phase 8 networking will add this target and app dependency direction:
+
+```text
+networking -> core, ecs
+game_client      -> networking
+dedicated_server -> networking
 ```
 
 ## Core rules
@@ -70,8 +77,14 @@ The dedicated server:
 - must not link renderer
 - must not link ImGui
 - must not link editor UI
-- must own authoritative simulation later
+- owns authoritative local physics/gameplay simulation now
 - must run fixed tick loop
 - must support Ctrl+C/SIGTERM shutdown
+
+## Networking rules
+
+`libs/networking` does not exist yet. Do not add networking transport, protocol,
+replication, lobbies, GameNetworkingSockets, prediction, interpolation, or
+reconciliation unless the user explicitly asks for Phase 8/networking work.
 
 If a requested change violates the dependency graph, stop and explain the violation before editing.

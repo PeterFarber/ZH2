@@ -56,8 +56,8 @@ Respect these library boundaries:
 - `libs/assets`: asset import/loading/cooking only.
 - `libs/renderer`: Vulkan rendering only.
 - `libs/physics`: physics integration only.
-- `libs/networking`: transport/protocol/replication/lobbies only.
 - `libs/gameplay`: hockey simulation/rules only.
+- `libs/networking`: transport/protocol/replication/lobbies only (future Phase 8).
 - `libs/editor`: editor panels/tools only.
 
 Apps:
@@ -66,7 +66,14 @@ Apps:
 - `apps/map_editor`: Unity-style map editor.
 - `apps/dedicated_server`: headless authoritative server.
 - `apps/core_tests`: tests for core.
-- Future test apps may be added per subsystem.
+- `apps/ecs_tests`: tests for ECS/scene/prefab behavior.
+- `apps/asset_tests`: tests for the asset pipeline.
+- `apps/renderer_tests`: tests for renderer settings, shaders, render graph, and smoke behavior.
+- `apps/editor_tests`: tests for editor logic, tools, and previews.
+- `apps/physics_tests`: tests for physics behavior.
+- `apps/gameplay_tests`: tests for hockey gameplay simulation.
+- `apps/asset_tool`: asset discovery/import/cook/validation CLI.
+- `apps/shader_tool`: shader compilation CLI.
 
 ## Dependency direction
 
@@ -76,15 +83,22 @@ The dependency graph must remain clean:
 core
 ecs        -> core
 assets     -> core
-renderer   -> core, ecs, assets
+renderer   -> core, ecs       (privately consumes assets)
 physics    -> core, ecs
-networking -> core, ecs
-gameplay   -> core, ecs, physics, networking
-editor     -> core, ecs, renderer, assets, gameplay
+gameplay   -> core, ecs, physics
+editor     -> core, ecs, renderer, assets, physics, gameplay
 
-game_client       -> core, ecs, renderer, assets, gameplay, networking
-map_editor        -> core, ecs, renderer, assets, editor
-dedicated_server  -> core, ecs, gameplay, networking, physics
+game_client       -> core, ecs, renderer, assets, physics, gameplay
+map_editor        -> core, ecs, renderer, assets, editor, physics, gameplay
+dedicated_server  -> core, ecs, physics, gameplay
+```
+
+Future Phase 8 networking dependency direction:
+
+```text
+networking -> core, ecs
+game_client       -> networking
+dedicated_server  -> networking
 ```
 
 ## Hard rules
@@ -94,6 +108,7 @@ dedicated_server  -> core, ecs, gameplay, networking, physics
 - `renderer` must not know hockey gameplay rules.
 - `networking` must not depend on renderer.
 - `gameplay` must not directly use SDL3, Vulkan, or ImGui.
+- `gameplay` must not depend on networking until Phase 8 explicitly introduces that integration.
 - `editor` may inspect gameplay data but should not own core gameplay simulation.
 - `dedicated_server` must stay headless and must not link renderer, Vulkan, ImGui, audio, or editor UI.
 

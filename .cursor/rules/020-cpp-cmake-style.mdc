@@ -41,6 +41,8 @@ Required patterns:
 - `target_include_directories`
 - `target_link_libraries`
 - imported targets like `SDL3::SDL3`, `spdlog::spdlog`, `fmt::fmt`
+- update the owning `CMakeLists.txt` whenever adding or removing source files
+- add or update focused tests for behavior changes
 
 Avoid:
 

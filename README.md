@@ -2,7 +2,7 @@
 
 Cross-platform C++20 hockey game and engine targeting a real-time 4v4 experience with an authoritative dedicated server, Vulkan renderer, Unity-style map editor, and modular library architecture.
 
-**Current status:** Phases 1–6 are substantially implemented (foundation through physics). Remaining work within those phases is documented below under [Known gaps](#known-gaps-within-completed-phases). Gameplay, networking, and polish (Phases 7–9) have not started.
+**Current status:** Phases 1-7 are substantially implemented (foundation through local/headless hockey gameplay). Networking/lobbies (Phase 8) and animation/audio/final UI/polish (Phase 9) are not implemented yet. For the most current target graph, build/run commands, scripts, and screenshot workflow, see `docs/project-structure-and-status.md`.
 
 ## Game design
 
@@ -22,13 +22,13 @@ ecs -> core
 assets -> core
 renderer -> core, ecs, assets
 physics -> core, ecs
-editor -> core, ecs, renderer, assets, physics
-gameplay -> core, ecs, physics, networking   (Phase 7 — not started)
-networking -> core, ecs                      (Phase 8 — not started)
+gameplay -> core, ecs, physics
+editor -> core, ecs, renderer, assets, physics, gameplay
+networking -> core, ecs                      (future Phase 8)
 
-game_client -> core, ecs, renderer, assets, physics
-map_editor -> core, ecs, renderer, assets, editor, physics
-dedicated_server -> core, ecs, physics       (headless — no renderer/editor)
+game_client -> core, ecs, renderer, assets, physics, gameplay
+map_editor -> core, ecs, renderer, assets, editor, physics, gameplay
+dedicated_server -> core, ecs, physics, gameplay       (headless — no renderer/editor)
 ```
 
 | Library | CMake target | Purpose |
@@ -39,14 +39,15 @@ dedicated_server -> core, ecs, physics       (headless — no renderer/editor)
 | Renderer | `hockey_renderer` | Vulkan PBR renderer, post-processing, debug draw |
 | Editor | `hockey_editor` | Unity-style map editor (ImGui) |
 | Physics | `hockey_physics` | Jolt Physics integration, collision, queries |
+| Gameplay | `hockey_gameplay` | Hockey simulation, match rules, player/puck systems |
 
 ## Applications
 
 | App | Description |
 |-----|-------------|
-| `HockeyGameClient` | Windowed client — renderer, Play-mode scene load, fixed-step physics, optional physics debug draw |
-| `HockeyMapEditor` | Full editor UI, asset import/cook/watch, offscreen viewport, hockey authoring tools, opt-in physics preview panel |
-| `HockeyDedicatedServer` | Headless fixed-tick server with Server-mode scene load and authoritative physics |
+| `HockeyGameClient` | Windowed client with renderer, scene load, fixed-step physics, local gameplay, optional debug draw |
+| `HockeyMapEditor` | Full editor UI, asset import/cook/watch, offscreen viewports, hockey authoring tools, physics/gameplay previews |
+| `HockeyDedicatedServer` | Headless fixed-tick server with Server-mode scene load, physics, and authoritative local gameplay |
 | `HockeyAssetTool` | CLI for asset discovery, import, cook, and validation |
 | `HockeyCoreTests` | Core foundation unit tests |
 | `HockeyECSTests` | ECS, scene, prefab, and serialization tests |
@@ -116,10 +117,10 @@ Presets: `linux-debug`, `linux-release`, `windows-debug`, `windows-release`.
 
 ```text
 apps/           Executables (client, editor, server, tools, tests)
-libs/           Engine libraries (core, ecs, assets, renderer, editor, physics)
+libs/           Engine libraries (core, ecs, assets, renderer, physics, gameplay, editor)
 data/           Config, raw/cooked assets, shaders, editor themes
 scripts/        Linux and Windows build/run helpers
-docs/           Phase rule reference files
+docs/           Project docs, AI playbook, phase status, and phase rule reference files
 .cursor/        Cursor AI rules and active phase config
 ```
 
@@ -127,7 +128,9 @@ docs/           Phase rule reference files
 
 Work proceeds in ordered phases. Each phase should fully complete its subsystem before moving on. See `AGENTS.md` and `.cursor/rules/` for agent/IDE guidance.
 
-### Implemented (Phases 1–6)
+Per-phase checkbox status files live under `docs/phase_status/`.
+
+### Implemented (Phases 1-7)
 
 - [x] **Phase 1 — Foundation / Core**
   - `Status`/`Result`, assertions, logging (spdlog + file sinks), TOML config, paths, filesystem
@@ -184,14 +187,17 @@ Work proceeds in ordered phases. Each phase should fully complete its subsystem 
   - Debug draw collection; editor physics preview + viewport gizmo overlay
   - Client (`Play` mode) and dedicated server (`Server` mode) both step physics on fixed tick
 
-### Remaining (Phases 7–9)
-
-- [ ] **Phase 7 — Hockey Gameplay**
+- [x] **Phase 7 — Hockey Gameplay**
   - `hockey_gameplay` library
-  - Player/skater/goalie movement and controls
-  - Puck handling, passing, shooting, faceoffs
-  - Rules, scoring, penalties, game state machine
-  - Rink-bound gameplay simulation on top of physics
+  - 4v4 match setup for 3 skaters plus 1 goalie per team
+  - Match state, score, period clock, faceoff, reset, goal, and out-of-play systems
+  - Player movement, puck controller/possession, stick handling, shooting, passing, and checking
+  - Gameplay components with scene serialization and editor metadata
+  - Gameplay snapshots for match, players, and puck state
+  - Local client gameplay, editor gameplay preview, and headless server gameplay integration
+  - `HockeyGameplayTests` coverage for simulation behavior and main rink validation
+
+### Remaining (Phases 8-9)
 
 - [ ] **Phase 8 — Networking & Dedicated Server**
   - `hockey_networking` library (GameNetworkingSockets)
@@ -208,10 +214,10 @@ Work proceeds in ordered phases. Each phase should fully complete its subsystem 
 
 ### Known gaps within completed phases
 
-These are carry-over items within Phases 1–6. They do not block starting Phase 7, but should be tracked. Two gap-closing passes resolved the small/medium items in each phase (the `*(closed)*` bullets); each remaining open bullet is annotated with **_depends on:_** the concrete blocker that keeps it open. The blockers fall into a few recurring categories:
+These are carry-over items within implemented phases. They do not block starting Phase 8, but should be tracked. Two gap-closing passes resolved the small/medium items in each phase (the `*(closed)*` bullets); each remaining open bullet is annotated with **_depends on:_** the concrete blocker that keeps it open. The blockers fall into a few recurring categories:
 
 - **GPU verification** — code is writable, but correctness can only be confirmed on a real GPU/display (this CI/headless environment has neither), so shipping it unverified is riskier than tracking the gap.
-- **Phase 7/8/9** — the item is a future-phase system; per phase discipline it is intentionally not implemented early.
+- **Phase 8/9** — the item is a future-phase system; per phase discipline it is intentionally not implemented early.
 - **New dependency / large subsystem** — requires a new third-party library or a multi-feature subsystem, not a gap-closer.
 - **In-scope now** — genuinely doable within Phases 1–6 today; called out explicitly.
 
@@ -257,8 +263,8 @@ These are carry-over items within Phases 1–6. They do not block starting Phase
 - *(closed)* `PropertiesPanel` shows live scene properties (name, mode, entity/system counts, file path)
 - *(closed)* Startup scene precedence: explicit `--scene` > restore-last-scene (`restoreLastScene`) > `scene.startup_scene` config
 - *(closed)* "Create Prefab" is now an undoable `EditorCommand` that stamps the source entity as a prefab instance; Ctrl+P toggles Play mode; hierarchy context menu adds "Focus In Viewport"
-- Toolbar Play/Simulate only flip `SceneMode` and call lifecycle hooks — no systems or physics attached; Pause/Step disabled — _depends on:_ Phase 7 gameplay/sim runtime wired into Play mode (Pause/Step is meaningless until something simulates)
-- Physics simulation lives in the separate Physics panel preview, not in Play/Simulate modes — _depends on:_ Phase 7 (attaching the `PhysicsWorld` to Play mode)
+- Toolbar Play/Simulate still needs final runtime UX polish for Pause/Step behavior — _depends on:_ editor gameplay preview/runtime UX work and display/GPU verification
+- Physics simulation still primarily lives in the separate Physics panel preview — _depends on:_ deciding whether toolbar Play mode should own physics preview or keep it panel-scoped
 - *(closed)* Prefab override **apply/revert** implemented: `PrefabSerializer::ComputeOverrides` diffs an instance against its prefab (populating `PrefabOverrideSet`), `ApplyInstanceToPrefab` merges instance edits back into the prefab file (preserving its asset id), and `RevertInstanceToPrefab` restores authored values. The Prefab panel shows the override count and wires Apply (direct) / Revert (undoable `RevertPrefabOverrides` command)
 - **Untested:** all panel UI, viewport/gizmo/picking, play/simulate modes, physics preview panel, file dialogs, game viewport — _depends on:_ a display/GPU in the test environment
 
@@ -292,13 +298,13 @@ These are carry-over items within Phases 1–6. They do not block starting Phase
 - *(closed)* Material combine modes (`CombineFriction` / `CombineRestitution`) applied at contacts via the Jolt contact listener; built-ins keep the historical max-restitution behaviour
 - *(closed)* `Sensor` layer now collides with players/goalies/puck/stick (and never static geometry) so it works as a non-physical detection zone
 - *(closed)* Validation warns when a player/goalie physics body omits a capsule collider or uses invalid capsule dimensions
-- `CharacterControllerComponent` serializes but has no Jolt controller or simulation — _depends on:_ Phase 7 (Jolt `CharacterVirtual` integration + movement logic)
+- `CharacterControllerComponent` serializes but has no Jolt controller or simulation — _depends on:_ future character-controller work if gameplay moves from rigid-body/custom movement to Jolt `CharacterVirtual`
 - *(closed)* `MeshColliderComponent` builds runtime shapes via an injected `PhysicsMeshRegistry` provider (convex → `ConvexHullShape`, concave → `MeshShape`); the editor installs a provider backed by its `AssetManager`, keeping `physics` independent of `assets`
 - `SceneMode::ClientPrediction` unused; client runs `Play` with no prediction/reconciliation — _depends on:_ Phase 8 networking
 
 #### Cross-cutting
 
-- No `libs/gameplay` or `libs/networking` libraries yet — _depends on:_ Phases 7/8 (correct for the current phase)
+- No `libs/networking` library yet — _depends on:_ Phase 8 networking/lobbies
 - CMake architectural guards enforce headless server and dependency boundaries
 - Automated tests are strong on library logic (`Phase2GapTests`, `Phase5GapTests`, `Phase6GapTests`, plus new core coverage for `Platform`, `Time`, `ThreadPool`); weak on SDL/GPU/UI integration and cross-platform smoke — _depends on:_ a display/GPU + a cross-platform CI harness
 

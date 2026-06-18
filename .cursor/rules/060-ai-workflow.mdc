@@ -1,0 +1,37 @@
+---
+description: Workflow rules for Cursor and Codex agents working in this repo.
+globs:
+alwaysApply: true
+---
+
+# AI Workflow
+
+Before editing:
+
+- Read `docs/project-structure-and-status.md` for current repo status.
+- Read `docs/ai-debugging-playbook.md` when debugging, verifying runtime
+  behavior, or collecting screenshot evidence.
+- Read `docs/phase_status/README.md` and the relevant phase status file for
+  per-phase finished/partial/remaining status.
+- Inspect the relevant source, headers, CMake target, config, and tests.
+- Prefer current source/CMake truth over stale overview text.
+- Check dependency boundaries before adding includes, links, or new targets.
+
+While editing:
+
+- Keep changes scoped to the requested subsystem.
+- Do not change generated/cooked assets unless the task is asset-pipeline work
+  and the user asked for it.
+- Do not touch unrelated dirty files.
+- Use existing local patterns before adding abstractions.
+- Update CMake when adding/removing source files.
+- Update tests for behavior changes.
+- Update the matching `docs/phase_status/phase-*.md` file when the work changes
+  phase status.
+
+After editing:
+
+- Run the narrowest relevant test executable or script when feasible.
+- For source changes, mention any tests that could not be run.
+- For docs-only changes, no build is required.
+- Report files changed and the verification performed.

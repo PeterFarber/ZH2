@@ -1,49 +1,49 @@
 ---
-description: Phase 7 scope — complete hockey gameplay simulation.
-globs: libs/gameplay/**,libs/ecs/**,libs/physics/**,libs/editor/**,apps/gameplay_tests/**,apps/game_client/**,apps/dedicated_server/**,data/raw/scenes/**,data/config/**,CMakeLists.txt,vcpkg.json
-alwaysApply: false
+description: Current phase scope for AI-assisted work.
+globs:
+alwaysApply: true
 ---
 
-# Phase 7 — Complete Hockey Gameplay Simulation
+# Current Phase Context
 
-Current phase: Phase 7.
+Current implementation status:
 
-This phase builds the full hockey gameplay simulation without final networking.
+- Phases 1 through 7 are implemented in this checkout.
+- `hockey_gameplay` exists and is wired into the client, editor preview,
+  dedicated server, and gameplay tests.
+- `hockey_networking` does not exist yet.
+- Phase 8 networking/lobbies is the next major planned subsystem.
 
-## Required library
+Canonical current-state reference:
 
-Create `hockey_gameplay`.
+- `docs/project-structure-and-status.md`
+- `docs/phase_status/README.md`
+- `docs/phase_status/phase-01-foundation-core.md` through
+  `docs/phase_status/phase-09-polish-animation-audio-ui.md`
 
-Dependency:
+Use `docs/phase_status/` to distinguish implemented work from known partial
+gaps and future-phase work. Do not treat unchecked Phase 8 or Phase 9 checklist
+items as current implementation.
 
-```text
-hockey_gameplay -> hockey_core, hockey_ecs, hockey_physics
-```
+## Phase 8 Scope
 
-## Required gameplay model
+Only implement Phase 8 when the user explicitly asks for networking, multiplayer,
+lobbies, transport, protocol, replication, snapshots over the wire, client
+prediction, interpolation, reconciliation, or GameNetworkingSockets.
 
-Implement 4v4 hockey with 2 teams, 3 skaters + 1 goalie per team, 1 puck, 2 goals, periods/timer, score, faceoffs, goals, spawn/reset flow.
+When Phase 8 is requested, follow:
 
-## Required components
+- `docs/phase-rules/120-phase-8-networking-lobbies.mdc`
+- `.cursor/plans/phase-08-networking-lobbies.md`
 
-Implement `PlayerComponent`, `SkaterComponent`, `GoalieComponent`, `PuckGameplayComponent`, `StickComponent`, `TeamStateComponent`, `MatchStateComponent`, `ScoreComponent`, `PossessionComponent`, `ShotComponent`, `PassComponent`, `CheckComponent`, `FaceoffComponent`, and `RespawnComponent`.
+## Out of Scope Unless Explicitly Requested
 
-## Required systems
+- Animation systems.
+- Audio systems.
+- Final game UI/HUD/menus.
+- Visual polish such as skate spray, puck trails, reflection probes, and decals.
+- Production render graph migration.
+- TAA/MSAA implementation.
 
-Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, shooting, passing, checking/contact, goal detection, score, match clock, periods, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
-
-## Input model
-
-Define gameplay input data independent from SDL. Gameplay must not directly read SDL input.
-
-## Server-readiness
-
-Gameplay must use fixed timestep, have no renderer/editor dependency, no direct SDL/Vulkan/ImGui dependency, and no direct networking dependency unless explicitly allowed.
-
-## Required tests
-
-Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, skater/goalie movement, shooting/pass/check paths, and server-mode fixed tick.
-
-## Definition of done
-
-Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/shooting/passing/checking/faceoffs work, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.
+Do not revive older phase plans as current work unless the user explicitly asks
+to revisit that phase.

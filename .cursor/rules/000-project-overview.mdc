@@ -10,6 +10,11 @@ This repository is a custom C++ hockey game and engine project.
 
 The goal is to build a high-quality real-time 4v4 hockey game.
 
+For current implementation status, target graph, build/run commands, scripts,
+and screenshot workflow, read:
+
+- `docs/project-structure-and-status.md`
+
 Game design:
 
 - 2 teams.
@@ -42,17 +47,28 @@ Target apps:
 - `HockeyMapEditor`: Unity-style map editor.
 - `HockeyDedicatedServer`: headless authoritative server.
 - `HockeyCoreTests`: foundation/core tests.
+- `HockeyECSTests`: ECS, scene, prefab, and serialization tests.
+- `HockeyAssetTests`: asset pipeline tests.
+- `HockeyRendererTests`: renderer settings, shader, render graph, and smoke tests.
+- `HockeyEditorTests`: editor workflow/tool/preview tests.
+- `HockeyPhysicsTests`: physics tests.
+- `HockeyGameplayTests`: hockey gameplay simulation tests.
+- `HockeyAssetTool`: asset discovery/import/cook/validation CLI.
+- `HockeyShaderTool`: shader compilation CLI.
 
-Primary libraries:
+Current libraries:
 
 - `libs/core`: platform, logging, config, paths, input, windowing, jobs, timing.
 - `libs/ecs`: entity/component/scene/prefab data.
 - `libs/assets`: asset loading/import/cooking.
 - `libs/renderer`: Vulkan renderer using Volk and Vulkan Memory Allocator.
 - `libs/physics`: physics integration.
-- `libs/networking`: GameNetworkingSockets wrapper, protocol, lobbies, replication.
 - `libs/gameplay`: hockey simulation/rules.
 - `libs/editor`: editor panels/tools.
+
+Future library:
+
+- `libs/networking`: GameNetworkingSockets wrapper, protocol, lobbies, replication.
 
 Development is phase-based.
 

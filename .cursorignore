@@ -1,0 +1,34 @@
+# Build and dependency output
+build/
+out/
+.vcpkg/
+vcpkg_installed/
+.vs/
+.idea/
+
+# VCS and local runtime output
+.git/
+_save/
+data/cooked/
+data/logs/
+data/temp/
+
+# Generated shader and binary artifacts
+data/shaders/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.ilk
+*.obj
+*.o
+*.a
+*.lib
+*.spv
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
