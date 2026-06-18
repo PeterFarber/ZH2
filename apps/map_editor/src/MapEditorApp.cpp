@@ -91,9 +91,9 @@ bool MapEditorApp::OnInit() {
         return false;
     }
 
-    // Content pipeline: discover/import/cook raw assets up front so the editor
-    // and renderer can resolve AssetIDs, then watch for hot-reload changes. The
-    // renderer borrows the manager to upload cooked meshes/materials/textures.
+    // Content pipeline: load the existing cooked asset database up front so the
+    // editor can resolve AssetIDs quickly. Full discovery/import/cook work is
+    // opt-in because it can dominate editor startup on large asset folders.
     // The raw/cooked roots default to the standard data/ layout but can be
     // redirected via the [assets] config keys.
     Hockey::AssetManagerCreateInfo assetInfo =
@@ -108,18 +108,31 @@ bool MapEditorApp::OnInit() {
         HK_CORE_ERROR("Asset manager init failed: {}", status.error);
         return false;
     }
-    // Honor the [assets] auto-pipeline config keys (mirrored by EditorSettings).
-    if (m_Config.GetBool("assets.auto_discover", true)) {
-        m_AssetManager.DiscoverRawAssets();
+    const bool autoDiscover = m_Config.GetBool("assets.auto_discover", false);
+    const bool autoImport = m_Config.GetBool("assets.auto_import", false);
+    const bool autoCookDirty = m_Config.GetBool("assets.auto_cook_dirty", false);
+    const bool hotReload = m_Config.GetBool("assets.hot_reload", false);
+
+    if (autoDiscover) {
+        if (const Hockey::Status status = m_AssetManager.DiscoverRawAssets(); !status) {
+            HK_EDITOR_WARN("Startup asset discovery failed: {}", status.error);
+        }
     }
-    if (m_Config.GetBool("assets.auto_import", true)) {
-        m_AssetManager.ImportAll();
+    if (autoImport) {
+        if (const Hockey::Status status = m_AssetManager.ImportAll(); !status) {
+            HK_EDITOR_WARN("Startup asset import reported issues: {}", status.error);
+        }
     }
-    if (m_Config.GetBool("assets.auto_cook_dirty", true)) {
-        m_AssetManager.CookAllDirty();
+    if (autoCookDirty) {
+        if (const Hockey::Status status = m_AssetManager.CookAllDirty(); !status) {
+            HK_EDITOR_WARN("Startup asset cook reported issues: {}", status.error);
+        }
     }
-    m_AssetManager.SaveDatabase();
-    m_AssetManager.StartWatching();
+    if (hotReload) {
+        m_AssetManager.StartWatching();
+    } else {
+        HK_EDITOR_INFO("Startup asset scan/import/cook/hot-reload disabled; use the Project panel to refresh assets");
+    }
     m_Renderer.SetAssetManager(&m_AssetManager);
 
     Hockey::EditorContextCreateInfo editorInfo;

@@ -18,6 +18,9 @@ void RunEditorSettingsTests() {
         HK_CHECK_NEAR(defaults.gridSpacing, 1.0f, 1e-6);
         HK_CHECK_MSG(!defaults.snapEnabled, "snap disabled by default");
         HK_CHECK_MSG(defaults.recentScenes.empty(), "no recent scenes by default");
+        HK_CHECK_MSG(!defaults.assetsAutoImport, "asset import disabled by default");
+        HK_CHECK_MSG(!defaults.assetsAutoCookDirty, "asset cook disabled by default");
+        HK_CHECK_MSG(!defaults.assetsHotReload, "asset hot reload disabled by default");
     }
 
     // --- save then load round-trips every field -----------------------------
