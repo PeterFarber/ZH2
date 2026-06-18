@@ -154,6 +154,154 @@
                 ]
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Hockey: Build Debug",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/scripts/linux/build_debug.sh"
+            ],
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "${workspaceFolder}\\scripts\\windows\\build_debug.ps1"
+                ]
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "${workspaceFolder}/scripts/linux/build_debug.sh"
+                ]
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Hockey: Test Debug",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/scripts/linux/test.sh"
+            ],
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "${workspaceFolder}\\scripts\\windows\\test.ps1"
+                ]
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "${workspaceFolder}/scripts/linux/test.sh"
+                ]
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Hockey: AI Smoke Text",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                "--mode",
+                "Text"
+            ],
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "${workspaceFolder}\\scripts\\windows\\ai_smoke.ps1",
+                    "-Mode",
+                    "Text"
+                ]
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                    "--mode",
+                    "Text"
+                ]
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Hockey: AI Smoke Visual",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                "--mode",
+                "Visual"
+            ],
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "${workspaceFolder}\\scripts\\windows\\ai_smoke.ps1",
+                    "-Mode",
+                    "Visual"
+                ]
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                    "--mode",
+                    "Visual"
+                ]
+            },
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Hockey: AI Smoke Full",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                "--mode",
+                "Full"
+            ],
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    "${workspaceFolder}\\scripts\\windows\\ai_smoke.ps1",
+                    "-Mode",
+                    "Full"
+                ]
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "${workspaceFolder}/scripts/linux/ai_smoke.sh",
+                    "--mode",
+                    "Full"
+                ]
+            },
+            "group": "test",
+            "problemMatcher": []
         }
     ]
 }

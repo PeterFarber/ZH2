@@ -1,6 +1,7 @@
 # Build output
 build/
-out/
+out/*
+!out/.gitkeep
 .vcpkg/
 vcpkg_installed/
 .vs/
@@ -33,3 +34,7 @@ Thumbs.db
 *.o
 *.a
 *.lib
+
+
+# _save
+_save/

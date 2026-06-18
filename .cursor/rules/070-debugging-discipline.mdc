@@ -1,0 +1,37 @@
+---
+description: Evidence-first debugging workflow for AI-assisted changes.
+globs:
+alwaysApply: true
+---
+
+# Debugging Discipline
+
+Before changing code for a bug:
+
+- Reproduce the issue with the narrowest command that exercises it.
+- Inspect the relevant source, headers, CMake target, config, tests, and logs.
+- Prefer existing bounded runs: `--max-frames` for windowed apps and
+  `--max-ticks` for the dedicated server.
+- Prefer subsystem test executables before broad full-suite runs.
+- Use `out/ai_diagnostics/` for AI-created diagnostic bundles.
+
+For runtime failures:
+
+- Check the latest relevant file under `data/logs/`.
+- Capture the exact command, exit code, and log path.
+- For crashes, look for the first meaningful error before the final crash line.
+- Do not guess at renderer, physics, or gameplay behavior when a bounded run or
+  test can provide evidence.
+
+For build failures:
+
+- Fix the first real compiler or linker error, not later cascading failures.
+- Check whether a new file was added without updating the owning `CMakeLists.txt`.
+- Check dependency-boundary rules before adding includes or target links.
+
+After debugging:
+
+- Report the reproduction command, the verification command, and any logs or
+  diagnostics used.
+- If a relevant test or run could not be performed, state why.
+- Do not modify unrelated dirty files while collecting evidence.
