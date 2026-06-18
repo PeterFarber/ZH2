@@ -7,6 +7,7 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/Screenshot.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
@@ -113,6 +114,12 @@ bool GameClientApp::OnInit() {
     const auto& cmd = GetCommandLine();
     auto root = cmd.GetString("--root", ".");
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
+    m_AutoScreenshotPending = cmd.Has("--screenshot") || cmd.Has("--screenshot-prefix");
+    m_ScreenshotPrefix = cmd.GetString("--screenshot-prefix", cmd.GetString("--screenshot", "game"));
+    if (m_ScreenshotPrefix.empty() || m_ScreenshotPrefix == "true") {
+        m_ScreenshotPrefix = "game";
+    }
+
     const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
                                           : Hockey::Paths::LogFile("client.log");
     Hockey::Log::Init(logPath);
@@ -355,6 +362,23 @@ void GameClientApp::OnUpdate(float deltaTime) {
         m_Renderer.Resize(width, height);
         m_LastWidth = width;
         m_LastHeight = height;
+    }
+
+    auto queueScreenshot = [this](const std::string& prefix) {
+        const std::filesystem::path path = Hockey::MakeScreenshotPath(prefix);
+        if (const Hockey::Status status = m_Renderer.RequestScreenshot(path); !status) {
+            HK_CLIENT_INFO("Screenshot request failed: {}", status.error);
+        } else {
+            HK_CLIENT_INFO("Screenshot queued: {}", path.string());
+        }
+    };
+
+    if (m_AutoScreenshotPending) {
+        queueScreenshot(m_ScreenshotPrefix);
+        m_AutoScreenshotPending = false;
+    }
+    if (Hockey::Input::WasKeyPressed(Hockey::KeyCode::F12)) {
+        queueScreenshot("game");
     }
 
     m_Renderer.BeginFrame();

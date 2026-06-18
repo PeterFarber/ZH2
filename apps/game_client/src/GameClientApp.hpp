@@ -10,6 +10,7 @@
 #include "Hockey/Renderer/Renderer.hpp"
 
 #include <cstdint>
+#include <string>
 #include <glm/glm.hpp>
 
 namespace Hockey {
@@ -48,6 +49,8 @@ private:
     bool m_HasLocalMoveTarget = false;
     bool m_PhysicsReady = false;
     bool m_PhysicsDebug = false;
+    bool m_AutoScreenshotPending = false;
+    std::string m_ScreenshotPrefix = "game";
 
     uint32_t m_LastWidth = 0;
     uint32_t m_LastHeight = 0;

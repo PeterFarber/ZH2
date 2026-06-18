@@ -15,6 +15,13 @@ int main(int argc, char** argv) {
             "  --scene <file>    Open the given scene on startup\n"
             "  --max-frames <n>  Auto-quit after n rendered frames (testing)\n"
             "  --frames <n>      Alias for --max-frames\n"
+            "  --capture-viewports  Save Scene and Game viewport screenshots\n"
+            "  --capture-prefix <p> Prefix for automated viewport screenshots\n"
+            "  --capture-width <n>  Automated viewport screenshot width (default: 1920)\n"
+            "  --capture-height <n> Automated viewport screenshot height (default: 1080)\n"
+            "  --screenshot      Save a screenshot of the full editor window\n"
+            "  --screenshot-prefix <p> Prefix for automated screenshot filenames\n"
+            "  --screenshot-frame <n> Frame to capture the full editor window (default: 3)\n"
             "  --vk-validation   Enable Vulkan validation layers\n"
             "  --help, -h        Print this message and exit\n");
         return 0;
