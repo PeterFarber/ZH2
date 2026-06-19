@@ -18,7 +18,7 @@ mouse_capture = false
 vsync = true
 preset = "High"
 shadow_quality = "High"
-shadow_distance = 100.0
+shadow_distance = 250.0
 ao_quality = "High"
 anti_aliasing = "FXAA"
 tone_mapper = "ACES"
@@ -27,7 +27,7 @@ brightness = 1.0
 anisotropy = 16
 
 [scene]
-startup_scene = "data/raw/scenes/main_rink.scene.yaml"
+startup_scene = "data/raw/scenes/render_shadows.scene.yaml"
 
 [physics]
 fixed_delta_seconds = 0.0166666667

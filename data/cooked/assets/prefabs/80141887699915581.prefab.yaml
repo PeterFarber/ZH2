@@ -1,0 +1,90 @@
+Prefab:
+  Name: Home Skater 0
+  Version: 1
+  AssetId: 7506790079929035504
+Root:
+  Entity: 100000000000024
+Entities:
+  - Entity: 100000000000024
+    NameComponent:
+      Name: Home Skater 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-6, 0.9, -20]
+      Rotation: [0, 0, 0]
+      Scale: [0.8, 1.8, 0.8]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.HomeJersey
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Kinematic
+      Mass: 80
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0.2
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Player
+      Material: PlayerBody
+    BoxColliderComponent:
+      HalfExtents: [0.4, 0.9, 0.4]
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PlayerComponent:
+      PlayerIndex: 0
+      Slot: HomeSkater0
+      Team: Home
+      Role: Skater
+      ControlledByLocalInput: true
+      ControlledByAI: false
+      ActiveInMatch: true
+    SkaterComponent:
+      MaxSpeed: 9
+      Acceleration: 32
+      Deceleration: 20
+      TurnSpeedDegrees: 720
+      HasPuck: true
+    PlayerRuntimeComponent:
+      Velocity: [0, 0, 0]
+      FacingDirection: [0, 0, 1]
+      MoveTarget: [0, 0, 0]
+      SprintEnergy: 1
+      CheckCooldown: 0
+      PokeCheckCooldown: 0
+      HasMoveTarget: false
+      InputEnabled: true
+      MovementEnabled: true
+    StickComponent:
+      OwnerPlayer: 100000000000024
+      Reach: 1.5
+      Width: 0.25
+      LocalOffset: [0, 0, 1]
+      CanControlPuck: true
+      CanShoot: true
+      CanPass: true
+      CanCheck: true
+    ShotComponent:
+      Charge: 0
+      Charging: false
+    PassComponent:
+      TargetPlayer: 0
+      AssistRadius: 2
+    CheckComponent:
+      Cooldown: 0

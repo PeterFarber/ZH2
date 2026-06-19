@@ -3,195 +3,23 @@ Scene:
   Mode: Edit
   Version: 1
 Entities:
-  - Entity: 13679118400816270226
+  - Entity: 400000000000011
     NameComponent:
-      Name: GameObject
+      Name: S Cylinder
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [-4.9461718, 1.4804261, -3.9259577]
-      Rotation: [180, -87.09971, 180]
-      Scale: [3.3200002, 3.32, 3.3200002]
+      Position: [8, 0.75, 3]
+      Rotation: [0, 0, 0]
+      Scale: [1.5, 1.5, 1.5]
     ChildrenComponent:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 160456599279444274
-      MaterialAsset: 8678109575161473379
-      MeshName: ""
+      MeshAsset: 0
+      MaterialAsset: 3090027327201878838
+      MeshName: BuiltIn.Cylinder
       MaterialName: ""
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 400000000000001
-    NameComponent:
-      Name: Main Camera
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 8.3, 11.2]
-      Rotation: [-42.7, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    CameraComponent:
-      FovDegrees: 60
-      NearClip: 0.1
-      FarClip: 120
-      Primary: true
-  - Entity: 400000000000002
-    NameComponent:
-      Name: Environment
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    EnvironmentComponent:
-      AmbientColor: [0.02, 0.02, 0.03]
-      AmbientIntensity: 0.5
-  - Entity: 400000000000003
-    NameComponent:
-      Name: Floor
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [100, 1, 100]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 589019741743117030
-      MeshName: BuiltIn.Plane
-      MaterialName: ""
-      Visible: true
-      CastsShadows: false
-      ReceivesShadows: true
-  - Entity: 400000000000004
-    NameComponent:
-      Name: Point Light (warm)
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-6, 3.5, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    LightComponent:
-      Type: Point
-      Color: [1, 0.55, 0.2]
-      Intensity: 14
-      Range: 13
-      InnerConeDegrees: 15
-      OuterConeDegrees: 30
-      CastsShadows: true
-  - Entity: 400000000000005
-    NameComponent:
-      Name: Spot Light (cool)
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [6.1, 6.6, -9.6]
-      Rotation: [-136.2, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    LightComponent:
-      Type: Spot
-      Color: [0.4, 0.6, 1]
-      Intensity: 40
-      Range: 18
-      InnerConeDegrees: 16
-      OuterConeDegrees: 30
-      CastsShadows: true
-  - Entity: 400000000000006
-    NameComponent:
-      Name: P Sphere 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-8, 0.75, -2]
-      Rotation: [0, 0, 0]
-      Scale: [1.5, 1.5, 1.5]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Sphere
-      MaterialName: BuiltIn.Glass
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 400000000000007
-    NameComponent:
-      Name: P Sphere 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-5.8937984, 1.1751713, 0.7407224]
-      Rotation: [0, -0, 0]
-      Scale: [1.5, 1.5, 1.5]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Sphere
-      MaterialName: BuiltIn.SolidAmber
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 400000000000008
-    NameComponent:
-      Name: P Cube
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-5, 0.75, -4]
-      Rotation: [0, 20, 0]
-      Scale: [1.5, 1.5, 1.5]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidGreen
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 400000000000009
-    NameComponent:
-      Name: S Cube 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [2.763752, 0.75, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1.5, 1.5, 1.5]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidBlue
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -215,13 +43,73 @@ Entities:
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
-  - Entity: 400000000000011
+  - Entity: 400000000000009
     NameComponent:
-      Name: S Cylinder
+      Name: S Cube 0
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [8, 0.75, 3]
+      Position: [2.763752, 0.75, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1.5, 1.5, 1.5]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 400000000000008
+    NameComponent:
+      Name: P Cube
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0.75, -4]
+      Rotation: [0, 20, 0]
+      Scale: [1.5, 1.5, 1.5]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidGreen
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 400000000000007
+    NameComponent:
+      Name: P Sphere 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5.8937984, 1.1751713, 0.7407224]
+      Rotation: [0, -0, 0]
+      Scale: [1.5, 1.5, 1.5]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Sphere
+      MaterialName: BuiltIn.SolidAmber
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 400000000000006
+    NameComponent:
+      Name: P Sphere 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-8, 0.75, -2]
       Rotation: [0, 0, 0]
       Scale: [1.5, 1.5, 1.5]
     ChildrenComponent:
@@ -229,8 +117,120 @@ Entities:
         []
     MeshRendererComponent:
       MeshAsset: 0
-      MaterialAsset: 3090027327201878838
-      MeshName: BuiltIn.Cylinder
+      MaterialAsset: 0
+      MeshName: BuiltIn.Sphere
+      MaterialName: BuiltIn.Glass
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 400000000000005
+    NameComponent:
+      Name: Spot Light (cool)
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [6.1, 6.6, -9.6]
+      Rotation: [-136.2, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Spot
+      Color: [0.4, 0.6, 1]
+      Intensity: 40
+      Range: 18
+      InnerConeDegrees: 16
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 400000000000004
+    NameComponent:
+      Name: Point Light (warm)
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-6, 3.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Point
+      Color: [1, 0.55, 0.2]
+      Intensity: 14
+      Range: 13
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 400000000000003
+    NameComponent:
+      Name: Floor
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [100, 1, 100]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 589019741743117030
+      MeshName: BuiltIn.Plane
+      MaterialName: ""
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: true
+  - Entity: 400000000000002
+    NameComponent:
+      Name: Environment
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    EnvironmentComponent:
+      AmbientColor: [0.02, 0.02, 0.03]
+      AmbientIntensity: 0.5
+  - Entity: 400000000000001
+    NameComponent:
+      Name: Main Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 8.3, 11.2]
+      Rotation: [-42.7, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    CameraComponent:
+      FovDegrees: 60
+      NearClip: 0.1
+      FarClip: 120
+      Primary: true
+  - Entity: 13679118400816270226
+    NameComponent:
+      Name: GameObject
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-4.9461718, 1.4804261, -3.9259577]
+      Rotation: [180, -87.09971, 180]
+      Scale: [3.3200002, 3.32, 3.3200002]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 160456599279444274
+      MaterialAsset: 8678109575161473379
+      MeshName: ""
       MaterialName: ""
       Visible: true
       CastsShadows: true

@@ -1,20 +1,44 @@
 Scene:
   Name: Shadows Test
+  Mode: Edit
   Version: 1
 Entities:
+  - Entity: 17583873326203499368
+    NameComponent:
+      Name: GameObject
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [14.083733, 4.2895803, -32.409878]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Point
+      Color: [0.1, 1, 1]
+      Intensity: 10.7
+      Range: 37.5
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
   - Entity: 500000000000001
     NameComponent:
       Name: Main Camera
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [2, 7, 17]
-      Rotation: [-20, 0, 0]
+      Position: [0, 37, 88]
+      Rotation: [-30, 0, 0]
       Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
     CameraComponent:
-      FovDegrees: 60
-      NearClip: 0.1
-      FarClip: 140
+      FovDegrees: 49.5
+      NearClip: 8.9
+      FarClip: 214
       Primary: true
   - Entity: 500000000000002
     NameComponent:
@@ -23,12 +47,18 @@ Entities:
       Active: true
     TransformComponent:
       Position: [0, 12, 0]
-      Rotation: [-26, -38, 0]
+      Rotation: [-45, -35, 0]
       Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
     LightComponent:
       Type: Directional
-      Color: [1.0, 0.96, 0.88]
-      Intensity: 2.2
+      Color: [1, 0.96, 0.88]
+      Intensity: 3.2
+      Range: 10
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
       CastsShadows: true
   - Entity: 500000000000003
     NameComponent:
@@ -39,96 +69,229 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
     EnvironmentComponent:
-      AmbientColor: [0.10, 0.12, 0.16]
-      AmbientIntensity: 1.0
+      AmbientColor: [0.1, 0.12, 0.16]
+      AmbientIntensity: 0.18
+  - Entity: 500000000000011
+    NameComponent:
+      Name: Far Green Cube
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-22, 2, -76]
+      Rotation: [0, 45, 0]
+      Scale: [4, 4, 4]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidGreen
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 500000000000012
+    NameComponent:
+      Name: Close Red Pillar
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 2.5, 27]
+      Rotation: [0, 0, 0]
+      Scale: [1.2, 5, 1.2]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cylinder
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 500000000000013
+    NameComponent:
+      Name: Far Distance Band
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.08, -66]
+      Rotation: [0, 0, 0]
+      Scale: [54, 0.08, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidAmber
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 500000000000014
+    NameComponent:
+      Name: Mid Distance Band
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.08, -22]
+      Rotation: [0, 0, 0]
+      Scale: [44, 0.08, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 500000000000015
+    NameComponent:
+      Name: Near Distance Band
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.08, 34]
+      Rotation: [0, 0, 0]
+      Scale: [34, 0.08, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidGreen
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
   - Entity: 500000000000004
     NameComponent:
-      Name: Floor
+      Name: Long Receiver Floor
     ActiveComponent:
       Active: true
     TransformComponent:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [44, 1, 44]
+      Scale: [170, 1, 190]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Plane"
-      MaterialName: "BuiltIn.DefaultWhite"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Plane
+      MaterialName: BuiltIn.DefaultWhite
       Visible: true
       CastsShadows: false
       ReceivesShadows: true
   - Entity: 500000000000005
     NameComponent:
-      Name: Tall Cylinder
+      Name: Far Left Tower
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [-6, 2, 0]
+      Position: [-45, 4, -48]
       Rotation: [0, 0, 0]
-      Scale: [0.8, 4, 0.8]
+      Scale: [1.8, 8, 1.8]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Cylinder"
-      MaterialName: "BuiltIn.SolidRed"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cylinder
+      MaterialName: BuiltIn.SolidRed
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
   - Entity: 500000000000006
     NameComponent:
-      Name: Cube
+      Name: Close Cube
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 1, 0]
-      Rotation: [0, 20, 0]
-      Scale: [2, 2, 2]
+      Position: [-7, 1.5, 32]
+      Rotation: [0, 28, 0]
+      Scale: [3, 3, 3]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Cube"
-      MaterialName: "BuiltIn.SolidGreen"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidGreen
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
   - Entity: 500000000000007
     NameComponent:
-      Name: Sphere
+      Name: Mid Sphere
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [4.5, 1, 1]
+      Position: [13, 1.5, -23]
       Rotation: [0, 0, 0]
-      Scale: [2, 2, 2]
+      Scale: [3, 3, 3]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Sphere"
-      MaterialName: "BuiltIn.SolidBlue"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Sphere
+      MaterialName: BuiltIn.SolidBlue
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
   - Entity: 500000000000008
     NameComponent:
-      Name: Capsule
+      Name: Far Right Capsule
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [9, 1.2, 2]
+      Position: [42, 1.2, -58]
       Rotation: [0, 0, 0]
-      Scale: [1.2, 1.2, 1.2]
+      Scale: [2.2, 2.2, 2.2]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Capsule"
-      MaterialName: "BuiltIn.SolidAmber"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Capsule
+      MaterialName: BuiltIn.SolidAmber
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
   - Entity: 500000000000009
     NameComponent:
-      Name: Wall
+      Name: Far Receiver Wall
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [1, 1.6, -7]
+      Position: [0, 2, -82]
       Rotation: [0, 0, 0]
-      Scale: [9, 3.2, 0.4]
+      Scale: [40, 4, 0.5]
+    ChildrenComponent:
+      Children:
+        []
     MeshRendererComponent:
-      MeshName: "BuiltIn.Cube"
-      MaterialName: "BuiltIn.DefaultWhite"
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.DefaultWhite
       Visible: true
       CastsShadows: true
       ReceivesShadows: true

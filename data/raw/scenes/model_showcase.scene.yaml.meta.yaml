@@ -8,9 +8,9 @@ Asset:
   CookedPath: data/cooked/assets/scenes/11284226548572360889.scene.yaml
   RawFileTimestamp: 134260507681204080
   RawFileHash: 244343152009320363
-  ImportedTimestamp: 1781581182
-  CookedTimestamp: 1781574103
-  Dependencies: [589019741743117030, 160456599279444274, 8678109575161473379, 14497894292417252792, 2871279154214157765]
+  ImportedTimestamp: 1781818161
+  CookedTimestamp: 1781816475
+  Dependencies: []
   Dependents: []
   Dirty: true
   Missing: false

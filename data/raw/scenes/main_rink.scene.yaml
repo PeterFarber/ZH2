@@ -3,9 +3,26 @@ Scene:
   Mode: Edit
   Version: 1
 Entities:
-  - Entity: 100000000000001
+  - Entity: 100000000000032
     NameComponent:
-      Name: Main Rink
+      Name: Main Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [36.1, 46.3, 0]
+      Rotation: [-59.1, 90, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    CameraComponent:
+      FovDegrees: 55
+      NearClip: 0.1
+      FarClip: 180
+      Primary: true
+  - Entity: 100000000000034
+    NameComponent:
+      Name: Environment
     ActiveComponent:
       Active: true
     TransformComponent:
@@ -15,75 +32,288 @@ Entities:
     ChildrenComponent:
       Children:
         []
-    RinkComponent:
-      RinkName: Main Rink
-    PlayAreaComponent:
-      HalfExtents: [30, 6, 60]
-    OutOfPlayComponent:
-      ResetPosition: [0, 0.12, 0]
-      MinY: -5
-  - Entity: 100000000000002
+    EnvironmentComponent:
+      AmbientColor: [0.12, 0.14, 0.2]
+      AmbientIntensity: 1
+  - Entity: 100000000000033
     NameComponent:
-      Name: Ice Surface
+      Name: Sun
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 24, 0]
+      Rotation: [-60, 35, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Directional
+      Color: [1, 0.97, 0.9]
+      Intensity: 3.6
+      Range: 10
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 100000000000023
+    NameComponent:
+      Name: Puck Spawn
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.12, 0]
+      Rotation: [0, 0, 0]
+      Scale: [4, 4, 4]
+    ChildrenComponent:
+      Children:
+        []
+    PuckComponent:
+      StartsInPlay: true
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.PuckCylinder
+      MaterialName: BuiltIn.PuckBlack
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Kinematic
+      Mass: 0.17
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0.02
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Puck
+      Material: PuckRubber
+    CylinderColliderComponent:
+      Radius: 0.3
+      HalfHeight: 0.04
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PuckGameplayComponent:
+      State: Loose
+      PossessingPlayer: 0
+      LastTouchedPlayer: 0
+      LastTouchedTeam: None
+      TimeSinceLastTouch: 0
+      InPlay: true
+    PuckRuntimeComponent:
+      Velocity: [0, 0, 0]
+      TargetPosition: [0, 0, 0]
+  - Entity: 100000000000022
+    NameComponent:
+      Name: Away Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.9, 50]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Goalie
+      Index: 0
+      PlayerPrefabPath: data/raw/prefabs/Away Goalie.prefab.yaml
+  - Entity: 100000000000021
+    NameComponent:
+      Name: Away Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [6, 0.9, 20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 2
+      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+  - Entity: 100000000000020
+    NameComponent:
+      Name: Away Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.9, 20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 1
+      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+  - Entity: 100000000000019
+    NameComponent:
+      Name: Away Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-6, 0.9, 20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      Role: Skater
+      Index: 0
+      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+  - Entity: 100000000000018
+    NameComponent:
+      Name: Home Goalie Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.9, -50]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Goalie
+      Index: 0
+      PlayerPrefabPath: data/raw/prefabs/Home Goalie.prefab.yaml
+  - Entity: 100000000000017
+    NameComponent:
+      Name: Home Skater Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [6, 0.9, -20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 2
+      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+  - Entity: 100000000000016
+    NameComponent:
+      Name: Home Skater Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.9, -20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 1
+      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+  - Entity: 100000000000015
+    NameComponent:
+      Name: Home Skater Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-6, 0.9, -20]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      Role: Skater
+      Index: 0
+      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+  - Entity: 100000000000014
+    NameComponent:
+      Name: Away Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 35]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    FaceoffSpotComponent:
+      Index: 2
+    FaceoffGameplayComponent:
+      Index: 2
+      CenterIce: false
+      PreferredZone: Away
+  - Entity: 100000000000013
+    NameComponent:
+      Name: Home Defensive Faceoff Spot
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -35]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    FaceoffSpotComponent:
+      Index: 1
+    FaceoffGameplayComponent:
+      Index: 1
+      CenterIce: false
+      PreferredZone: Home
+  - Entity: 100000000000012
+    NameComponent:
+      Name: Center Faceoff Spot
     ActiveComponent:
       Active: true
     TransformComponent:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [60, 1, 120]
+      Scale: [1, 1, 1]
     ChildrenComponent:
       Children:
         []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.RinkPlane
-      MaterialName: BuiltIn.Ice
-      Visible: true
-      CastsShadows: false
-      ReceivesShadows: true
-    RigidBodyComponent:
-      Type: Static
-      Mass: 1
-      UseGravity: false
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Rink
-      Material: Ice
-    BoxColliderComponent:
-      HalfExtents: [30, 0.5, 60]
-      Offset: [0, -0.5, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000003
+    FaceoffSpotComponent:
+      Index: 0
+    FaceoffGameplayComponent:
+      Index: 0
+      CenterIce: true
+      PreferredZone: None
+  - Entity: 100000000000011
     NameComponent:
-      Name: Board North
+      Name: Away Goal
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 1, 60]
+      Position: [0, 1, 55]
       Rotation: [0, 0, 0]
-      Scale: [60, 2, 0.5]
+      Scale: [2, 1.2, 1]
     ChildrenComponent:
       Children:
         []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.Boards
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
+    GoalComponent:
+      DefendingTeam: Away
     RigidBodyComponent:
       Type: Static
       Mass: 1
@@ -99,22 +329,136 @@ Entities:
       AngularDamping: 0.05
       InitialLinearVelocity: [0, 0, 0]
       InitialAngularVelocity: [0, 0, 0]
-      Layer: Rink
-      Material: Boards
+      Layer: Goal
+      Material: Trigger
     BoxColliderComponent:
-      HalfExtents: [30, 1, 0.25]
+      HalfExtents: [1, 0.6, 0.5]
       Offset: [0, 0, 0]
       Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000004
+      IsTrigger: true
+    TriggerComponent:
+      Tag: Goal
+      DetectPlayers: false
+      DetectGoalies: false
+      DetectPuck: true
+    GoalGameplayComponent:
+      ScoringTeam: Home
+      DefendingTeam: Away
+      Enabled: true
+  - Entity: 100000000000010
     NameComponent:
-      Name: Board South
+      Name: Home Goal
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 1, -60]
+      Position: [0, 1, -55]
       Rotation: [0, 0, 0]
-      Scale: [60, 2, 0.5]
+      Scale: [2, 1.2, 1]
+    ChildrenComponent:
+      Children:
+        []
+    GoalComponent:
+      DefendingTeam: Home
+    RigidBodyComponent:
+      Type: Static
+      Mass: 1
+      UseGravity: false
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Goal
+      Material: Trigger
+    BoxColliderComponent:
+      HalfExtents: [1, 0.6, 0.5]
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: true
+    TriggerComponent:
+      Tag: Goal
+      DetectPlayers: false
+      DetectGoalies: false
+      DetectPuck: true
+    GoalGameplayComponent:
+      ScoringTeam: Away
+      DefendingTeam: Home
+      Enabled: true
+  - Entity: 100000000000009
+    NameComponent:
+      Name: Blue Line Away
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.03, 20]
+      Rotation: [0, 0, 0]
+      Scale: [60, 0.02, 0.4]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000008
+    NameComponent:
+      Name: Blue Line Home
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.03, -20]
+      Rotation: [0, 0, 0]
+      Scale: [60, 0.02, 0.4]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidBlue
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000007
+    NameComponent:
+      Name: Center Red Line
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.025, 0]
+      Rotation: [0, 0, 0]
+      Scale: [60, 0.02, 0.45]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: BuiltIn.Cube
+      MaterialName: BuiltIn.SolidRed
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
+  - Entity: 100000000000006
+    NameComponent:
+      Name: Board West
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-30, 1, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0.5, 2, 120]
     ChildrenComponent:
       Children:
         []
@@ -144,7 +488,7 @@ Entities:
       Layer: Rink
       Material: Boards
     BoxColliderComponent:
-      HalfExtents: [30, 1, 0.25]
+      HalfExtents: [0.25, 1, 60]
       Offset: [0, 0, 0]
       Rotation: [0, 0, 0]
       IsTrigger: false
@@ -190,15 +534,15 @@ Entities:
       Offset: [0, 0, 0]
       Rotation: [0, 0, 0]
       IsTrigger: false
-  - Entity: 100000000000006
+  - Entity: 100000000000004
     NameComponent:
-      Name: Board West
+      Name: Board South
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [-30, 1, 0]
+      Position: [0, 1, -60]
       Rotation: [0, 0, 0]
-      Scale: [0.5, 2, 120]
+      Scale: [60, 2, 0.5]
     ChildrenComponent:
       Children:
         []
@@ -228,19 +572,19 @@ Entities:
       Layer: Rink
       Material: Boards
     BoxColliderComponent:
-      HalfExtents: [0.25, 1, 60]
+      HalfExtents: [30, 1, 0.25]
       Offset: [0, 0, 0]
       Rotation: [0, 0, 0]
       IsTrigger: false
-  - Entity: 100000000000007
+  - Entity: 100000000000003
     NameComponent:
-      Name: Center Red Line
+      Name: Board North
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.025, 0]
+      Position: [0, 1, 60]
       Rotation: [0, 0, 0]
-      Scale: [60, 0.02, 0.45]
+      Scale: [60, 2, 0.5]
     ChildrenComponent:
       Children:
         []
@@ -248,76 +592,10 @@ Entities:
       MeshAsset: 0
       MaterialAsset: 0
       MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidRed
+      MaterialName: BuiltIn.Boards
       Visible: true
-      CastsShadows: false
-      ReceivesShadows: false
-  - Entity: 100000000000008
-    NameComponent:
-      Name: Blue Line Home
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.03, -20]
-      Rotation: [0, 0, 0]
-      Scale: [60, 0.02, 0.4]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidBlue
-      Visible: true
-      CastsShadows: false
-      ReceivesShadows: false
-  - Entity: 100000000000009
-    NameComponent:
-      Name: Blue Line Away
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.03, 20]
-      Rotation: [0, 0, 0]
-      Scale: [60, 0.02, 0.4]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidBlue
-      Visible: true
-      CastsShadows: false
-      ReceivesShadows: false
-  - Entity: 100000000000010
-    NameComponent:
-      Name: Home Goal
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 1, -55]
-      Rotation: [0, 0, 0]
-      Scale: [2, 1.2, 1]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.GoalNet
-      Visible: true
-      CastsShadows: false
+      CastsShadows: true
       ReceivesShadows: true
-    GoalComponent:
-      DefendingTeam: Home
-    GoalGameplayComponent:
-      ScoringTeam: Away
-      DefendingTeam: Home
-      Enabled: true
     RigidBodyComponent:
       Type: Static
       Mass: 1
@@ -333,44 +611,33 @@ Entities:
       AngularDamping: 0.05
       InitialLinearVelocity: [0, 0, 0]
       InitialAngularVelocity: [0, 0, 0]
-      Layer: Goal
-      Material: Trigger
+      Layer: Rink
+      Material: Boards
     BoxColliderComponent:
-      HalfExtents: [1, 0.6, 0.5]
+      HalfExtents: [30, 1, 0.25]
       Offset: [0, 0, 0]
       Rotation: [0, 0, 0]
-      IsTrigger: true
-    TriggerComponent:
-      Tag: Goal
-      DetectPlayers: false
-      DetectGoalies: false
-      DetectPuck: true
-  - Entity: 100000000000011
+      IsTrigger: false
+  - Entity: 100000000000002
     NameComponent:
-      Name: Away Goal
+      Name: Ice Surface
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 1, 55]
+      Position: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [2, 1.2, 1]
+      Scale: [60, 1, 120]
     ChildrenComponent:
       Children:
         []
     MeshRendererComponent:
       MeshAsset: 0
       MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.GoalNet
+      MeshName: BuiltIn.RinkPlane
+      MaterialName: BuiltIn.Ice
       Visible: true
       CastsShadows: false
       ReceivesShadows: true
-    GoalComponent:
-      DefendingTeam: Away
-    GoalGameplayComponent:
-      ScoringTeam: Home
-      DefendingTeam: Away
-      Enabled: true
     RigidBodyComponent:
       Type: Static
       Mass: 1
@@ -386,21 +653,16 @@ Entities:
       AngularDamping: 0.05
       InitialLinearVelocity: [0, 0, 0]
       InitialAngularVelocity: [0, 0, 0]
-      Layer: Goal
-      Material: Trigger
+      Layer: Rink
+      Material: Ice
     BoxColliderComponent:
-      HalfExtents: [1, 0.6, 0.5]
-      Offset: [0, 0, 0]
+      HalfExtents: [30, 0.5, 60]
+      Offset: [0, -0.5, 0]
       Rotation: [0, 0, 0]
-      IsTrigger: true
-    TriggerComponent:
-      Tag: Goal
-      DetectPlayers: false
-      DetectGoalies: false
-      DetectPuck: true
-  - Entity: 100000000000012
+      IsTrigger: false
+  - Entity: 100000000000001
     NameComponent:
-      Name: Center Faceoff Spot
+      Name: Main Rink
     ActiveComponent:
       Active: true
     TransformComponent:
@@ -410,934 +672,10 @@ Entities:
     ChildrenComponent:
       Children:
         []
-    FaceoffSpotComponent:
-      Index: 0
-    FaceoffGameplayComponent:
-      Index: 0
-      CenterIce: true
-      PreferredZone: None
-  - Entity: 100000000000013
-    NameComponent:
-      Name: Home Defensive Faceoff Spot
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, -35]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    FaceoffSpotComponent:
-      Index: 1
-    FaceoffGameplayComponent:
-      Index: 1
-      CenterIce: false
-      PreferredZone: Home
-  - Entity: 100000000000014
-    NameComponent:
-      Name: Away Defensive Faceoff Spot
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 35]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    FaceoffSpotComponent:
-      Index: 2
-    FaceoffGameplayComponent:
-      Index: 2
-      CenterIce: false
-      PreferredZone: Away
-  - Entity: 100000000000015
-    NameComponent:
-      Name: Home Skater Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-6, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 0
-  - Entity: 100000000000016
-    NameComponent:
-      Name: Home Skater Spawn 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 1
-  - Entity: 100000000000017
-    NameComponent:
-      Name: Home Skater Spawn 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [6, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Home
-      Role: Skater
-      Index: 2
-  - Entity: 100000000000018
-    NameComponent:
-      Name: Home Goalie Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, -50]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Home
-      Role: Goalie
-      Index: 0
-  - Entity: 100000000000019
-    NameComponent:
-      Name: Away Skater Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-6, 0.9, 20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 0
-  - Entity: 100000000000020
-    NameComponent:
-      Name: Away Skater Spawn 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, 20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 1
-  - Entity: 100000000000021
-    NameComponent:
-      Name: Away Skater Spawn 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [6, 0.9, 20]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Away
-      Role: Skater
-      Index: 2
-  - Entity: 100000000000022
-    NameComponent:
-      Name: Away Goalie Spawn 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, 50]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    SpawnPointComponent:
-      Team: Away
-      Role: Goalie
-      Index: 0
-  - Entity: 100000000000023
-    NameComponent:
-      Name: Puck Spawn
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.12, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.PuckCylinder
-      MaterialName: BuiltIn.PuckBlack
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PuckComponent:
-      StartsInPlay: true
-    PuckGameplayComponent:
-      State: Loose
-      PossessingPlayer: 0
-      LastTouchedPlayer: 0
-      LastTouchedTeam: None
-      TimeSinceLastTouch: 0
-      InPlay: true
-    PuckRuntimeComponent:
-      Velocity: [0, 0, 0]
-      TargetPosition: [0, 0, 0]
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 0.17
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.02
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Puck
-      Material: PuckRubber
-    CylinderColliderComponent:
-      Radius: 0.1
-      HalfHeight: 0.02
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000024
-    NameComponent:
-      Name: Home Skater 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-6, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.HomeJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 0
-      Slot: HomeSkater0
-      Team: Home
-      Role: Skater
-      ControlledByLocalInput: true
-      ControlledByAI: false
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, 1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000024
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000025
-    NameComponent:
-      Name: Home Skater 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.HomeJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 1
-      Slot: HomeSkater1
-      Team: Home
-      Role: Skater
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, 1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000025
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000026
-    NameComponent:
-      Name: Home Skater 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [6, 0.9, -20]
-      Rotation: [0, 0, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.HomeJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 2
-      Slot: HomeSkater2
-      Team: Home
-      Role: Skater
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, 1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000026
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000027
-    NameComponent:
-      Name: Home Goalie
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, -50]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1.8, 1]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.HomeJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 3
-      Slot: HomeGoalie
-      Team: Home
-      Role: Goalie
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    GoalieComponent:
-      MaxSpeed: 6.5
-      Acceleration: 28
-      SaveReachRadius: 1.8
-      LockToCrease: true
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, 1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000027
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 85
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Goalie
-      Material: GoalieBody
-    CapsuleColliderComponent:
-      Radius: 0.45
-      HalfHeight: 0.55
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000028
-    NameComponent:
-      Name: Away Skater 0
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [-6, 0.9, 20]
-      Rotation: [0, 180, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.AwayJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 4
-      Slot: AwaySkater0
-      Team: Away
-      Role: Skater
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, -1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000028
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000029
-    NameComponent:
-      Name: Away Skater 1
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, 20]
-      Rotation: [0, 180, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.AwayJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 5
-      Slot: AwaySkater1
-      Team: Away
-      Role: Skater
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, -1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000029
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000030
-    NameComponent:
-      Name: Away Skater 2
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [6, 0.9, 20]
-      Rotation: [0, 180, 0]
-      Scale: [0.8, 1.8, 0.8]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.AwayJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 6
-      Slot: AwaySkater2
-      Team: Away
-      Role: Skater
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
-      HasPuck: false
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, -1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000030
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 80
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Player
-      Material: PlayerBody
-    CapsuleColliderComponent:
-      Radius: 0.4
-      HalfHeight: 0.5
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000031
-    NameComponent:
-      Name: Away Goalie
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0.9, 50]
-      Rotation: [0, 180, 0]
-      Scale: [1, 1.8, 1]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.AwayJersey
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    PlayerComponent:
-      PlayerIndex: 7
-      Slot: AwayGoalie
-      Team: Away
-      Role: Goalie
-      ControlledByLocalInput: false
-      ControlledByAI: true
-      ActiveInMatch: true
-    GoalieComponent:
-      MaxSpeed: 6.5
-      Acceleration: 28
-      SaveReachRadius: 1.8
-      LockToCrease: true
-    PlayerRuntimeComponent:
-      Velocity: [0, 0, 0]
-      FacingDirection: [0, 0, -1]
-      SprintEnergy: 1
-      CheckCooldown: 0
-      PokeCheckCooldown: 0
-      InputEnabled: true
-      MovementEnabled: true
-    StickComponent:
-      OwnerPlayer: 100000000000031
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true
-      CanPass: true
-      CanCheck: true
-    ShotComponent:
-      Charge: 0
-      Charging: false
-    PassComponent:
-      TargetPlayer: 0
-      AssistRadius: 2
-    CheckComponent:
-      Cooldown: 0
-    RigidBodyComponent:
-      Type: Dynamic
-      Mass: 85
-      UseGravity: true
-      AllowSleeping: true
-      LockTranslationX: false
-      LockTranslationY: false
-      LockTranslationZ: false
-      LockRotationX: false
-      LockRotationY: false
-      LockRotationZ: false
-      LinearDamping: 0.2
-      AngularDamping: 0.05
-      InitialLinearVelocity: [0, 0, 0]
-      InitialAngularVelocity: [0, 0, 0]
-      Layer: Goalie
-      Material: GoalieBody
-    CapsuleColliderComponent:
-      Radius: 0.45
-      HalfHeight: 0.55
-      Offset: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      IsTrigger: false
-  - Entity: 100000000000032
-    NameComponent:
-      Name: Main Camera
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 42, -82]
-      Rotation: [-62, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    CameraComponent:
-      FovDegrees: 55
-      NearClip: 0.1
-      FarClip: 180
-      Primary: true
-  - Entity: 100000000000033
-    NameComponent:
-      Name: Sun
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 24, 0]
-      Rotation: [-60, 35, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    LightComponent:
-      Type: Directional
-      Color: [1, 0.97, 0.9]
-      Intensity: 3.6
-      Range: 10
-      InnerConeDegrees: 15
-      OuterConeDegrees: 30
-      CastsShadows: true
-  - Entity: 100000000000034
-    NameComponent:
-      Name: Environment
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    EnvironmentComponent:
-      AmbientColor: [0.12, 0.14, 0.2]
-      AmbientIntensity: 1
+    RinkComponent:
+      RinkName: Main Rink
+    PlayAreaComponent:
+      HalfExtents: [30, 6, 60]
+    OutOfPlayComponent:
+      ResetPosition: [0, 0.12, 0]
+      MinY: -5
