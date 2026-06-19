@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 
 #include "Hockey/Core/Result.hpp"
@@ -75,6 +76,10 @@ public:
     // Copies an offscreen color target into the current swapchain image. Used
     // by the editor until an ImGui-based viewport exists.
     void BlitTargetToSwapchain(TextureHandle target);
+    // Queues a PNG screenshot of the next rendered swapchain frame.
+    Status RequestScreenshot(const std::filesystem::path& path);
+    // Queues a PNG screenshot of the next render into the given offscreen target.
+    Status RequestRenderTargetScreenshot(TextureHandle target, const std::filesystem::path& path);
 
     // ----- Resource creation -----
     MeshHandle CreateMesh(const MeshDesc& desc);

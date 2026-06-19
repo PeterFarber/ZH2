@@ -11,6 +11,7 @@ enum class KeyCode {
     Z,
     X,
     R,
+    F12,
     Up,
     Down,
     Left,

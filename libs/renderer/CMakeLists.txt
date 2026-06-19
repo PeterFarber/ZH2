@@ -31,6 +31,7 @@ target_sources(hockey_renderer
         # Vulkan base
         src/Vulkan/VolkImpl.cpp
         src/Vulkan/VmaImpl.cpp
+        src/Vulkan/StbImageWriteImpl.cpp
         src/Vulkan/VulkanCommon.cpp
         src/Vulkan/VulkanInstance.cpp
         src/Vulkan/VulkanDebug.cpp

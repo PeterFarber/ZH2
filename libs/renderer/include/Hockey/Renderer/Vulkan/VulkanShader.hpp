@@ -23,7 +23,8 @@ struct VulkanShaderModule {
 VkShaderModule CreateShaderModule(const RenderDevice& device, const std::vector<uint32_t>& spirv);
 void DestroyShaderModule(const RenderDevice& device, VkShaderModule module);
 
-// Compiles a GLSL file and creates a shader module from the result.
+// Loads a cached SPIR-V binary when up to date, otherwise compiles GLSL and
+// creates a shader module from the result.
 Result<VulkanShaderModule> LoadShaderModule(const RenderDevice& device, const ShaderDesc& desc,
                                             const std::filesystem::path& binaryDir = {});
 

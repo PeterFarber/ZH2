@@ -78,6 +78,7 @@ Status VulkanSwapchain::Build(uint32_t width, uint32_t height, bool vsync, VkSwa
     }
     m_Extent = extent;
     m_ColorFormat = surfaceFormat.format;
+    m_SupportsTransferSrc = (caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0;
 
     // Zero extent (minimized) - defer real creation; caller skips frames.
     if (extent.width == 0 || extent.height == 0) {
@@ -99,6 +100,11 @@ Status VulkanSwapchain::Build(uint32_t width, uint32_t height, bool vsync, VkSwa
     info.imageExtent = extent;
     info.imageArrayLayers = 1;
     info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (m_SupportsTransferSrc) {
+        info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    } else {
+        HK_CORE_WARN("Swapchain screenshots disabled: surface does not support transfer-src images");
+    }
     info.preTransform = caps.currentTransform;
     info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     info.presentMode = presentMode;
