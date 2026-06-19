@@ -1,0 +1,84 @@
+---
+description: Overall project context for the HockeyGame engine.
+globs:
+alwaysApply: true
+---
+
+# HockeyGame Project Overview
+
+This repository is a custom C++ hockey game and engine project.
+
+The goal is to build a high-quality real-time 4v4 hockey game.
+
+For target graph, build/run commands, scripts, and screenshot workflow, read:
+
+- `docs/project-structure.md`
+
+For current implementation status, read:
+
+- `docs/phase_status/README.md`
+
+After every repo-tracked change, check whether `docs/phase_status/` needs an
+update. If it does not, report "No phase status change needed" in the final
+response.
+
+Game design:
+
+- 2 teams.
+- 3 skaters + 1 goalie per team.
+- 8 players total.
+- 1 puck.
+- 2 goals.
+- Dedicated authoritative server.
+- Clients send input.
+- Server simulates authoritative state.
+- Clients receive snapshots.
+- Client prediction/interpolation/reconciliation will be used later.
+
+Long-term engine systems:
+
+- Vulkan renderer.
+- SDL3 platform/window/input layer.
+- Unity-style map editor.
+- Entity Component System.
+- Dedicated server.
+- GameNetworkingSockets networking.
+- Asset pipeline.
+- Physics system.
+- Hockey gameplay simulation.
+- Cross-platform Windows/Linux support.
+
+Target apps:
+
+- `HockeyGameClient`: playable game client.
+- `HockeyMapEditor`: Unity-style map editor.
+- `HockeyDedicatedServer`: headless authoritative server.
+- `HockeyCoreTests`: foundation/core tests.
+- `HockeyECSTests`: ECS, scene, prefab, and serialization tests.
+- `HockeyAssetTests`: asset pipeline tests.
+- `HockeyRendererTests`: renderer settings, shader, render graph, and smoke tests.
+- `HockeyEditorTests`: editor workflow/tool/preview tests.
+- `HockeyPhysicsTests`: physics tests.
+- `HockeyGameplayTests`: hockey gameplay simulation tests.
+- `HockeyAssetTool`: asset discovery/import/cook/validation CLI.
+- `HockeyShaderTool`: shader compilation CLI.
+
+Current libraries:
+
+- `libs/core`: platform, logging, config, paths, input, windowing, jobs, timing.
+- `libs/ecs`: entity/component/scene/prefab data.
+- `libs/assets`: asset loading/import/cooking.
+- `libs/renderer`: Vulkan renderer using Volk and Vulkan Memory Allocator.
+- `libs/physics`: physics integration.
+- `libs/gameplay`: hockey simulation/rules.
+- `libs/editor`: editor panels/tools.
+
+Future library:
+
+- `libs/networking`: GameNetworkingSockets wrapper, protocol, lobbies, replication.
+
+Development is phase-based.
+
+Do not implement systems from future phases unless explicitly asked.
+Do not create monolithic code.
+Keep systems separated by library.

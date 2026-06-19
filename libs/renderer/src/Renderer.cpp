@@ -6,11 +6,16 @@
 #include <cstring>
 #include <deque>
 #include <filesystem>
+#include <limits>
+#include <optional>
+#include <string>
+#include <system_error>
 #include <unordered_map>
 #include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <stb_image_write.h>
 
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
@@ -80,6 +85,59 @@ TextureFormat SwapchainLogicalFormat(VkFormat format) {
     return TextureFormat::BGRA8_SRGB;
 }
 
+bool IsRgbaReadbackFormat(VkFormat format) {
+    return format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB;
+}
+
+bool IsBgraReadbackFormat(VkFormat format) {
+    return format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB;
+}
+
+Status WriteScreenshotPng(const std::filesystem::path& path, uint32_t width, uint32_t height, VkFormat format,
+                          const void* readbackBytes) {
+    if (path.empty()) {
+        return Status::Fail("Screenshot path is empty");
+    }
+    if (width == 0 || height == 0 || readbackBytes == nullptr) {
+        return Status::Fail("Screenshot readback is empty");
+    }
+    if (!IsRgbaReadbackFormat(format) && !IsBgraReadbackFormat(format)) {
+        return Status::Fail("Screenshot only supports 8-bit RGBA/BGRA render targets");
+    }
+
+    const auto* src = static_cast<const unsigned char*>(readbackBytes);
+    std::vector<unsigned char> rgba(static_cast<size_t>(width) * static_cast<size_t>(height) * 4u);
+    for (uint32_t y = 0; y < height; ++y) {
+        for (uint32_t x = 0; x < width; ++x) {
+            const size_t i = (static_cast<size_t>(y) * width + x) * 4u;
+            if (IsBgraReadbackFormat(format)) {
+                rgba[i + 0] = src[i + 2];
+                rgba[i + 1] = src[i + 1];
+                rgba[i + 2] = src[i + 0];
+                rgba[i + 3] = src[i + 3];
+            } else {
+                rgba[i + 0] = src[i + 0];
+                rgba[i + 1] = src[i + 1];
+                rgba[i + 2] = src[i + 2];
+                rgba[i + 3] = src[i + 3];
+            }
+        }
+    }
+
+    std::error_code ec;
+    if (!path.parent_path().empty()) {
+        std::filesystem::create_directories(path.parent_path(), ec);
+        if (ec) {
+            return Status::Fail("Could not create screenshot directory: " + ec.message());
+        }
+    }
+    if (stbi_write_png(path.string().c_str(), static_cast<int>(width), static_cast<int>(height), 4, rgba.data(),
+                       static_cast<int>(width * 4u)) == 0) {
+        return Status::Fail("Failed to write screenshot PNG: " + path.string());
+    }
+    return Status::Ok();
+}
+
 // std140-compatible GPU layouts mirroring the shader UBOs (common.glsl /
 // pbr.frag). Only vec4/mat4 members are used so the layouts match without
 // explicit padding.
@@ -129,7 +187,7 @@ GpuLight PackLight(const LightRenderData& light) {
     out.positionRange = glm::vec4(light.position, light.range);
     out.direction = glm::vec4(light.direction, static_cast<float>(light.type));
     out.color = glm::vec4(light.color, light.intensity);
-    // spot.z holds the local-shadow base tile; -1 means this light casts none.
+    // spot.z is the shadow enable/index slot; -1 means this light casts none.
     out.spot = glm::vec4(light.cosInner, light.cosOuter, -1.0f, 0.0f);
     return out;
 }
@@ -188,8 +246,26 @@ struct SsaoBlurPush {
     glm::vec4 texel{0.0f}; // xy = 1/size
 };
 
-// Directional-light cascade matrices computed by fitting each view-frustum
-// slice with a light-space bounding sphere (stable size, snapped to texels).
+struct ShadowCasterBounds {
+    glm::mat4 model{1.0f};
+    glm::vec3 localMin{0.0f};
+    glm::vec3 localMax{0.0f};
+};
+
+template <typename Fn>
+void ForEachBoundsCorner(const glm::vec3& min, const glm::vec3& max, Fn&& fn) {
+    for (int x = 0; x < 2; ++x) {
+        for (int y = 0; y < 2; ++y) {
+            for (int z = 0; z < 2; ++z) {
+                fn(glm::vec3(x ? max.x : min.x, y ? max.y : min.y, z ? max.z : min.z));
+            }
+        }
+    }
+}
+
+// Directional-light cascade matrices computed from the camera frustum in light
+// space. Cascades intentionally overlap so a caster near a split can still
+// shadow receivers sampled from the neighboring cascade.
 struct CascadeResult {
     std::array<glm::mat4, kMaxCascades> viewProj{};
     std::array<float, kMaxCascades> splitFar{}; // view-space far distance
@@ -197,7 +273,8 @@ struct CascadeResult {
 };
 
 CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& lightDir, uint32_t cascadeCount,
-                              float shadowDistance, uint32_t atlasResolution) {
+                              float shadowDistance, uint32_t atlasResolution,
+                              const std::vector<ShadowCasterBounds>& shadowCasters) {
     CascadeResult result;
     result.count = std::min(cascadeCount, kMaxCascades);
     if (result.count == 0) {
@@ -209,8 +286,10 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
     const glm::mat4 invViewProj = glm::inverse(camera.projection * camera.view);
     const glm::vec3 dir = glm::normalize(lightDir);
     const glm::vec3 up = std::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-    // Tile size within the 2x2 atlas; light-space units per shadow texel.
-    const float tileResolution = static_cast<float>(atlasResolution) * 0.5f;
+    // Tile size within the atlas; one cascade uses the full texture, otherwise
+    // cascades are packed into a 2x2 atlas.
+    const float tileResolution =
+        result.count == 1 ? static_cast<float>(atlasResolution) : static_cast<float>(atlasResolution) * 0.5f;
 
     constexpr float lambda = 0.85f; // blend uniform/log splits
     float prevSplit = nearClip;
@@ -221,8 +300,17 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
         const float splitFar = glm::mix(uniformSplit, logSplit, lambda);
 
         // Frustum-slice corners: interpolate full-frustum near->far edges.
-        const float fracNear = (prevSplit - nearClip) / (farClip - nearClip);
-        const float fracFar = (splitFar - nearClip) / (farClip - nearClip);
+        // CSM artifacts usually show up when a receiver just after a split uses
+        // the next cascade but the caster is still just before the split. Fit a
+        // wider slice than the selection range so each cascade contains nearby
+        // casters on both sides of its split.
+        const float selectionRange = std::max(splitFar - prevSplit, 0.001f);
+        const float casterOverlap = glm::clamp(selectionRange * 0.25f, 4.0f, std::max(4.0f, shadowDistance * 0.10f));
+        const float fitNear = c == 0 ? nearClip : std::max(nearClip, prevSplit - casterOverlap);
+        const float fitFar =
+            std::min(farClip, splitFar + std::min(casterOverlap, selectionRange * 0.5f));
+        const float fracNear = (fitNear - nearClip) / (farClip - nearClip);
+        const float fracFar = (fitFar - nearClip) / (farClip - nearClip);
         std::array<glm::vec3, 8> corners{};
         int idx = 0;
         for (int x = 0; x < 2; ++x) {
@@ -241,25 +329,64 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
             center += corner;
         }
         center /= static_cast<float>(corners.size());
+
         float radius = 0.0f;
         for (const glm::vec3& corner : corners) {
             radius = std::max(radius, glm::length(corner - center));
         }
-        radius = std::ceil(radius * 16.0f) / 16.0f;
+        radius = std::max(std::ceil(radius * 16.0f) / 16.0f, 1.0f);
 
-        const glm::vec3 eye = center - dir * radius;
+        constexpr float depthPad = 8.0f;
+        const glm::vec3 eye = center - dir * (radius + depthPad);
         glm::mat4 lightView = glm::lookAtRH(eye, center, up);
-        // Texel-snap the center in light space to reduce shimmering.
-        const glm::vec3 lightSpaceCenter = glm::vec3(lightView * glm::vec4(center, 1.0f));
-        const float unitsPerTexel = (2.0f * radius) / std::max(tileResolution, 1.0f);
-        glm::vec3 snapped = lightSpaceCenter;
-        snapped.x = std::floor(snapped.x / unitsPerTexel) * unitsPerTexel;
-        snapped.y = std::floor(snapped.y / unitsPerTexel) * unitsPerTexel;
-        const glm::vec3 offset = snapped - lightSpaceCenter;
-        lightView[3][0] += offset.x;
-        lightView[3][1] += offset.y;
 
-        glm::mat4 lightProj = glm::orthoRH_ZO(-radius, radius, -radius, radius, 0.0f, 2.0f * radius);
+        glm::vec3 minLS(std::numeric_limits<float>::max());
+        glm::vec3 maxLS(std::numeric_limits<float>::lowest());
+        for (const glm::vec3& corner : corners) {
+            const glm::vec3 lightSpaceCorner = glm::vec3(lightView * glm::vec4(corner, 1.0f));
+            minLS = glm::min(minLS, lightSpaceCorner);
+            maxLS = glm::max(maxLS, lightSpaceCorner);
+        }
+
+        // Keep cascade X/Y fitted to receivers, but derive depth from actual
+        // casters that overlap this light-space tile. Using only the camera
+        // frustum for near/far clips directional casters before they can write
+        // into the map, which shows up as large rectangular missing-shadow
+        // regions on broad receivers.
+        const float casterXYPad = std::max(radius * 0.05f, 1.0f);
+        for (const ShadowCasterBounds& caster : shadowCasters) {
+            glm::vec3 casterMinLS(std::numeric_limits<float>::max());
+            glm::vec3 casterMaxLS(std::numeric_limits<float>::lowest());
+            ForEachBoundsCorner(caster.localMin, caster.localMax, [&](const glm::vec3& localCorner) {
+                const glm::vec3 lightSpaceCorner =
+                    glm::vec3(lightView * caster.model * glm::vec4(localCorner, 1.0f));
+                casterMinLS = glm::min(casterMinLS, lightSpaceCorner);
+                casterMaxLS = glm::max(casterMaxLS, lightSpaceCorner);
+            });
+            const bool overlapsXY = casterMaxLS.x >= minLS.x - casterXYPad &&
+                                    casterMinLS.x <= maxLS.x + casterXYPad &&
+                                    casterMaxLS.y >= minLS.y - casterXYPad &&
+                                    casterMinLS.y <= maxLS.y + casterXYPad;
+            if (!overlapsXY) {
+                continue;
+            }
+            minLS.z = std::min(minLS.z, casterMinLS.z);
+            maxLS.z = std::max(maxLS.z, casterMaxLS.z);
+        }
+
+        // Snap x/y bounds to shadow texels for stable cascades without inflating
+        // the z range. Directional acne is very sensitive to wasted depth span.
+        const float unitsPerTexelX = std::max((maxLS.x - minLS.x) / std::max(tileResolution, 1.0f), 1e-4f);
+        const float unitsPerTexelY = std::max((maxLS.y - minLS.y) / std::max(tileResolution, 1.0f), 1e-4f);
+        minLS.x = std::floor(minLS.x / unitsPerTexelX) * unitsPerTexelX;
+        minLS.y = std::floor(minLS.y / unitsPerTexelY) * unitsPerTexelY;
+        maxLS.x = minLS.x + std::ceil((maxLS.x - minLS.x) / unitsPerTexelX) * unitsPerTexelX;
+        maxLS.y = minLS.y + std::ceil((maxLS.y - minLS.y) / unitsPerTexelY) * unitsPerTexelY;
+
+        const float nearPlane = std::max(0.0f, -maxLS.z - depthPad);
+        const float farPlane = std::max(nearPlane + 1.0f, -minLS.z + depthPad);
+        glm::mat4 lightProj =
+            glm::orthoRH_ZO(minLS.x, maxLS.x, minLS.y, maxLS.y, nearPlane, farPlane);
         result.viewProj[c] = lightProj * lightView;
         result.splitFar[c] = splitFar;
         prevSplit = splitFar;
@@ -487,6 +614,8 @@ struct Renderer::Impl {
     // offscreen target so the whole forward+post pipeline shares one code path.
     VulkanFrameTargets* curTargets = nullptr;
     std::array<VkDescriptorSet, kFramesInFlight>* curGlobalSets = nullptr;
+    std::array<VulkanBuffer, kFramesInFlight>* curCameraUBOs = nullptr;
+    std::array<VulkanBuffer, kFramesInFlight>* curSceneUBOs = nullptr;
     std::array<VulkanTexture, kFramesInFlight>* curDepth = nullptr;
 
     // Per-frame-in-flight CPU-visible vertex buffers for immediate-mode debug
@@ -505,6 +634,8 @@ struct Renderer::Impl {
         VulkanFrameTargets intermediates;
         std::array<VulkanTexture, kFramesInFlight> color; // swapchain-format FXAA output
         std::array<VulkanTexture, kFramesInFlight> depth;
+        std::array<VulkanBuffer, kFramesInFlight> cameraUBOs;
+        std::array<VulkanBuffer, kFramesInFlight> sceneUBOs;
         std::array<VkDescriptorSet, kFramesInFlight> globalSets{};
     };
     std::vector<OffscreenTarget> renderTargets;
@@ -516,6 +647,23 @@ struct Renderer::Impl {
 
     std::filesystem::path shaderSourceDir;
     std::filesystem::path shaderBinaryDir;
+
+    enum class ScreenshotSource { Swapchain, RenderTarget };
+    struct ScreenshotRequest {
+        ScreenshotSource source = ScreenshotSource::Swapchain;
+        TextureHandle target{};
+        std::filesystem::path path;
+    };
+    struct ScreenshotReadback {
+        VulkanBuffer buffer;
+        std::filesystem::path path;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        uint32_t frameIndex = 0;
+    };
+    std::vector<ScreenshotRequest> screenshotRequests;
+    std::vector<ScreenshotReadback> screenshotReadbacks;
 
     RenderDevice device;
     uint32_t apiVersion = 0;
@@ -551,6 +699,13 @@ struct Renderer::Impl {
     Status SetupDescriptors();
     Status RebuildTargets();
     void UpdateGlobalImageBindings();
+    Status CreateGlobalUniforms(std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                                std::array<VulkanBuffer, kFramesInFlight>& scenes, const std::string& debugPrefix);
+    void DestroyGlobalUniforms(std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                               std::array<VulkanBuffer, kFramesInFlight>& scenes);
+    Status AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInFlight>& sets,
+                              std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                              std::array<VulkanBuffer, kFramesInFlight>& scenes);
     void BuildBuiltInResources();
     uint32_t CreateMaterialInternal(const MaterialDesc& desc);
     VkImageView ResolveTextureView(TextureHandle handle) const;
@@ -569,6 +724,11 @@ struct Renderer::Impl {
     void RecordDebugLines(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent);
     void RenderSceneInternal(Scene& scene, const CameraRenderData& camera, VkImageView outputColor,
                              VkExtent2D outputExtent);
+    std::optional<std::filesystem::path> TakeScreenshotRequest(ScreenshotSource source, TextureHandle target);
+    void RecordScreenshotCopy(VkCommandBuffer cmd, VkImage image, VkExtent2D extent, VkFormat format,
+                              VkImageLayout layout, const std::filesystem::path& path);
+    void FlushCompletedScreenshots(uint32_t completedFrameIndex);
+    void FlushAllScreenshots();
 
     Status BuildOffscreenTarget(OffscreenTarget& target);
     void DestroyOffscreenTarget(OffscreenTarget& target);
@@ -849,6 +1009,58 @@ MaterialHandle Renderer::Impl::ResolveAssetMaterial(uint64_t assetId) {
     return handle;
 }
 
+Status Renderer::Impl::CreateGlobalUniforms(std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                                            std::array<VulkanBuffer, kFramesInFlight>& scenes,
+                                            const std::string& debugPrefix) {
+    const std::string prefix = debugPrefix.empty() ? std::string("Global") : debugPrefix;
+    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
+        BufferDesc camDesc;
+        camDesc.size = sizeof(CameraGPU);
+        camDesc.usage = BufferUsage::Uniform;
+        camDesc.cpuVisible = true;
+        camDesc.debugName = prefix + ".CameraUBO";
+        cameras[f] = CreateBuffer(device, camDesc);
+
+        BufferDesc sceneDesc;
+        sceneDesc.size = sizeof(SceneGPU);
+        sceneDesc.usage = BufferUsage::Uniform;
+        sceneDesc.cpuVisible = true;
+        sceneDesc.debugName = prefix + ".SceneUBO";
+        scenes[f] = CreateBuffer(device, sceneDesc);
+
+        if (!cameras[f].IsValid() || !scenes[f].IsValid()) {
+            DestroyGlobalUniforms(cameras, scenes);
+            return Status::Fail("Failed to create global uniform buffers");
+        }
+    }
+    return Status::Ok();
+}
+
+void Renderer::Impl::DestroyGlobalUniforms(std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                                           std::array<VulkanBuffer, kFramesInFlight>& scenes) {
+    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
+        DestroyBuffer(device, cameras[f]);
+        DestroyBuffer(device, scenes[f]);
+    }
+}
+
+Status Renderer::Impl::AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInFlight>& sets,
+                                          std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                                          std::array<VulkanBuffer, kFramesInFlight>& scenes) {
+    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
+        sets[f] = descriptorAllocator.Allocate(descriptorLayouts.global);
+        if (sets[f] == VK_NULL_HANDLE) {
+            return Status::Fail("Failed to allocate global descriptor set");
+        }
+
+        DescriptorWriter writer;
+        writer.WriteBuffer(0, cameras[f].buffer, cameras[f].size, 0, DescriptorType::UniformBuffer)
+            .WriteBuffer(1, scenes[f].buffer, scenes[f].size, 0, DescriptorType::UniformBuffer);
+        writer.Update(device, sets[f]);
+    }
+    return Status::Ok();
+}
+
 Status Renderer::Impl::SetupDescriptors() {
     if (Status s = descriptorLayouts.Create(device); !s) {
         return s;
@@ -882,37 +1094,14 @@ Status Renderer::Impl::SetupDescriptors() {
         return Status::Fail("Failed to create default normal texture");
     }
 
-    // Per-frame-in-flight camera/scene UBOs + global descriptor sets. Each set
-    // points at its frame's buffers, so per-frame updates are plain memcpys (no
-    // descriptor rewrites) and never race the GPU.
-    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
-        BufferDesc camDesc;
-        camDesc.size = sizeof(CameraGPU);
-        camDesc.usage = BufferUsage::Uniform;
-        camDesc.cpuVisible = true;
-        camDesc.debugName = "CameraUBO";
-        cameraUBOs[f] = CreateBuffer(device, camDesc);
-
-        BufferDesc sceneDesc;
-        sceneDesc.size = sizeof(SceneGPU);
-        sceneDesc.usage = BufferUsage::Uniform;
-        sceneDesc.cpuVisible = true;
-        sceneDesc.debugName = "SceneUBO";
-        sceneUBOs[f] = CreateBuffer(device, sceneDesc);
-
-        if (!cameraUBOs[f].IsValid() || !sceneUBOs[f].IsValid()) {
-            return Status::Fail("Failed to create per-frame uniform buffers");
-        }
-
-        globalSets[f] = descriptorAllocator.Allocate(descriptorLayouts.global);
-        if (globalSets[f] == VK_NULL_HANDLE) {
-            return Status::Fail("Failed to allocate global descriptor set");
-        }
-
-        DescriptorWriter writer;
-        writer.WriteBuffer(0, cameraUBOs[f].buffer, cameraUBOs[f].size, 0, DescriptorType::UniformBuffer)
-            .WriteBuffer(1, sceneUBOs[f].buffer, sceneUBOs[f].size, 0, DescriptorType::UniformBuffer);
-        writer.Update(device, globalSets[f]);
+    // Swapchain camera/scene UBOs + descriptor sets. Offscreen editor viewports
+    // allocate their own sets so camera-dependent cascades cannot be overwritten
+    // by another viewport rendered later in the same frame.
+    if (Status s = CreateGlobalUniforms(cameraUBOs, sceneUBOs, "Swapchain"); !s) {
+        return s;
+    }
+    if (Status s = AllocateGlobalSets(globalSets, cameraUBOs, sceneUBOs); !s) {
+        return s;
     }
     UpdateGlobalImageBindings();
 
@@ -1140,17 +1329,9 @@ Status Renderer::Impl::BuildMeshPipelines() {
     ShaderDesc shadowVsDesc;
     shadowVsDesc.sourcePath = shaderSourceDir / "shadow.vert";
     shadowVsDesc.stage = ShaderStage::Vertex;
-    ShaderDesc shadowFsDesc;
-    shadowFsDesc.sourcePath = shaderSourceDir / "shadow.frag";
-    shadowFsDesc.stage = ShaderStage::Fragment;
     Result<VulkanShaderModule> shadowVs = LoadShaderModule(device, shadowVsDesc, shaderBinaryDir);
     if (!shadowVs) {
         return Status::Fail(shadowVs.error);
-    }
-    Result<VulkanShaderModule> shadowFs = LoadShaderModule(device, shadowFsDesc, shaderBinaryDir);
-    if (!shadowFs) {
-        DestroyShaderModule(device, shadowVs.value.module);
-        return Status::Fail(shadowFs.error);
     }
 
     VkPushConstantRange shadowPush{};
@@ -1161,21 +1342,21 @@ Status Renderer::Impl::BuildMeshPipelines() {
 
     GraphicsPipelineDesc shadow;
     shadow.vertexShader = shadowVs.value.module;
-    shadow.fragmentShader = shadowFs.value.module;
     shadow.layout = shadowPipelineLayout;
     shadow.vertexInput = PositionOnlyVertexInput();
     shadow.colorFormats = {}; // depth-only
     shadow.depthFormat = depthFormat;
     shadow.topology = PrimitiveTopology::TriangleList;
+    // Shadow casters include thin boards and simple built-ins; culling can drop
+    // the only useful face when winding or projection orientation varies.
     shadow.cullMode = CullMode::None;
     shadow.depthTest = true;
     shadow.depthWrite = true;
-    shadow.depthBias = true; // combat shadow acne
+    shadow.depthBias = true;
     shadow.debugName = "ShadowPipeline";
     shadowPipeline = CreateGraphicsPipeline(device, shadow);
 
     DestroyShaderModule(device, shadowVs.value.module);
-    DestroyShaderModule(device, shadowFs.value.module);
 
     if (shadowPipelineLayout == VK_NULL_HANDLE || !shadowPipeline.IsValid()) {
         return Status::Fail("Failed to build shadow pipeline");
@@ -1286,6 +1467,7 @@ void Renderer::WaitIdle() {
     Impl& r = *m_Impl;
     if (r.initialized && r.device.device != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(r.device.device);
+        r.FlushAllScreenshots();
     }
 }
 
@@ -1296,7 +1478,9 @@ void Renderer::Shutdown() {
     }
     if (r.device.device != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(r.device.device);
+        r.FlushAllScreenshots();
     }
+    r.screenshotRequests.clear();
     for (VulkanMesh& mesh : r.meshes) {
         DestroyMesh(r.device, mesh);
     }
@@ -1367,6 +1551,7 @@ bool Renderer::CanRender() const {
 bool Renderer::Impl::BeginRecording() {
     FrameData& frame = frames.Frame(frameIndex);
     vkWaitForFences(device.device, 1, &frame.inFlightFence, VK_TRUE, UINT64_MAX);
+    FlushCompletedScreenshots(frameIndex);
 
     bool needsRecreate = false;
     if (!swapchain.Acquire(frame.imageAvailableSemaphore, imageIndex, needsRecreate)) {
@@ -1443,8 +1628,8 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     cameraGpu.position = glm::vec4(camera.position, 1.0f);
     cameraGpu.clip =
         glm::vec4(camera.nearClip, camera.farClip, static_cast<float>(extent.width), static_cast<float>(extent.height));
-    if (cameraUBOs[frameIndex].mapped != nullptr) {
-        std::memcpy(cameraUBOs[frameIndex].mapped, &cameraGpu, sizeof(cameraGpu));
+    if (curCameraUBOs != nullptr && (*curCameraUBOs)[frameIndex].mapped != nullptr) {
+        std::memcpy((*curCameraUBOs)[frameIndex].mapped, &cameraGpu, sizeof(cameraGpu));
     }
 
     // --- Lights + environment -----------------------------------------------
@@ -1457,6 +1642,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     }
     frameLocalShadowTiles = 0;
     bool hasSun = false;
+    uint32_t sunLightIndex = 0;
     glm::vec3 sunDir(0.0f, -1.0f, 0.0f);
     // Shadow-casting spot/point lights, captured so we can assign atlas tiles
     // and build their view-projections after the light loop.
@@ -1494,6 +1680,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
             frameScene.lights[lightCount] = PackLight(data);
             if (!hasSun && data.type == 0 && data.castsShadows) {
                 hasSun = true;
+                sunLightIndex = lightCount;
                 sunDir = data.direction;
             }
             // Queue spot (type 2) / point (type 1) shadow casters for tiling.
@@ -1506,57 +1693,10 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         frameScene.params = glm::vec4(static_cast<float>(lightCount), 0.0f, 0.0f, 0.0f);
     }
 
-    // --- Directional cascaded shadows ---------------------------------------
-    const uint32_t cascadeCount = ShadowCascadeCount(settings.shadowQuality);
-    if (settings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
-        const uint32_t atlasRes = curTargets->ShadowResolution();
-        const CascadeResult cascades = ComputeCascades(camera, sunDir, cascadeCount, settings.shadowDistance, atlasRes);
-        for (uint32_t c = 0; c < cascades.count; ++c) {
-            frameScene.cascadeViewProj[c] = cascades.viewProj[c];
-            frameScene.cascadeSplits[c] = cascades.splitFar[c];
-        }
-        const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
-        frameScene.params.y = static_cast<float>(cascades.count);
-        frameScene.params.z = 1.0f / static_cast<float>(std::max(atlasRes, 1u));
-        frameScene.params.w = pcfRadius;
-    }
-
-    // --- Local (spot/point) light shadows -----------------------------------
-    // Pack each shadow-casting spot light into one atlas tile and each point
-    // light into six cube-face tiles, greedily until the atlas is full.
-    const uint32_t localAtlasRes = curTargets->LocalShadowResolution();
-    if (settings.shadowQuality != ShadowQuality::Off && localCasterCount > 0 && curTargets->IsValid() &&
-        localAtlasRes > 1) {
-        uint32_t tileCursor = 0;
-        for (uint32_t i = 0; i < localCasterCount; ++i) {
-            const LightRenderData& data = localCasters[i].data;
-            const uint32_t needed = data.type == 1 ? 6u : 1u;
-            if (tileCursor + needed > kMaxLocalShadowTiles) {
-                break; // atlas full; remaining casters fall back to no shadow
-            }
-            if (data.type == 2) {
-                frameScene.localShadowViewProj[tileCursor] = ComputeSpotShadowMatrix(data);
-            } else {
-                std::array<glm::mat4, 6> faces;
-                ComputePointShadowMatrices(data, faces);
-                for (uint32_t f = 0; f < 6; ++f) {
-                    frameScene.localShadowViewProj[tileCursor + f] = faces[f];
-                }
-            }
-            frameScene.lights[localCasters[i].lightIndex].spot.z = static_cast<float>(tileCursor);
-            tileCursor += needed;
-        }
-        frameLocalShadowTiles = tileCursor;
-        if (tileCursor > 0) {
-            const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
-            frameScene.localShadowParams = glm::vec4(1.0f / static_cast<float>(localAtlasRes), pcfRadius,
-                                                     static_cast<float>(kLocalShadowGrid), 1.0f);
-        }
-    }
-
     // --- Renderables, resolving names to handles + fallbacks ----------------
     frameOpaque.clear();
     frameTransparent.clear();
+    std::vector<ShadowCasterBounds> shadowCasters;
     const auto meshView = scene.Registry().view<TransformComponent, MeshRendererComponent>();
     for (const entt::entity handle : meshView) {
         const Entity entity{handle, &scene};
@@ -1598,6 +1738,9 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         if (!item.mesh->IsValid()) {
             continue;
         }
+        if (item.castsShadows) {
+            shadowCasters.push_back({item.model, item.mesh->boundsMin, item.mesh->boundsMax});
+        }
 
         if (item.material->desc.alphaMode == AlphaMode::Blend) {
             frameTransparent.push_back(item);
@@ -1609,6 +1752,56 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     // Transparent geometry draws back-to-front for correct blending.
     std::sort(frameTransparent.begin(), frameTransparent.end(),
               [](const DrawItem& a, const DrawItem& b) { return a.viewDepth > b.viewDepth; });
+
+    // --- Directional cascaded shadows ---------------------------------------
+    const uint32_t cascadeCount = ShadowCascadeCount(settings.shadowQuality);
+    if (settings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
+        const uint32_t atlasRes = curTargets->ShadowResolution();
+        const CascadeResult cascades =
+            ComputeCascades(camera, sunDir, cascadeCount, settings.shadowDistance, atlasRes, shadowCasters);
+        for (uint32_t c = 0; c < cascades.count; ++c) {
+            frameScene.cascadeViewProj[c] = cascades.viewProj[c];
+            frameScene.cascadeSplits[c] = cascades.splitFar[c];
+        }
+        const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
+        frameScene.params.y = static_cast<float>(cascades.count);
+        frameScene.params.z = 1.0f / static_cast<float>(std::max(atlasRes, 1u));
+        frameScene.params.w = pcfRadius;
+        frameScene.lights[sunLightIndex].spot.z = 0.0f;
+    }
+
+    // --- Local (spot/point) light shadows -----------------------------------
+    // Pack each shadow-casting spot light into one atlas tile and each point
+    // light into six cube-face tiles, greedily until the atlas is full.
+    const uint32_t localAtlasRes = curTargets->LocalShadowResolution();
+    if (settings.shadowQuality != ShadowQuality::Off && localCasterCount > 0 && curTargets->IsValid() &&
+        localAtlasRes > 1) {
+        uint32_t tileCursor = 0;
+        for (uint32_t i = 0; i < localCasterCount; ++i) {
+            const LightRenderData& data = localCasters[i].data;
+            const uint32_t needed = data.type == 1 ? 6u : 1u;
+            if (tileCursor + needed > kMaxLocalShadowTiles) {
+                break; // atlas full; remaining casters fall back to no shadow
+            }
+            if (data.type == 2) {
+                frameScene.localShadowViewProj[tileCursor] = ComputeSpotShadowMatrix(data);
+            } else {
+                std::array<glm::mat4, 6> faces;
+                ComputePointShadowMatrices(data, faces);
+                for (uint32_t f = 0; f < 6; ++f) {
+                    frameScene.localShadowViewProj[tileCursor + f] = faces[f];
+                }
+            }
+            frameScene.lights[localCasters[i].lightIndex].spot.z = static_cast<float>(tileCursor);
+            tileCursor += needed;
+        }
+        frameLocalShadowTiles = tileCursor;
+        if (tileCursor > 0) {
+            const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
+            frameScene.localShadowParams = glm::vec4(1.0f / static_cast<float>(localAtlasRes), pcfRadius,
+                                                     static_cast<float>(kLocalShadowGrid), 1.0f);
+        }
+    }
 }
 
 void Renderer::Impl::RecordSceneDrawsInPass(VkCommandBuffer cmd) {
@@ -1650,7 +1843,7 @@ void Renderer::Impl::RecordShadowPass(VkCommandBuffer cmd) {
     }
     VulkanTexture& atlas = curTargets->Frame(frameIndex).shadowAtlas;
     const uint32_t atlasRes = curTargets->ShadowResolution();
-    const float tileSize = static_cast<float>(atlasRes) * 0.5f;
+    const float tileSize = cascadeCount == 1 ? static_cast<float>(atlasRes) : static_cast<float>(atlasRes) * 0.5f;
 
     TransitionImage(cmd, atlas.image, atlas.currentLayout, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -1676,8 +1869,8 @@ void Renderer::Impl::RecordShadowPass(VkCommandBuffer cmd) {
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);
     for (uint32_t c = 0; c < cascadeCount; ++c) {
         VkViewport viewport{};
-        viewport.x = static_cast<float>(c & 1u) * tileSize;
-        viewport.y = static_cast<float>(c >> 1u) * tileSize;
+        viewport.x = cascadeCount == 1 ? 0.0f : static_cast<float>(c & 1u) * tileSize;
+        viewport.y = cascadeCount == 1 ? 0.0f : static_cast<float>(c >> 1u) * tileSize;
         viewport.width = tileSize;
         viewport.height = tileSize;
         viewport.minDepth = 0.0f;
@@ -1985,6 +2178,96 @@ void Renderer::Impl::RecordDebugLines(VkCommandBuffer cmd, VkImageView color, Vk
     EndDebugLabel(cmd);
 }
 
+std::optional<std::filesystem::path> Renderer::Impl::TakeScreenshotRequest(ScreenshotSource source,
+                                                                           TextureHandle target) {
+    for (auto it = screenshotRequests.begin(); it != screenshotRequests.end(); ++it) {
+        if (it->source == source && it->target.id == target.id) {
+            std::filesystem::path path = it->path;
+            screenshotRequests.erase(it);
+            return path;
+        }
+    }
+    return std::nullopt;
+}
+
+void Renderer::Impl::RecordScreenshotCopy(VkCommandBuffer cmd, VkImage image, VkExtent2D extent, VkFormat format,
+                                          VkImageLayout layout, const std::filesystem::path& path) {
+    if (image == VK_NULL_HANDLE || extent.width == 0 || extent.height == 0) {
+        HK_CORE_WARN("Screenshot skipped: invalid image or extent");
+        return;
+    }
+    if (!IsRgbaReadbackFormat(format) && !IsBgraReadbackFormat(format)) {
+        HK_CORE_WARN("Screenshot skipped: unsupported format {}", static_cast<int>(format));
+        return;
+    }
+
+    ScreenshotReadback capture;
+    capture.path = path;
+    capture.width = extent.width;
+    capture.height = extent.height;
+    capture.format = format;
+    capture.frameIndex = frameIndex;
+
+    BufferDesc readbackDesc;
+    readbackDesc.size = static_cast<size_t>(extent.width) * static_cast<size_t>(extent.height) * 4u;
+    readbackDesc.usage = BufferUsage::Readback;
+    readbackDesc.cpuVisible = true;
+    readbackDesc.debugName = "ScreenshotReadback";
+    capture.buffer = CreateBuffer(device, readbackDesc);
+    if (!capture.buffer.IsValid()) {
+        HK_CORE_WARN("Screenshot skipped: failed to allocate readback buffer");
+        return;
+    }
+
+    TransitionImage(cmd, image, layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    VkBufferImageCopy region{};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent = {extent.width, extent.height, 1};
+    vkCmdCopyImageToBuffer(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, capture.buffer.buffer, 1, &region);
+    TransitionImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, layout, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    screenshotReadbacks.push_back(std::move(capture));
+}
+
+void Renderer::Impl::FlushCompletedScreenshots(uint32_t completedFrameIndex) {
+    for (auto it = screenshotReadbacks.begin(); it != screenshotReadbacks.end();) {
+        if (it->frameIndex != completedFrameIndex) {
+            ++it;
+            continue;
+        }
+        if (it->buffer.IsValid()) {
+            vmaInvalidateAllocation(device.allocator, it->buffer.allocation, 0, it->buffer.size);
+        }
+        const Status written =
+            WriteScreenshotPng(it->path, it->width, it->height, it->format, it->buffer.mapped);
+        if (written) {
+            HK_CORE_INFO("Screenshot saved: {}", it->path.string());
+        } else {
+            HK_CORE_WARN("Screenshot failed: {}", written.error);
+        }
+        DestroyBuffer(device, it->buffer);
+        it = screenshotReadbacks.erase(it);
+    }
+}
+
+void Renderer::Impl::FlushAllScreenshots() {
+    for (auto& capture : screenshotReadbacks) {
+        if (capture.buffer.IsValid()) {
+            vmaInvalidateAllocation(device.allocator, capture.buffer.allocation, 0, capture.buffer.size);
+        }
+        const Status written =
+            WriteScreenshotPng(capture.path, capture.width, capture.height, capture.format, capture.buffer.mapped);
+        if (written) {
+            HK_CORE_INFO("Screenshot saved: {}", capture.path.string());
+        } else {
+            HK_CORE_WARN("Screenshot failed: {}", written.error);
+        }
+        DestroyBuffer(device, capture.buffer);
+    }
+    screenshotReadbacks.clear();
+}
+
 void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& camera, VkImageView outputColor,
                                          VkExtent2D outputExtent) {
     FrameData& frame = frames.Frame(frameIndex);
@@ -1998,8 +2281,8 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
     // Gather camera/lights/cascades/renderables, then upload the scene UBO so
     // the cascade matrices are visible to both the shadow and main passes.
     GatherScene(scene, camera);
-    if (sceneUBOs[frameIndex].mapped != nullptr) {
-        std::memcpy(sceneUBOs[frameIndex].mapped, &frameScene, sizeof(frameScene));
+    if (curSceneUBOs != nullptr && (*curSceneUBOs)[frameIndex].mapped != nullptr) {
+        std::memcpy((*curSceneUBOs)[frameIndex].mapped, &frameScene, sizeof(frameScene));
     }
 
     // --- Shadow pass: render cascades into the depth atlas ------------------
@@ -2084,6 +2367,8 @@ void Renderer::RenderScene(Scene& scene, const CameraRenderData& camera) {
     }
     r.curTargets = &r.targets;
     r.curGlobalSets = &r.globalSets;
+    r.curCameraUBOs = &r.cameraUBOs;
+    r.curSceneUBOs = &r.sceneUBOs;
     r.curDepth = &r.depthTargets;
 
     VkCommandBuffer cmd = r.frames.Frame(r.frameIndex).commandBuffer;
@@ -2111,6 +2396,16 @@ void Renderer::EndFrame() {
         BeginRenderingScope(cmd, r.swapchain.Extent(), r.swapchain.ImageView(r.imageIndex), VK_ATTACHMENT_LOAD_OP_CLEAR,
                             r.clearColor, VK_NULL_HANDLE, false);
         vkCmdEndRendering(cmd);
+    }
+
+    if (std::optional<std::filesystem::path> path =
+            r.TakeScreenshotRequest(Impl::ScreenshotSource::Swapchain, TextureHandle{})) {
+        if (r.swapchain.SupportsTransferSrc()) {
+            r.RecordScreenshotCopy(cmd, r.swapchain.Image(r.imageIndex), r.swapchain.Extent(),
+                                   r.swapchain.ColorFormat(), r.swapchainLayout, *path);
+        } else {
+            HK_CORE_WARN("Screenshot skipped: swapchain no longer supports transfer-src images");
+        }
     }
 
     TransitionImage(cmd, r.swapchain.Image(r.imageIndex), r.swapchainLayout, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -2241,6 +2536,7 @@ void Renderer::Impl::DestroyOffscreenTarget(OffscreenTarget& t) {
         DestroyTexture(device, t.color[f]);
         DestroyTexture(device, t.depth[f]);
     }
+    DestroyGlobalUniforms(t.cameraUBOs, t.sceneUBOs);
     t.intermediates.Destroy();
     t.valid = false;
 }
@@ -2261,18 +2557,13 @@ TextureHandle Renderer::CreateRenderTarget(const RenderTargetDesc& desc) {
     if (Status s = target.intermediates.Create(r.device, r.command); !s) {
         return {};
     }
-    // Global sets share the per-frame camera/scene UBOs (bindings 0/1); the
-    // shadow/AO images (bindings 2/3) are filled by BuildOffscreenTarget.
-    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
-        target.globalSets[f] = r.descriptorAllocator.Allocate(r.descriptorLayouts.global);
-        if (target.globalSets[f] == VK_NULL_HANDLE) {
-            target.intermediates.Destroy();
-            return {};
-        }
-        DescriptorWriter writer;
-        writer.WriteBuffer(0, r.cameraUBOs[f].buffer, r.cameraUBOs[f].size, 0, DescriptorType::UniformBuffer)
-            .WriteBuffer(1, r.sceneUBOs[f].buffer, r.sceneUBOs[f].size, 0, DescriptorType::UniformBuffer);
-        writer.Update(r.device, target.globalSets[f]);
+    if (Status s = r.CreateGlobalUniforms(target.cameraUBOs, target.sceneUBOs, target.debugName); !s) {
+        target.intermediates.Destroy();
+        return {};
+    }
+    if (Status s = r.AllocateGlobalSets(target.globalSets, target.cameraUBOs, target.sceneUBOs); !s) {
+        r.DestroyOffscreenTarget(target);
+        return {};
     }
     if (Status s = r.BuildOffscreenTarget(target); !s) {
         r.DestroyOffscreenTarget(target);
@@ -2327,6 +2618,8 @@ void Renderer::RenderSceneToTarget(Scene& scene, const CameraRenderData& camera,
 
     r.curTargets = &t->intermediates;
     r.curGlobalSets = &t->globalSets;
+    r.curCameraUBOs = &t->cameraUBOs;
+    r.curSceneUBOs = &t->sceneUBOs;
     r.curDepth = &t->depth;
 
     TransitionImage(cmd, color.image, color.currentLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -2336,6 +2629,12 @@ void Renderer::RenderSceneToTarget(Scene& scene, const CameraRenderData& camera,
     BeginDebugLabel(cmd, "RenderToTarget");
     r.RenderSceneInternal(scene, camera, color.view, {t->width, t->height});
     EndDebugLabel(cmd);
+
+    if (std::optional<std::filesystem::path> path =
+            r.TakeScreenshotRequest(Impl::ScreenshotSource::RenderTarget, target)) {
+        r.RecordScreenshotCopy(cmd, color.image, {t->width, t->height}, color.format,
+                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, *path);
+    }
 
     // Leave the result sampleable (ImGui later) / transferable (blit now).
     TransitionImage(cmd, color.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -2376,6 +2675,36 @@ void Renderer::BlitTargetToSwapchain(TextureHandle target) {
                     VK_IMAGE_ASPECT_COLOR_BIT);
     color.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     r.sceneRendered = true; // swapchain now has content; skip the clear fallback
+}
+
+Status Renderer::RequestScreenshot(const std::filesystem::path& path) {
+    Impl& r = *m_Impl;
+    if (!r.initialized) {
+        return Status::Fail("Renderer is not initialized");
+    }
+    if (path.empty()) {
+        return Status::Fail("Screenshot path is empty");
+    }
+    if (r.swapchain.Get() == VK_NULL_HANDLE || !r.swapchain.SupportsTransferSrc()) {
+        return Status::Fail("Swapchain screenshots are not supported on this surface");
+    }
+    r.screenshotRequests.push_back({Impl::ScreenshotSource::Swapchain, TextureHandle{}, path});
+    return Status::Ok();
+}
+
+Status Renderer::RequestRenderTargetScreenshot(TextureHandle target, const std::filesystem::path& path) {
+    Impl& r = *m_Impl;
+    if (!r.initialized) {
+        return Status::Fail("Renderer is not initialized");
+    }
+    if (path.empty()) {
+        return Status::Fail("Screenshot path is empty");
+    }
+    if (r.ResolveRenderTarget(target) == nullptr) {
+        return Status::Fail("Screenshot target is invalid");
+    }
+    r.screenshotRequests.push_back({Impl::ScreenshotSource::RenderTarget, target, path});
+    return Status::Ok();
 }
 
 MeshHandle Renderer::CreateMesh(const MeshDesc& desc) {

@@ -1,5 +1,7 @@
 #include "Hockey/Renderer/Vulkan/VulkanMesh.hpp"
 
+#include <limits>
+
 namespace Hockey {
 
 VulkanMesh CreateMesh(const RenderDevice& device, const VulkanCommand& commands, const MeshDesc& desc) {
@@ -10,6 +12,12 @@ VulkanMesh CreateMesh(const RenderDevice& device, const VulkanCommand& commands,
     }
     mesh.vertexCount = static_cast<uint32_t>(desc.vertices.size());
     mesh.indexCount = static_cast<uint32_t>(desc.indices.size());
+    mesh.boundsMin = glm::vec3(std::numeric_limits<float>::max());
+    mesh.boundsMax = glm::vec3(std::numeric_limits<float>::lowest());
+    for (const Vertex& vertex : desc.vertices) {
+        mesh.boundsMin = glm::min(mesh.boundsMin, vertex.position);
+        mesh.boundsMax = glm::max(mesh.boundsMax, vertex.position);
+    }
 
     const size_t vertexBytes = desc.vertices.size() * sizeof(Vertex);
     const size_t indexBytes = desc.indices.size() * sizeof(uint32_t);

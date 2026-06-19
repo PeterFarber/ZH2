@@ -6,6 +6,7 @@
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/EditorGameplayPreview.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 #include "Hockey/Editor/ImGui/ImGuiLayer.hpp"
 #include "Hockey/Editor/MainMenuBar.hpp"
@@ -73,9 +74,9 @@ public:
     // Runs the scene validator and reports the result (Console panel later; logs
     // for now). Returns the number of issues found.
     int ValidateActiveScene();
-    // Toggles play / simulate scene-lifecycle modes (no gameplay in Phase 4).
-    void TogglePlayMode();
-    void ToggleSimulateMode();
+    // Toggles the in-editor gameplay playtest. Play mode is live/editable and
+    // restored from an authoring snapshot on stop.
+    void TogglePlaytestMode();
 
     // ----- Undo / clipboard actions (Edit menu + keyboard shortcuts) -----
     void Undo();
@@ -88,7 +89,10 @@ public:
     void SelectAllEntities();
     void DeselectAll();
 
-    // Opens (and focuses) the Preferences panel from the Edit menu.
+    // Opens (and focuses) the Project Settings panel from the Edit menu.
+    void OpenProjectSettings();
+
+    // Backward-compatible alias for older call sites.
     void OpenPreferences();
 
 private:
@@ -117,6 +121,8 @@ private:
     bool DoSaveScene();   // save to active path, falling back to Save As
     bool DoSaveSceneAs(); // native dialog + serialize
     void DoOpenScene(const std::filesystem::path& path);
+    void StopPlaytestMode();
+    void SyncPreviewState();
     // Copies 'source' into data/raw/<type> and runs import + cook on it.
     void DoImportAsset(const std::filesystem::path& source);
     std::filesystem::path DefaultSceneDirectory() const;
@@ -128,10 +134,12 @@ private:
     Toolbar m_Toolbar;
     SceneWorkflow m_SceneWorkflow;
     EditorPhysicsPreview m_PhysicsPreview;
+    EditorGameplayPreview m_GameplayPreview;
 
     PendingAction m_PendingAction = PendingAction::None;
     std::filesystem::path m_PendingScenePath;
     bool m_OpenUnsavedPopup = false;
+    bool m_PlayModeRestoreDirty = false;
 
     bool m_Initialized = false;
     bool m_WantsQuit = false;

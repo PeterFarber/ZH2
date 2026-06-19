@@ -1,0 +1,157 @@
+Scene:
+  Name: Main
+  Mode: Edit
+  Version: 1
+Entities:
+  - Entity: 11893923224105565907
+    NameComponent:
+      Name: Directional Light
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [224.3, -91.5, 0]
+      Scale: [0.99999994, 1.0000002, 1.0000002]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 1.5
+      Range: 2.5
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 500440934243038823
+    NameComponent:
+      Name: Cube
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3.789865, 7.632551, 3.8337302]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: Builtin.sphere
+      MaterialName: BuiltIn.Ice
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 1018384515503876314
+    NameComponent:
+      Name: Camera
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 20, 14.5]
+      Rotation: [-63.6, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    CameraComponent:
+      FovDegrees: 70
+      NearClip: 0.1
+      FarClip: 1000
+      Primary: true
+  - Entity: 6097499891596942872
+    NameComponent:
+      Name: Environment
+    ActiveComponent:
+      Active: false
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    EnvironmentComponent:
+      AmbientColor: [0.03, 0.03, 0.03]
+      AmbientIntensity: 2
+  - Entity: 3212542106637362575
+    NameComponent:
+      Name: Point Light
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [6.914242, 9.656038, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Point
+      Color: [1, 0.2, 1]
+      Intensity: 26.8
+      Range: 18.8
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 4145744024904508047
+    NameComponent:
+      Name: Rink_Boards
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 12715888057807001399
+      MaterialAsset: 8730987331800323447
+      MeshName: ""
+      MaterialName: ""
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 10266258035893822130
+    NameComponent:
+      Name: Rink_Ice
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 15640204396032829137
+      MaterialAsset: 11304597749339719697
+      MeshName: ""
+      MaterialName: ""
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 17435537181274817166
+    NameComponent:
+      Name: Cube
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3.789865, 6.8354, 3.8337302]
+      Rotation: [0, -0, 0]
+      Scale: [7.514145, 1, 5.605714]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 0
+      MaterialAsset: 0
+      MeshName: Builtin.capsule
+      MaterialName: BuiltIn.Ice
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

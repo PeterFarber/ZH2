@@ -71,6 +71,7 @@ Entity Scene::CreateEntityWithUUID(UUID id, const std::string& name) {
     const entt::entity handle = m_Registry.create();
     m_Registry.emplace<IDComponent>(handle, id);
     m_Registry.emplace<NameComponent>(handle, name);
+    m_Registry.emplace<ObjectSettingsComponent>(handle);
     m_Registry.emplace<ActiveComponent>(handle);
     m_Registry.emplace<TransformComponent>(handle);
     m_Registry.emplace<ChildrenComponent>(handle);
@@ -91,6 +92,7 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     const entt::entity newHandle = copy.Handle();
 
     CopyComponent<ActiveComponent>(m_Registry, sourceHandle, newHandle);
+    CopyComponent<ObjectSettingsComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<TransformComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<TeamComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<PlayerRoleComponent>(m_Registry, sourceHandle, newHandle);

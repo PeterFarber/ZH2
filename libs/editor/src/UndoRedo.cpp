@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "Hockey/Editor/EditorContext.hpp"
+
 namespace Hockey {
 
 void UndoRedoStack::Execute(std::unique_ptr<EditorCommand> command, EditorContext& context) {
@@ -9,6 +11,9 @@ void UndoRedoStack::Execute(std::unique_ptr<EditorCommand> command, EditorContex
         return;
     }
     command->Execute(context);
+    if (context.playMode) {
+        return;
+    }
     m_RedoStack.clear();
     m_UndoStack.push_back(std::move(command));
     while (m_UndoStack.size() > m_Capacity && !m_UndoStack.empty()) {
@@ -17,7 +22,7 @@ void UndoRedoStack::Execute(std::unique_ptr<EditorCommand> command, EditorContex
 }
 
 void UndoRedoStack::Undo(EditorContext& context) {
-    if (m_UndoStack.empty()) {
+    if (context.playMode || m_UndoStack.empty()) {
         return;
     }
     std::unique_ptr<EditorCommand> command = std::move(m_UndoStack.back());
@@ -27,7 +32,7 @@ void UndoRedoStack::Undo(EditorContext& context) {
 }
 
 void UndoRedoStack::Redo(EditorContext& context) {
-    if (m_RedoStack.empty()) {
+    if (context.playMode || m_RedoStack.empty()) {
         return;
     }
     std::unique_ptr<EditorCommand> command = std::move(m_RedoStack.back());

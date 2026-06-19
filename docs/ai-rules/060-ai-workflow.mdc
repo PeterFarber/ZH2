@@ -1,0 +1,45 @@
+---
+description: Workflow rules for AI agents working in this repo.
+globs:
+alwaysApply: true
+---
+
+# AI Workflow
+
+Before editing:
+
+- Read `docs/project-structure.md` for current repo structure and target state.
+- Read `docs/ai-agent-tooling.md` for the shared `just` command surface and
+  optional agent tool policy.
+- Read `docs/ai-debugging-playbook.md` when debugging, verifying runtime
+  behavior, or collecting screenshot evidence.
+- Read `docs/phase_status/README.md` and the relevant phase status file for
+  per-phase finished/partial/remaining status.
+- Inspect the relevant source, headers, CMake target, config, and tests.
+- Prefer current source/CMake truth over stale overview text.
+- Check dependency boundaries before adding includes, links, or new targets.
+
+While editing:
+
+- Keep changes scoped to the requested subsystem.
+- Do not change generated/cooked assets unless the task is asset-pipeline work
+  and the user asked for it.
+- Do not touch unrelated dirty files.
+- Use existing local patterns before adding abstractions.
+- Update CMake when adding/removing source files.
+- Update tests for behavior changes.
+- Check whether the matching `docs/phase_status/phase-*.md` file needs an
+  update after every repo-tracked change.
+
+After editing:
+
+- Run the narrowest relevant test executable or script when feasible.
+- Prefer `just verify` as the completion contract when the `just` CLI is
+  available; otherwise use the direct platform scripts it wraps.
+- For source changes, mention any tests that could not be run.
+- For docs-only changes, no build is required.
+- Update phase status if the change completed, started, removed, invalidated, or
+  changed verification for a phase item.
+- If no phase status file needs to change, say
+  "No phase status change needed" in the final response.
+- Report files changed and the verification performed.

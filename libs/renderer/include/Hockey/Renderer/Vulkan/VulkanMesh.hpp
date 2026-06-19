@@ -15,6 +15,8 @@ struct VulkanMesh {
     VulkanBuffer indexBuffer;
     uint32_t vertexCount = 0;
     uint32_t indexCount = 0;
+    glm::vec3 boundsMin{0.0f};
+    glm::vec3 boundsMax{0.0f};
 
     bool IsValid() const {
         return vertexBuffer.IsValid() && indexBuffer.IsValid() && indexCount > 0;

@@ -19,3 +19,13 @@ gravity_z = 0.0
 enable_debug_draw = false
 enable_sleeping = true
 deterministic_mode = true
+
+[gameplay]
+enabled = true
+authoritative = true
+target_player_count = 8
+skaters_per_team = 3
+goalies_per_team = 1
+period_length_seconds = 300.0
+period_count = 3
+log_gameplay_events = true

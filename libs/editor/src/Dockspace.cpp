@@ -62,7 +62,6 @@ void Dockspace::BuildDefaultLayout() {
     using namespace EditorPanelNames;
     ImGui::DockBuilderDockWindow(kHierarchy, left);
     ImGui::DockBuilderDockWindow(kInspector, right);
-    ImGui::DockBuilderDockWindow(kPhysics, right);
     ImGui::DockBuilderDockWindow(kSceneViewport, center);
     ImGui::DockBuilderDockWindow(kGameViewport, center);
     ImGui::DockBuilderDockWindow(kProject, bottom);

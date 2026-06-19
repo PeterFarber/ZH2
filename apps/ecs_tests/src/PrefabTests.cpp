@@ -71,6 +71,13 @@ void RunPrefabTests() {
     activeOverride.value = YAML::Load("false");
     overrides.AddOverride(activeOverride);
 
+    PrefabOverride settingsOverride;
+    settingsOverride.entityId = root.GetUUID();
+    settingsOverride.componentName = "ObjectSettingsComponent";
+    settingsOverride.fieldName = "Tag";
+    settingsOverride.value = YAML::Load("Goal");
+    overrides.AddOverride(settingsOverride);
+
     PrefabOverride markerOverride;
     markerOverride.entityId = childInstance.GetUUID();
     markerOverride.componentName = "GoalComponent";
@@ -83,5 +90,6 @@ void RunPrefabTests() {
     HK_CHECK_NEAR(root.GetComponent<TransformComponent>().localPosition.z, 7.0f, 1e-4);
     HK_CHECK_EQ(root.GetName(), std::string("Renamed Net"));
     HK_CHECK(!root.IsActive());
+    HK_CHECK_EQ(root.GetComponent<ObjectSettingsComponent>().tag, std::string("Goal"));
     HK_CHECK(childInstance.GetComponent<GoalComponent>().defendingTeam == Team::Away);
 }

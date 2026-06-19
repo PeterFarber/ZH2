@@ -6,6 +6,8 @@
 #include "Hockey/Editor/EditorApp.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
+#include <string>
+
 // Thin host shell for the Unity-style map editor. It owns the OS/window, the
 // renderer, the active scene and config, then hands references to EditorApp
 // (libs/editor), which owns all editor UI/state. This app links hockey_editor;
@@ -34,4 +36,7 @@ private:
     // Optional headless-ish smoke mode: --frames N renders N frames then quits.
     int m_FrameLimit = 0;
     int m_FrameCount = 0;
+    int m_ScreenshotFrame = 3;
+    bool m_AutoScreenshotPending = false;
+    std::string m_ScreenshotPrefix = "editor_window";
 };

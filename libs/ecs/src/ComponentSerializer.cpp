@@ -56,6 +56,9 @@ void SerializeHockeyMarkers(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "Team" << YAML::Value << TeamToString(spawn.team);
         out << YAML::Key << "Role" << YAML::Value << PlayerRoleToString(spawn.role);
         out << YAML::Key << "Index" << YAML::Value << spawn.index;
+        if (!spawn.playerPrefabPath.empty()) {
+            out << YAML::Key << "PlayerPrefabPath" << YAML::Value << spawn.playerPrefabPath.generic_string();
+        }
         out << YAML::EndMap;
     }
     if (entity.HasComponent<FaceoffSpotComponent>()) {
@@ -147,6 +150,13 @@ void ComponentSerializer::SerializeEntity(YAML::Emitter& out, Entity entity) {
 
     out << YAML::Key << "NameComponent" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Name" << YAML::Value << entity.GetComponent<NameComponent>().name;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "ObjectSettingsComponent" << YAML::Value << YAML::BeginMap;
+    const auto& settings = entity.GetComponent<ObjectSettingsComponent>();
+    out << YAML::Key << "Tag" << YAML::Value << settings.tag;
+    out << YAML::Key << "Layer" << YAML::Value << settings.layer;
+    out << YAML::Key << "Static" << YAML::Value << settings.isStatic;
     out << YAML::EndMap;
 
     out << YAML::Key << "ActiveComponent" << YAML::Value << YAML::BeginMap;
@@ -241,6 +251,19 @@ bool ComponentSerializer::DeserializeCoreComponents(Entity entity, const YAML::N
         registry.get<NameComponent>(handle).name = nameNode["Name"].as<std::string>();
     }
 
+    if (const auto settingsNode = node["ObjectSettingsComponent"]) {
+        auto& settings = registry.get<ObjectSettingsComponent>(handle);
+        if (settingsNode["Tag"]) {
+            settings.tag = settingsNode["Tag"].as<std::string>();
+        }
+        if (settingsNode["Layer"]) {
+            settings.layer = settingsNode["Layer"].as<std::string>();
+        }
+        if (settingsNode["Static"]) {
+            settings.isStatic = settingsNode["Static"].as<bool>();
+        }
+    }
+
     if (const auto activeNode = node["ActiveComponent"]; activeNode && activeNode["Active"]) {
         registry.get<ActiveComponent>(handle).active = activeNode["Active"].as<bool>();
     }
@@ -328,6 +351,9 @@ bool ComponentSerializer::DeserializeHockeyMarkerComponents(Entity entity, const
         }
         if (spawnNode["Index"]) {
             component.index = spawnNode["Index"].as<int>();
+        }
+        if (spawnNode["PlayerPrefabPath"]) {
+            component.playerPrefabPath = spawnNode["PlayerPrefabPath"].as<std::string>();
         }
         registry.emplace_or_replace<SpawnPointComponent>(handle, component);
     }

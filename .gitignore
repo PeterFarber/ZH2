@@ -1,10 +1,12 @@
 # Build output
 build/
-out/
+out/*
+!out/.gitkeep
 .vcpkg/
 vcpkg_installed/
 .vs/
 .idea/
+CMakeUserPresets.json
 
 # Notes
 _notes/*
@@ -21,6 +23,22 @@ data/temp/*
 Thumbs.db
 *.swp
 *.swo
+__pycache__/
+*.py[cod]
+
+# Local agent/tool state
+agents.lock
+.agents/.gitignore
+.cache/
+.beads/
+graphify-out/
+.serena/project.local.yml
+.serena/.gitignore
+.serena/cache/
+.serena/logs/
+.serena/memories/
+.codex/
+.mcp.json
 
 # Binaries
 *.exe
@@ -33,3 +51,13 @@ Thumbs.db
 *.o
 *.a
 *.lib
+
+
+# _save
+_save/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/

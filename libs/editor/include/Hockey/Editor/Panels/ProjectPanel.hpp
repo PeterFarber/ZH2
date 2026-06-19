@@ -26,7 +26,7 @@ private:
         ConfirmDelete,
     };
 
-    void DrawToolbar();
+    void DrawToolbar(EditorContext& context);
     void DrawTree(EditorContext& context);
     void DrawSearchResults(EditorContext& context);
     void DrawDirectoryChildren(EditorContext& context, const std::filesystem::path& dir);

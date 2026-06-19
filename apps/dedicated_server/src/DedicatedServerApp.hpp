@@ -2,6 +2,8 @@
 #include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/HeadlessApplication.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Gameplay/GameplaySettings.hpp"
+#include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include <cstdint>
 
 namespace Hockey {
@@ -20,8 +22,12 @@ protected:
 private:
     Hockey::Config m_Config;
     Hockey::Scene m_Scene{"Server Scene"};
+    Hockey::GameplayWorld m_GameplayWorld;
+    Hockey::GameplaySettings m_GameplaySettings;
     Hockey::PhysicsSystem* m_PhysicsSystem = nullptr; // owned by m_Scene
+    bool m_GameplayEnabled = false;
     bool m_PhysicsDebug = false;
     uint64_t m_Tick = 0;
     uint64_t m_TicksPerLog = 60;
+    uint64_t m_MaxTicks = 0;
 };

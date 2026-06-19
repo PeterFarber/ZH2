@@ -26,6 +26,7 @@ void EditorPhysicsPreview::Start(Scene& scene) {
     }
     m_PhysicsScene.OnSimulationStart(scene);
     m_Timestep.Reset();
+    m_ContactPoints.clear();
     m_Active = true;
     m_Running = false;
 }
@@ -38,6 +39,7 @@ void EditorPhysicsPreview::Stop(Scene& scene) {
     m_PhysicsScene.Shutdown();
     RestoreTransforms(scene);
     m_SavedTransforms.clear();
+    m_ContactPoints.clear();
     m_Active = false;
     m_Running = false;
 }
@@ -57,7 +59,15 @@ void EditorPhysicsPreview::StepOnce(Scene& scene) {
         return;
     }
     m_Running = false;
-    m_PhysicsScene.OnFixedUpdate(scene, m_Settings.fixedDeltaSeconds);
+    AdvanceFixed(scene, m_Settings.fixedDeltaSeconds);
+}
+
+void EditorPhysicsPreview::AdvanceFixed(Scene& scene, float fixedDeltaSeconds) {
+    if (!m_Active) {
+        return;
+    }
+    m_PhysicsScene.OnFixedUpdate(scene, fixedDeltaSeconds);
+    CaptureContactPoints();
 }
 
 void EditorPhysicsPreview::Reset(Scene& scene) {
@@ -69,6 +79,7 @@ void EditorPhysicsPreview::Reset(Scene& scene) {
     // Rebuild the preview world from the restored transforms.
     m_PhysicsScene.OnSimulationStart(scene);
     m_Timestep.Reset();
+    m_ContactPoints.clear();
 }
 
 void EditorPhysicsPreview::Update(Scene& scene, float deltaTime) {
@@ -78,18 +89,18 @@ void EditorPhysicsPreview::Update(Scene& scene, float deltaTime) {
     const int steps = m_Timestep.Accumulate(static_cast<double>(deltaTime));
     const float fixedDelta = static_cast<float>(m_Timestep.GetFixedDeltaSeconds());
     for (int i = 0; i < steps; ++i) {
-        m_PhysicsScene.OnFixedUpdate(scene, fixedDelta);
+        AdvanceFixed(scene, fixedDelta);
         m_Timestep.AdvanceTick();
     }
+}
 
+void EditorPhysicsPreview::CaptureContactPoints() {
     // Capture contact points for the overlay, then keep event queues bounded.
-    if (steps > 0) {
-        m_ContactPoints.clear();
-        for (const PhysicsContactEvent& contact : m_PhysicsScene.World().DrainContactEvents()) {
-            m_ContactPoints.push_back(contact.contactPoint);
-        }
-        m_PhysicsScene.World().DrainTriggerEvents();
+    m_ContactPoints.clear();
+    for (const PhysicsContactEvent& contact : m_PhysicsScene.World().DrainContactEvents()) {
+        m_ContactPoints.push_back(contact.contactPoint);
     }
+    m_PhysicsScene.World().DrainTriggerEvents();
 }
 
 void EditorPhysicsPreview::SnapshotTransforms(Scene& scene) {

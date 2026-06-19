@@ -63,7 +63,9 @@ void main() {
         float shadow = 1.0;
         if (light.direction.w < 0.5) {
             L = normalize(-light.direction.xyz);
-            shadow = SampleSunShadow(vWorldPos, max(dot(N, L), 0.0));
+            if (light.spot.z > -0.5) {
+                shadow = SampleSunShadow(vWorldPos, N, max(dot(N, L), 0.0));
+            }
         } else {
             vec3 toLight = light.positionRange.xyz - vWorldPos;
             float dist = length(toLight);

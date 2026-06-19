@@ -43,52 +43,11 @@ void Toolbar::Draw(EditorContext& ctx, EditorApp& app) {
         return;
     }
 
-    // Transform tools. Activation routes through the ToolManager, which sets the
-    // viewport gizmo mode; the active tool is highlighted.
-    const char* const transformTools[] = {"Select", "Move", "Rotate", "Scale"};
-    for (const char* toolName : transformTools) {
-        if (toolName != transformTools[0]) {
-            ImGui::SameLine();
-        }
-        const EditorTool* tool = ctx.toolManager.Find(toolName);
-        if (ToggleButton(toolName, tool != nullptr && ctx.toolManager.IsActive(tool))) {
-            ctx.toolManager.Activate(toolName, ctx);
-        }
-    }
-
-    VerticalSeparator();
-
-    // Transform space toggle.
-    const bool worldSpace = ctx.transformSpace == TransformSpace::World;
-    if (ImGui::Button(worldSpace ? "World" : "Local")) {
-        ctx.transformSpace = worldSpace ? TransformSpace::Local : TransformSpace::World;
-    }
-
-    ImGui::SameLine();
-    if (ToggleButton("Snap", ctx.settings.snapEnabled)) {
-        ctx.settings.snapEnabled = !ctx.settings.snapEnabled;
-    }
-    ImGui::SameLine();
-    if (ToggleButton("Grid", ctx.settings.showGrid)) {
-        ctx.settings.showGrid = !ctx.settings.showGrid;
-    }
-
-    VerticalSeparator();
-
-    // Play-mode controls (scene lifecycle only; no gameplay in Phase 4).
+    // Playtest controls. Scene/game view state remains live-editable while the
+    // gameplay preview runs.
     if (ToggleButton("Play", ctx.playMode)) {
-        app.TogglePlayMode();
+        app.TogglePlaytestMode();
     }
-    ImGui::SameLine();
-    if (ToggleButton("Simulate", ctx.simulateMode)) {
-        app.ToggleSimulateMode();
-    }
-    ImGui::SameLine();
-    ImGui::BeginDisabled();
-    ImGui::Button("Pause");
-    ImGui::SameLine();
-    ImGui::Button("Step");
-    ImGui::EndDisabled();
 
     VerticalSeparator();
 

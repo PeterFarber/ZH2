@@ -1,0 +1,30 @@
+---
+description: Screenshot and visual verification rules for renderer/editor work.
+globs:
+alwaysApply: true
+---
+
+# Visual Verification
+
+For renderer, editor UI, scene, shader, camera, viewport, or screenshot changes:
+
+- Use visual evidence when feasible; do not claim visual correctness from code
+  inspection alone.
+- Prefer `scripts/windows/ai_smoke.ps1 -Mode Visual` or
+  `scripts/linux/ai_smoke.sh --mode Visual` for automated captures.
+- Store AI diagnostic bundles under `out/ai_diagnostics/`.
+- Treat `_save/` as engine/user runtime output, not as the AI diagnostics home.
+
+Screenshot facts:
+
+- Built-in engine screenshots are produced under `_save/screenshots/`.
+- AI smoke scripts use unique `ai_*` prefixes and move only their own captures
+  into `out/ai_diagnostics/<timestamp>/screenshots/`.
+- If manual screenshots are necessary, use a unique `ai_*` prefix and keep any
+  AI-owned copies under `out/ai_diagnostics/`.
+
+When visual verification is not possible:
+
+- Say that no display/GPU/screenshot verification was available.
+- Still run the narrowest relevant non-visual test or bounded command.
+- Report the exact command that should be used for visual follow-up.

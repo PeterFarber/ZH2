@@ -1,0 +1,151 @@
+#include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
+
+#include <yaml-cpp/yaml.h>
+
+#include "Hockey/Core/FileSystem.hpp"
+
+namespace Hockey {
+namespace {
+float ReadFloat(const YAML::Node& node, const char* key, float fallback) {
+    if (const YAML::Node value = node[key]) {
+        return value.as<float>(fallback);
+    }
+    return fallback;
+}
+
+glm::vec3 ReadVec3(const YAML::Node& node, const char* key, glm::vec3 fallback) {
+    const YAML::Node value = node[key];
+    if (!value || !value.IsSequence() || value.size() != 3) {
+        return fallback;
+    }
+    return {value[0].as<float>(fallback.x), value[1].as<float>(fallback.y), value[2].as<float>(fallback.z)};
+}
+
+void EmitVec3(YAML::Emitter& out, const char* key, const glm::vec3& value) {
+    out << YAML::Key << key << YAML::Value << YAML::Flow << YAML::BeginSeq << value.x << value.y << value.z << YAML::EndSeq;
+}
+}
+
+std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "Skater" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "MaxSpeed" << YAML::Value << tuning.skater.maxSpeed;
+    out << YAML::Key << "Acceleration" << YAML::Value << tuning.skater.acceleration;
+    out << YAML::Key << "Deceleration" << YAML::Value << tuning.skater.deceleration;
+    out << YAML::Key << "TurnSpeedDegrees" << YAML::Value << tuning.skater.turnSpeedDegrees;
+    out << YAML::Key << "SprintMultiplier" << YAML::Value << tuning.skater.sprintMultiplier;
+    out << YAML::Key << "PuckControlRadius" << YAML::Value << tuning.skater.puckControlRadius;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Goalie" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "MaxSpeed" << YAML::Value << tuning.goalie.maxSpeed;
+    out << YAML::Key << "Acceleration" << YAML::Value << tuning.goalie.acceleration;
+    out << YAML::Key << "CreaseMoveMultiplier" << YAML::Value << tuning.goalie.creaseMoveMultiplier;
+    out << YAML::Key << "SaveReachRadius" << YAML::Value << tuning.goalie.saveReachRadius;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Puck" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "MaxSpeed" << YAML::Value << tuning.puck.maxSpeed;
+    EmitVec3(out, "PossessionOffset", tuning.puck.possessionOffset);
+    out << YAML::Key << "LoosePuckDrag" << YAML::Value << tuning.puck.loosePuckDrag;
+    out << YAML::Key << "OutOfPlayY" << YAML::Value << tuning.puck.outOfPlayY;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Stick" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Reach" << YAML::Value << tuning.stick.reach;
+    out << YAML::Key << "Width" << YAML::Value << tuning.stick.width;
+    out << YAML::Key << "PokeCheckCooldown" << YAML::Value << tuning.stick.pokeCheckCooldown;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Shot" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "MinPower" << YAML::Value << tuning.shot.minPower;
+    out << YAML::Key << "MaxPower" << YAML::Value << tuning.shot.maxPower;
+    out << YAML::Key << "ChargeSeconds" << YAML::Value << tuning.shot.chargeSeconds;
+    out << YAML::Key << "AccuracyDegrees" << YAML::Value << tuning.shot.accuracyDegrees;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Pass" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Power" << YAML::Value << tuning.pass.power;
+    out << YAML::Key << "AssistRadius" << YAML::Value << tuning.pass.assistRadius;
+    out << YAML::Key << "MaxAssistAngleDegrees" << YAML::Value << tuning.pass.maxAssistAngleDegrees;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Check" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Cooldown" << YAML::Value << tuning.check.cooldown;
+    out << YAML::Key << "Impulse" << YAML::Value << tuning.check.impulse;
+    out << YAML::Key << "Radius" << YAML::Value << tuning.check.radius;
+    out << YAML::EndMap;
+    out << YAML::EndMap;
+    return out.c_str();
+}
+
+bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outTuning) {
+    YAML::Node root;
+    try {
+        root = YAML::Load(text);
+    } catch (const YAML::Exception&) {
+        return false;
+    }
+
+    if (const YAML::Node skater = root["Skater"]) {
+        outTuning.skater.maxSpeed = ReadFloat(skater, "MaxSpeed", outTuning.skater.maxSpeed);
+        outTuning.skater.acceleration = ReadFloat(skater, "Acceleration", outTuning.skater.acceleration);
+        outTuning.skater.deceleration = ReadFloat(skater, "Deceleration", outTuning.skater.deceleration);
+        outTuning.skater.turnSpeedDegrees = ReadFloat(skater, "TurnSpeedDegrees", outTuning.skater.turnSpeedDegrees);
+        outTuning.skater.sprintMultiplier = ReadFloat(skater, "SprintMultiplier", outTuning.skater.sprintMultiplier);
+        outTuning.skater.puckControlRadius = ReadFloat(skater, "PuckControlRadius", outTuning.skater.puckControlRadius);
+    }
+    if (const YAML::Node goalie = root["Goalie"]) {
+        outTuning.goalie.maxSpeed = ReadFloat(goalie, "MaxSpeed", outTuning.goalie.maxSpeed);
+        outTuning.goalie.acceleration = ReadFloat(goalie, "Acceleration", outTuning.goalie.acceleration);
+        outTuning.goalie.creaseMoveMultiplier = ReadFloat(goalie, "CreaseMoveMultiplier", outTuning.goalie.creaseMoveMultiplier);
+        outTuning.goalie.saveReachRadius = ReadFloat(goalie, "SaveReachRadius", outTuning.goalie.saveReachRadius);
+    }
+    if (const YAML::Node puck = root["Puck"]) {
+        outTuning.puck.maxSpeed = ReadFloat(puck, "MaxSpeed", outTuning.puck.maxSpeed);
+        outTuning.puck.possessionOffset = ReadVec3(puck, "PossessionOffset", outTuning.puck.possessionOffset);
+        outTuning.puck.loosePuckDrag = ReadFloat(puck, "LoosePuckDrag", outTuning.puck.loosePuckDrag);
+        outTuning.puck.outOfPlayY = ReadFloat(puck, "OutOfPlayY", outTuning.puck.outOfPlayY);
+    }
+    if (const YAML::Node stick = root["Stick"]) {
+        outTuning.stick.reach = ReadFloat(stick, "Reach", outTuning.stick.reach);
+        outTuning.stick.width = ReadFloat(stick, "Width", outTuning.stick.width);
+        outTuning.stick.pokeCheckCooldown = ReadFloat(stick, "PokeCheckCooldown", outTuning.stick.pokeCheckCooldown);
+    }
+    if (const YAML::Node shot = root["Shot"]) {
+        outTuning.shot.minPower = ReadFloat(shot, "MinPower", outTuning.shot.minPower);
+        outTuning.shot.maxPower = ReadFloat(shot, "MaxPower", outTuning.shot.maxPower);
+        outTuning.shot.chargeSeconds = ReadFloat(shot, "ChargeSeconds", outTuning.shot.chargeSeconds);
+        outTuning.shot.accuracyDegrees = ReadFloat(shot, "AccuracyDegrees", outTuning.shot.accuracyDegrees);
+    }
+    if (const YAML::Node pass = root["Pass"]) {
+        outTuning.pass.power = ReadFloat(pass, "Power", outTuning.pass.power);
+        outTuning.pass.assistRadius = ReadFloat(pass, "AssistRadius", outTuning.pass.assistRadius);
+        outTuning.pass.maxAssistAngleDegrees = ReadFloat(pass, "MaxAssistAngleDegrees", outTuning.pass.maxAssistAngleDegrees);
+    }
+    if (const YAML::Node check = root["Check"]) {
+        outTuning.check.cooldown = ReadFloat(check, "Cooldown", outTuning.check.cooldown);
+        outTuning.check.impulse = ReadFloat(check, "Impulse", outTuning.check.impulse);
+        outTuning.check.radius = ReadFloat(check, "Radius", outTuning.check.radius);
+    }
+    return true;
+}
+
+Status TuningSerializer::Save(const std::filesystem::path& path, const GameplayTuning& tuning) {
+    return FileSystem::WriteTextFile(path, Serialize(tuning));
+}
+
+Result<GameplayTuning> TuningSerializer::Load(const std::filesystem::path& path) {
+    Result<std::string> text = FileSystem::ReadTextFile(path);
+    if (!text) {
+        return Result<GameplayTuning>::Fail(text.error);
+    }
+    GameplayTuning tuning;
+    if (!Deserialize(text.value, tuning)) {
+        return Result<GameplayTuning>::Fail("failed to parse gameplay tuning: " + path.string());
+    }
+    return Result<GameplayTuning>::Ok(tuning);
+}
+
+}

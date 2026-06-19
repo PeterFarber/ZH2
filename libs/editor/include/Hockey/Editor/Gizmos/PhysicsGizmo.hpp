@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace Hockey {
 
 class DebugDraw;
@@ -12,7 +14,19 @@ struct PhysicsViewState;
 // world transform, so it works in Edit mode without a running simulation.
 namespace PhysicsGizmo {
 
-void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view);
+struct SubmitStats {
+    std::uint32_t colliders = 0;
+    std::uint32_t triggers = 0;
+    std::uint32_t bodyCenters = 0;
+    std::uint32_t contacts = 0;
+    std::uint32_t lines = 0;
+
+    bool HasAny() const {
+        return colliders > 0 || triggers > 0 || bodyCenters > 0 || contacts > 0;
+    }
+};
+
+SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view);
 
 } // namespace PhysicsGizmo
 

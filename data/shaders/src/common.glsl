@@ -21,7 +21,7 @@ struct GpuLight {
     vec4 positionRange; // xyz position, w range (0 => directional)
     vec4 direction;     // xyz direction, w type (0 dir, 1 point, 2 spot)
     vec4 color;         // rgb color, a intensity
-    vec4 spot;          // x cosInner, y cosOuter, z local-shadow base tile (<0 => none)
+    vec4 spot;          // x cosInner, y cosOuter, z shadow index/enabled (<0 => none)
 };
 
 #define HK_MAX_LIGHTS 16
@@ -74,9 +74,43 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float SampleSunShadowCascade(int cascade, int cascadeCount, vec3 shadowPos, float bias) {
+    vec4 lightClip = uScene.cascadeViewProj[cascade] * vec4(shadowPos, 1.0);
+    vec3 proj = lightClip.xyz / lightClip.w;
+    if (proj.z > 1.0 || proj.z < 0.0) {
+        return 1.0;
+    }
+    vec2 uv = proj.xy * 0.5 + 0.5;
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return 1.0;
+    }
+    // Map cascade UV into the atlas. A single cascade owns the full atlas;
+    // multiple cascades are packed into a 2x2 atlas.
+    vec2 tile = vec2(float(cascade & 1), float(cascade >> 1));
+    float tileScale = cascadeCount == 1 ? 1.0 : 0.5;
+    vec2 atlasUV = cascadeCount == 1 ? uv : (uv + tile) * 0.5;
+
+    float texel = uScene.params.z;
+    int radius = int(uScene.params.w + 0.5);
+    vec2 tileMin = cascadeCount == 1 ? vec2(texel) : tile * 0.5 + vec2(texel);
+    vec2 tileMax = cascadeCount == 1 ? vec2(1.0 - texel) : (tile + vec2(1.0)) * tileScale - vec2(texel);
+
+    float sum = 0.0;
+    float taps = 0.0;
+    for (int x = -radius; x <= radius; ++x) {
+        for (int y = -radius; y <= radius; ++y) {
+            vec2 offset = vec2(float(x), float(y)) * texel;
+            vec2 sampleUV = clamp(atlasUV + offset, tileMin, tileMax);
+            sum += texture(uShadowMap, vec3(sampleUV, proj.z - bias));
+            taps += 1.0;
+        }
+    }
+    return sum / max(taps, 1.0);
+}
+
 // Returns lit visibility (1 = lit) from the cascaded directional shadow map.
 // Cascades are packed into a 2x2 atlas; the cascade is chosen by view depth.
-float SampleSunShadow(vec3 worldPos, float NdotL) {
+float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL) {
     int cascadeCount = int(uScene.params.y + 0.5);
     if (cascadeCount <= 0) {
         return 1.0;
@@ -91,33 +125,27 @@ float SampleSunShadow(vec3 worldPos, float NdotL) {
         }
     }
 
-    vec4 lightClip = uScene.cascadeViewProj[cascade] * vec4(worldPos, 1.0);
-    vec3 proj = lightClip.xyz / lightClip.w;
-    if (proj.z > 1.0 || proj.z < 0.0) {
-        return 1.0;
-    }
-    vec2 uv = proj.xy * 0.5 + 0.5;
-    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-        return 1.0;
-    }
-    // Map cascade UV into its half-atlas tile (col = cascade&1, row = cascade>>1).
-    vec2 tile = vec2(float(cascade & 1), float(cascade >> 1));
-    vec2 atlasUV = (uv + tile) * 0.5;
+    // Offset the receiver query a little along the surface normal. This keeps
+    // visible surfaces from comparing against their own nearly-identical depth.
+    vec3 shadowPos = worldPos + normalize(normal) * 0.035;
+    float bias = clamp(0.0009 + 0.0035 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.0009, 0.006);
+    float shadow = SampleSunShadowCascade(cascade, cascadeCount, shadowPos, bias);
 
-    float bias = clamp(0.0015 * tan(acos(clamp(NdotL, 0.0, 1.0))), 0.0, 0.005);
-    float texel = uScene.params.z;
-    int radius = int(uScene.params.w + 0.5);
-
-    float sum = 0.0;
-    float taps = 0.0;
-    for (int x = -radius; x <= radius; ++x) {
-        for (int y = -radius; y <= radius; ++y) {
-            vec2 offset = vec2(float(x), float(y)) * texel;
-            sum += texture(uShadowMap, vec3(atlasUV + offset, proj.z - bias));
-            taps += 1.0;
+    // Blend into the next cascade near a split. The renderer overlaps cascade
+    // fit regions, so both maps should contain nearby casters and this removes
+    // hard rectangular split edges on broad receivers like the rink ice.
+    if (cascade + 1 < cascadeCount) {
+        float split = uScene.cascadeSplits[cascade];
+        float prevSplit = cascade == 0 ? uCamera.clip.x : uScene.cascadeSplits[cascade - 1];
+        float blendRange = max((split - prevSplit) * 0.12, 0.75);
+        float blend = clamp((viewDepth - (split - blendRange)) / blendRange, 0.0, 1.0);
+        if (blend > 0.0) {
+            float nextShadow = SampleSunShadowCascade(cascade + 1, cascadeCount, shadowPos, bias);
+            shadow = mix(shadow, nextShadow, blend);
         }
     }
-    return sum / max(taps, 1.0);
+
+    return shadow;
 }
 
 // Returns lit visibility (1 = lit) for a spot/point light from the shared local

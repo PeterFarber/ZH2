@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
             "  --config <file>   Override server config TOML path\n"
             "  --log <file>      Override server log file path\n"
             "  --tick-rate <hz>  Override the fixed simulation tick rate\n"
+            "  --max-ticks <n>   Run a bounded simulation and exit after n ticks\n"
             "  --port <port>     Override the listen port\n"
             "  --help, -h        Print this message and exit\n");
         return 0;

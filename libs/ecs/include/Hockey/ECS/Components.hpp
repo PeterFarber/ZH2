@@ -24,6 +24,12 @@ struct NameComponent {
     std::string name = "GameObject";
 };
 
+struct ObjectSettingsComponent {
+    std::string tag = "Untagged";
+    std::string layer = "Default";
+    bool isStatic = false;
+};
+
 struct ActiveComponent {
     bool active = true;            // user-controlled local flag
     bool activeInHierarchy = true; // active && every ancestor active
@@ -82,6 +88,7 @@ struct SpawnPointComponent {
     Team team = Team::None;
     PlayerRole role = PlayerRole::Skater;
     int index = 0;
+    std::filesystem::path playerPrefabPath;
 };
 
 struct FaceoffSpotComponent {
@@ -114,6 +121,7 @@ template <typename T> struct ComponentTraits;
 
 HK_DEFINE_COMPONENT_TRAITS(IDComponent);
 HK_DEFINE_COMPONENT_TRAITS(NameComponent);
+HK_DEFINE_COMPONENT_TRAITS(ObjectSettingsComponent);
 HK_DEFINE_COMPONENT_TRAITS(ActiveComponent);
 HK_DEFINE_COMPONENT_TRAITS(TransformComponent);
 HK_DEFINE_COMPONENT_TRAITS(ParentComponent);

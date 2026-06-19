@@ -1,0 +1,17 @@
+Asset:
+  ID: 80141887699915581
+  Type: Prefab
+  Name: Home Skater 0.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/80141887699915581.prefab.yaml
+  RawFileTimestamp: 134262087127455666
+  RawFileHash: 12814071500494457146
+  ImportedTimestamp: 1781818155
+  CookedTimestamp: 1781816465
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

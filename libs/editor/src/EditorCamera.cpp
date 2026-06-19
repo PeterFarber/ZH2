@@ -100,6 +100,44 @@ void EditorCamera::Focus(const glm::vec3& target, float radius) {
     m_Position = target - Forward() * distance;
 }
 
+void EditorCamera::SetFromRenderData(const CameraRenderData& data) {
+    const glm::mat4 world = glm::inverse(data.view);
+    m_Position = glm::vec3(world[3]);
+
+    const glm::vec3 forward = glm::normalize(-glm::vec3(world[2]));
+    m_Pitch = glm::degrees(std::asin(std::clamp(forward.y, -1.0f, 1.0f)));
+    m_Yaw = glm::degrees(std::atan2(forward.z, forward.x));
+
+    const float projectionY = std::abs(data.projection[1][1]);
+    if (projectionY > 1e-5f) {
+        m_Fov = glm::degrees(2.0f * std::atan(1.0f / projectionY));
+    }
+    m_Near = std::max(data.nearClip, 1e-3f);
+    m_Far = std::max(data.farClip, m_Near + 1e-2f);
+
+    if (std::abs(forward.y) > 1e-4f) {
+        const float groundT = -m_Position.y / forward.y;
+        if (groundT > 0.5f) {
+            m_PivotDistance = groundT;
+            return;
+        }
+    }
+    m_PivotDistance = std::max(m_PivotDistance, 1.0f);
+}
+
+void EditorCamera::SetViewDirection(const glm::vec3& forward) {
+    if (glm::dot(forward, forward) < 1e-6f) {
+        return;
+    }
+
+    const glm::vec3 pivot = m_Position + Forward() * m_PivotDistance;
+    const glm::vec3 f = glm::normalize(forward);
+    m_Pitch = glm::degrees(std::asin(std::clamp(f.y, -1.0f, 1.0f)));
+    m_Pitch = std::clamp(m_Pitch, -89.0f, 89.0f);
+    m_Yaw = glm::degrees(std::atan2(f.z, f.x));
+    m_Position = pivot - Forward() * m_PivotDistance;
+}
+
 CameraRenderData EditorCamera::RenderData(float aspectRatio) const {
     CameraRenderData data;
     data.view = ViewMatrix();

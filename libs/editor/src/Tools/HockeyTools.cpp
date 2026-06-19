@@ -13,6 +13,7 @@
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/UndoRedo.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsLayer.hpp"
 
@@ -28,6 +29,61 @@ Entity MakeEntity(Scene& scene, const std::string& name, const glm::vec3& positi
     Entity entity = scene.CreateEntity(name);
     entity.GetComponent<TransformComponent>().localPosition = position;
     return entity;
+}
+
+GameplayTeam ToGameplayTeam(Team team) {
+    switch (team) {
+    case Team::Home: return GameplayTeam::Home;
+    case Team::Away: return GameplayTeam::Away;
+    case Team::None: return GameplayTeam::None;
+    }
+    return GameplayTeam::None;
+}
+
+GameplayRole ToGameplayRole(PlayerRole role) {
+    return role == PlayerRole::Goalie ? GameplayRole::Goalie : GameplayRole::Skater;
+}
+
+PlayerSlot ToPlayerSlot(Team team, PlayerRole role, int index) {
+    if (team == Team::Home && role == PlayerRole::Goalie) {
+        return PlayerSlot::HomeGoalie;
+    }
+    if (team == Team::Away && role == PlayerRole::Goalie) {
+        return PlayerSlot::AwayGoalie;
+    }
+    if (team == Team::Home && role == PlayerRole::Skater) {
+        if (index == 0) {
+            return PlayerSlot::HomeSkater0;
+        }
+        if (index == 1) {
+            return PlayerSlot::HomeSkater1;
+        }
+        if (index == 2) {
+            return PlayerSlot::HomeSkater2;
+        }
+    }
+    if (team == Team::Away && role == PlayerRole::Skater) {
+        if (index == 0) {
+            return PlayerSlot::AwaySkater0;
+        }
+        if (index == 1) {
+            return PlayerSlot::AwaySkater1;
+        }
+        if (index == 2) {
+            return PlayerSlot::AwaySkater2;
+        }
+    }
+    return PlayerSlot::None;
+}
+
+uint32_t ToPlayerIndex(Team team, PlayerRole role, int index) {
+    if (team == Team::Home) {
+        return role == PlayerRole::Goalie ? 3u : static_cast<uint32_t>(index);
+    }
+    if (team == Team::Away) {
+        return role == PlayerRole::Goalie ? 7u : static_cast<uint32_t>(4 + index);
+    }
+    return 0u;
 }
 
 void AddMesh(Entity entity, const char* mesh, const char* material) {
@@ -94,6 +150,9 @@ void HockeyRinkTool::OnSelected(EditorContext& context) {
                 Entity rink = MakeEntity(scene, "Rink", {0.0f, 0.0f, 0.0f});
                 rink.AddComponent<RinkComponent>();
                 rink.AddComponent<PlayAreaComponent>();
+                OutOfPlayComponent outOfPlay;
+                outOfPlay.resetPosition = {0.0f, 0.1f, 0.0f};
+                rink.AddComponent<OutOfPlayComponent>(outOfPlay);
 
                 Entity ice = MakeEntity(scene, "Ice", {0.0f, 0.0f, 0.0f});
                 ice.GetComponent<TransformComponent>().localScale = {60.0f, 1.0f, 120.0f};
@@ -201,6 +260,26 @@ void HockeyPlayerTool::OnSelected(EditorContext& context) {
                     AddCapsuleCollider(player, /*radius=*/0.4f, /*halfHeight=*/0.5f);
                     player.AddComponent<TeamComponent>(TeamComponent{def.team});
                     player.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});
+                    PlayerComponent gameplayPlayer;
+                    gameplayPlayer.playerIndex = ToPlayerIndex(def.team, def.role, def.index);
+                    gameplayPlayer.slot = ToPlayerSlot(def.team, def.role, def.index);
+                    gameplayPlayer.team = ToGameplayTeam(def.team);
+                    gameplayPlayer.role = ToGameplayRole(def.role);
+                    gameplayPlayer.controlledByLocalInput = gameplayPlayer.playerIndex == 0;
+                    gameplayPlayer.controlledByAI = gameplayPlayer.playerIndex != 0;
+                    player.AddComponent<PlayerComponent>(gameplayPlayer);
+                    if (goalie) {
+                        player.AddComponent<GoalieComponent>();
+                    } else {
+                        player.AddComponent<SkaterComponent>();
+                    }
+                    player.AddComponent<PlayerRuntimeComponent>();
+                    StickComponent stick;
+                    stick.ownerPlayer = player.GetUUID();
+                    player.AddComponent<StickComponent>(stick);
+                    player.AddComponent<ShotComponent>();
+                    player.AddComponent<PassComponent>();
+                    player.AddComponent<CheckComponent>();
                     // Visible placeholder body so authors can see the capsule.
                     AddMesh(player, "BuiltIn.Cube", "BuiltIn.Boards");
                     player.GetComponent<TransformComponent>().localScale = {0.8f, 1.8f, 0.8f};
@@ -222,15 +301,21 @@ void HockeyGoalTool::OnSelected(EditorContext& context) {
 
                                      Entity home = MakeEntity(scene, "Home Goal", {0.0f, 1.0f, -55.0f});
                                      home.AddComponent<GoalComponent>(GoalComponent{Team::Home});
+                                     GoalGameplayComponent homeGameplayGoal;
+                                     homeGameplayGoal.defendingTeam = GameplayTeam::Home;
+                                     homeGameplayGoal.scoringTeam = GameplayTeam::Away;
+                                     home.AddComponent<GoalGameplayComponent>(homeGameplayGoal);
                                      AddMesh(home, "BuiltIn.Cube", "BuiltIn.GoalNet");
-                                     // Goal scoring volume: a trigger box + TriggerComponent. Gameplay
-                                     // (a later phase) decides whether an overlap is a goal.
                                      AddRigidBody(home, RigidBodyType::Static, PhysicsLayer::Goal, "Trigger");
                                      AddBoxCollider(home, goalHalfExtents, glm::vec3(0.0f), /*isTrigger=*/true);
                                      home.AddComponent<TriggerComponent>(TriggerComponent{"Goal", false, false, true});
 
                                      Entity away = MakeEntity(scene, "Away Goal", {0.0f, 1.0f, 55.0f});
                                      away.AddComponent<GoalComponent>(GoalComponent{Team::Away});
+                                     GoalGameplayComponent awayGameplayGoal;
+                                     awayGameplayGoal.defendingTeam = GameplayTeam::Away;
+                                     awayGameplayGoal.scoringTeam = GameplayTeam::Home;
+                                     away.AddComponent<GoalGameplayComponent>(awayGameplayGoal);
                                      AddMesh(away, "BuiltIn.Cube", "BuiltIn.GoalNet");
                                      AddRigidBody(away, RigidBodyType::Static, PhysicsLayer::Goal, "Trigger");
                                      AddBoxCollider(away, goalHalfExtents, glm::vec3(0.0f), /*isTrigger=*/true);
@@ -250,8 +335,9 @@ void HockeyPuckTool::OnSelected(EditorContext& context) {
                                       [](Scene& scene) -> std::vector<UUID> {
                                           Entity puck = MakeEntity(scene, "Puck Spawn", {0.0f, 0.1f, 0.0f});
                                           puck.AddComponent<PuckComponent>();
+                                          puck.AddComponent<PuckGameplayComponent>();
+                                          puck.AddComponent<PuckRuntimeComponent>();
                                           AddMesh(puck, "BuiltIn.PuckCylinder", "BuiltIn.PuckBlack");
-                                          // Dynamic puck body (placeholder mass/size; tuned in gameplay).
                                           AddRigidBody(puck, RigidBodyType::Dynamic, PhysicsLayer::Puck, "PuckRubber",
                                                        /*mass=*/0.17f, /*useGravity=*/true);
                                           CylinderColliderComponent collider;
@@ -272,14 +358,26 @@ void HockeyFaceoffTool::OnSelected(EditorContext& context) {
                                       [](Scene& scene) -> std::vector<UUID> {
                                           Entity center = MakeEntity(scene, "Center Faceoff Spot", {0.0f, 0.0f, 0.0f});
                                           center.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{0});
+                                          FaceoffGameplayComponent centerGameplay;
+                                          centerGameplay.index = 0;
+                                          centerGameplay.centerIce = true;
+                                          center.AddComponent<FaceoffGameplayComponent>(centerGameplay);
 
                                           Entity home =
                                               MakeEntity(scene, "Home Defensive Faceoff Spot", {0.0f, 0.0f, -25.0f});
                                           home.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{1});
+                                          FaceoffGameplayComponent homeGameplay;
+                                          homeGameplay.index = 1;
+                                          homeGameplay.preferredZone = GameplayTeam::Home;
+                                          home.AddComponent<FaceoffGameplayComponent>(homeGameplay);
 
                                           Entity away =
                                               MakeEntity(scene, "Away Defensive Faceoff Spot", {0.0f, 0.0f, 25.0f});
                                           away.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{2});
+                                          FaceoffGameplayComponent awayGameplay;
+                                          awayGameplay.index = 2;
+                                          awayGameplay.preferredZone = GameplayTeam::Away;
+                                          away.AddComponent<FaceoffGameplayComponent>(awayGameplay);
 
                                           return {center.GetUUID(), home.GetUUID(), away.GetUUID()};
                                       }),

@@ -18,7 +18,7 @@ mouse_capture = false
 vsync = true
 preset = "High"
 shadow_quality = "High"
-shadow_distance = 100.0
+shadow_distance = 250.0
 ao_quality = "High"
 anti_aliasing = "FXAA"
 tone_mapper = "ACES"
@@ -27,7 +27,7 @@ brightness = 1.0
 anisotropy = 16
 
 [scene]
-startup_scene = "data/raw/scenes/main_rink.scene.yaml"
+startup_scene = "data/raw/scenes/render_shadows.scene.yaml"
 
 [physics]
 fixed_delta_seconds = 0.0166666667
@@ -36,6 +36,12 @@ gravity_y = -9.81
 gravity_z = 0.0
 enable_debug_draw = false
 enable_sleeping = true
+
+[gameplay]
+enabled = true
+local_play = true
+debug_draw_gameplay = false
+log_gameplay_events = false
 
 [assets]
 # The client loads cooked assets only; cooking is owned by the editor/asset tool.

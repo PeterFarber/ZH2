@@ -7,10 +7,12 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/Screenshot.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
+#include "Hockey/Gameplay/Gameplay.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsDebugDraw.hpp"
@@ -22,8 +24,13 @@
 #include "Hockey/Renderer/DebugDraw.hpp"
 #include "Hockey/Renderer/RendererInitInfo.hpp"
 #include "Hockey/Renderer/RendererSettings.hpp"
+#include <cmath>
 #include <filesystem>
 #include <memory>
+
+#include <glm/geometric.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 
 namespace {
 
@@ -71,12 +78,48 @@ void EnsureRenderables(Hockey::Scene& scene) {
     }
 }
 
+bool ProjectMouseToIcePlane(Hockey::Scene& scene, std::uint32_t width, std::uint32_t height, glm::vec3& outPoint) {
+    if (width == 0 || height == 0) {
+        return false;
+    }
+
+    Hockey::CameraRenderData camera;
+    const float aspect = static_cast<float>(width) / static_cast<float>(height);
+    if (!Hockey::FindActiveCamera(scene, aspect, camera)) {
+        return false;
+    }
+
+    const float x = (Hockey::Input::MouseX() / static_cast<float>(width)) * 2.0f - 1.0f;
+    const float y = (Hockey::Input::MouseY() / static_cast<float>(height)) * 2.0f - 1.0f;
+    const glm::mat4 invViewProj = glm::inverse(camera.projection * camera.view);
+    const glm::vec4 nearClip = invViewProj * glm::vec4{x, y, 0.0f, 1.0f};
+    const glm::vec4 farClip = invViewProj * glm::vec4{x, y, 1.0f, 1.0f};
+    const glm::vec3 nearWorld = glm::vec3(nearClip) / nearClip.w;
+    const glm::vec3 farWorld = glm::vec3(farClip) / farClip.w;
+    const glm::vec3 dir = glm::normalize(farWorld - nearWorld);
+    if (std::abs(dir.y) < 1e-5f) {
+        return false;
+    }
+    const float t = -nearWorld.y / dir.y;
+    if (t < 0.0f) {
+        return false;
+    }
+    outPoint = nearWorld + dir * t;
+    return true;
+}
+
 } // namespace
 
 bool GameClientApp::OnInit() {
     const auto& cmd = GetCommandLine();
     auto root = cmd.GetString("--root", ".");
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
+    m_AutoScreenshotPending = cmd.Has("--screenshot") || cmd.Has("--screenshot-prefix");
+    m_ScreenshotPrefix = cmd.GetString("--screenshot-prefix", cmd.GetString("--screenshot", "game"));
+    if (m_ScreenshotPrefix.empty() || m_ScreenshotPrefix == "true") {
+        m_ScreenshotPrefix = "game";
+    }
+
     const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
                                           : Hockey::Paths::LogFile("client.log");
     Hockey::Log::Init(logPath);
@@ -104,6 +147,7 @@ bool GameClientApp::OnInit() {
     // Register physics component serialization + materials before scene load so
     // physics components deserialize and resolve their materials.
     Hockey::RegisterPhysicsComponents();
+    Hockey::RegisterGameplayComponents();
     Hockey::PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     m_Scene.SetMode(Hockey::SceneMode::Play);
@@ -123,6 +167,12 @@ bool GameClientApp::OnInit() {
     EnsureRenderables(m_Scene);
     HK_CLIENT_INFO("Active scene '{}' with {} entities", m_Scene.GetName(), m_Scene.EntityCount());
 
+    m_GameplaySettings = Hockey::LoadGameplaySettings(m_Config);
+    m_LocalGameplayEnabled = m_GameplaySettings.enabled && m_Config.GetBool("gameplay.local_play", true);
+    if (m_GameplaySettings.fixedDeltaSeconds > 0.0f) {
+        m_SimulationTimestep.SetTickRate(1.0 / static_cast<double>(m_GameplaySettings.fixedDeltaSeconds));
+    }
+
     if (m_Config.GetBool("physics.enabled", true)) {
         if (!Hockey::Physics::Init()) {
             HK_CLIENT_INFO("Physics failed to initialise; running without physics");
@@ -130,8 +180,8 @@ bool GameClientApp::OnInit() {
             Hockey::PhysicsSettings physicsSettings;
             Hockey::LoadPhysicsSettings(m_Config, physicsSettings);
             m_PhysicsDebug = physicsSettings.enableDebugDraw || GetCommandLine().Has("--physics-debug");
-            if (physicsSettings.fixedDeltaSeconds > 0.0f) {
-                m_PhysicsTimestep.SetTickRate(1.0 / static_cast<double>(physicsSettings.fixedDeltaSeconds));
+            if (!m_LocalGameplayEnabled && physicsSettings.fixedDeltaSeconds > 0.0f) {
+                m_SimulationTimestep.SetTickRate(1.0 / static_cast<double>(physicsSettings.fixedDeltaSeconds));
             }
 
             auto physicsSystem = std::make_unique<Hockey::PhysicsSystem>(physicsSettings);
@@ -146,6 +196,19 @@ bool GameClientApp::OnInit() {
             HK_CLIENT_INFO("Physics enabled ({} bodies, debug draw {})", m_PhysicsSystem->World().BodyCount(),
                            m_PhysicsDebug ? "on" : "off");
         }
+    }
+
+    if (m_LocalGameplayEnabled) {
+        Hockey::PhysicsWorld* physicsWorld = m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr;
+        const Hockey::Status status = m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings);
+        if (status) {
+            HK_CLIENT_INFO("Local gameplay enabled");
+        } else {
+            m_LocalGameplayEnabled = false;
+            HK_CLIENT_INFO("Local gameplay disabled: {}", status.error);
+        }
+    } else {
+        HK_CLIENT_INFO("Local gameplay disabled by config");
     }
 
     Hockey::RendererInitInfo rendererInfo;
@@ -179,6 +242,7 @@ bool GameClientApp::OnInit() {
 
 void GameClientApp::OnShutdown() {
     HK_CLIENT_INFO("Shutdown");
+    m_GameplayWorld.Shutdown();
     if (m_PhysicsReady) {
         m_Scene.OnSimulationStop();
         m_Scene.ClearSystems(); // destroy physics world before global Jolt teardown
@@ -201,19 +265,76 @@ void GameClientApp::OnShutdown() {
     Hockey::Log::Shutdown();
 }
 
-void GameClientApp::StepPhysics(float deltaTime) {
-    if (!m_PhysicsReady) {
+Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTick) {
+    Hockey::GameplayInputFrame input;
+    input.playerIndex = 0;
+    input.inputSequence = ++m_LocalInputSequence;
+    input.simulationTick = simulationTick;
+
+    if (Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Right)) {
+        glm::vec3 target{0.0f};
+        if (ProjectMouseToIcePlane(m_Scene, GetWindow().Width(), GetWindow().Height(), target)) {
+            m_LocalMoveTarget = target;
+            m_HasLocalMoveTarget = true;
+        }
+    }
+
+    if (m_HasLocalMoveTarget) {
+        input.moveTarget = m_LocalMoveTarget;
+        input.hasMoveTarget = true;
+    }
+
+    input.aim.x = (Hockey::Input::IsKeyDown(Hockey::KeyCode::Right) ? 1.0f : 0.0f) -
+                  (Hockey::Input::IsKeyDown(Hockey::KeyCode::Left) ? 1.0f : 0.0f);
+    input.aim.y = (Hockey::Input::IsKeyDown(Hockey::KeyCode::Up) ? 1.0f : 0.0f) -
+                  (Hockey::Input::IsKeyDown(Hockey::KeyCode::Down) ? 1.0f : 0.0f);
+    if (glm::dot(input.aim, input.aim) > 1.0f) {
+        input.aim = glm::normalize(input.aim);
+    }
+
+    input.boostForward = Hockey::Input::IsKeyDown(Hockey::KeyCode::Z);
+    input.brake = Hockey::Input::IsKeyDown(Hockey::KeyCode::S);
+    input.quickTurnPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::X);
+    input.shootPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Left);
+    input.shootHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
+    input.shootReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
+    input.pokeCheckPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Middle);
+
+    return input;
+}
+
+void GameClientApp::StepSimulation(float deltaTime) {
+    if (!m_PhysicsReady && !m_LocalGameplayEnabled) {
         return;
     }
-    const int steps = m_PhysicsTimestep.Accumulate(static_cast<double>(deltaTime));
-    const float fixedDelta = static_cast<float>(m_PhysicsTimestep.GetFixedDeltaSeconds());
+    const int steps = m_SimulationTimestep.Accumulate(static_cast<double>(deltaTime));
+    const float fixedDelta = static_cast<float>(m_SimulationTimestep.GetFixedDeltaSeconds());
     for (int i = 0; i < steps; ++i) {
-        m_Scene.OnFixedUpdate(fixedDelta);
-        m_PhysicsTimestep.AdvanceTick();
+        const uint64_t tick = m_SimulationTimestep.GetTick() + 1;
+
+        if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
+            if (Hockey::Input::WasKeyPressed(Hockey::KeyCode::R)) {
+                m_GameplayWorld.ResetMatch(m_Scene);
+            }
+            m_GameplayWorld.PushInput(BuildLocalInput(tick));
+            m_GameplayWorld.FixedUpdate(m_Scene, fixedDelta, tick);
+            const std::vector<Hockey::GameplayEvent> events = m_GameplayWorld.DrainEvents();
+            if (m_GameplaySettings.logGameplayEvents) {
+                for (const Hockey::GameplayEvent& event : events) {
+                    HK_CLIENT_INFO("Gameplay event: {}", Hockey::GameplayEventTypeToString(event.type));
+                }
+            }
+        }
+
+        if (m_PhysicsReady) {
+            m_Scene.OnFixedUpdate(fixedDelta);
+        }
+        m_SimulationTimestep.AdvanceTick();
     }
-    // No hockey gameplay rules yet: consume events so the queues stay bounded.
-    m_PhysicsSystem->World().DrainContactEvents();
-    m_PhysicsSystem->World().DrainTriggerEvents();
+    if (m_PhysicsReady) {
+        m_PhysicsSystem->World().DrainContactEvents();
+        m_PhysicsSystem->World().DrainTriggerEvents();
+    }
 }
 
 void GameClientApp::SubmitPhysicsDebugDraw() {
@@ -230,7 +351,7 @@ void GameClientApp::SubmitPhysicsDebugDraw() {
 
 void GameClientApp::OnUpdate(float deltaTime) {
     m_Scene.OnUpdate(deltaTime);
-    StepPhysics(deltaTime);
+    StepSimulation(deltaTime);
     if (!m_RendererReady) {
         return;
     }
@@ -241,6 +362,23 @@ void GameClientApp::OnUpdate(float deltaTime) {
         m_Renderer.Resize(width, height);
         m_LastWidth = width;
         m_LastHeight = height;
+    }
+
+    auto queueScreenshot = [this](const std::string& prefix) {
+        const std::filesystem::path path = Hockey::MakeScreenshotPath(prefix);
+        if (const Hockey::Status status = m_Renderer.RequestScreenshot(path); !status) {
+            HK_CLIENT_INFO("Screenshot request failed: {}", status.error);
+        } else {
+            HK_CLIENT_INFO("Screenshot queued: {}", path.string());
+        }
+    };
+
+    if (m_AutoScreenshotPending) {
+        queueScreenshot(m_ScreenshotPrefix);
+        m_AutoScreenshotPending = false;
+    }
+    if (Hockey::Input::WasKeyPressed(Hockey::KeyCode::F12)) {
+        queueScreenshot("game");
     }
 
     m_Renderer.BeginFrame();

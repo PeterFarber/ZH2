@@ -1,0 +1,17 @@
+Asset:
+  ID: 17028253443224574589
+  Type: Model
+  Name: ice
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/ice.glb
+  CookedPath: data/cooked/assets/models/17028253443224574589.model.bin
+  RawFileTimestamp: 134262086103986481
+  RawFileHash: 18013400771115629165
+  ImportedTimestamp: 1781818160
+  CookedTimestamp: 1781816480
+  Dependencies: [11304597749339719697, 15640204396032829137]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

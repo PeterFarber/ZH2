@@ -54,7 +54,6 @@ ImplementationFileExtensions:
   - cc
   - cpp
   - cxx
-  - c++
 
 CheckOptions:
   readability-braces-around-statements.ShortStatementLines: "0"

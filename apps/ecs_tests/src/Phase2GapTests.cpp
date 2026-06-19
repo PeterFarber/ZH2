@@ -70,13 +70,37 @@ void RunSceneClearTests() {
     HK_CHECK_EQ(scene.EntityCount(), static_cast<std::size_t>(1));
 }
 
+void RunObjectSettingsTests() {
+    HockeyTest::BeginSuite("ObjectSettingsTests");
+
+    Scene scene("ObjectSettings");
+    Entity entity = scene.CreateEntity("Editable");
+    HK_CHECK(entity.HasComponent<ObjectSettingsComponent>());
+    HK_CHECK_EQ(entity.GetComponent<ObjectSettingsComponent>().tag, std::string("Untagged"));
+    HK_CHECK_EQ(entity.GetComponent<ObjectSettingsComponent>().layer, std::string("Default"));
+    HK_CHECK(!entity.GetComponent<ObjectSettingsComponent>().isStatic);
+
+    auto& settings = entity.GetComponent<ObjectSettingsComponent>();
+    settings.tag = "Player";
+    settings.layer = "Gameplay";
+    settings.isStatic = true;
+
+    Entity copy = scene.DuplicateEntity(entity);
+    HK_CHECK(copy.IsValid());
+    HK_CHECK(copy.HasComponent<ObjectSettingsComponent>());
+    HK_CHECK_EQ(copy.GetComponent<ObjectSettingsComponent>().tag, std::string("Player"));
+    HK_CHECK_EQ(copy.GetComponent<ObjectSettingsComponent>().layer, std::string("Gameplay"));
+    HK_CHECK(copy.GetComponent<ObjectSettingsComponent>().isStatic);
+}
+
 void RunMarkerSerializationTests() {
     HockeyTest::BeginSuite("MarkerSerializationTests");
 
     Scene scene("Markers");
 
     Entity spawn = scene.CreateEntity("Spawn");
-    spawn.AddComponent<SpawnPointComponent>(SpawnPointComponent{Team::Away, PlayerRole::Goalie, 2});
+    spawn.AddComponent<SpawnPointComponent>(
+        SpawnPointComponent{Team::Away, PlayerRole::Goalie, 2, "data/raw/prefabs/goalie.prefab.yaml"});
     spawn.AddComponent<TeamComponent>(TeamComponent{Team::Away});
     spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{PlayerRole::Goalie});
 
@@ -109,6 +133,7 @@ void RunMarkerSerializationTests() {
         HK_CHECK(sp.team == Team::Away);
         HK_CHECK(sp.role == PlayerRole::Goalie);
         HK_CHECK_EQ(sp.index, 2);
+        HK_CHECK_EQ(sp.playerPrefabPath.generic_string(), std::string("data/raw/prefabs/goalie.prefab.yaml"));
     }
     HK_CHECK(ls.HasComponent<TeamComponent>() && ls.GetComponent<TeamComponent>().team == Team::Away);
     HK_CHECK(ls.HasComponent<PlayerRoleComponent>() &&

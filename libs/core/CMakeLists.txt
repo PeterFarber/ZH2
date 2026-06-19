@@ -14,6 +14,7 @@ target_sources(hockey_core
         src/CommandLine.cpp
         src/FileSystem.cpp
         src/Paths.cpp
+        src/Screenshot.cpp
         src/Config.cpp
         src/Time.cpp
         src/Timer.cpp

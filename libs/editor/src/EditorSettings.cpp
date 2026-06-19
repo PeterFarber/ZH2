@@ -18,7 +18,6 @@ void EditorSettings::ApplyProjectConfig(const Config& projectConfig) {
     autosaveIntervalSeconds = projectConfig.GetInt("scene.autosave_interval_seconds", autosaveIntervalSeconds);
 
     // editor.toml [assets]
-    assetsAutoDiscover = projectConfig.GetBool("assets.auto_discover", assetsAutoDiscover);
     assetsAutoImport = projectConfig.GetBool("assets.auto_import", assetsAutoImport);
     assetsAutoCookDirty = projectConfig.GetBool("assets.auto_cook_dirty", assetsAutoCookDirty);
     assetsHotReload = projectConfig.GetBool("assets.hot_reload", assetsHotReload);
@@ -52,7 +51,6 @@ Status EditorSettings::Load(const std::filesystem::path& path) {
 
     restoreLastScene = config.GetBool("scene.restore_last", restoreLastScene);
 
-    assetsAutoDiscover = config.GetBool("assets.auto_discover", assetsAutoDiscover);
     assetsAutoImport = config.GetBool("assets.auto_import", assetsAutoImport);
     assetsAutoCookDirty = config.GetBool("assets.auto_cook_dirty", assetsAutoCookDirty);
     assetsHotReload = config.GetBool("assets.hot_reload", assetsHotReload);
@@ -93,7 +91,6 @@ Status EditorSettings::Save(const std::filesystem::path& path) const {
 
     config.SetBool("scene.restore_last", restoreLastScene);
 
-    config.SetBool("assets.auto_discover", assetsAutoDiscover);
     config.SetBool("assets.auto_import", assetsAutoImport);
     config.SetBool("assets.auto_cook_dirty", assetsAutoCookDirty);
     config.SetBool("assets.hot_reload", assetsHotReload);

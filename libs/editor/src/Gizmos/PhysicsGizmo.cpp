@@ -49,9 +49,10 @@ void FlushTo(DebugDraw& debug, const PhysicsDebugDrawList& list) {
 
 } // namespace
 
-void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
+SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
+    SubmitStats stats;
     if (!view.showColliders && !view.showTriggers && !view.showBodyCenters && !view.showContacts) {
-        return;
+        return stats;
     }
 
     PhysicsDebugDrawList list;
@@ -77,12 +78,14 @@ void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
             if (wanted(box.isTrigger)) {
                 AppendWireBox(list, colliderCenter(box.offset), box.halfExtents, colliderRotation(box.rotation),
                               ColliderColor(box.isTrigger));
+                box.isTrigger ? ++stats.triggers : ++stats.colliders;
             }
         }
         if (entity.HasComponent<SphereColliderComponent>()) {
             const SphereColliderComponent& sphere = entity.GetComponent<SphereColliderComponent>();
             if (wanted(sphere.isTrigger)) {
                 AppendWireSphere(list, colliderCenter(sphere.offset), sphere.radius, ColliderColor(sphere.isTrigger));
+                sphere.isTrigger ? ++stats.triggers : ++stats.colliders;
             }
         }
         if (entity.HasComponent<CapsuleColliderComponent>()) {
@@ -90,6 +93,7 @@ void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
             if (wanted(capsule.isTrigger)) {
                 AppendWireCapsule(list, colliderCenter(capsule.offset), capsule.radius, capsule.halfHeight,
                                   colliderRotation(capsule.rotation), ColliderColor(capsule.isTrigger));
+                capsule.isTrigger ? ++stats.triggers : ++stats.colliders;
             }
         }
         if (entity.HasComponent<CylinderColliderComponent>()) {
@@ -97,6 +101,7 @@ void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
             if (wanted(cylinder.isTrigger)) {
                 AppendWireCylinder(list, colliderCenter(cylinder.offset), cylinder.radius, cylinder.halfHeight,
                                    colliderRotation(cylinder.rotation), ColliderColor(cylinder.isTrigger));
+                cylinder.isTrigger ? ++stats.triggers : ++stats.colliders;
             }
         }
 
@@ -108,21 +113,26 @@ void Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
                 // entity with a unit placeholder box so authors can see the mesh
                 // collider exists and where it sits.
                 AppendWireBox(list, worldPos, glm::vec3(0.5f), worldRot, ColliderColor(meshCol.isTrigger));
+                meshCol.isTrigger ? ++stats.triggers : ++stats.colliders;
             }
         }
 
         if (view.showBodyCenters && entity.HasComponent<RigidBodyComponent>()) {
             AppendCross(list, worldPos, 0.25f, PhysicsDebugColors::kBodyCenter);
+            ++stats.bodyCenters;
         }
     }
 
     if (view.showContacts) {
         for (const glm::vec3& point : view.contactPoints) {
             AppendCross(list, point, 0.15f, PhysicsDebugColors::kContact);
+            ++stats.contacts;
         }
     }
 
+    stats.lines = static_cast<std::uint32_t>(list.lines.size());
     FlushTo(debug, list);
+    return stats;
 }
 
 } // namespace Hockey::PhysicsGizmo

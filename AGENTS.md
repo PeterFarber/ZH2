@@ -35,6 +35,47 @@ Do not implement systems from future phases unless explicitly requested.
 
 No placeholders unless the user explicitly asks for temporary scaffolding.
 
+After every repo-tracked change, check whether `docs/phase_status/` needs to be
+updated. If the change completes, starts, removes, invalidates, or changes the
+verification state of a phase item, update the matching
+`docs/phase_status/phase-*.md` file in the same change. If no phase status
+changed, explicitly say "No phase status change needed" in the final response.
+
+## Agent tooling files
+
+Keep `AGENTS.md`. It is the authoritative instruction file for humans and AI
+agents working in this repo.
+
+`agents.toml` is the dotagents machine-readable manifest for Codex-oriented
+tool and skill configuration. It does not replace `AGENTS.md`.
+
+Supporting AI context belongs in `docs/ai-rules/`, `docs/phase-plans/`, and
+`docs/ai-agent-tooling.md`. Treat those files as supporting guidance unless
+they are promoted into this file.
+
+Do not add repo-managed `.agents` skills just to mirror these instructions.
+Only add a skill when the project has a repeatable workflow with concrete,
+versionable instructions that should travel through dotagents.
+
+## AI working loop
+
+At the start of a coding task, read the relevant current source/CMake/tests and
+the matching `docs/phase_status/` file before editing. Use `docs/ai-onboarding.md`
+for the full orientation checklist when the task spans multiple subsystems.
+
+Use `rg`, Serena, and Graphify as accelerators, but verify behavior against
+source, builds, tests, logs, and screenshots. Generated tool output is never a
+substitute for repository truth.
+
+Prefer the root `justfile` command surface:
+
+- `just tools-check` for local tool inventory.
+- `just serena-health` for semantic tooling health.
+- `just verify` as the normal completion contract for repo changes.
+
+Before finalizing, report the focused verification that ran and whether phase
+status changed. If verification could not run, report the exact blocker.
+
 ## Phase order
 
 1. Complete cross-platform foundation/core.
@@ -56,8 +97,8 @@ Respect these library boundaries:
 - `libs/assets`: asset import/loading/cooking only.
 - `libs/renderer`: Vulkan rendering only.
 - `libs/physics`: physics integration only.
-- `libs/networking`: transport/protocol/replication/lobbies only.
 - `libs/gameplay`: hockey simulation/rules only.
+- `libs/networking`: transport/protocol/replication/lobbies only (future Phase 8).
 - `libs/editor`: editor panels/tools only.
 
 Apps:
@@ -66,7 +107,14 @@ Apps:
 - `apps/map_editor`: Unity-style map editor.
 - `apps/dedicated_server`: headless authoritative server.
 - `apps/core_tests`: tests for core.
-- Future test apps may be added per subsystem.
+- `apps/ecs_tests`: tests for ECS/scene/prefab behavior.
+- `apps/asset_tests`: tests for the asset pipeline.
+- `apps/renderer_tests`: tests for renderer settings, shaders, render graph, and smoke behavior.
+- `apps/editor_tests`: tests for editor logic, tools, and previews.
+- `apps/physics_tests`: tests for physics behavior.
+- `apps/gameplay_tests`: tests for hockey gameplay simulation.
+- `apps/asset_tool`: asset discovery/import/cook/validation CLI.
+- `apps/shader_tool`: shader compilation CLI.
 
 ## Dependency direction
 
@@ -76,15 +124,22 @@ The dependency graph must remain clean:
 core
 ecs        -> core
 assets     -> core
-renderer   -> core, ecs, assets
+renderer   -> core, ecs       (privately consumes assets)
 physics    -> core, ecs
-networking -> core, ecs
-gameplay   -> core, ecs, physics, networking
-editor     -> core, ecs, renderer, assets, gameplay
+gameplay   -> core, ecs, physics
+editor     -> core, ecs, renderer, assets, physics, gameplay
 
-game_client       -> core, ecs, renderer, assets, gameplay, networking
-map_editor        -> core, ecs, renderer, assets, editor
-dedicated_server  -> core, ecs, gameplay, networking, physics
+game_client       -> core, ecs, renderer, assets, physics, gameplay
+map_editor        -> core, ecs, renderer, assets, editor, physics, gameplay
+dedicated_server  -> core, ecs, physics, gameplay
+```
+
+Future Phase 8 networking dependency direction:
+
+```text
+networking -> core, ecs
+game_client       -> networking
+dedicated_server  -> networking
 ```
 
 ## Hard rules
@@ -94,6 +149,7 @@ dedicated_server  -> core, ecs, gameplay, networking, physics
 - `renderer` must not know hockey gameplay rules.
 - `networking` must not depend on renderer.
 - `gameplay` must not directly use SDL3, Vulkan, or ImGui.
+- `gameplay` must not depend on networking until Phase 8 explicitly introduces that integration.
 - `editor` may inspect gameplay data but should not own core gameplay simulation.
 - `dedicated_server` must stay headless and must not link renderer, Vulkan, ImGui, audio, or editor UI.
 
@@ -139,3 +195,20 @@ Avoid:
 - Keep Windows/Linux compatibility.
 - Do not create monolithic systems.
 - Do not silently change architecture.
+
+## Graphify
+
+This project can maintain a local code knowledge graph in `graphify-out/`.
+The generated graph is ignored by git and should be refreshed on demand.
+
+Use Graphify before broad architecture questions, large refactors, dependency
+tracing, or unfamiliar subsystem work:
+
+- `graphify query "<question>"` for a scoped subgraph.
+- `graphify path "<A>" "<B>"` for relationships between symbols or files.
+- `graphify explain "<concept>"` for focused neighborhood context.
+
+Direct source inspection is still expected for precise edits, tests, CMake
+changes, and line-level debugging. If Graphify output is missing or stale, run
+`graphify update . --force --no-cluster` and then continue with normal repo
+inspection.

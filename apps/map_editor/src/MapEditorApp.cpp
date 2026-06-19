@@ -6,10 +6,25 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/Screenshot.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Renderer/RendererInitInfo.hpp"
 #include "Hockey/Renderer/RendererSettings.hpp"
+
+#include <algorithm>
+#include <filesystem>
+
+namespace {
+
+Hockey::RendererSettings LoadEditorViewportRendererSettings(const Hockey::Config& editorConfig) {
+    Hockey::RendererSettings settings = Hockey::MakeDefaultRendererSettings();
+    Hockey::LoadRendererSettings(editorConfig, settings);
+    HK_EDITOR_INFO("Editor viewport graphics loaded from editor renderer config");
+    return settings;
+}
+
+} // namespace
 
 bool MapEditorApp::OnInit() {
     const auto& cmd = GetCommandLine();
@@ -32,17 +47,23 @@ bool MapEditorApp::OnInit() {
     HK_EDITOR_INFO("Map editor started on {} ({} hardware threads)", Hockey::Platform::OSName(),
                    Hockey::Platform::HardwareThreadCount());
 
-    m_FrameLimit = GetCommandLine().GetInt("--frames", 0);
+    m_FrameLimit = cmd.GetInt("--max-frames", cmd.GetInt("--frames", 0));
+    m_AutoScreenshotPending = cmd.Has("--screenshot") || cmd.Has("--screenshot-window");
+    m_ScreenshotFrame = std::max(1, cmd.GetInt("--screenshot-frame", 3));
+    m_ScreenshotPrefix = cmd.GetString("--screenshot-prefix", cmd.GetString("--screenshot", "editor_window"));
+    if (m_ScreenshotPrefix.empty() || m_ScreenshotPrefix == "true") {
+        m_ScreenshotPrefix = "editor_window";
+    }
 
-    // Bring up the physics engine so the editor can build preview bodies and
-    // draw collider/trigger debug geometry. Preview simulation stays off until
-    // the user enables it; the editor never auto-simulates an Edit-mode scene.
+    // Bring up the physics engine so editor playtest can simulate and Scene
+    // View can draw collider/trigger debug geometry. The editor never
+    // auto-simulates an Edit-mode scene outside playtest.
     if (m_Config.GetBool("physics.enabled", true)) {
         if (!Hockey::Physics::Init()) {
             HK_EDITOR_INFO("Physics failed to initialise; editor running without physics");
         } else {
             m_PhysicsReady = true;
-            HK_EDITOR_INFO("Physics initialised for editor preview");
+            HK_EDITOR_INFO("Physics initialised for editor playtest/debug visualization");
         }
     }
 
@@ -50,8 +71,7 @@ bool MapEditorApp::OnInit() {
 
     Hockey::RendererInitInfo rendererInfo;
     rendererInfo.window = &GetWindow();
-    rendererInfo.settings = Hockey::MakeDefaultRendererSettings();
-    Hockey::LoadRendererSettings(m_Config, rendererInfo.settings);
+    rendererInfo.settings = LoadEditorViewportRendererSettings(m_Config);
     rendererInfo.enableValidation = GetCommandLine().Has("--vk-validation");
     rendererInfo.shaderSourceDirectory = Hockey::Paths::Get().root / "data/shaders/src";
     rendererInfo.shaderBinaryDirectory = Hockey::Paths::Get().root / "data/shaders/bin";
@@ -60,9 +80,9 @@ bool MapEditorApp::OnInit() {
         return false;
     }
 
-    // Content pipeline: discover/import/cook raw assets up front so the editor
-    // and renderer can resolve AssetIDs, then watch for hot-reload changes. The
-    // renderer borrows the manager to upload cooked meshes/materials/textures.
+    // Content pipeline: load the existing cooked asset database up front so the
+    // editor can resolve AssetIDs quickly. Full discovery/import/cook work is
+    // opt-in because it can dominate editor startup on large asset folders.
     // The raw/cooked roots default to the standard data/ layout but can be
     // redirected via the [assets] config keys.
     Hockey::AssetManagerCreateInfo assetInfo =
@@ -77,18 +97,31 @@ bool MapEditorApp::OnInit() {
         HK_CORE_ERROR("Asset manager init failed: {}", status.error);
         return false;
     }
-    // Honor the [assets] auto-pipeline config keys (mirrored by EditorSettings).
-    if (m_Config.GetBool("assets.auto_discover", true)) {
-        m_AssetManager.DiscoverRawAssets();
+    const bool autoDiscover = m_Config.GetBool("assets.auto_discover", false);
+    const bool autoImport = m_Config.GetBool("assets.auto_import", false);
+    const bool autoCookDirty = m_Config.GetBool("assets.auto_cook_dirty", false);
+    const bool hotReload = m_Config.GetBool("assets.hot_reload", false);
+
+    if (autoDiscover) {
+        if (const Hockey::Status status = m_AssetManager.DiscoverRawAssets(); !status) {
+            HK_EDITOR_WARN("Startup asset discovery failed: {}", status.error);
+        }
     }
-    if (m_Config.GetBool("assets.auto_import", true)) {
-        m_AssetManager.ImportAll();
+    if (autoImport) {
+        if (const Hockey::Status status = m_AssetManager.ImportAll(); !status) {
+            HK_EDITOR_WARN("Startup asset import reported issues: {}", status.error);
+        }
     }
-    if (m_Config.GetBool("assets.auto_cook_dirty", true)) {
-        m_AssetManager.CookAllDirty();
+    if (autoCookDirty) {
+        if (const Hockey::Status status = m_AssetManager.CookAllDirty(); !status) {
+            HK_EDITOR_WARN("Startup asset cook reported issues: {}", status.error);
+        }
     }
-    m_AssetManager.SaveDatabase();
-    m_AssetManager.StartWatching();
+    if (hotReload) {
+        m_AssetManager.StartWatching();
+    } else {
+        HK_EDITOR_INFO("Startup asset scan/import/cook/hot-reload disabled; use the Project panel to refresh assets");
+    }
     m_Renderer.SetAssetManager(&m_AssetManager);
 
     Hockey::EditorContextCreateInfo editorInfo;
@@ -96,7 +129,14 @@ bool MapEditorApp::OnInit() {
     editorInfo.renderer = &m_Renderer;
     editorInfo.scene = &m_Scene;
     editorInfo.config = &m_Config;
+    editorInfo.configPath = configPath;
     editorInfo.assetManager = &m_AssetManager;
+    editorInfo.captureSceneViewport = cmd.Has("--capture-viewports") || cmd.Has("--capture-scene-view");
+    editorInfo.captureGameViewport = cmd.Has("--capture-viewports") || cmd.Has("--capture-game-view");
+    editorInfo.captureViewportPrefix =
+        cmd.GetString("--capture-prefix", cmd.GetString("--screenshot-prefix", "editor"));
+    editorInfo.captureViewportWidth = static_cast<std::uint32_t>(std::max(1, cmd.GetInt("--capture-width", 1920)));
+    editorInfo.captureViewportHeight = static_cast<std::uint32_t>(std::max(1, cmd.GetInt("--capture-height", 1080)));
     if (const Hockey::Status status = m_Editor.Init(editorInfo); !status) {
         HK_CORE_ERROR("Editor init failed: {}", status.error);
         return false;
@@ -114,26 +154,23 @@ bool MapEditorApp::OnInit() {
 
 void MapEditorApp::LoadStartupScene() {
     const auto& cmd = GetCommandLine();
-    const Hockey::EditorSettings& settings = m_Editor.Context().settings;
-
-    // Precedence: explicit --scene > restore-last-scene (most recent) > config.
     std::filesystem::path path;
     if (cmd.Has("--scene")) {
         path = Hockey::Paths::Resolve(cmd.GetString("--scene", ""));
-    } else if (settings.restoreLastScene && !settings.recentScenes.empty()) {
-        const std::filesystem::path recent = Hockey::Paths::Resolve(settings.recentScenes.front());
-        if (Hockey::FileSystem::Exists(recent)) {
-            path = recent;
-            HK_EDITOR_INFO("Restoring last scene '{}'", path.string());
+    } else {
+        const Hockey::EditorSettings& settings = m_Editor.Context().settings;
+        if (settings.restoreLastScene && !settings.recentScenes.empty()) {
+            const std::filesystem::path recent = Hockey::Paths::Resolve(settings.recentScenes.front());
+            if (Hockey::FileSystem::Exists(recent)) {
+                path = recent;
+                HK_EDITOR_INFO("Restoring last scene '{}'", path.string());
+            } else {
+                HK_EDITOR_INFO("Last scene '{}' not found; opening empty Edit scene", recent.string());
+            }
         }
     }
     if (path.empty()) {
-        const std::string startupScene = m_Config.GetString("scene.startup_scene", "");
-        if (!startupScene.empty()) {
-            path = Hockey::Paths::Resolve(startupScene);
-        }
-    }
-    if (path.empty()) {
+        HK_EDITOR_INFO("No startup scene requested; opening empty Edit scene");
         return;
     }
     if (!Hockey::FileSystem::Exists(path)) {
@@ -180,12 +217,23 @@ void MapEditorApp::OnUpdate(float deltaTime) {
     m_Editor.BeginFrame(deltaTime);
     m_Editor.Update(deltaTime);
     m_Editor.Render();
+    const int renderedFrame = m_FrameCount + 1;
+    if (m_AutoScreenshotPending && renderedFrame >= m_ScreenshotFrame) {
+        const std::filesystem::path path = Hockey::MakeScreenshotPath(m_ScreenshotPrefix);
+        if (const Hockey::Status status = m_Renderer.RequestScreenshot(path); !status) {
+            HK_EDITOR_INFO("Screenshot request failed: {}", status.error);
+        } else {
+            HK_EDITOR_INFO("Screenshot queued: {}", path.string());
+        }
+        m_AutoScreenshotPending = false;
+    }
     m_Editor.EndFrame();
 
     if (m_Editor.WantsQuit()) {
         RequestQuit();
     }
-    if (m_FrameLimit > 0 && ++m_FrameCount >= m_FrameLimit) {
+    ++m_FrameCount;
+    if (m_FrameLimit > 0 && m_FrameCount >= m_FrameLimit) {
         RequestQuit();
     }
 }

@@ -133,9 +133,10 @@ Result<LoadedPrefab> LoadPrefabNodes(const std::filesystem::path& path) {
 // diff to these keeps every recorded override round-trippable.
 const std::unordered_set<std::string>& OverridableComponents() {
     static const std::unordered_set<std::string> kComponents = {
-        "TransformComponent",   "NameComponent",        "ActiveComponent",  "TeamComponent",
-        "PlayerRoleComponent",  "GoalComponent",        "PuckComponent",    "SpawnPointComponent",
-        "FaceoffSpotComponent", "RinkComponent",        "PlayAreaComponent", "CameraRigMarkerComponent"};
+        "TransformComponent",   "NameComponent",        "ObjectSettingsComponent", "ActiveComponent",
+        "TeamComponent",        "PlayerRoleComponent",  "GoalComponent",           "PuckComponent",
+        "SpawnPointComponent",  "FaceoffSpotComponent", "RinkComponent",           "PlayAreaComponent",
+        "CameraRigMarkerComponent"};
     return kComponents;
 }
 

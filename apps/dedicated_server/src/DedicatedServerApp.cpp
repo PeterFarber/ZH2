@@ -7,6 +7,7 @@
 #include "Hockey/Core/Platform.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
+#include "Hockey/Gameplay/Gameplay.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
@@ -40,13 +41,20 @@ bool DedicatedServerApp::OnInit() {
     }
     SetTickRate(tickRate);
     m_TicksPerLog = static_cast<uint64_t>(std::max(1.0, tickRate));
+    m_MaxTicks = GetCommandLine().Has("--max-ticks")
+                     ? static_cast<uint64_t>(std::max(0, GetCommandLine().GetInt("--max-ticks", 0)))
+                     : 0;
 
     HK_SERVER_INFO("Dedicated server started on {} at {} Hz (port {})", Hockey::Platform::OSName(), tickRate,
                    m_Config.GetInt("server.port", 27020));
+    if (m_MaxTicks > 0) {
+        HK_SERVER_INFO("Dedicated server will exit after {} ticks", m_MaxTicks);
+    }
 
     // Register physics component serialization/validation + materials before
     // loading any scene so physics components deserialize and validate.
     Hockey::RegisterPhysicsComponents();
+    Hockey::RegisterGameplayComponents();
     Hockey::PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     m_Scene.SetMode(Hockey::SceneMode::Server);
@@ -102,11 +110,27 @@ bool DedicatedServerApp::OnInit() {
     } else {
         HK_SERVER_INFO("Physics disabled by config");
     }
+
+    m_GameplaySettings = Hockey::LoadGameplaySettings(m_Config);
+    m_GameplayEnabled = m_GameplaySettings.enabled && m_Config.GetBool("gameplay.authoritative", true);
+    if (m_GameplayEnabled) {
+        Hockey::PhysicsWorld* physicsWorld = m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr;
+        const Hockey::Status status = m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings);
+        if (status) {
+            HK_SERVER_INFO("Gameplay enabled for authoritative headless simulation");
+        } else {
+            m_GameplayEnabled = false;
+            HK_SERVER_INFO("Gameplay disabled: {}", status.error);
+        }
+    } else {
+        HK_SERVER_INFO("Gameplay disabled by config");
+    }
     return true;
 }
 
 void DedicatedServerApp::OnShutdown() {
     HK_SERVER_INFO("Server shutdown after {} ticks", m_Tick);
+    m_GameplayWorld.Shutdown();
     if (m_PhysicsSystem != nullptr) {
         m_Scene.OnSimulationStop();
         m_Scene.ClearSystems(); // destroy physics world before global Jolt teardown
@@ -119,7 +143,18 @@ void DedicatedServerApp::OnShutdown() {
 }
 
 void DedicatedServerApp::OnFixedUpdate(double fixedDeltaSeconds) {
-    m_Scene.OnFixedUpdate(static_cast<float>(fixedDeltaSeconds));
+    const float delta = static_cast<float>(fixedDeltaSeconds);
+    if (m_GameplayEnabled && m_GameplayWorld.IsInitialized()) {
+        m_GameplayWorld.FixedUpdate(m_Scene, delta, m_Tick + 1);
+        const std::vector<Hockey::GameplayEvent> events = m_GameplayWorld.DrainEvents();
+        if (m_GameplaySettings.logGameplayEvents) {
+            for (const Hockey::GameplayEvent& event : events) {
+                HK_SERVER_INFO("Gameplay event: {}", Hockey::GameplayEventTypeToString(event.type));
+            }
+        }
+    }
+
+    m_Scene.OnFixedUpdate(delta);
     ++m_Tick;
 
     if (m_PhysicsSystem != nullptr) {
@@ -132,5 +167,10 @@ void DedicatedServerApp::OnFixedUpdate(double fixedDeltaSeconds) {
 
     if (m_Tick % m_TicksPerLog == 0) {
         HK_SERVER_INFO("Server tick {}", m_Tick);
+    }
+
+    if (m_MaxTicks > 0 && m_Tick >= m_MaxTicks) {
+        HK_SERVER_INFO("Reached max tick count {}; requesting shutdown", m_MaxTicks);
+        RequestQuit();
     }
 }

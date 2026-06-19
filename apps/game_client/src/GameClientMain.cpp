@@ -13,6 +13,9 @@ int main(int argc, char** argv) {
             "  --config <file>   Override client config TOML path\n"
             "  --log <file>      Override client log file path\n"
             "  --fps-limit <n>   Override the frame-rate cap\n"
+            "  --max-frames <n>  Auto-quit after n rendered frames (testing)\n"
+            "  --screenshot [p]  Save a screenshot from the first rendered frame\n"
+            "  --screenshot-prefix <p>  Prefix for automated screenshot filenames\n"
             "  --vk-validation   Enable Vulkan validation layers\n"
             "  --physics-debug   Enable physics debug drawing\n"
             "  --help, -h        Print this message and exit\n");

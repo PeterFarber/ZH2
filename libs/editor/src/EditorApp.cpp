@@ -1,5 +1,6 @@
 #include "Hockey/Editor/EditorApp.hpp"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -27,16 +28,17 @@
 #include "Hockey/Editor/Panels/GameViewportPanel.hpp"
 #include "Hockey/Editor/Panels/HierarchyPanel.hpp"
 #include "Hockey/Editor/Panels/InspectorPanel.hpp"
-#include "Hockey/Editor/Panels/PhysicsPanel.hpp"
 #include "Hockey/Editor/Panels/PrefabPanel.hpp"
-#include "Hockey/Editor/Panels/PreferencesPanel.hpp"
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
+#include "Hockey/Editor/Panels/ProjectSettingsPanel.hpp"
 #include "Hockey/Editor/Panels/PropertiesPanel.hpp"
 #include "Hockey/Editor/Panels/SceneValidationPanel.hpp"
 #include "Hockey/Editor/Panels/SceneViewportPanel.hpp"
 #include "Hockey/Editor/Panels/StatsPanel.hpp"
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
 #include "Hockey/Editor/Tools/EditorTools.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 #include "Hockey/Physics/PhysicsMeshProvider.hpp"
@@ -90,7 +92,14 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     m_Context.renderer = info.renderer;
     m_Context.activeScene = info.scene;
     m_Context.config = info.config;
+    m_Context.configPath = info.configPath;
     m_Context.assetManager = info.assetManager;
+    m_Context.captureSceneViewport = info.captureSceneViewport;
+    m_Context.captureGameViewport = info.captureGameViewport;
+    m_Context.captureViewportPrefix =
+        info.captureViewportPrefix.empty() ? std::string("editor") : info.captureViewportPrefix;
+    m_Context.captureViewportWidth = std::max(1u, info.captureViewportWidth);
+    m_Context.captureViewportHeight = std::max(1u, info.captureViewportHeight);
     // Seed autosave/asset defaults from editor.toml, then let the user's
     // editor_settings.toml override where present.
     if (m_Context.config != nullptr) {
@@ -115,6 +124,7 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     // registration (which clears the registry first). Materials back the
     // inspector dropdown and validation.
     RegisterPhysicsComponents();
+    RegisterGameplayComponents();
     PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     // hockey_physics cannot load mesh assets itself (it must not depend on
@@ -147,6 +157,13 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     m_PhysicsPreview.Configure(physicsSettings);
     m_Context.physicsPreview = &m_PhysicsPreview;
 
+    GameplaySettings gameplaySettings;
+    if (m_Context.config != nullptr) {
+        gameplaySettings = LoadGameplaySettings(*m_Context.config);
+    }
+    m_GameplayPreview.Configure(gameplaySettings);
+    m_Context.gameplayPreview = &m_GameplayPreview;
+
     RegisterPanels();
     RegisterTools();
 
@@ -169,8 +186,7 @@ void EditorApp::RegisterPanels() {
     panels.AddPanel<StatsPanel>();
     panels.AddPanel<SceneValidationPanel>();
     panels.AddPanel<PrefabPanel>();
-    panels.AddPanel<PhysicsPanel>();
-    panels.AddPanel<PreferencesPanel>();
+    panels.AddPanel<ProjectSettingsPanel>();
 }
 
 void EditorApp::RegisterTools() {
@@ -185,8 +201,10 @@ void EditorApp::Shutdown() {
     }
     // Tear down any active physics preview, restoring the authored transforms.
     if (m_Context.activeScene != nullptr) {
+        m_GameplayPreview.Stop(*m_Context.activeScene, m_PhysicsPreview);
         m_PhysicsPreview.Stop(*m_Context.activeScene);
     }
+    m_Context.gameplayPreview = nullptr;
     m_Context.physicsPreview = nullptr;
     // Drop the mesh-collider provider so it can't outlive the AssetManager.
     PhysicsMeshRegistry::Get().Clear();
@@ -238,10 +256,15 @@ void EditorApp::Update(float deltaTime) {
 
     // Advance the physics preview (no-op unless the user enabled + is playing).
     if (m_Context.activeScene != nullptr) {
-        m_PhysicsPreview.Update(*m_Context.activeScene, deltaTime);
-        m_Context.physicsView.previewRunning = m_PhysicsPreview.IsRunning();
+        m_GameplayPreview.SetInputEnabled(m_Context.playMode && m_Context.gameplayView.gameInputActive);
+        if (m_GameplayPreview.IsActive()) {
+            m_GameplayPreview.Update(*m_Context.activeScene, m_PhysicsPreview, deltaTime);
+        } else {
+            m_PhysicsPreview.Update(*m_Context.activeScene, deltaTime);
+        }
+        SyncPreviewState();
         m_Context.physicsView.contactPoints.clear();
-        if (m_Context.physicsView.showContacts && m_PhysicsPreview.IsRunning()) {
+        if (m_Context.physicsView.showContacts && m_PhysicsPreview.IsActive()) {
             m_Context.physicsView.contactPoints = m_PhysicsPreview.ContactPoints();
         }
     }
@@ -325,33 +348,65 @@ int EditorApp::ValidateActiveScene() {
     return static_cast<int>(issues.size());
 }
 
-void EditorApp::TogglePlayMode() {
-    if (m_Context.activeScene == nullptr || m_Context.simulateMode) {
+void EditorApp::TogglePlaytestMode() {
+    if (m_Context.playMode) {
+        StopPlaytestMode();
         return;
     }
-    m_Context.playMode = !m_Context.playMode;
-    if (m_Context.playMode) {
-        m_Context.activeScene->SetMode(SceneMode::Play);
-        m_Context.activeScene->OnRuntimeStart();
-        HK_EDITOR_INFO("Enter Play mode");
-    } else {
-        m_Context.activeScene->OnRuntimeStop();
-        m_Context.activeScene->SetMode(SceneMode::Edit);
+
+    if (m_Context.activeScene == nullptr) {
+        return;
+    }
+
+    m_PlayModeRestoreDirty = m_Context.sceneDirty;
+    if (const Status status = m_GameplayPreview.Start(*m_Context.activeScene, m_PhysicsPreview); !status) {
+        HK_EDITOR_ERROR("Playtest failed: {}", status.error);
+        SyncPreviewState();
+        return;
+    }
+
+    m_Context.playMode = true;
+    m_Context.gameplayView.previewEnabled = true;
+    m_Context.gameplayView.gameInputActive = false;
+    m_GameplayPreview.SetDebugDrawEnabled(m_Context.gameplayView.showDebug);
+    m_GameplayPreview.SetInputEnabled(false);
+    m_GameplayPreview.Play();
+    SyncPreviewState();
+    m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kGameViewport);
+    HK_EDITOR_INFO("Enter Play mode");
+}
+
+void EditorApp::StopPlaytestMode() {
+    const bool wasPlaying = m_Context.playMode;
+    const bool hadPreview = m_GameplayPreview.IsActive() || m_PhysicsPreview.IsActive();
+    if (!wasPlaying && !hadPreview) {
+        return;
+    }
+
+    if (m_Context.activeScene != nullptr) {
+        m_GameplayPreview.Stop(*m_Context.activeScene, m_PhysicsPreview);
+        m_PhysicsPreview.Stop(*m_Context.activeScene);
+    }
+    m_GameplayPreview.SetInputEnabled(false);
+    m_Context.playMode = false;
+    m_Context.gameplayView.gameInputActive = false;
+    m_Context.physicsView.contactPoints.clear();
+    if (wasPlaying) {
+        m_Context.sceneDirty = m_PlayModeRestoreDirty;
+    }
+    SyncPreviewState();
+    if (wasPlaying) {
         HK_EDITOR_INFO("Exit Play mode");
     }
 }
 
-void EditorApp::ToggleSimulateMode() {
-    if (m_Context.activeScene == nullptr || m_Context.playMode) {
-        return;
-    }
-    m_Context.simulateMode = !m_Context.simulateMode;
-    if (m_Context.simulateMode) {
-        m_Context.activeScene->OnSimulationStart();
-        HK_EDITOR_INFO("Enter Simulate mode");
-    } else {
-        m_Context.activeScene->OnSimulationStop();
-        HK_EDITOR_INFO("Exit Simulate mode");
+void EditorApp::SyncPreviewState() {
+    m_Context.gameplayView.previewEnabled = m_GameplayPreview.IsActive();
+    m_Context.gameplayView.previewRunning = m_GameplayPreview.IsRunning();
+    m_Context.physicsView.previewEnabled = m_PhysicsPreview.IsActive();
+    m_Context.physicsView.previewRunning = m_PhysicsPreview.IsRunning();
+    if (!m_Context.playMode) {
+        m_Context.gameplayView.gameInputActive = false;
     }
 }
 
@@ -383,10 +438,16 @@ std::vector<UUID> TopLevelSelected(Scene& scene, const Selection& selection) {
 } // namespace
 
 void EditorApp::Undo() {
+    if (m_Context.playMode) {
+        return;
+    }
     m_Context.undoRedo.Undo(m_Context);
 }
 
 void EditorApp::Redo() {
+    if (m_Context.playMode) {
+        return;
+    }
     m_Context.undoRedo.Redo(m_Context);
 }
 
@@ -442,11 +503,12 @@ void EditorApp::DeselectAll() {
     m_Context.selection.Clear();
 }
 
+void EditorApp::OpenProjectSettings() {
+    m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kProjectSettings);
+}
+
 void EditorApp::OpenPreferences() {
-    m_Context.panelManager.SetPanelOpen(EditorPanelNames::kPreferences, true);
-    if (Panel* panel = m_Context.panelManager.FindPanel(EditorPanelNames::kPreferences)) {
-        panel->SetOpen(true);
-    }
+    OpenProjectSettings();
 }
 
 std::filesystem::path EditorApp::DefaultSceneDirectory() const {
@@ -476,9 +538,7 @@ void EditorApp::PerformPendingAction() {
     // Any scene switch must end the preview first so its bodies/snapshot don't
     // outlive the scene they were built from.
     if (action != PendingAction::None && action != PendingAction::Quit && m_Context.activeScene != nullptr) {
-        m_PhysicsPreview.Stop(*m_Context.activeScene);
-        m_Context.physicsView.previewEnabled = false;
-        m_Context.physicsView.previewRunning = false;
+        StopPlaytestMode();
     }
 
     switch (action) {
@@ -528,6 +588,10 @@ bool EditorApp::SaveSceneAs() {
 }
 
 bool EditorApp::DoSaveScene() {
+    if (m_Context.playMode) {
+        HK_EDITOR_WARN("Exit Play mode before saving the scene");
+        return false;
+    }
     if (m_Context.activeScenePath.empty()) {
         return DoSaveSceneAs();
     }
@@ -540,6 +604,10 @@ bool EditorApp::DoSaveScene() {
 }
 
 bool EditorApp::DoSaveSceneAs() {
+    if (m_Context.playMode) {
+        HK_EDITOR_WARN("Exit Play mode before saving the scene");
+        return false;
+    }
     std::string defaultName = "Untitled.scene.yaml";
     if (m_Context.activeScene != nullptr && !m_Context.activeScene->GetName().empty()) {
         defaultName = m_Context.activeScene->GetName() + ".scene.yaml";
@@ -736,7 +804,7 @@ void EditorApp::ProcessShortcuts() {
         SelectAllEntities();
     }
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_P, false)) {
-        TogglePlayMode();
+        TogglePlaytestMode();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
         DeleteSelection();

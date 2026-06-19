@@ -37,6 +37,9 @@ public:
     VkImageView ImageView(uint32_t index) const {
         return m_ImageViews[index];
     }
+    bool SupportsTransferSrc() const {
+        return m_SupportsTransferSrc;
+    }
 
 private:
     Status Build(uint32_t width, uint32_t height, bool vsync, VkSwapchainKHR oldSwapchain);
@@ -47,6 +50,7 @@ private:
     VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
     VkFormat m_ColorFormat = VK_FORMAT_UNDEFINED;
     VkExtent2D m_Extent{0, 0};
+    bool m_SupportsTransferSrc = false;
     std::vector<VkImage> m_Images;
     std::vector<VkImageView> m_ImageViews;
 };

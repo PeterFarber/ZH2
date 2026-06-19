@@ -12,11 +12,14 @@ namespace Hockey {
 // Editable field kinds the future Unity-style inspector will understand.
 enum class FieldType { Bool, Int, Float, String, Vec2, Vec3, Vec4, Enum, UUID, Path, AssetRef };
 
+enum class FieldHint { Default, Color };
+
 // Reflection-lite description of a single editable field on a component.
 struct FieldMetadata {
     std::string name;
     std::string displayName;
     FieldType type = FieldType::Float;
+    FieldHint hint = FieldHint::Default;
 
     std::size_t offset = 0;
 
@@ -43,6 +46,7 @@ struct FieldMetadata {
 struct ComponentMetadata {
     std::string name;
     std::string displayName;
+    std::string category = "Miscellaneous";
 
     std::vector<FieldMetadata> fields;
 

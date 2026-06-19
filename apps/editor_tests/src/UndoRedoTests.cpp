@@ -84,6 +84,27 @@ void RunUndoRedoTests() {
         HK_CHECK_MSG(!fix.context.undoRedo.CanRedo(), "executing a new command clears redo");
     }
 
+    // --- play-mode edits execute live but do not enter authoring history ----
+    {
+        CommandFixture fix;
+        fix.context.playMode = true;
+        fix.context.undoRedo.Execute(EditorCommands::CreateEntity("LiveOnly"), fix.context);
+        HK_CHECK_EQ(fix.scene.EntityCount(), static_cast<std::size_t>(1));
+        HK_CHECK_MSG(!fix.context.undoRedo.CanUndo(), "play-mode edit is not recorded for authoring undo");
+        HK_CHECK_MSG(!fix.context.sceneDirty, "play-mode edit does not mark the authored scene dirty");
+    }
+
+    // --- play mode blocks existing authoring undo/redo ----------------------
+    {
+        CommandFixture fix;
+        fix.context.undoRedo.Execute(EditorCommands::CreateEntity("Authored"), fix.context);
+        HK_CHECK_EQ(fix.scene.EntityCount(), static_cast<std::size_t>(1));
+        fix.context.playMode = true;
+        fix.context.undoRedo.Undo(fix.context);
+        HK_CHECK_EQ(fix.scene.EntityCount(), static_cast<std::size_t>(1));
+        HK_CHECK_MSG(fix.context.undoRedo.CanUndo(), "authoring undo is preserved while play mode is active");
+    }
+
     // --- rename entity undo/redo --------------------------------------------
     {
         CommandFixture fix;

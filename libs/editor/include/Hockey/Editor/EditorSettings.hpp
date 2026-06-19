@@ -35,10 +35,9 @@ struct EditorSettings {
 
     // Content pipeline behaviour (the [assets] section). Drives startup discovery
     // and the per-frame hot-reload poll in EditorApp.
-    bool assetsAutoDiscover = true;
-    bool assetsAutoImport = true;
-    bool assetsAutoCookDirty = true;
-    bool assetsHotReload = true;
+    bool assetsAutoImport = false;
+    bool assetsAutoCookDirty = false;
+    bool assetsHotReload = false;
 
     // Maximum number of most-recently-used scene paths retained.
     static constexpr std::size_t kMaxRecentScenes = 10;

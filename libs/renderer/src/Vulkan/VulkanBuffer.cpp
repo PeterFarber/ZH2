@@ -47,7 +47,12 @@ VulkanBuffer CreateBuffer(const RenderDevice& device, const BufferDesc& desc) {
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     if (traits.hostVisible) {
-        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        if (desc.usage == BufferUsage::Readback) {
+            allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+        } else {
+            allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        }
     }
 
     VmaAllocationInfo info{};

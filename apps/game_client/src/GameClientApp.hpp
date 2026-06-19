@@ -4,9 +4,14 @@
 #include "Hockey/Core/FixedTimestep.hpp"
 #include "Hockey/Core/WindowedApplication.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Gameplay/GameplayInput.hpp"
+#include "Hockey/Gameplay/GameplaySettings.hpp"
+#include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 #include <cstdint>
+#include <string>
+#include <glm/glm.hpp>
 
 namespace Hockey {
 class PhysicsSystem;
@@ -23,20 +28,29 @@ protected:
     void OnEvent(const Hockey::Event& event) override;
 
 private:
-    void StepPhysics(float deltaTime);
+    void StepSimulation(float deltaTime);
+    Hockey::GameplayInputFrame BuildLocalInput(uint64_t simulationTick);
     void SubmitPhysicsDebugDraw();
 
     Hockey::Config m_Config;
     Hockey::Scene m_Scene{"Game Scene"};
+    Hockey::GameplayWorld m_GameplayWorld;
+    Hockey::GameplaySettings m_GameplaySettings;
     Hockey::Renderer m_Renderer;
     Hockey::AssetManager m_AssetManager;
     bool m_RendererReady = false;
     bool m_AssetsReady = false;
 
     Hockey::PhysicsSystem* m_PhysicsSystem = nullptr; // owned by m_Scene
-    Hockey::FixedTimestep m_PhysicsTimestep{60.0};
+    Hockey::FixedTimestep m_SimulationTimestep{60.0};
+    uint64_t m_LocalInputSequence = 0;
+    glm::vec3 m_LocalMoveTarget{0.0f};
+    bool m_LocalGameplayEnabled = false;
+    bool m_HasLocalMoveTarget = false;
     bool m_PhysicsReady = false;
     bool m_PhysicsDebug = false;
+    bool m_AutoScreenshotPending = false;
+    std::string m_ScreenshotPrefix = "game";
 
     uint32_t m_LastWidth = 0;
     uint32_t m_LastHeight = 0;

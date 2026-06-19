@@ -1,0 +1,34 @@
+Skater:
+  MaxSpeed: 9.0
+  Acceleration: 32.0
+  Deceleration: 20.0
+  TurnSpeedDegrees: 720.0
+  SprintMultiplier: 1.2
+  PuckControlRadius: 1.25
+Goalie:
+  MaxSpeed: 6.5
+  Acceleration: 28.0
+  CreaseMoveMultiplier: 1.0
+  SaveReachRadius: 1.8
+Puck:
+  MaxSpeed: 45.0
+  PossessionOffset: [0.0, 0.0, 1.1]
+  LoosePuckDrag: 0.15
+  OutOfPlayY: -5.0
+Stick:
+  Reach: 1.5
+  Width: 0.25
+  PokeCheckCooldown: 0.35
+Shot:
+  MinPower: 8.0
+  MaxPower: 32.0
+  ChargeSeconds: 1.0
+  AccuracyDegrees: 4.0
+Pass:
+  Power: 18.0
+  AssistRadius: 2.0
+  MaxAssistAngleDegrees: 25.0
+Check:
+  Cooldown: 0.75
+  Impulse: 8.0
+  Radius: 1.25

@@ -1,0 +1,20 @@
+version = 1
+agents = ["codex"]
+
+# AGENTS.md remains the authoritative agent instruction file. This manifest is
+# only for dotagents-managed agent and skill configuration.
+
+[trust]
+github_orgs = [
+  "getsentry",
+  "obra",
+  "oraios",
+  "gastownhall",
+  "safishamsi",
+]
+
+# Keep MCP/server launch details local unless they are repo-wide Codex defaults.
+# Serena, for example, uses client-specific setup outside this file.
+#
+# No skills are declared yet. Add project skills only for concrete repeatable
+# workflows, not as placeholders for existing docs.

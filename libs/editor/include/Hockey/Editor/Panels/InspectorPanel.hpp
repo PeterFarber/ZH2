@@ -25,6 +25,8 @@ private:
     ComponentInspector m_Inspector;
     ComponentAddMenu m_AddMenu;
     char m_NameBuffer[256] = {};
+    char m_TagBuffer[128] = {};
+    char m_LayerBuffer[128] = {};
     std::string m_NameOriginal;
     bool m_NameEditing = false;
 };

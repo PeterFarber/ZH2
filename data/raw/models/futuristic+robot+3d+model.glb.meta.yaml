@@ -1,0 +1,17 @@
+Asset:
+  ID: 15016660897869443009
+  Type: Model
+  Name: futuristic+robot+3d+model
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/futuristic+robot+3d+model.glb
+  CookedPath: data/cooked/assets/models/15016660897869443009.model.bin
+  RawFileTimestamp: 134256187884444972
+  RawFileHash: 12850083541555453715
+  ImportedTimestamp: 1781818161
+  CookedTimestamp: 1781816480
+  Dependencies: [17547610319020794610, 9314026843142607525]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true
