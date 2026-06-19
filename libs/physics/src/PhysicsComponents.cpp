@@ -344,6 +344,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "RigidBodyComponent";
         md.displayName = "Rigid Body";
+        md.category = "Physics";
         md.fields.push_back(MakeRigidBodyTypeField(offsetof(RigidBodyComponent, type)));
         md.fields.push_back(MakeField("Mass", FieldType::Float, offsetof(RigidBodyComponent, mass)));
         md.fields.push_back(MakeField("UseGravity", FieldType::Bool, offsetof(RigidBodyComponent, useGravity)));
@@ -373,6 +374,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "BoxColliderComponent";
         md.displayName = "Box Collider";
+        md.category = "Physics";
         md.fields.push_back(MakeField("HalfExtents", FieldType::Vec3, offsetof(BoxColliderComponent, halfExtents)));
         md.fields.push_back(MakeField("Offset", FieldType::Vec3, offsetof(BoxColliderComponent, offset)));
         md.fields.push_back(MakeField("Rotation", FieldType::Vec3, offsetof(BoxColliderComponent, rotation)));
@@ -384,6 +386,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "SphereColliderComponent";
         md.displayName = "Sphere Collider";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Radius", FieldType::Float, offsetof(SphereColliderComponent, radius)));
         md.fields.push_back(MakeField("Offset", FieldType::Vec3, offsetof(SphereColliderComponent, offset)));
         md.fields.push_back(MakeField("IsTrigger", FieldType::Bool, offsetof(SphereColliderComponent, isTrigger)));
@@ -394,6 +397,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "CapsuleColliderComponent";
         md.displayName = "Capsule Collider";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Radius", FieldType::Float, offsetof(CapsuleColliderComponent, radius)));
         md.fields.push_back(MakeField("HalfHeight", FieldType::Float, offsetof(CapsuleColliderComponent, halfHeight)));
         md.fields.push_back(MakeField("Offset", FieldType::Vec3, offsetof(CapsuleColliderComponent, offset)));
@@ -406,6 +410,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "CylinderColliderComponent";
         md.displayName = "Cylinder Collider";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Radius", FieldType::Float, offsetof(CylinderColliderComponent, radius)));
         md.fields.push_back(MakeField("HalfHeight", FieldType::Float, offsetof(CylinderColliderComponent, halfHeight)));
         md.fields.push_back(MakeField("Offset", FieldType::Vec3, offsetof(CylinderColliderComponent, offset)));
@@ -418,6 +423,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "MeshColliderComponent";
         md.displayName = "Mesh Collider";
+        md.category = "Physics";
         FieldMetadata meshAsset =
             MakeField("MeshAsset", FieldType::AssetRef, offsetof(MeshColliderComponent, meshAsset));
         meshAsset.assetTypeName = "Mesh";
@@ -431,6 +437,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "TriggerComponent";
         md.displayName = "Trigger";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Tag", FieldType::String, offsetof(TriggerComponent, tag)));
         md.fields.push_back(MakeField("DetectPlayers", FieldType::Bool, offsetof(TriggerComponent, detectPlayers)));
         md.fields.push_back(MakeField("DetectGoalies", FieldType::Bool, offsetof(TriggerComponent, detectGoalies)));
@@ -442,6 +449,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "CharacterControllerComponent";
         md.displayName = "Character Controller";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Radius", FieldType::Float, offsetof(CharacterControllerComponent, radius)));
         md.fields.push_back(MakeField("Height", FieldType::Float, offsetof(CharacterControllerComponent, height)));
         md.fields.push_back(
@@ -455,6 +463,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "PhysicsMaterialComponent";
         md.displayName = "Physics Material";
+        md.category = "Physics";
         md.fields.push_back(MakeField("Material", FieldType::String, offsetof(PhysicsMaterialComponent, materialName)));
         registry.RegisterComponent<PhysicsMaterialComponent>(std::move(md));
     }

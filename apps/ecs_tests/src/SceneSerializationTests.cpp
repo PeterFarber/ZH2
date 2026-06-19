@@ -32,6 +32,10 @@ void RunSceneSerializationTests() {
     Entity rink = scene.CreateEntity("Rink");
     rink.AddComponent<RinkComponent>(RinkComponent{"Test Rink"});
     rink.GetComponent<TransformComponent>().localPosition = glm::vec3(1.0f, 2.0f, 3.0f);
+    auto& rinkSettings = rink.GetComponent<ObjectSettingsComponent>();
+    rinkSettings.tag = "Rink";
+    rinkSettings.layer = "Gameplay";
+    rinkSettings.isStatic = true;
 
     Entity puck = scene.CreateEntity("Puck Spawn");
     puck.AddComponent<PuckComponent>(PuckComponent{true});
@@ -75,6 +79,10 @@ void RunSceneSerializationTests() {
     HK_CHECK_EQ(lr.GetName(), std::string("Rink"));
     HK_CHECK(lr.HasComponent<RinkComponent>());
     HK_CHECK_EQ(lr.GetComponent<RinkComponent>().rinkName, std::string("Test Rink"));
+    HK_CHECK(lr.HasComponent<ObjectSettingsComponent>());
+    HK_CHECK_EQ(lr.GetComponent<ObjectSettingsComponent>().tag, std::string("Rink"));
+    HK_CHECK_EQ(lr.GetComponent<ObjectSettingsComponent>().layer, std::string("Gameplay"));
+    HK_CHECK(lr.GetComponent<ObjectSettingsComponent>().isStatic);
     HK_CHECK_NEAR(lr.GetComponent<TransformComponent>().localPosition.x, 1.0f, 1e-4);
     HK_CHECK_NEAR(lr.GetComponent<TransformComponent>().localPosition.z, 3.0f, 1e-4);
 

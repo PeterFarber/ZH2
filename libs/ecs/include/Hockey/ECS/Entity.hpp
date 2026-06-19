@@ -75,8 +75,8 @@ public:
     }
 
     template <typename T> void RemoveComponent() {
-        if constexpr (std::is_same_v<T, IDComponent> || std::is_same_v<T, TransformComponent> ||
-                      std::is_same_v<T, ChildrenComponent>) {
+        if constexpr (std::is_same_v<T, IDComponent> || std::is_same_v<T, ObjectSettingsComponent> ||
+                      std::is_same_v<T, TransformComponent> || std::is_same_v<T, ChildrenComponent>) {
             HK_CORE_ERROR("RemoveComponent refused: '{}' is protected on normal entities", ComponentName<T>());
             return;
         } else {

@@ -107,6 +107,20 @@ Status ApplyOne(Scene& scene, const PrefabOverride& ov) {
         return Status::Ok();
     }
 
+    if (ov.componentName == "ObjectSettingsComponent") {
+        auto& settings = registry.get<ObjectSettingsComponent>(handle);
+        if (ov.fieldName == "Tag") {
+            settings.tag = ov.value.as<std::string>();
+        } else if (ov.fieldName == "Layer") {
+            settings.layer = ov.value.as<std::string>();
+        } else if (ov.fieldName == "Static") {
+            settings.isStatic = ov.value.as<bool>();
+        } else {
+            return Fail("unknown ObjectSettingsComponent field '" + ov.fieldName + "'");
+        }
+        return Status::Ok();
+    }
+
     if (ov.componentName == "ActiveComponent") {
         if (ov.fieldName != "Active") {
             return Fail("unknown ActiveComponent field '" + ov.fieldName + "'");
@@ -175,6 +189,8 @@ Status ApplyOne(Scene& scene, const PrefabOverride& ov) {
             component->role = PlayerRoleFromString(ov.value.as<std::string>());
         } else if (ov.fieldName == "Index") {
             component->index = ov.value.as<int>();
+        } else if (ov.fieldName == "PlayerPrefabPath") {
+            component->playerPrefabPath = ov.value.as<std::string>();
         } else {
             return Fail("unknown SpawnPointComponent field '" + ov.fieldName + "'");
         }

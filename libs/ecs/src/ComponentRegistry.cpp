@@ -18,6 +18,32 @@ FieldMetadata MakeField(std::string name, FieldType type, std::size_t offset, st
     return field;
 }
 
+FieldMetadata MakeFloatRangeField(std::string name, std::size_t offset, float minValue, float maxValue,
+                                  float speed = 0.1f, std::string displayName = {}) {
+    FieldMetadata field = MakeField(std::move(name), FieldType::Float, offset, std::move(displayName));
+    field.minFloat = minValue;
+    field.maxFloat = maxValue;
+    field.speed = speed;
+    return field;
+}
+
+FieldMetadata MakeVecRangeField(std::string name, FieldType type, std::size_t offset, float minValue, float maxValue,
+                                float speed = 0.1f, std::string displayName = {}) {
+    FieldMetadata field = MakeField(std::move(name), type, offset, std::move(displayName));
+    field.minFloat = minValue;
+    field.maxFloat = maxValue;
+    field.speed = speed;
+    return field;
+}
+
+FieldMetadata MakeColorField(std::string name, std::size_t offset, std::string displayName = {}) {
+    FieldMetadata field = MakeField(std::move(name), FieldType::Vec3, offset, std::move(displayName));
+    field.hint = FieldHint::Color;
+    field.minFloat = 0.0f;
+    field.maxFloat = 1.0f;
+    return field;
+}
+
 FieldMetadata MakeLightTypeField(std::string name, std::size_t offset) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Enum, offset);
     field.enumNames = {"Directional", "Point", "Spot"};
@@ -88,6 +114,18 @@ void ComponentRegistry::RegisterPhase2Components() {
 
     {
         ComponentMetadata md;
+        md.name = "ObjectSettingsComponent";
+        md.displayName = "Object Settings";
+        md.addable = false;
+        md.removable = false;
+        md.fields.push_back(MakeField("Tag", FieldType::String, offsetof(ObjectSettingsComponent, tag)));
+        md.fields.push_back(MakeField("Layer", FieldType::String, offsetof(ObjectSettingsComponent, layer)));
+        md.fields.push_back(MakeField("Static", FieldType::Bool, offsetof(ObjectSettingsComponent, isStatic)));
+        RegisterComponent<ObjectSettingsComponent>(std::move(md));
+    }
+
+    {
+        ComponentMetadata md;
         md.name = "ActiveComponent";
         md.displayName = "Active";
         md.removable = false;
@@ -140,6 +178,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "TeamComponent";
         md.displayName = "Team";
+        md.category = "Hockey";
         md.fields.push_back(MakeTeamField("Team", offsetof(TeamComponent, team)));
         RegisterComponent<TeamComponent>(std::move(md));
     }
@@ -148,6 +187,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "PlayerRoleComponent";
         md.displayName = "Player Role";
+        md.category = "Hockey";
         md.fields.push_back(MakeRoleField("Role", offsetof(PlayerRoleComponent, role)));
         RegisterComponent<PlayerRoleComponent>(std::move(md));
     }
@@ -156,6 +196,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "PuckComponent";
         md.displayName = "Puck";
+        md.category = "Hockey";
         md.fields.push_back(MakeField("StartsInPlay", FieldType::Bool, offsetof(PuckComponent, startsInPlay)));
         RegisterComponent<PuckComponent>(std::move(md));
     }
@@ -164,6 +205,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "GoalComponent";
         md.displayName = "Goal";
+        md.category = "Hockey";
         md.fields.push_back(MakeTeamField("DefendingTeam", offsetof(GoalComponent, defendingTeam)));
         RegisterComponent<GoalComponent>(std::move(md));
     }
@@ -172,9 +214,12 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "SpawnPointComponent";
         md.displayName = "Spawn Point";
+        md.category = "Hockey";
         md.fields.push_back(MakeTeamField("Team", offsetof(SpawnPointComponent, team)));
         md.fields.push_back(MakeRoleField("Role", offsetof(SpawnPointComponent, role)));
         md.fields.push_back(MakeField("Index", FieldType::Int, offsetof(SpawnPointComponent, index)));
+        md.fields.push_back(
+            MakeField("PlayerPrefabPath", FieldType::Path, offsetof(SpawnPointComponent, playerPrefabPath)));
         RegisterComponent<SpawnPointComponent>(std::move(md));
     }
 
@@ -182,6 +227,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "FaceoffSpotComponent";
         md.displayName = "Faceoff Spot";
+        md.category = "Hockey";
         md.fields.push_back(MakeField("Index", FieldType::Int, offsetof(FaceoffSpotComponent, index)));
         RegisterComponent<FaceoffSpotComponent>(std::move(md));
     }
@@ -190,6 +236,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "RinkComponent";
         md.displayName = "Rink";
+        md.category = "Hockey";
         md.fields.push_back(MakeField("RinkName", FieldType::String, offsetof(RinkComponent, rinkName)));
         RegisterComponent<RinkComponent>(std::move(md));
     }
@@ -198,6 +245,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "PlayAreaComponent";
         md.displayName = "Play Area";
+        md.category = "Hockey";
         md.fields.push_back(MakeField("HalfExtents", FieldType::Vec3, offsetof(PlayAreaComponent, halfExtents)));
         RegisterComponent<PlayAreaComponent>(std::move(md));
     }
@@ -206,6 +254,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "CameraRigMarkerComponent";
         md.displayName = "Camera Rig Marker";
+        md.category = "Hockey";
         md.fields.push_back(MakeField("Purpose", FieldType::String, offsetof(CameraRigMarkerComponent, purpose)));
         RegisterComponent<CameraRigMarkerComponent>(std::move(md));
     }
@@ -214,9 +263,13 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "CameraComponent";
         md.displayName = "Camera";
-        md.fields.push_back(MakeField("FovDegrees", FieldType::Float, offsetof(CameraComponent, fovDegrees)));
-        md.fields.push_back(MakeField("NearClip", FieldType::Float, offsetof(CameraComponent, nearClip)));
-        md.fields.push_back(MakeField("FarClip", FieldType::Float, offsetof(CameraComponent, farClip)));
+        md.category = "Rendering";
+        md.fields.push_back(MakeFloatRangeField("FovDegrees", offsetof(CameraComponent, fovDegrees), 1.0f, 179.0f,
+                                                0.1f, "FOV"));
+        md.fields.push_back(
+            MakeFloatRangeField("NearClip", offsetof(CameraComponent, nearClip), 0.001f, 10.0f, 0.01f));
+        md.fields.push_back(
+            MakeFloatRangeField("FarClip", offsetof(CameraComponent, farClip), 1.0f, 10000.0f, 1.0f));
         md.fields.push_back(MakeField("Primary", FieldType::Bool, offsetof(CameraComponent, primary)));
         RegisterComponent<CameraComponent>(std::move(md));
     }
@@ -225,6 +278,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "MeshRendererComponent";
         md.displayName = "Mesh Renderer";
+        md.category = "Rendering";
         FieldMetadata meshAsset =
             MakeField("MeshAsset", FieldType::AssetRef, offsetof(MeshRendererComponent, meshAsset));
         meshAsset.assetTypeName = "Mesh";
@@ -247,14 +301,16 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "LightComponent";
         md.displayName = "Light";
+        md.category = "Rendering";
         md.fields.push_back(MakeLightTypeField("Type", offsetof(LightComponent, type)));
-        md.fields.push_back(MakeField("Color", FieldType::Vec3, offsetof(LightComponent, color)));
-        md.fields.push_back(MakeField("Intensity", FieldType::Float, offsetof(LightComponent, intensity)));
-        md.fields.push_back(MakeField("Range", FieldType::Float, offsetof(LightComponent, range)));
+        md.fields.push_back(MakeColorField("Color", offsetof(LightComponent, color)));
         md.fields.push_back(
-            MakeField("InnerConeDegrees", FieldType::Float, offsetof(LightComponent, innerConeDegrees)));
+            MakeFloatRangeField("Intensity", offsetof(LightComponent, intensity), 0.0f, 16.0f, 0.05f));
+        md.fields.push_back(MakeFloatRangeField("Range", offsetof(LightComponent, range), 0.0f, 500.0f, 0.5f));
         md.fields.push_back(
-            MakeField("OuterConeDegrees", FieldType::Float, offsetof(LightComponent, outerConeDegrees)));
+            MakeFloatRangeField("InnerConeDegrees", offsetof(LightComponent, innerConeDegrees), 0.0f, 90.0f, 0.1f));
+        md.fields.push_back(
+            MakeFloatRangeField("OuterConeDegrees", offsetof(LightComponent, outerConeDegrees), 0.0f, 90.0f, 0.1f));
         md.fields.push_back(MakeField("CastsShadows", FieldType::Bool, offsetof(LightComponent, castsShadows)));
         RegisterComponent<LightComponent>(std::move(md));
     }
@@ -263,9 +319,11 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "EnvironmentComponent";
         md.displayName = "Environment";
-        md.fields.push_back(MakeField("AmbientColor", FieldType::Vec3, offsetof(EnvironmentComponent, ambientColor)));
+        md.category = "Rendering";
+        md.fields.push_back(MakeColorField("AmbientColor", offsetof(EnvironmentComponent, ambientColor)));
         md.fields.push_back(
-            MakeField("AmbientIntensity", FieldType::Float, offsetof(EnvironmentComponent, ambientIntensity)));
+            MakeFloatRangeField("AmbientIntensity", offsetof(EnvironmentComponent, ambientIntensity), 0.0f, 16.0f,
+                                0.05f));
         RegisterComponent<EnvironmentComponent>(std::move(md));
     }
 
@@ -273,8 +331,11 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "ReflectionProbeComponent";
         md.displayName = "Reflection Probe";
-        md.fields.push_back(MakeField("Radius", FieldType::Float, offsetof(ReflectionProbeComponent, radius)));
-        md.fields.push_back(MakeField("Intensity", FieldType::Float, offsetof(ReflectionProbeComponent, intensity)));
+        md.category = "Rendering";
+        md.fields.push_back(
+            MakeFloatRangeField("Radius", offsetof(ReflectionProbeComponent, radius), 0.0f, 1000.0f, 0.5f));
+        md.fields.push_back(
+            MakeFloatRangeField("Intensity", offsetof(ReflectionProbeComponent, intensity), 0.0f, 16.0f, 0.05f));
         RegisterComponent<ReflectionProbeComponent>(std::move(md));
     }
 
@@ -282,8 +343,10 @@ void ComponentRegistry::RegisterPhase2Components() {
         ComponentMetadata md;
         md.name = "DecalComponent";
         md.displayName = "Decal";
+        md.category = "Rendering";
         md.fields.push_back(MakeField("MaterialName", FieldType::String, offsetof(DecalComponent, materialName)));
-        md.fields.push_back(MakeField("Size", FieldType::Vec3, offsetof(DecalComponent, size)));
+        md.fields.push_back(
+            MakeVecRangeField("Size", FieldType::Vec3, offsetof(DecalComponent, size), 0.0f, 100.0f, 0.1f));
         md.fields.push_back(MakeField("AffectsBaseColor", FieldType::Bool, offsetof(DecalComponent, affectsBaseColor)));
         md.fields.push_back(MakeField("AffectsNormals", FieldType::Bool, offsetof(DecalComponent, affectsNormals)));
         RegisterComponent<DecalComponent>(std::move(md));

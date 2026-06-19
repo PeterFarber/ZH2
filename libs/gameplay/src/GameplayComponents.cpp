@@ -443,6 +443,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "PlayerComponent";
         md.displayName = "Player";
+        md.category = "Gameplay";
         md.fields.push_back(MakeField("PlayerIndex", FieldType::Int, offsetof(PlayerComponent, playerIndex)));
         md.fields.push_back(MakeSlotField("Slot", offsetof(PlayerComponent, slot)));
         md.fields.push_back(MakeTeamField("Team", offsetof(PlayerComponent, team)));
@@ -456,6 +457,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "SkaterComponent";
         md.displayName = "Skater";
+        md.category = "Gameplay";
         md.fields.push_back(MakeField("MaxSpeed", FieldType::Float, offsetof(SkaterComponent, maxSpeed)));
         md.fields.push_back(MakeField("Acceleration", FieldType::Float, offsetof(SkaterComponent, acceleration)));
         md.fields.push_back(MakeField("Deceleration", FieldType::Float, offsetof(SkaterComponent, deceleration)));
@@ -467,6 +469,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "GoalieComponent";
         md.displayName = "Goalie";
+        md.category = "Gameplay";
         md.fields.push_back(MakeField("MaxSpeed", FieldType::Float, offsetof(GoalieComponent, maxSpeed)));
         md.fields.push_back(MakeField("Acceleration", FieldType::Float, offsetof(GoalieComponent, acceleration)));
         md.fields.push_back(MakeField("SaveReachRadius", FieldType::Float, offsetof(GoalieComponent, saveReachRadius)));
@@ -477,6 +480,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "MatchStateComponent";
         md.displayName = "Match State";
+        md.category = "Gameplay";
         md.fields.push_back(MakePhaseField(offsetof(MatchStateComponent, phase)));
         md.fields.push_back(MakeField("Period", FieldType::Int, offsetof(MatchStateComponent, period)));
         md.fields.push_back(MakeField("PeriodCount", FieldType::Int, offsetof(MatchStateComponent, periodCount)));
@@ -488,6 +492,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "TeamStateComponent";
         md.displayName = "Team State";
+        md.category = "Gameplay";
         md.fields.push_back(MakeTeamField("Team", offsetof(TeamStateComponent, team)));
         md.fields.push_back(MakeField("Score", FieldType::Int, offsetof(TeamStateComponent, score)));
         registry.RegisterComponent<TeamStateComponent>(std::move(md));
@@ -496,6 +501,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "PuckGameplayComponent";
         md.displayName = "Puck Gameplay";
+        md.category = "Gameplay";
         md.fields.push_back(MakePuckStateField(offsetof(PuckGameplayComponent, state)));
         md.fields.push_back(MakeTeamField("LastTouchedTeam", offsetof(PuckGameplayComponent, lastTouchedTeam)));
         md.fields.push_back(MakeField("TimeSinceLastTouch", FieldType::Float, offsetof(PuckGameplayComponent, timeSinceLastTouch)));
@@ -506,6 +512,7 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "StickComponent";
         md.displayName = "Stick";
+        md.category = "Gameplay";
         md.fields.push_back(MakeField("OwnerPlayer", FieldType::UUID, offsetof(StickComponent, ownerPlayer)));
         md.fields.push_back(MakeField("Reach", FieldType::Float, offsetof(StickComponent, reach)));
         md.fields.push_back(MakeField("Width", FieldType::Float, offsetof(StickComponent, width)));
@@ -516,23 +523,24 @@ void RegisterMetadata() {
         ComponentMetadata md;
         md.name = "GoalGameplayComponent";
         md.displayName = "Goal Gameplay";
+        md.category = "Gameplay";
         md.fields.push_back(MakeTeamField("ScoringTeam", offsetof(GoalGameplayComponent, scoringTeam)));
         md.fields.push_back(MakeTeamField("DefendingTeam", offsetof(GoalGameplayComponent, defendingTeam)));
         md.fields.push_back(MakeField("Enabled", FieldType::Bool, offsetof(GoalGameplayComponent, enabled)));
         registry.RegisterComponent<GoalGameplayComponent>(std::move(md));
     }
 
-    registry.RegisterComponent<PlayerRuntimeComponent>({"PlayerRuntimeComponent", "Player Runtime"});
-    registry.RegisterComponent<PuckRuntimeComponent>({"PuckRuntimeComponent", "Puck Runtime"});
-    registry.RegisterComponent<PossessionComponent>({"PossessionComponent", "Possession"});
-    registry.RegisterComponent<ShotComponent>({"ShotComponent", "Shot"});
-    registry.RegisterComponent<PassComponent>({"PassComponent", "Pass"});
-    registry.RegisterComponent<CheckComponent>({"CheckComponent", "Check"});
-    registry.RegisterComponent<ScoreComponent>({"ScoreComponent", "Score"});
-    registry.RegisterComponent<OutOfPlayComponent>({"OutOfPlayComponent", "Out Of Play"});
-    registry.RegisterComponent<FaceoffGameplayComponent>({"FaceoffGameplayComponent", "Faceoff Gameplay"});
-    registry.RegisterComponent<FaceoffComponent>({"FaceoffComponent", "Faceoff"});
-    registry.RegisterComponent<RespawnComponent>({"RespawnComponent", "Respawn"});
+    registry.RegisterComponent<PlayerRuntimeComponent>({"PlayerRuntimeComponent", "Player Runtime", "Gameplay"});
+    registry.RegisterComponent<PuckRuntimeComponent>({"PuckRuntimeComponent", "Puck Runtime", "Gameplay"});
+    registry.RegisterComponent<PossessionComponent>({"PossessionComponent", "Possession", "Gameplay"});
+    registry.RegisterComponent<ShotComponent>({"ShotComponent", "Shot", "Gameplay"});
+    registry.RegisterComponent<PassComponent>({"PassComponent", "Pass", "Gameplay"});
+    registry.RegisterComponent<CheckComponent>({"CheckComponent", "Check", "Gameplay"});
+    registry.RegisterComponent<ScoreComponent>({"ScoreComponent", "Score", "Gameplay"});
+    registry.RegisterComponent<OutOfPlayComponent>({"OutOfPlayComponent", "Out Of Play", "Gameplay"});
+    registry.RegisterComponent<FaceoffGameplayComponent>({"FaceoffGameplayComponent", "Faceoff Gameplay", "Gameplay"});
+    registry.RegisterComponent<FaceoffComponent>({"FaceoffComponent", "Faceoff", "Gameplay"});
+    registry.RegisterComponent<RespawnComponent>({"RespawnComponent", "Respawn", "Gameplay"});
 }
 
 } // namespace

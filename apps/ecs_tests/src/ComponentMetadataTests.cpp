@@ -19,6 +19,15 @@ bool HasField(const ComponentMetadata& md, const std::string& name) {
     return false;
 }
 
+const FieldMetadata* FindField(const ComponentMetadata& md, const std::string& name) {
+    for (const auto& field : md.fields) {
+        if (field.name == name) {
+            return &field;
+        }
+    }
+    return nullptr;
+}
+
 } // namespace
 
 void RunComponentMetadataTests() {
@@ -52,10 +61,38 @@ void RunComponentMetadataTests() {
         HK_CHECK(role->fields[0].type == FieldType::Enum);
     }
 
+    const ComponentMetadata* objectSettings = registry.FindByName("ObjectSettingsComponent");
+    HK_CHECK(objectSettings != nullptr);
+    if (objectSettings != nullptr) {
+        HK_CHECK(!objectSettings->addable);
+        HK_CHECK(!objectSettings->removable);
+        HK_CHECK(HasField(*objectSettings, "Tag"));
+        HK_CHECK(HasField(*objectSettings, "Layer"));
+        HK_CHECK(HasField(*objectSettings, "Static"));
+    }
+
     const ComponentMetadata* spawn = registry.FindByName("SpawnPointComponent");
     HK_CHECK(spawn != nullptr);
     if (spawn != nullptr) {
+        HK_CHECK_EQ(spawn->category, std::string("Hockey"));
         HK_CHECK(HasField(*spawn, "PlayerPrefabPath"));
+    }
+
+    const ComponentMetadata* light = registry.FindByName("LightComponent");
+    HK_CHECK(light != nullptr);
+    if (light != nullptr) {
+        HK_CHECK_EQ(light->category, std::string("Rendering"));
+        const FieldMetadata* color = FindField(*light, "Color");
+        HK_CHECK(color != nullptr && color->hint == FieldHint::Color);
+        const FieldMetadata* intensity = FindField(*light, "Intensity");
+        HK_CHECK(intensity != nullptr && intensity->maxFloat > intensity->minFloat);
+    }
+
+    const ComponentMetadata* camera = registry.FindByName("CameraComponent");
+    HK_CHECK(camera != nullptr);
+    if (camera != nullptr) {
+        const FieldMetadata* fov = FindField(*camera, "FovDegrees");
+        HK_CHECK(fov != nullptr && fov->minFloat > 0.0f && fov->maxFloat > fov->minFloat);
     }
 
     // has/add/remove callbacks.

@@ -18,6 +18,7 @@ void RunSceneEventTests();
 void RunRenderComponentTests();
 void RunActiveHierarchyTests();
 void RunSceneClearTests();
+void RunObjectSettingsTests();
 void RunMarkerSerializationTests();
 void RunPrefabOverridePersistenceTests();
 void RunMainRinkLoadTests();
@@ -45,6 +46,7 @@ int main(int argc, char** argv) {
     RunRenderComponentTests();
     RunActiveHierarchyTests();
     RunSceneClearTests();
+    RunObjectSettingsTests();
     RunMarkerSerializationTests();
     RunPrefabOverridePersistenceTests();
     RunMainRinkLoadTests();

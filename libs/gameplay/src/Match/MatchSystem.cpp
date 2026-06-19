@@ -1,12 +1,14 @@
 #include "Hockey/Gameplay/Match/MatchSystem.hpp"
 
 #include <array>
+#include <filesystem>
 #include <string>
 
 #include <entt/entt.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
@@ -53,6 +55,21 @@ Entity FindPlayerBySlot(Scene& scene, PlayerSlot slot) {
 Entity FindOrCreateNamed(Scene& scene, const std::string& name) {
     Entity entity = scene.FindEntityByName(name);
     return entity.IsValid() ? entity : scene.CreateEntity(name);
+}
+
+Result<Entity> CreatePlayerFromSpawnPrefab(Scene& scene, const SpawnPointComponent& spawn, PlayerSlot slot) {
+    if (spawn.playerPrefabPath.empty()) {
+        return Result<Entity>::Ok(scene.CreateEntity(std::string(PlayerSlotToString(slot))));
+    }
+
+    Result<Entity> prefab = PrefabSerializer::Instantiate(scene, spawn.playerPrefabPath);
+    if (!prefab) {
+        return Result<Entity>::Fail("failed to instantiate player prefab '" + spawn.playerPrefabPath.generic_string() +
+                                    "': " + prefab.error);
+    }
+
+    prefab.value.GetComponent<NameComponent>().name = std::string(PlayerSlotToString(slot));
+    return prefab;
 }
 
 void EnsureTeamState(Scene& scene, GameplayTeam team) {
@@ -145,7 +162,11 @@ Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settin
 
         Entity player = FindPlayerBySlot(scene, slot);
         if (!player.IsValid()) {
-            player = scene.CreateEntity(std::string(PlayerSlotToString(slot)));
+            Result<Entity> spawnedPlayer = CreatePlayerFromSpawnPrefab(scene, spawn, slot);
+            if (!spawnedPlayer) {
+                return Status::Fail(spawnedPlayer.error);
+            }
+            player = spawnedPlayer.value;
         }
         player.GetComponent<TransformComponent>().localPosition = spawnView.get<TransformComponent>(handle).localPosition;
 
