@@ -4,7 +4,8 @@ Status: Not implemented as a phase yet. Prerequisites exist from earlier phases.
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-08-networking-lobbies.md`.
+- [x] Read `docs/phase-plans/phase-08-networking-lobbies.md`.
+- [x] Read `docs/phase-rules/120-phase-8-networking-lobbies.mdc`.
 - [x] Checked `docs/phase-rules/120-phase-8-networking-lobbies.mdc`.
 - [x] Checked `docs/project-structure.md`.
 

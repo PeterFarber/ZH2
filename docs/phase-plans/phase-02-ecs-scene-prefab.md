@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-02-ecs-scene-prefab.md
+docs/phase-plans/phase-02-ecs-scene-prefab.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-02-ecs-scene-prefab.md` and implement Phase 2 exactly. Do not implement Vulkan, renderer, physics, networking, GameNetworkingSockets, hockey gameplay simulation, ImGui editor UI, audio, animation, or the final asset pipeline during this phase. Work step by step, update CMake whenever files are added, add tests, and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-02-ecs-scene-prefab.md` and implement Phase 2 exactly. Do not implement Vulkan, renderer, physics, networking, GameNetworkingSockets, hockey gameplay simulation, ImGui editor UI, audio, animation, or the final asset pipeline during this phase. Work step by step, update CMake whenever files are added, add tests, and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -1848,7 +1848,7 @@ ClearPendingEvents clears events
 
 ---
 
-# 25. Implementation Order for Cursor
+# 25. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2095,9 +2095,9 @@ no ImGui/editor UI exists
 
 ---
 
-# 28. Cursor Completion Instruction
+# 28. AI Completion Instruction
 
-When Phase 2 is complete, Cursor should report:
+When Phase 2 is complete, AI agent should report:
 
 ```text
 Phase 2 complete.

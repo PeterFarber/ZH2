@@ -1,7 +1,6 @@
 # AI Onboarding
 
-Use this as the first-read guide for Cursor and Codex agents working in this
-repository.
+Use this as the first-read guide for Codex agents working in this repository.
 
 ## Read First
 
@@ -13,11 +12,19 @@ repository.
    remaining work.
 5. `docs/ai-debugging-playbook.md` - debugging, screenshots, and evidence
    collection workflow.
-6. `.cursor/rules/` - Cursor-specific always-on and task-specific rules.
-7. The relevant source, headers, CMake target, config, and tests for the task.
+6. `docs/ai-workflow-guide.md` - day-to-day Codex and local AI tool workflow.
+7. `docs/ai-agent-tooling.md` - `just` command surface and optional tool policy.
+8. `docs/ai-rules/` - shared project workflow, boundary, phase, debugging, and
+   visual-verification guidance retained for AI agents.
+9. `docs/phase-plans/` - detailed phase implementation plans and sequencing
+   context.
+10. The relevant source, headers, CMake target, config, and tests for the task.
 
 Prefer current source/CMake truth and `docs/project-structure.md`
 over older summary text. If sources disagree, stop and call out the conflict.
+
+`AGENTS.md` remains authoritative for hard rules. Treat `docs/ai-rules/` and
+`docs/phase-plans/` content as supporting guidance for the current AI flow.
 
 ## Current Project State
 
@@ -43,6 +50,20 @@ over older summary text. If sources disagree, stop and call out the conflict.
   or explicitly say "No phase status change needed" in the final response.
 
 ## Standard Commands
+
+Preferred command surface when `just` is installed:
+
+```powershell
+just tools-check
+just serena-health
+just configure-debug
+just build-debug
+just test
+just smoke-text
+just verify
+```
+
+Direct platform scripts remain supported and are what the `justfile` wraps.
 
 Windows first-time flow:
 
@@ -79,8 +100,8 @@ Linux first-time flow:
 ./scripts/linux/test.sh
 ```
 
-Current Linux note: `scripts/linux/test.sh` only runs `HockeyCoreTests`. Run
-other test executables directly from `build/linux-debug/apps/...` when needed.
+`scripts/linux/test.sh` runs the same debug test executable set as the Windows
+test helper.
 
 Linux AI diagnostics:
 
@@ -104,11 +125,27 @@ HockeyPhysicsTests
 HockeyGameplayTests
 ```
 
-On Windows, the full debug suite is:
+The full debug suite is:
 
 ```powershell
-.\scripts\windows\test.ps1
+just test
 ```
+
+Use the direct platform test scripts when `just` is unavailable.
+
+## AI Tool Health
+
+Use these before tasks that depend on semantic tooling or broad project context:
+
+```powershell
+just tools-check
+just serena-health
+just ai-ready
+```
+
+`just ai-ready` is intentionally light: it checks local AI/developer tools and
+Serena's clangd-backed project health. It does not replace build/test
+verification.
 
 ## Editing Checklist
 

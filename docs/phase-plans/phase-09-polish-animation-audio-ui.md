@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-09-polish-animation-audio-ui.md
+docs/phase-plans/phase-09-polish-animation-audio-ui.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-09-polish-animation-audio-ui.md` and implement Phase 9 exactly. Build the complete presentation, usability, optimization, packaging, and release-readiness layer for the hockey game. This includes animation, audio, game UI/HUD, controls/settings UX, graphics/audio/input settings screens, multiplayer UI flow, debugging overlays, profiling, performance optimization, packaging, install/run layout, and QA validation. Do not rewrite the engine architecture from earlier phases. Keep the dedicated server headless. Keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-09-polish-animation-audio-ui.md` and implement Phase 9 exactly. Build the complete presentation, usability, optimization, packaging, and release-readiness layer for the hockey game. This includes animation, audio, game UI/HUD, controls/settings UX, graphics/audio/input settings screens, multiplayer UI flow, debugging overlays, profiling, performance optimization, packaging, install/run layout, and QA validation. Do not rewrite the engine architecture from earlier phases. Keep the dedicated server headless. Keep Windows/Linux compatibility.
 ```
 
 ---
@@ -2233,7 +2233,7 @@ Do not overwrite user-edited config on update unless explicitly requested.
 
 ---
 
-# 24. Implementation Order for Cursor
+# 24. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2542,9 +2542,9 @@ Linux build works
 
 ---
 
-# 27. Cursor Completion Instruction
+# 27. AI Completion Instruction
 
-When Phase 9 is complete, Cursor should report:
+When Phase 9 is complete, AI agent should report:
 
 ```text
 Phase 9 complete.

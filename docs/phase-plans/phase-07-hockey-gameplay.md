@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-07-hockey-gameplay.md
+docs/phase-plans/phase-07-hockey-gameplay.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-07-hockey-gameplay.md` and implement Phase 7 exactly. Build the complete local/headless hockey gameplay simulation on top of the existing core, ECS, asset, renderer, editor, and physics systems. Do not implement GameNetworkingSockets transport, online lobby networking, replication protocol, final animation runtime, final audio runtime, or final game UI during this phase. Gameplay must be server-authoritative-ready, fixed-tick, deterministic-minded, and independent from SDL, Vulkan, ImGui, and networking transport. Keep the dedicated server headless and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-07-hockey-gameplay.md` and implement Phase 7 exactly. Build the complete local/headless hockey gameplay simulation on top of the existing core, ECS, asset, renderer, editor, and physics systems. Do not implement GameNetworkingSockets transport, online lobby networking, replication protocol, final animation runtime, final audio runtime, or final game UI during this phase. Gameplay must be server-authoritative-ready, fixed-tick, deterministic-minded, and independent from SDL, Vulkan, ImGui, and networking transport. Keep the dedicated server headless and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -2392,7 +2392,7 @@ server does not require renderer/editor
 
 ---
 
-# 30. Implementation Order for Cursor
+# 30. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2688,9 +2688,9 @@ no final animation/audio/UI exists
 
 ---
 
-# 33. Cursor Completion Instruction
+# 33. AI Completion Instruction
 
-When Phase 7 is complete, Cursor should report:
+When Phase 7 is complete, AI agent should report:
 
 ```text
 Phase 7 complete.

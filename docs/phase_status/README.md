@@ -1,8 +1,9 @@
 # Phase Status Guide
 
 This folder is the AI-readable checklist for project phase state. Use it with
-`docs/project-structure.md`, the matching `.cursor/plans/phase-*`
-file, and current source/CMake truth.
+`docs/project-structure.md`, the matching `docs/phase-plans/phase-*` plan,
+the matching `docs/phase-rules/phase-*` guidance, and current source/CMake
+truth.
 
 ## Phase Files
 

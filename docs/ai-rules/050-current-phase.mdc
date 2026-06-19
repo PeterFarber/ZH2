@@ -38,7 +38,7 @@ prediction, interpolation, reconciliation, or GameNetworkingSockets.
 When Phase 8 is requested, follow:
 
 - `docs/phase-rules/120-phase-8-networking-lobbies.mdc`
-- `.cursor/plans/phase-08-networking-lobbies.md`
+- `docs/phase-plans/phase-08-networking-lobbies.md`
 
 ## Out of Scope Unless Explicitly Requested
 

@@ -58,8 +58,14 @@ function Invoke-ExternalStep {
 
     try {
         $global:LASTEXITCODE = 0
-        $output = & $FilePath @Arguments 2>&1
-        $exitCode = $LASTEXITCODE
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            $output = & $FilePath @Arguments 2>&1
+            $exitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
         $output | Out-File -FilePath $logFile -Encoding utf8
 
         if ($exitCode -ne 0) {

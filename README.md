@@ -10,12 +10,27 @@ Current status: phases 1-7 are substantially implemented, covering foundation/co
 - [Phase status index](docs/phase_status/README.md) - per-phase checkbox status files with finished, started, and remaining work.
 - [Agent instructions](AGENTS.md) - architecture boundaries, dependency rules, phase order, and coding expectations.
 - [AI onboarding](docs/ai-onboarding.md) - how AI agents should orient themselves before making changes.
+- [AI workflow guide](docs/ai-workflow-guide.md) - day-to-day instructions for using Codex and local AI tools.
+- [AI agent tooling](docs/ai-agent-tooling.md) - shared command surface and optional agent tool policy.
 - [AI debugging playbook](docs/ai-debugging-playbook.md) - build/test/screenshot/debug workflow for AI-assisted development.
-- [Cursor rules](.cursor/rules/) and [phase rules](docs/phase-rules/) - IDE and phase-specific guidance.
+- [AI rules](docs/ai-rules/), [phase plans](docs/phase-plans/), and [phase rules](docs/phase-rules/) - AI workflow and phase-specific guidance.
 
 ## Quick Build
 
 Dependencies are managed with vcpkg manifest mode through [vcpkg.json](vcpkg.json). Set `VCPKG_ROOT` to your vcpkg install before configuring.
+
+Preferred command surface when `just` is installed:
+
+```powershell
+just tools-check
+just ai-ready
+just configure-debug
+just build-debug
+just test
+just verify
+```
+
+Direct platform scripts remain supported.
 
 Windows:
 
@@ -52,7 +67,10 @@ libs/       Engine libraries: core, ecs, assets, renderer, physics, gameplay, ed
 data/       Config, raw/cooked assets, shaders, editor state
 scripts/    Windows and Linux build/run/test helpers
 docs/       Project documentation, phase status, AI workflow docs
-.cursor/    Cursor project rules and active phase context
+  ai-rules/     Shared AI project rules
+  phase-plans/  Detailed phase implementation plans
+justfile    Shared build/test/run/verify command recipes
+agents.toml Shared Codex agent-tool declarations
 ```
 
 For the detailed dependency graph and subsystem notes, use [docs/project-structure.md](docs/project-structure.md).

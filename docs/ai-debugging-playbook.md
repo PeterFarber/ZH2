@@ -1,6 +1,6 @@
 # AI Debugging Playbook
 
-Use this when a Codex or Cursor session needs to debug, visually verify, or
+Use this when a Codex session needs to debug, visually verify, or
 collect evidence for this project.
 
 ## Diagnostic Output

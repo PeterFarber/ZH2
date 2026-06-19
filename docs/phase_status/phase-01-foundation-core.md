@@ -4,7 +4,8 @@ Status: Implemented, with display-backed runtime coverage still manual.
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-01-foundation-core.md`.
+- [x] Read `docs/phase-plans/phase-01-foundation-core.md`.
+- [x] Read `docs/phase-rules/050-phase-1-foundation-core.mdc`.
 - [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 
@@ -77,6 +78,7 @@ Source material:
 - [x] Additional coverage exists for platform, time, timer, thread pool, signal handler, and paths.
 - [x] Dedicated server can run headless.
 - [x] Client and editor have windowed app entrypoints.
+- [x] Windows and Linux debug test helpers run the full built test executable set.
 
 ## Started / Partial
 

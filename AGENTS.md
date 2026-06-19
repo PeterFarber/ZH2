@@ -41,6 +41,41 @@ verification state of a phase item, update the matching
 `docs/phase_status/phase-*.md` file in the same change. If no phase status
 changed, explicitly say "No phase status change needed" in the final response.
 
+## Agent tooling files
+
+Keep `AGENTS.md`. It is the authoritative instruction file for humans and AI
+agents working in this repo.
+
+`agents.toml` is the dotagents machine-readable manifest for Codex-oriented
+tool and skill configuration. It does not replace `AGENTS.md`.
+
+Supporting AI context belongs in `docs/ai-rules/`, `docs/phase-plans/`, and
+`docs/ai-agent-tooling.md`. Treat those files as supporting guidance unless
+they are promoted into this file.
+
+Do not add repo-managed `.agents` skills just to mirror these instructions.
+Only add a skill when the project has a repeatable workflow with concrete,
+versionable instructions that should travel through dotagents.
+
+## AI working loop
+
+At the start of a coding task, read the relevant current source/CMake/tests and
+the matching `docs/phase_status/` file before editing. Use `docs/ai-onboarding.md`
+for the full orientation checklist when the task spans multiple subsystems.
+
+Use `rg`, Serena, and Graphify as accelerators, but verify behavior against
+source, builds, tests, logs, and screenshots. Generated tool output is never a
+substitute for repository truth.
+
+Prefer the root `justfile` command surface:
+
+- `just tools-check` for local tool inventory.
+- `just serena-health` for semantic tooling health.
+- `just verify` as the normal completion contract for repo changes.
+
+Before finalizing, report the focused verification that ran and whether phase
+status changed. If verification could not run, report the exact blocker.
+
 ## Phase order
 
 1. Complete cross-platform foundation/core.
@@ -160,3 +195,20 @@ Avoid:
 - Keep Windows/Linux compatibility.
 - Do not create monolithic systems.
 - Do not silently change architecture.
+
+## Graphify
+
+This project can maintain a local code knowledge graph in `graphify-out/`.
+The generated graph is ignored by git and should be refreshed on demand.
+
+Use Graphify before broad architecture questions, large refactors, dependency
+tracing, or unfamiliar subsystem work:
+
+- `graphify query "<question>"` for a scoped subgraph.
+- `graphify path "<A>" "<B>"` for relationships between symbols or files.
+- `graphify explain "<concept>"` for focused neighborhood context.
+
+Direct source inspection is still expected for precise edits, tests, CMake
+changes, and line-level debugging. If Graphify output is missing or stale, run
+`graphify update . --force --no-cluster` and then continue with normal repo
+inspection.

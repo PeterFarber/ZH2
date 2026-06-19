@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-08-networking-lobbies.md
+docs/phase-plans/phase-08-networking-lobbies.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-08-networking-lobbies.md` and implement Phase 8 exactly. Build the complete multiplayer networking layer using GameNetworkingSockets, including transport, protocol, dedicated server hosting, local lobby flow, team/role selection, match start, input streaming, authoritative server snapshots, interpolation, client prediction, server reconciliation, disconnect handling, network statistics, and tests. Do not implement final matchmaking services, platform storefront integration, final animation/audio/UI polish, monetization, or anti-cheat service integration during this phase. Keep the dedicated server headless and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-08-networking-lobbies.md` and implement Phase 8 exactly. Build the complete multiplayer networking layer using GameNetworkingSockets, including transport, protocol, dedicated server hosting, local lobby flow, team/role selection, match start, input streaming, authoritative server snapshots, interpolation, client prediction, server reconciliation, disconnect handling, network statistics, and tests. Do not implement final matchmaking services, platform storefront integration, final animation/audio/UI polish, monetization, or anti-cheat service integration during this phase. Keep the dedicated server headless and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -2271,7 +2271,7 @@ If launching multiple terminals is platform-specific, document command lines ins
 
 ---
 
-# 29. Implementation Order for Cursor
+# 29. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2586,9 +2586,9 @@ no final animation/audio/UI polish exists
 
 ---
 
-# 32. Cursor Completion Instruction
+# 32. AI Completion Instruction
 
-When Phase 8 is complete, Cursor should report:
+When Phase 8 is complete, AI agent should report:
 
 ```text
 Phase 8 complete.

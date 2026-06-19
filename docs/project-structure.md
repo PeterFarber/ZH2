@@ -73,13 +73,15 @@ Vulkan, ImGui, or other UI/rendering dependencies.
 |-- CMakeLists.txt     Top-level target wiring and architecture guards
 |-- CMakePresets.json  Configure/build presets
 |-- vcpkg.json         Manifest-mode third-party dependencies
+|-- justfile           Shared build/test/run/verify command recipes
 |-- AGENTS.md          Agent rules and architecture constraints
+|-- agents.toml        Dotagents manifest for Codex-oriented tooling
 |-- README.md          Short project entry point
 |-- LICENSE            Project license
-|-- .cursor/           Cursor project rules and active phase context
 |-- .clang-format      Formatting rules
 |-- .clang-tidy        Static analysis rules
 |-- .editorconfig      Editor defaults
+|-- .serena/           Serena project configuration and ignored local state
 `-- project-words.txt  Project dictionary for spell checking
 ```
 
@@ -93,6 +95,9 @@ vcpkg_installed/  vcpkg installed packages
 _save/            User/runtime saves and built-in screenshot output
 data/logs/        Runtime logs
 data/temp/        Temporary runtime/editor/test files
+graphify-out/     Ignored Graphify graph and HTML output
+.serena/cache/    Ignored Serena language-server cache
+.serena/logs/     Ignored Serena health-check and runtime logs
 ```
 
 `_save/` is user-owned local runtime output. AI diagnostics should go under
@@ -244,10 +249,19 @@ Common shader source groups:
 docs/
 |-- project-structure.md             This repository structure guide
 |-- ai-onboarding.md                 AI orientation checklist
+|-- ai-workflow-guide.md             Day-to-day Codex and AI tool workflow
+|-- ai-agent-tooling.md              AI tool stack and command policy
 |-- ai-debugging-playbook.md         Debug/build/test/screenshot workflow
+|-- ai-rules/                        Shared AI project rules
+|-- phase-plans/                     Detailed phase implementation plans
 |-- phase_status/                    Per-phase checkbox status
-`-- phase-rules/                     Phase-specific Cursor rule sources
+`-- phase-rules/                     Phase-specific agent rule sources
 ```
+
+The `docs/ai-rules/` and `docs/phase-plans/` directories are retained as shared
+AI guidance. Codex sessions should use the relevant files as supporting context
+while treating `AGENTS.md`, source/CMake truth, and `docs/phase_status/` as
+authoritative.
 
 Phase status files:
 

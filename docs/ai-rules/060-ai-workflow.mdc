@@ -1,5 +1,5 @@
 ---
-description: Workflow rules for Cursor and Codex agents working in this repo.
+description: Workflow rules for AI agents working in this repo.
 globs:
 alwaysApply: true
 ---
@@ -9,6 +9,8 @@ alwaysApply: true
 Before editing:
 
 - Read `docs/project-structure.md` for current repo structure and target state.
+- Read `docs/ai-agent-tooling.md` for the shared `just` command surface and
+  optional agent tool policy.
 - Read `docs/ai-debugging-playbook.md` when debugging, verifying runtime
   behavior, or collecting screenshot evidence.
 - Read `docs/phase_status/README.md` and the relevant phase status file for
@@ -32,6 +34,8 @@ While editing:
 After editing:
 
 - Run the narrowest relevant test executable or script when feasible.
+- Prefer `just verify` as the completion contract when the `just` CLI is
+  available; otherwise use the direct platform scripts it wraps.
 - For source changes, mention any tests that could not be run.
 - For docs-only changes, no build is required.
 - Update phase status if the change completed, started, removed, invalidated, or

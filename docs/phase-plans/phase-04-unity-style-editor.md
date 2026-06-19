@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-04-unity-style-editor.md
+docs/phase-plans/phase-04-unity-style-editor.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-04-unity-style-editor.md` and implement Phase 4 exactly. Build the complete Unity-style map editor on top of the existing core, ECS, scene, prefab, and Vulkan renderer systems. Do not implement the final asset pipeline, physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, audio, or animation during this phase. Keep the dedicated server headless and make sure it does not link editor UI code. Work step by step, update CMake whenever files are added, add tests/smoke tests, and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-04-unity-style-editor.md` and implement Phase 4 exactly. Build the complete Unity-style map editor on top of the existing core, ECS, scene, prefab, and Vulkan renderer systems. Do not implement the final asset pipeline, physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, audio, or animation during this phase. Keep the dedicated server headless and make sure it does not link editor UI code. Work step by step, update CMake whenever files are added, add tests/smoke tests, and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -2245,7 +2245,7 @@ Mark GUI smoke tests optional if CI/headless environment cannot run them.
 
 ---
 
-# 32. Implementation Order for Cursor
+# 32. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2537,9 +2537,9 @@ no final asset pipeline exists
 
 ---
 
-# 35. Cursor Completion Instruction
+# 35. AI Completion Instruction
 
-When Phase 4 is complete, Cursor should report:
+When Phase 4 is complete, AI agent should report:
 
 ```text
 Phase 4 complete.

@@ -4,7 +4,8 @@ Status: Implemented, with UI/GPU verification gaps.
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-04-unity-style-editor.md`.
+- [x] Read `docs/phase-plans/phase-04-unity-style-editor.md`.
+- [x] Read `docs/phase-rules/080-phase-4-unity-style-editor.mdc`.
 - [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 

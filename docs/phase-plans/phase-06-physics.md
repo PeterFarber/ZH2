@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-06-physics.md
+docs/phase-plans/phase-06-physics.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-06-physics.md` and implement Phase 6 exactly. Build the complete physics system using Jolt Physics, including ECS physics components, physics world simulation, collision layers, rigid bodies, colliders, triggers, queries, debug drawing, editor integration, and server-safe fixed-tick simulation. Do not implement networking, GameNetworkingSockets, hockey gameplay rules, final animation, audio, or final game UI during this phase. Keep the dedicated server headless and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-06-physics.md` and implement Phase 6 exactly. Build the complete physics system using Jolt Physics, including ECS physics components, physics world simulation, collision layers, rigid bodies, colliders, triggers, queries, debug drawing, editor integration, and server-safe fixed-tick simulation. Do not implement networking, GameNetworkingSockets, hockey gameplay rules, final animation, audio, or final game UI during this phase. Keep the dedicated server headless and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -1627,7 +1627,7 @@ server physics shuts down cleanly
 
 ---
 
-# 21. Implementation Order for Cursor
+# 21. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -1885,9 +1885,9 @@ no final animation/audio/UI exists
 
 ---
 
-# 24. Cursor Completion Instruction
+# 24. AI Completion Instruction
 
-When Phase 6 is complete, Cursor should report:
+When Phase 6 is complete, AI agent should report:
 
 ```text
 Phase 6 complete.

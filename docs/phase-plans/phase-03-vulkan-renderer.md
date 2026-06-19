@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-03-vulkan-renderer.md
+docs/phase-plans/phase-03-vulkan-renderer.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-03-vulkan-renderer.md` and implement Phase 3 exactly. Build the complete shared Vulkan renderer subsystem for the game client and map editor. Do not implement the Unity-style editor UI, physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, audio, animation, or the final asset pipeline during this phase. Keep the dedicated server headless and make sure it does not link the renderer. Work step by step, update CMake whenever files are added, add tests/smoke tests, and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-03-vulkan-renderer.md` and implement Phase 3 exactly. Build the complete shared Vulkan renderer subsystem for the game client and map editor. Do not implement the Unity-style editor UI, physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, audio, animation, or the final asset pipeline during this phase. Keep the dedicated server headless and make sure it does not link the renderer. Work step by step, update CMake whenever files are added, add tests/smoke tests, and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -2060,7 +2060,7 @@ render passes
 
 ---
 
-# 21. Implementation Order for Cursor
+# 21. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2374,9 +2374,9 @@ no ImGui editor UI exists
 
 ---
 
-# 24. Cursor Completion Instruction
+# 24. AI Completion Instruction
 
-When Phase 3 is complete, Cursor should report:
+When Phase 3 is complete, AI agent should report:
 
 ```text
 Phase 3 complete.

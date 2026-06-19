@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-05-asset-pipeline.md
+docs/phase-plans/phase-05-asset-pipeline.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-05-asset-pipeline.md` and implement Phase 5 exactly. Build the complete asset import, registry, cooking, loading, hot-reload, and editor integration pipeline. Do not implement physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, animation runtime, audio runtime, or final game UI during this phase. Keep Windows/Linux compatibility and keep the dedicated server headless.
+Read `docs/phase-plans/phase-05-asset-pipeline.md` and implement Phase 5 exactly. Build the complete asset import, registry, cooking, loading, hot-reload, and editor integration pipeline. Do not implement physics simulation, networking, GameNetworkingSockets, hockey gameplay simulation, animation runtime, audio runtime, or final game UI during this phase. Keep Windows/Linux compatibility and keep the dedicated server headless.
 ```
 
 ---
@@ -1739,7 +1739,7 @@ Run recook all dirty
 
 ---
 
-# 22. Implementation Order for Cursor
+# 22. Implementation Order for AI Agents
 
 ## Step 1 — Target and Dependency Setup
 
@@ -2016,9 +2016,9 @@ no audio runtime exists
 
 ---
 
-# 25. Cursor Completion Instruction
+# 25. AI Completion Instruction
 
-When Phase 5 is complete, Cursor should report:
+When Phase 5 is complete, AI agent should report:
 
 ```text
 Phase 5 complete.

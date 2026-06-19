@@ -4,7 +4,8 @@ Status: Not implemented as a phase yet. Some placeholders and prerequisites exis
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-09-polish-animation-audio-ui.md`.
+- [x] Read `docs/phase-plans/phase-09-polish-animation-audio-ui.md`.
+- [x] Read `docs/phase-rules/130-phase-9-polish-animation-audio-ui.mdc`.
 - [x] Checked `docs/phase-rules/130-phase-9-polish-animation-audio-ui.mdc`.
 - [x] Checked `docs/project-structure.md`.
 

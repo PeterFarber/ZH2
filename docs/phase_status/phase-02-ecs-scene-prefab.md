@@ -4,7 +4,8 @@ Status: Implemented.
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-02-ecs-scene-prefab.md`.
+- [x] Read `docs/phase-plans/phase-02-ecs-scene-prefab.md`.
+- [x] Read `docs/phase-rules/060-phase-2-ecs-scene-prefab.mdc`.
 - [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 

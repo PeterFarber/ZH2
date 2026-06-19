@@ -4,7 +4,8 @@ Status: Implemented, with advanced format and future-system gaps.
 
 Source material:
 
-- [x] Read `.cursor/plans/phase-05-asset-pipeline.md`.
+- [x] Read `docs/phase-plans/phase-05-asset-pipeline.md`.
+- [x] Read `docs/phase-rules/090-phase-5-asset-pipeline.mdc`.
 - [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 

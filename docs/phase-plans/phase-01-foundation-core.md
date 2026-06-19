@@ -3,13 +3,13 @@
 File path recommendation:
 
 ```text
-.cursor/plans/phase-01-foundation-core.md
+docs/phase-plans/phase-01-foundation-core.md
 ```
 
-Cursor instruction:
+AI instruction:
 
 ```text
-Read `.cursor/plans/phase-01-foundation-core.md` and implement Phase 1 exactly. Do not implement ECS, renderer, networking, physics, gameplay, editor UI, ImGui, Vulkan, or asset pipeline code during this phase. Work step by step, update CMake whenever files are added, and keep Windows/Linux compatibility.
+Read `docs/phase-plans/phase-01-foundation-core.md` and implement Phase 1 exactly. Do not implement ECS, renderer, networking, physics, gameplay, editor UI, ImGui, Vulkan, or asset pipeline code during this phase. Work step by step, update CMake whenever files are added, and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -78,7 +78,7 @@ HockeyGame/
   .clang-format
   .clang-tidy
 
-  .cursor/
+  docs/ai-rules/
     rules/
       000-project-overview.mdc
       010-architecture-boundaries.mdc
@@ -1846,7 +1846,7 @@ clear empties queue
 
 ---
 
-# 25. Implementation Order for Cursor
+# 25. Implementation Order for AI Agents
 
 Implement in this exact order.
 
@@ -2036,9 +2036,9 @@ no gameplay code exists
 
 ---
 
-# 28. Cursor Completion Instruction
+# 28. AI Completion Instruction
 
-When Phase 1 is complete, Cursor should report:
+When Phase 1 is complete, AI agent should report:
 
 ```text
 Phase 1 complete.
