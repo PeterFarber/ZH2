@@ -5,7 +5,7 @@ Status: Implemented, with known renderer gaps.
 Source material:
 
 - [x] Read `.cursor/plans/phase-03-vulkan-renderer.md`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 
 ## What This Phase Implements

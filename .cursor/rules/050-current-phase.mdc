@@ -16,7 +16,7 @@ Current implementation status:
 
 Canonical current-state reference:
 
-- `docs/project-structure-and-status.md`
+- `docs/project-structure.md`
 - `docs/phase_status/README.md`
 - `docs/phase_status/phase-01-foundation-core.md` through
   `docs/phase_status/phase-09-polish-animation-audio-ui.md`
@@ -24,6 +24,10 @@ Canonical current-state reference:
 Use `docs/phase_status/` to distinguish implemented work from known partial
 gaps and future-phase work. Do not treat unchecked Phase 8 or Phase 9 checklist
 items as current implementation.
+
+After every repo-tracked change, update the matching phase status file when
+phase state changed. If phase state did not change, say
+"No phase status change needed" in the final response.
 
 ## Phase 8 Scope
 

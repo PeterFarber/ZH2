@@ -12,7 +12,7 @@ Before editing:
 
 - Read `docs/phase_status/README.md`.
 - Read the phase status file that owns the requested subsystem.
-- Read `docs/project-structure-and-status.md` for current target/app state.
+- Read `docs/project-structure.md` for current target/app state.
 - Prefer current source and CMake truth if docs disagree.
 
 Checkbox meaning:
@@ -36,7 +36,12 @@ Phase discipline:
 
 When completing work:
 
-- Update the matching phase status file if the work changes phase status.
+- After every repo-tracked change, check whether phase status changed.
+- Update the matching phase status file when the work completes an unchecked
+  item, starts or partially implements an item, removes or invalidates existing
+  work, changes verification status, or changes a known gap.
+- If no phase status file needs to change, explicitly say
+  "No phase status change needed" in the final response.
 - Only change `[ ]` to `[x]` when implementation and relevant verification are
   complete, or when current source/CMake truth proves the item was already done.
 - If verification could not be performed, keep the item unchecked or document

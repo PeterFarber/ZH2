@@ -35,6 +35,12 @@ Do not implement systems from future phases unless explicitly requested.
 
 No placeholders unless the user explicitly asks for temporary scaffolding.
 
+After every repo-tracked change, check whether `docs/phase_status/` needs to be
+updated. If the change completes, starts, removes, invalidates, or changes the
+verification state of a phase item, update the matching
+`docs/phase_status/phase-*.md` file in the same change. If no phase status
+changed, explicitly say "No phase status change needed" in the final response.
+
 ## Phase order
 
 1. Complete cross-platform foundation/core.

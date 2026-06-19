@@ -1,7 +1,7 @@
 # Phase Status Guide
 
 This folder is the AI-readable checklist for project phase state. Use it with
-`docs/project-structure-and-status.md`, the matching `.cursor/plans/phase-*`
+`docs/project-structure.md`, the matching `.cursor/plans/phase-*`
 file, and current source/CMake truth.
 
 ## Phase Files
@@ -40,8 +40,12 @@ phase-09-polish-animation-audio-ui.md Not-started polish/animation/audio/UI chec
 ## AI Update Rules
 
 - Before editing a subsystem, read the matching phase status file.
-- If the task completes an unchecked item, update the same phase file in the
-  same change.
+- After every repo-tracked change, check whether phase status changed.
+- Update the matching phase file in the same change when work completes an
+  unchecked item, starts or partially implements an item, removes or invalidates
+  existing work, changes verification status, or changes a known gap.
+- If no phase status file needs to change, explicitly say
+  "No phase status change needed" in the final response.
 - Only mark an item `[x]` after the implementation and relevant verification are
   complete or after source/CMake truth proves it was already complete.
 - If an item cannot be verified, keep it unchecked and add or preserve the

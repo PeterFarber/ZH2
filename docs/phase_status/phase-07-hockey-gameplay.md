@@ -5,7 +5,7 @@ Status: Implemented for local client, editor preview, and headless server use.
 Source material:
 
 - [x] Read `.cursor/plans/phase-07-hockey-gameplay.md`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 
 ## What This Phase Implements

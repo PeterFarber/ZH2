@@ -5,7 +5,7 @@ Status: Implemented, with display-backed runtime coverage still manual.
 Source material:
 
 - [x] Read `.cursor/plans/phase-01-foundation-core.md`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 
 ## What This Phase Implements

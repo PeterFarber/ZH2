@@ -6,7 +6,7 @@ Source material:
 
 - [x] Read `.cursor/plans/phase-09-polish-animation-audio-ui.md`.
 - [x] Checked `docs/phase-rules/130-phase-9-polish-animation-audio-ui.mdc`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 
 ## What This Phase Implements
 

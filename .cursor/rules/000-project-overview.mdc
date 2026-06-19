@@ -10,10 +10,17 @@ This repository is a custom C++ hockey game and engine project.
 
 The goal is to build a high-quality real-time 4v4 hockey game.
 
-For current implementation status, target graph, build/run commands, scripts,
-and screenshot workflow, read:
+For target graph, build/run commands, scripts, and screenshot workflow, read:
 
-- `docs/project-structure-and-status.md`
+- `docs/project-structure.md`
+
+For current implementation status, read:
+
+- `docs/phase_status/README.md`
+
+After every repo-tracked change, check whether `docs/phase_status/` needs an
+update. If it does not, report "No phase status change needed" in the final
+response.
 
 Game design:
 

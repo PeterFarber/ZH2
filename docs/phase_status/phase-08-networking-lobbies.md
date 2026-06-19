@@ -6,7 +6,7 @@ Source material:
 
 - [x] Read `.cursor/plans/phase-08-networking-lobbies.md`.
 - [x] Checked `docs/phase-rules/120-phase-8-networking-lobbies.mdc`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 
 ## What This Phase Implements
 
