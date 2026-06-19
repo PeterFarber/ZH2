@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -32,7 +33,13 @@ struct EditorContextCreateInfo {
     Renderer* renderer = nullptr;
     Scene* scene = nullptr;
     Config* config = nullptr;
+    std::filesystem::path configPath;
     AssetManager* assetManager = nullptr;
+    bool captureSceneViewport = false;
+    bool captureGameViewport = false;
+    std::string captureViewportPrefix = "editor";
+    std::uint32_t captureViewportWidth = 1920;
+    std::uint32_t captureViewportHeight = 1080;
 };
 
 // Frame of reference for transform gizmos / the toolbar's space toggle.
@@ -41,16 +48,16 @@ enum class TransformSpace {
     Local,
 };
 
-// Physics preview + visualization state (runtime; not persisted). Drives the
-// collider/trigger overlay in the scene viewport and the Physics panel's
-// preview controls. The preview simulation itself is owned by EditorApp.
+// Physics visualization state (runtime; not persisted). The preview simulation
+// itself is an internal playtest backend owned by EditorApp.
 struct PhysicsViewState {
-    bool previewEnabled = false; // simulate physics in the Edit-mode viewport
-    bool previewRunning = false; // play/pause within preview
+    bool previewEnabled = false; // internal backend state, surfaced for status only
+    bool previewRunning = false; // internal backend state, surfaced for status only
     bool showColliders = true;
     bool showTriggers = true;
     bool showBodyCenters = false;
     bool showContacts = false;
+    bool visualizationOptionsOpen = false;
 
     // Contact points captured during the last preview step (world space), filled
     // by EditorApp when showContacts is on. Drawn as crosses by the PhysicsGizmo.
@@ -61,6 +68,7 @@ struct GameplayPreviewState {
     bool previewEnabled = false;
     bool previewRunning = false;
     bool showDebug = false;
+    bool gameInputActive = false;
 };
 
 // Central editor state shared by every panel, tool, command and gizmo. The
@@ -73,6 +81,7 @@ public:
     Renderer* renderer = nullptr;
     Scene* activeScene = nullptr;
     Config* config = nullptr;
+    std::filesystem::path configPath;
 
     // Borrowed from the host application; owns the content pipeline (database,
     // import/cook, runtime loading, hot-reload). Null in headless tests.
@@ -98,14 +107,13 @@ public:
     std::filesystem::path activeScenePath;
     bool sceneDirty = false;
     bool playMode = false;
-    bool simulateMode = false;
 
-    // Physics collider/trigger overlay + preview toggles (see PhysicsViewState).
+    // Physics collider/trigger overlay + internal playtest backend state.
     PhysicsViewState physicsView;
     GameplayPreviewState gameplayView;
 
-    // Owned by EditorApp; null in headless tests without physics. The Physics
-    // panel drives it (start/stop/step/reset) and EditorApp ticks it each frame.
+    // Owned by EditorApp; null in headless tests without physics. Gameplay
+    // playtest drives it and EditorApp ticks it each frame.
     EditorPhysicsPreview* physicsPreview = nullptr;
     EditorGameplayPreview* gameplayPreview = nullptr;
 
@@ -113,6 +121,16 @@ public:
     // the host to open a scene file. EditorApp drains this each frame, running
     // the unsaved-changes prompt, then clears it.
     std::filesystem::path requestedOpenScene;
+
+    // Set by commands that need a docked panel to become active on the next UI
+    // pass. PanelManager consumes and clears this after applying focus.
+    std::string requestedPanelFocus;
+
+    bool captureSceneViewport = false;
+    bool captureGameViewport = false;
+    std::string captureViewportPrefix = "editor";
+    std::uint32_t captureViewportWidth = 1920;
+    std::uint32_t captureViewportHeight = 1080;
 
     // Size of the scene viewport's offscreen target in pixels, refreshed each
     // frame by the SceneViewportPanel. Consumed by the Stats panel. Zero until
@@ -127,6 +145,9 @@ public:
     // Marks the active scene as modified (drives the save prompt / dirty
     // indicator). Calling with false clears the flag (e.g. after a save).
     void MarkDirty(bool dirty = true) {
+        if (playMode && dirty) {
+            return;
+        }
         sceneDirty = dirty;
     }
 

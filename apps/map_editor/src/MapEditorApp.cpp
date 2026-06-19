@@ -19,19 +19,8 @@ namespace {
 
 Hockey::RendererSettings LoadEditorViewportRendererSettings(const Hockey::Config& editorConfig) {
     Hockey::RendererSettings settings = Hockey::MakeDefaultRendererSettings();
-
-    const std::filesystem::path clientConfigPath = Hockey::Paths::ConfigFile("client.toml");
-    Hockey::Config clientConfig;
-    if (const Hockey::Status status = clientConfig.Load(clientConfigPath); status) {
-        Hockey::LoadRendererSettings(clientConfig, settings);
-        HK_EDITOR_INFO("Editor viewport graphics mirror client renderer config '{}'", clientConfigPath.string());
-        return settings;
-    } else {
-        HK_EDITOR_WARN("Could not load client renderer config '{}': {}", clientConfigPath.string(), status.error);
-    }
-
     Hockey::LoadRendererSettings(editorConfig, settings);
-    HK_EDITOR_WARN("Falling back to editor renderer settings for viewport graphics");
+    HK_EDITOR_INFO("Editor viewport graphics loaded from editor renderer config");
     return settings;
 }
 
@@ -165,12 +154,25 @@ bool MapEditorApp::OnInit() {
 
 void MapEditorApp::LoadStartupScene() {
     const auto& cmd = GetCommandLine();
-    if (!cmd.Has("--scene")) {
+    std::filesystem::path path;
+    if (cmd.Has("--scene")) {
+        path = Hockey::Paths::Resolve(cmd.GetString("--scene", ""));
+    } else {
+        const Hockey::EditorSettings& settings = m_Editor.Context().settings;
+        if (settings.restoreLastScene && !settings.recentScenes.empty()) {
+            const std::filesystem::path recent = Hockey::Paths::Resolve(settings.recentScenes.front());
+            if (Hockey::FileSystem::Exists(recent)) {
+                path = recent;
+                HK_EDITOR_INFO("Restoring last scene '{}'", path.string());
+            } else {
+                HK_EDITOR_INFO("Last scene '{}' not found; opening empty Edit scene", recent.string());
+            }
+        }
+    }
+    if (path.empty()) {
         HK_EDITOR_INFO("No startup scene requested; opening empty Edit scene");
         return;
     }
-
-    const std::filesystem::path path = Hockey::Paths::Resolve(cmd.GetString("--scene", ""));
     if (!Hockey::FileSystem::Exists(path)) {
         HK_EDITOR_INFO("Startup scene '{}' not found; using empty Edit scene", path.string());
         return;

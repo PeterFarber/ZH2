@@ -19,6 +19,7 @@ target_sources(hockey_editor
         src/EditorGameplayPreview.cpp
         src/EditorPhysicsPreview.cpp
         src/EditorSettings.cpp
+        src/SceneViewOverlay.cpp
         src/SceneWorkflow.cpp
         src/FileDialog.cpp
         src/Dockspace.cpp
@@ -30,6 +31,7 @@ target_sources(hockey_editor
         src/UndoRedo.cpp
         src/EditorCommands.cpp
         src/Clipboard.cpp
+        src/Gizmos/CameraLightGizmo.cpp
         src/Gizmos/GridGizmo.cpp
         src/Gizmos/PhysicsGizmo.cpp
         src/Gizmos/SelectionOutline.cpp
@@ -58,8 +60,7 @@ target_sources(hockey_editor
         src/Panels/StatsPanel.cpp
         src/Panels/SceneValidationPanel.cpp
         src/Panels/PrefabPanel.cpp
-        src/Panels/PhysicsPanel.cpp
-        src/Panels/PreferencesPanel.cpp
+        src/Panels/ProjectSettingsPanel.cpp
         src/ImGui/EditorTheme.cpp
         src/ImGui/ImGuiRendererBridge.cpp
         src/ImGui/ImGuiLayer.cpp

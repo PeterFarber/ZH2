@@ -5,7 +5,7 @@ Status: Implemented, with UI/GPU verification gaps.
 Source material:
 
 - [x] Read `.cursor/plans/phase-04-unity-style-editor.md`.
-- [x] Checked `docs/project-structure-and-status.md`.
+- [x] Checked `docs/project-structure.md`.
 - [x] Checked `README.md` known-gap notes.
 
 ## What This Phase Implements
@@ -55,8 +55,8 @@ Source material:
 - [x] Stats panel exists.
 - [x] Scene validation panel exists.
 - [x] Prefab panel exists.
-- [x] Physics panel exists.
-- [x] Preferences panel exists.
+- [x] Project Settings panel exists.
+- [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 
 ## Finished - Editing Workflows
@@ -122,7 +122,6 @@ Source material:
 ## Started / Partial
 
 - [ ] Toolbar Play/Simulate Pause/Step behavior still needs final runtime UX polish.
-- [ ] Physics simulation primarily lives in the Physics panel; toolbar ownership remains a design decision.
 - [ ] Panel rendering needs display/GPU verification.
 - [ ] Viewport/gizmo/picking behavior needs display/GPU verification.
 - [ ] File dialogs need platform/display verification.
@@ -131,5 +130,4 @@ Source material:
 ## Left To Do
 
 - [ ] Run visual verification on a real GPU/display before treating UI behavior as fully proven.
-- [ ] Decide whether toolbar Play mode should own physics preview or remain panel-scoped.
 - [ ] Keep editor-only UI dependencies out of server and non-editor libraries.

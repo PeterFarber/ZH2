@@ -16,6 +16,7 @@
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/ComponentMetadata.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
+#include "Hockey/Editor/PrefabDragDrop.hpp"
 
 namespace Hockey::FieldDrawers {
 
@@ -53,6 +54,83 @@ bool DrawEnum(const char* label, const FieldMetadata& field, int* value) {
         ImGui::EndCombo();
     }
     return changed;
+}
+
+bool HasFloatRange(const FieldMetadata& field) {
+    return field.maxFloat > field.minFloat;
+}
+
+bool HasIntRange(const FieldMetadata& field) {
+    return field.maxInt > field.minInt;
+}
+
+struct WidgetEdit {
+    bool changed = false;
+    bool started = false;
+    bool committed = false;
+};
+
+WidgetEdit DrawColorControl(const char* label, float* value, int componentCount) {
+    WidgetEdit edit;
+    const ImGuiColorEditFlags flags =
+        ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_Float | ImGuiColorEditFlags_PickerHueWheel;
+
+    if (componentCount == 4) {
+        edit.changed = ImGui::ColorEdit4(label, value, flags);
+    } else {
+        edit.changed = ImGui::ColorEdit3(label, value, flags);
+    }
+    edit.started = ImGui::IsItemActivated();
+    edit.committed = ImGui::IsItemDeactivatedAfterEdit();
+
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Palette")) {
+        ImGui::OpenPopup("##palette");
+    }
+    if (ImGui::IsItemActivated()) {
+        edit.started = true;
+    }
+
+    if (ImGui::BeginPopup("##palette")) {
+        const bool pickerChanged =
+            componentCount == 4 ? ImGui::ColorPicker4("##picker", value, flags)
+                                : ImGui::ColorPicker3("##picker", value, flags);
+        if (pickerChanged) {
+            edit.changed = true;
+        }
+        edit.started = edit.started || ImGui::IsItemActivated();
+        edit.committed = edit.committed || ImGui::IsItemDeactivatedAfterEdit();
+
+        ImGui::Separator();
+        constexpr ImVec4 kSwatches[] = {
+            ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 0.92f, 0.72f, 1.0f),
+            ImVec4(0.58f, 0.74f, 1.0f, 1.0f), ImVec4(0.64f, 1.0f, 0.78f, 1.0f),
+            ImVec4(1.0f, 0.56f, 0.52f, 1.0f), ImVec4(0.64f, 0.52f, 1.0f, 1.0f),
+            ImVec4(1.0f, 0.7f, 0.35f, 1.0f),  ImVec4(0.08f, 0.1f, 0.12f, 1.0f),
+        };
+        for (int i = 0; i < static_cast<int>(sizeof(kSwatches) / sizeof(kSwatches[0])); ++i) {
+            ImGui::PushID(i);
+            if (i > 0 && i % 4 != 0) {
+                ImGui::SameLine();
+            }
+            if (ImGui::ColorButton("##swatch", kSwatches[i], ImGuiColorEditFlags_NoTooltip,
+                                   ImVec2(24.0f, 24.0f))) {
+                value[0] = kSwatches[i].x;
+                value[1] = kSwatches[i].y;
+                value[2] = kSwatches[i].z;
+                if (componentCount == 4) {
+                    value[3] = kSwatches[i].w;
+                }
+                edit.changed = true;
+                edit.started = true;
+                edit.committed = true;
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndPopup();
+    }
+
+    return edit;
 }
 
 // Draws an asset-reference slot: a labelled button showing the current asset's
@@ -163,21 +241,53 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
     case FieldType::Int: {
         int* value = static_cast<int*>(ptr);
         const float intSpeed = field.speed > 0.0f ? field.speed : 1.0f;
-        result.changed = ImGui::DragInt(label, value, intSpeed, field.minInt, field.maxInt);
+        if (HasIntRange(field)) {
+            result.changed = ImGui::SliderInt(label, value, field.minInt, field.maxInt);
+        } else {
+            result.changed = ImGui::DragInt(label, value, intSpeed, field.minInt, field.maxInt);
+        }
         break;
     }
     case FieldType::Float:
-        result.changed = ImGui::DragFloat(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        if (HasFloatRange(field)) {
+            result.changed = ImGui::SliderFloat(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+        } else {
+            result.changed = ImGui::DragFloat(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        }
         break;
     case FieldType::Vec2:
-        result.changed = ImGui::DragFloat2(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        if (HasFloatRange(field)) {
+            result.changed = ImGui::SliderFloat2(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+        } else {
+            result.changed = ImGui::DragFloat2(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        }
         break;
-    case FieldType::Vec3:
-        result.changed = ImGui::DragFloat3(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+    case FieldType::Vec3: {
+        if (field.hint == FieldHint::Color) {
+            const WidgetEdit edit = DrawColorControl(label, static_cast<float*>(ptr), 3);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
+        } else if (HasFloatRange(field)) {
+            result.changed = ImGui::SliderFloat3(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+        } else {
+            result.changed = ImGui::DragFloat3(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        }
         break;
-    case FieldType::Vec4:
-        result.changed = ImGui::DragFloat4(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+    }
+    case FieldType::Vec4: {
+        if (field.hint == FieldHint::Color) {
+            const WidgetEdit edit = DrawColorControl(label, static_cast<float*>(ptr), 4);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
+        } else if (HasFloatRange(field)) {
+            result.changed = ImGui::SliderFloat4(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+        } else {
+            result.changed = ImGui::DragFloat4(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
+        }
         break;
+    }
     case FieldType::Enum:
         result.changed = DrawEnum(label, field, static_cast<int*>(ptr));
         break;
@@ -205,6 +315,13 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
             *path = std::filesystem::path(buffer);
             result.changed = true;
         }
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
+                *path = std::filesystem::path(static_cast<const char*>(payload->Data));
+                result.changed = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
         break;
     }
     case FieldType::AssetRef:
@@ -218,8 +335,8 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
     }
 
     // Bracket the interaction so callers push a single undo step per edit.
-    result.started = ImGui::IsItemActivated();
-    result.committed = ImGui::IsItemDeactivatedAfterEdit();
+    result.started = result.started || ImGui::IsItemActivated();
+    result.committed = result.committed || ImGui::IsItemDeactivatedAfterEdit();
     // Discrete widgets (checkbox / enum combo / asset drop) commit the moment
     // they change rather than relying on a deactivation edge.
     if (result.changed &&

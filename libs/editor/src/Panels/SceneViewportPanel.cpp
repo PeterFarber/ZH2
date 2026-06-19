@@ -13,22 +13,27 @@
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Core/Log.hpp"
+#include "Hockey/Core/Screenshot.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
-#include "Hockey/Editor/EditorGameplayPreview.hpp"
+#include "Hockey/Editor/Gizmos/CameraLightGizmo.hpp"
 #include "Hockey/Editor/Gizmos/GridGizmo.hpp"
 #include "Hockey/Editor/Gizmos/PhysicsGizmo.hpp"
 #include "Hockey/Editor/Gizmos/SelectionOutline.hpp"
 #include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
+#include "Hockey/Editor/SceneViewOverlay.hpp"
+#include "Hockey/Editor/ViewportFrame.hpp"
+#include "Hockey/Renderer/Camera.hpp"
+#include "Hockey/Renderer/DebugDraw.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 #include "Hockey/Renderer/Texture.hpp"
 
 namespace Hockey {
 
 namespace {
-
 // Ray vs. the unit cube [-0.5, 0.5]^3 in the ray's coordinate space. Returns the
 // nearest non-negative hit distance (origin-inside yields the exit distance).
 bool RayUnitBox(const glm::vec3& origin, const glm::vec3& dir, float& outDistance) {
@@ -59,16 +64,55 @@ bool RayUnitBox(const glm::vec3& origin, const glm::vec3& dir, float& outDistanc
     return outDistance >= 0.0f;
 }
 
-bool RayIcePlane(const glm::vec3& origin, const glm::vec3& dir, glm::vec3& outPoint) {
-    if (std::abs(dir.y) < 1e-5f) {
+void QueueViewportScreenshot(Renderer& renderer, TextureHandle target, const char* prefix) {
+    const std::filesystem::path path = MakeScreenshotPath(prefix);
+    if (const Status status = renderer.RequestRenderTargetScreenshot(target, path); !status) {
+        HK_EDITOR_WARN("Screenshot request failed: {}", status.error);
+    } else {
+        HK_EDITOR_INFO("Screenshot queued: {}", path.string());
+    }
+}
+
+glm::mat4 GizmoProjectionFromRenderCamera(const CameraRenderData& camera) {
+    glm::mat4 projection = camera.projection;
+    projection[1][1] *= -1.0f; // remove the Vulkan image-space Y flip for ImGuizmo
+    return projection;
+}
+
+void RayFromRenderCamera(const CameraRenderData& camera, const glm::vec2& viewportUV, glm::vec3& outOrigin,
+                         glm::vec3& outDirection) {
+    const float ndcX = viewportUV.x * 2.0f - 1.0f;
+    const float ndcY = viewportUV.y * 2.0f - 1.0f; // render projection already contains the Vulkan Y flip
+    const glm::mat4 invViewProj = glm::inverse(camera.projection * camera.view);
+
+    glm::vec4 nearPoint = invViewProj * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
+    glm::vec4 farPoint = invViewProj * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
+    nearPoint /= nearPoint.w;
+    farPoint /= farPoint.w;
+
+    outOrigin = glm::vec3(nearPoint);
+    outDirection = glm::normalize(glm::vec3(farPoint) - glm::vec3(nearPoint));
+}
+
+PhysicsGizmo::SubmitStats SubmitSceneDebugOverlay(Renderer& renderer, EditorContext& context, float viewportAspect) {
+    DebugDraw& debug = renderer.Debug();
+    if (context.settings.showGrid) {
+        GridGizmo::Submit(debug, context.settings.gridSpacing);
+    }
+    CameraLightGizmo::Submit(debug, *context.activeScene, context.selection, viewportAspect);
+    SelectionOutline::Submit(debug, *context.activeScene, context.selection);
+    return PhysicsGizmo::Submit(debug, *context.activeScene, context.physicsView);
+}
+
+bool PhysicsVisualizationRequested(const PhysicsViewState& view) {
+    return view.showColliders || view.showTriggers || view.showBodyCenters || view.showContacts;
+}
+
+bool ShouldShowEmptyPhysicsNotice(EditorContext& context, const PhysicsGizmo::SubmitStats& stats) {
+    if (!PhysicsVisualizationRequested(context.physicsView) || stats.HasAny()) {
         return false;
     }
-    const float t = -origin.y / dir.y;
-    if (t < 0.0f) {
-        return false;
-    }
-    outPoint = origin + dir * t;
-    return true;
+    return context.physicsView.visualizationOptionsOpen;
 }
 
 } // namespace
@@ -107,14 +151,29 @@ void SceneViewportPanel::EnsureTarget(EditorContext& context, std::uint32_t widt
     }
 }
 
-void SceneViewportPanel::UpdateCamera(EditorContext& context, bool hovered) {
-    const ImGuiIO& io = ImGui::GetIO();
-
-    if (context.gameplayView.previewEnabled) {
-        m_Navigating = false;
-        context.editorCamera.Update({}, io.DeltaTime, context.settings);
+void SceneViewportPanel::EnsureCaptureTarget(EditorContext& context, std::uint32_t width, std::uint32_t height) {
+    width = std::max(1u, width);
+    height = std::max(1u, height);
+    if (!m_CaptureTarget.IsValid()) {
+        RenderTargetDesc desc;
+        desc.width = width;
+        desc.height = height;
+        desc.hasDepth = true;
+        desc.debugName = "EditorSceneViewportCapture";
+        m_CaptureTarget = context.renderer->CreateRenderTarget(desc);
+        m_CaptureWidth = width;
+        m_CaptureHeight = height;
         return;
     }
+    if (width != m_CaptureWidth || height != m_CaptureHeight) {
+        context.renderer->ResizeRenderTarget(m_CaptureTarget, width, height);
+        m_CaptureWidth = width;
+        m_CaptureHeight = height;
+    }
+}
+
+void SceneViewportPanel::UpdateCamera(EditorContext& context, bool hovered) {
+    const ImGuiIO& io = ImGui::GetIO();
 
     const bool look = ImGui::IsMouseDown(ImGuiMouseButton_Right);
     const bool pan = ImGui::IsMouseDown(ImGuiMouseButton_Middle);
@@ -150,7 +209,7 @@ void SceneViewportPanel::UpdateCamera(EditorContext& context, bool hovered) {
 
 void SceneViewportPanel::ProcessHotkeys(EditorContext& context, bool hovered) {
     const ImGuiIO& io = ImGui::GetIO();
-    if (!hovered || io.WantTextInput || m_Navigating || context.gameplayView.previewEnabled) {
+    if (!hovered || io.WantTextInput || m_Navigating) {
         return;
     }
     // Transform-tool shortcuts route through the ToolManager so the toolbar/menu
@@ -181,11 +240,22 @@ void SceneViewportPanel::ProcessHotkeys(EditorContext& context, bool hovered) {
     }
 }
 
-void SceneViewportPanel::Pick(EditorContext& context, const glm::vec2& viewportUV, float aspect, bool additive) {
+void SceneViewportPanel::Pick(EditorContext& context, const CameraRenderData& camera, const glm::vec2& viewportUV,
+                              const glm::vec2& viewportPixels, bool additive) {
     Scene& scene = *context.activeScene;
+    const UUID handlePick = CameraLightGizmo::PickOrigin(scene, camera, viewportUV, viewportPixels);
+    if (handlePick.IsValid()) {
+        if (additive) {
+            context.selection.Toggle(handlePick);
+        } else {
+            context.selection.Select(handlePick);
+        }
+        return;
+    }
+
     glm::vec3 origin;
     glm::vec3 dir;
-    context.editorCamera.Ray(viewportUV, aspect, origin, dir);
+    RayFromRenderCamera(camera, viewportUV, origin, dir);
 
     UUID best{0};
     float bestDistance = std::numeric_limits<float>::max();
@@ -218,11 +288,18 @@ void SceneViewportPanel::Pick(EditorContext& context, const glm::vec2& viewportU
 void SceneViewportPanel::DrawViewport(EditorContext& context) {
     Renderer* renderer = context.renderer;
     ImGuiRendererBridge* bridge = context.imguiBridge;
-    const ImVec2 available = ImGui::GetContentRegionAvail();
-    const auto width = static_cast<std::uint32_t>(std::max(1.0f, available.x));
-    const auto height = static_cast<std::uint32_t>(std::max(1.0f, available.y));
+    if (renderer == nullptr || bridge == nullptr || context.activeScene == nullptr) {
+        ImGui::TextUnformatted("Scene viewport unavailable.");
+        return;
+    }
 
-    if (renderer == nullptr || bridge == nullptr || context.activeScene == nullptr || width < 8 || height < 8) {
+    const ImVec2 available = ImGui::GetContentRegionAvail();
+    const ImVec2 basePos = ImGui::GetCursorScreenPos();
+    const EditorViewport::Frame frame = EditorViewport::ComputeFrame(basePos, available, renderer->GetSettings());
+    const auto width = frame.width;
+    const auto height = frame.height;
+
+    if (width < 8 || height < 8) {
         ImGui::TextUnformatted("Scene viewport unavailable.");
         return;
     }
@@ -235,24 +312,55 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
     context.viewportWidth = m_Width;
     context.viewportHeight = m_Height;
 
-    const bool hovered = ImGui::IsWindowHovered();
-    UpdateCamera(context, hovered);
+    const glm::vec2 imagePosGlm(frame.imagePos.x, frame.imagePos.y);
+    const glm::vec2 imageSizeGlm(frame.imageSize.x, frame.imageSize.y);
+    const glm::vec2 mouseGlm(ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+    const bool controlsHovered = SceneViewOverlay::ContainsControls(imagePosGlm, imageSizeGlm, mouseGlm);
+    const bool hovered =
+        ImGui::IsWindowHovered() && EditorViewport::Contains(frame.imagePos, frame.imageSize, ImGui::GetIO().MousePos) &&
+        !controlsHovered;
+    const float aspect = frame.aspect;
+    CameraRenderData gameCamera;
+    const bool hasActiveCamera = FindActiveCamera(*context.activeScene, aspect, gameCamera);
+    if (m_FollowGameCamera && hasActiveCamera) {
+        m_Navigating = false;
+    } else {
+        UpdateCamera(context, hovered);
+    }
+    CameraRenderData sceneCamera =
+        (m_FollowGameCamera && hasActiveCamera) ? gameCamera : context.editorCamera.RenderData(aspect);
     ProcessHotkeys(context, hovered);
+    if (hovered && !ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F12, false)) {
+        QueueViewportScreenshot(*renderer, m_Target, "editor_scene");
+    }
 
-    const float aspect = static_cast<float>(width) / static_cast<float>(height);
+    if (context.captureSceneViewport) {
+        EnsureCaptureTarget(context, context.captureViewportWidth, context.captureViewportHeight);
+        if (m_CaptureTarget.IsValid()) {
+            const float captureAspect =
+                static_cast<float>(context.captureViewportWidth) / static_cast<float>(context.captureViewportHeight);
+            CameraRenderData captureCamera;
+            if (!(m_FollowGameCamera && FindActiveCamera(*context.activeScene, captureAspect, captureCamera))) {
+                captureCamera = context.editorCamera.RenderData(captureAspect);
+            }
+            renderer->Debug().Clear();
+            SubmitSceneDebugOverlay(*renderer, context, captureAspect);
+            QueueViewportScreenshot(*renderer, m_CaptureTarget, (context.captureViewportPrefix + "_scene").c_str());
+            renderer->RenderSceneToTarget(*context.activeScene, captureCamera, m_CaptureTarget);
+        }
+        context.captureSceneViewport = false;
+    }
 
     // Submit overlay geometry before rendering so it is drawn into the target.
-    if (context.settings.showGrid) {
-        GridGizmo::Submit(renderer->Debug(), context.settings.gridSpacing);
-    }
-    SelectionOutline::Submit(renderer->Debug(), *context.activeScene, context.selection);
-    PhysicsGizmo::Submit(renderer->Debug(), *context.activeScene, context.physicsView);
+    renderer->Debug().Clear();
+    const PhysicsGizmo::SubmitStats physicsStats = SubmitSceneDebugOverlay(*renderer, context, aspect);
 
-    renderer->RenderSceneToTarget(*context.activeScene, context.editorCamera.RenderData(aspect), m_Target);
+    renderer->RenderSceneToTarget(*context.activeScene, sceneCamera, m_Target);
 
-    const ImVec2 imagePos = ImGui::GetCursorScreenPos();
-    const ImVec2 imageSize(static_cast<float>(width), static_cast<float>(height));
+    const ImVec2 imagePos = frame.imagePos;
+    const ImVec2 imageSize = frame.imageSize;
     const std::uint64_t textureId = bridge->ViewportTextureId(m_Target);
+    ImGui::SetCursorScreenPos(imagePos);
     if (textureId != 0) {
         ImGui::Image(static_cast<ImTextureID>(textureId), imageSize);
     } else {
@@ -271,7 +379,7 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
                 const glm::vec2 dropUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
                 glm::vec3 rayOrigin;
                 glm::vec3 rayDir;
-                context.editorCamera.Ray(dropUV, aspect, rayOrigin, rayDir);
+                RayFromRenderCamera(sceneCamera, dropUV, rayOrigin, rayDir);
                 glm::vec3 dropPoint(0.0f);
                 if (std::abs(rayDir.y) > 1e-5f) {
                     const float t = -rayOrigin.y / rayDir.y;
@@ -285,29 +393,34 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
         ImGui::EndDragDropTarget();
     }
 
-    const glm::mat4 view = context.editorCamera.ViewMatrix();
-    const glm::mat4 gizmoProj = context.editorCamera.GizmoProjection(aspect);
-    const bool gizmoActive = m_Gizmo.Manipulate(context, context.gizmoOperation, view, gizmoProj, imagePos.x,
-                                                imagePos.y, imageSize.x, imageSize.y);
-
-    if (!context.gameplayView.previewEnabled && imageHovered && !gizmoActive && !m_Navigating &&
-        ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        const ImVec2 mouse = ImGui::GetIO().MousePos;
-        const glm::vec2 viewportUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
-        Pick(context, viewportUV, aspect, ImGui::GetIO().KeyCtrl);
+    const ImVec2 captureSize = ImGui::CalcTextSize("Capture");
+    ImGui::SetCursorScreenPos(ImVec2(imagePos.x + imageSize.x - captureSize.x - 24.0f, imagePos.y + 110.0f));
+    const bool captureClicked = ImGui::Button("Capture##scene_capture");
+    const bool captureHovered = ImGui::IsItemHovered();
+    if (captureClicked) {
+        QueueViewportScreenshot(*renderer, m_Target, "editor_scene");
     }
 
-    if (context.gameplayView.previewEnabled && context.gameplayPreview != nullptr && imageHovered &&
-        ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+    const glm::mat4 view = sceneCamera.view;
+    const glm::mat4 gizmoProj = GizmoProjectionFromRenderCamera(sceneCamera);
+    const bool gizmoActive = m_Gizmo.Manipulate(context, context.gizmoOperation, view, gizmoProj, imagePos.x,
+                                                imagePos.y, imageSize.x, imageSize.y);
+    SceneViewOverlayResult overlay =
+        SceneViewOverlay::Draw(context, *context.activeScene, sceneCamera, imagePosGlm, imageSizeGlm, hasActiveCamera,
+                               gameCamera, m_FollowGameCamera);
+    if (!hasActiveCamera) {
+        m_FollowGameCamera = false;
+    }
+    if (ShouldShowEmptyPhysicsNotice(context, physicsStats)) {
+        ImGui::SetCursorScreenPos(ImVec2(imagePos.x + 8.0f, imagePos.y + 36.0f));
+        ImGui::TextDisabled("Physics visualization: no collider/body/contact components in this scene");
+    }
+    const bool overlayBlocked = controlsHovered || captureHovered || captureClicked || overlay.hovered || overlay.capturedMouse;
+
+    if (imageHovered && !overlayBlocked && !gizmoActive && !m_Navigating && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         const ImVec2 mouse = ImGui::GetIO().MousePos;
         const glm::vec2 viewportUV((mouse.x - imagePos.x) / imageSize.x, (mouse.y - imagePos.y) / imageSize.y);
-        glm::vec3 rayOrigin;
-        glm::vec3 rayDir;
-        context.editorCamera.Ray(viewportUV, aspect, rayOrigin, rayDir);
-        glm::vec3 target;
-        if (RayIcePlane(rayOrigin, rayDir, target)) {
-            context.gameplayPreview->SetMoveTarget(target);
-        }
+        Pick(context, sceneCamera, viewportUV, glm::vec2(imageSize.x, imageSize.y), ImGui::GetIO().KeyCtrl);
     }
 }
 

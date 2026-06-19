@@ -16,12 +16,11 @@ namespace Hockey {
 class Scene;
 
 // ---------------------------------------------------------------------------
-// Drives a non-destructive physics preview inside the editor's Edit-mode scene.
+// Internal non-destructive physics backend for editor playtest.
 //
-// Edit mode never auto-simulates. When the user enables preview we snapshot all
-// entity transforms, build a PhysicsScene from the current scene and step it on
-// demand (play/pause/step). Stopping or resetting restores the snapshot so the
-// authored scene is never permanently modified by the preview.
+// The editor no longer exposes a standalone physics preview UI. Gameplay
+// playtest starts this backend, snapshots authored transforms, steps physics,
+// and restores the snapshot when play mode stops.
 // ---------------------------------------------------------------------------
 class EditorPhysicsPreview {
 public:
@@ -45,6 +44,9 @@ public:
     // Advances exactly one fixed step (auto-pauses continuous play).
     void StepOnce(Scene& scene);
 
+    // Advances one fixed step for an active internal preview backend.
+    void AdvanceFixed(Scene& scene, float fixedDeltaSeconds);
+
     // Restores transforms and rebuilds bodies without leaving preview.
     void Reset(Scene& scene);
 
@@ -61,6 +63,7 @@ public:
     }
 
 private:
+    void CaptureContactPoints();
     void SnapshotTransforms(Scene& scene);
     void RestoreTransforms(Scene& scene);
 

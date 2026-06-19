@@ -1,52 +1,93 @@
 [app]
-name = "Hockey Map Editor"
+name = 'Hockey Map Editor'
 target_fps = 0
 
-[window]
-title = "Hockey Map Editor"
-width = 1600
-height = 900
-resizable = true
-maximized = true
-start_centered = true
+[assets]
+auto_cook_dirty = false
+auto_discover = false
+auto_import = false
+hot_reload = false
+
+[gameplay]
+debug_draw_gameplay = true
+preview_enabled = false
+validate_on_load = true
 
 [input]
 gamepad_enabled = true
 mouse_capture = false
 
-[renderer]
-vsync = true
-preset = "High"
-shadow_quality = "Medium"
-shadow_distance = 100.0
-ao_quality = "Medium"
-anti_aliasing = "FXAA"
-tone_mapper = "ACES"
-bloom = true
-brightness = 1.0
-anisotropy = 16
-
-[scene]
-startup_scene = "data/raw/scenes/physics_smoke.scene.yaml"
-autosave_enabled = true
-autosave_interval_seconds = 120
-
 [physics]
+enable_debug_draw = true
+enable_sleeping = true
 fixed_delta_seconds = 0.0166666667
 gravity_x = 0.0
 gravity_y = -9.81
 gravity_z = 0.0
-enable_debug_draw = true
-enable_sleeping = true
 preview_simulation = false
 
-[gameplay]
-preview_enabled = false
-validate_on_load = true
-debug_draw_gameplay = true
+[renderer]
+anisotropy = 16
+anti_aliasing = 'FXAA'
+ao_quality = 'Ultra'
+arena_detail = 'Ultra'
+bloom = true
+board_glass_detail = 'Ultra'
+brightness = 1.0
+chromatic_aberration = false
+contact_shadows = true
+crowd_quality = 'High'
+depth_of_field = true
+display_mode = 'Windowed'
+dynamic_resolution = true
+field_of_view = 50.0
+film_grain = false
+fps_limit = 0
+global_illumination_quality = 'Ultra'
+goal_net_quality = 'Ultra'
+hdr = true
+ice_quality = 'Ultra'
+ice_reflection_quality = 'Ultra'
+ice_scratch_quality = 'Ultra'
+jersey_quality = 'Ultra'
+lens_flare = true
+lod_distance_multiplier = 1.0
+material_quality = 'Ultra'
+model_quality = 'Ultra'
+monitor_index = 0
+motion_blur = false
+particle_quality = 'Ultra'
+preset = 'Custom'
+puck_trail_quality = 'High'
+reflection_quality = 'Ultra'
+refresh_rate = 60
+render_scale = 1.0
+resolution_height = 1440
+resolution_width = 2560
+shadow_distance = 2000.0
+shadow_quality = 'Ultra'
+sharpening = 1.1299999952316284
+show_fps = true
+show_frame_time = true
+show_gpu_stats = true
+show_network_stats = true
+skate_spray_quality = 'Ultra'
+texture_quality = 'Ultra'
+texture_streaming_budget_mb = 4096
+tone_mapper = 'ACES'
+upscaler = 'FSR'
+vignette = true
+volumetric_lighting = 'Ultra'
+vsync = false
 
-[assets]
-auto_discover = true
-auto_import = true
-auto_cook_dirty = true
-hot_reload = true
+[scene]
+autosave_enabled = true
+autosave_interval_seconds = 120
+
+[window]
+height = 900
+maximized = true
+resizable = true
+start_centered = true
+title = 'Hockey Map Editor'
+width = 1600

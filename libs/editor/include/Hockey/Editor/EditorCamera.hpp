@@ -39,6 +39,14 @@ public:
     // Frames a world-space sphere (center + radius) so it fits in view (F key).
     void Focus(const glm::vec3& target, float radius);
 
+    // Aligns the free editor camera to an already resolved scene/game camera.
+    // The editor camera has no roll, so roll is intentionally discarded.
+    void SetFromRenderData(const CameraRenderData& data);
+
+    // Reorients the camera around its current pivot while preserving distance.
+    // Used by the Scene View orientation gizmo for axis/isometric views.
+    void SetViewDirection(const glm::vec3& forward);
+
     // Vulkan render data (perspective with the clip-space Y flip the renderer
     // expects). Used for RenderSceneToTarget.
     CameraRenderData RenderData(float aspectRatio) const;

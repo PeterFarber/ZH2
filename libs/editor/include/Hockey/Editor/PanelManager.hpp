@@ -28,6 +28,7 @@ public:
     void OnImGui(EditorContext& context);
 
     void SetPanelOpen(const std::string& name, bool open);
+    void RequestPanelFocus(EditorContext& context, const std::string& name);
 
     // Panels in registration order; used by the Window menu to list toggles.
     const std::vector<std::unique_ptr<Panel>>& Panels() const {

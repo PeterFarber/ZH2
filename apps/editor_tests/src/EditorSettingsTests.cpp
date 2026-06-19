@@ -17,6 +17,7 @@ void RunEditorSettingsTests() {
         HK_CHECK_MSG(defaults.showGrid, "grid shown by default");
         HK_CHECK_NEAR(defaults.gridSpacing, 1.0f, 1e-6);
         HK_CHECK_MSG(!defaults.snapEnabled, "snap disabled by default");
+        HK_CHECK_MSG(defaults.restoreLastScene, "restore-last-scene enabled by default");
         HK_CHECK_MSG(defaults.recentScenes.empty(), "no recent scenes by default");
         HK_CHECK_MSG(!defaults.assetsAutoImport, "asset import disabled by default");
         HK_CHECK_MSG(!defaults.assetsAutoCookDirty, "asset cook disabled by default");
@@ -39,6 +40,7 @@ void RunEditorSettingsTests() {
         out.cameraMoveSpeed = 22.0f;
         out.cameraFastMultiplier = 6.0f;
         out.cameraMouseSensitivity = 0.3f;
+        out.restoreLastScene = false;
         out.AddRecentScene("data/raw/scenes/a.scene.yaml");
         out.AddRecentScene("data/raw/scenes/b.scene.yaml");
 
@@ -65,6 +67,7 @@ void RunEditorSettingsTests() {
         HK_CHECK_NEAR(in.cameraMoveSpeed, 22.0f, 1e-5);
         HK_CHECK_NEAR(in.cameraFastMultiplier, 6.0f, 1e-5);
         HK_CHECK_NEAR(in.cameraMouseSensitivity, 0.3f, 1e-5);
+        HK_CHECK_EQ(in.restoreLastScene, false);
 
         // --- recent scenes persist (most-recent first) ---
         HK_CHECK_EQ(in.recentScenes.size(), static_cast<std::size_t>(2));

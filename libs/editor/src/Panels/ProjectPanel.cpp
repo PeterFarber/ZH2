@@ -89,7 +89,7 @@ void ProjectPanel::RequestModal(Modal modal, const std::filesystem::path& target
 void ProjectPanel::OnImGui(EditorContext& context) {
     if (BeginWindow()) {
         m_Browser.ClearSelectionIfMissing();
-        DrawToolbar();
+        DrawToolbar(context);
         ImGui::Separator();
 
         // Split the panel horizontally: file tree on the left, selected-asset
@@ -112,7 +112,7 @@ void ProjectPanel::OnImGui(EditorContext& context) {
     EndWindow();
 }
 
-void ProjectPanel::DrawToolbar() {
+void ProjectPanel::DrawToolbar(EditorContext& context) {
     ImGui::SetNextItemWidth(220.0f);
     ImGui::InputTextWithHint("##search", "Search...", m_Browser.SearchBuffer(), m_Browser.SearchBufferSize());
     ImGui::SameLine();
@@ -123,6 +123,32 @@ void ProjectPanel::DrawToolbar() {
     if (ImGui::Button("Refresh")) {
         m_Browser.ClearSelectionIfMissing();
         m_Status.clear();
+    }
+    if (context.assetManager != nullptr) {
+        ImGui::SameLine();
+        if (ImGui::Button("Scan")) {
+            if (const Status status = context.assetManager->DiscoverRawAssets(); !status) {
+                m_Status = status.error;
+            } else {
+                m_Status = "Scanned raw assets";
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Import All")) {
+            if (const Status status = context.assetManager->ImportAll(); !status) {
+                m_Status = status.error;
+            } else {
+                m_Status = "Imported assets";
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cook Dirty")) {
+            if (const Status status = context.assetManager->CookAllDirty(); !status) {
+                m_Status = status.error;
+            } else {
+                m_Status = "Cooked dirty assets";
+            }
+        }
     }
     if (!m_Status.empty()) {
         ImGui::SameLine();

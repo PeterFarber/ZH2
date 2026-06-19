@@ -58,6 +58,7 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
     m_HasMoveTarget = false;
     m_Active = true;
     m_Running = false;
+    m_InputEnabled = false;
     return Status::Ok();
 }
 
@@ -69,6 +70,7 @@ void EditorGameplayPreview::Stop(Scene& scene, EditorPhysicsPreview& physicsPrev
     m_World.Shutdown();
     m_Active = false;
     m_Running = false;
+    m_InputEnabled = false;
     RestoreAuthoringSnapshot(scene);
 
     if (m_StartedPhysicsPreview) {
@@ -166,7 +168,7 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulati
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
 
-    if (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput) {
+    if (!m_InputEnabled || (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput)) {
         return input;
     }
 
@@ -200,7 +202,7 @@ void EditorGameplayPreview::StepFixed(Scene& scene, EditorPhysicsPreview& physic
     }
     m_World.PushInput(BuildLocalInput(m_Tick));
     m_World.FixedUpdate(scene, fixedDeltaSeconds, m_Tick);
-    physicsPreview.World().OnFixedUpdate(scene, fixedDeltaSeconds);
+    physicsPreview.AdvanceFixed(scene, fixedDeltaSeconds);
     ++m_Tick;
 }
 

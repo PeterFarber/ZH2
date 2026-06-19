@@ -21,7 +21,8 @@ namespace {
 // Identity-style components surfaced in the inspector header rather than as
 // their own component sections.
 bool IsHeaderComponent(const std::string& name) {
-    return name == "IDComponent" || name == "NameComponent" || name == "ActiveComponent";
+    return name == "IDComponent" || name == "NameComponent" || name == "ObjectSettingsComponent" ||
+           name == "ActiveComponent";
 }
 
 } // namespace
@@ -55,7 +56,9 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
 
         ImGui::PushID(metadata.name.c_str());
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 5.0f));
         const bool open = ImGui::CollapsingHeader(metadata.displayName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        ImGui::PopStyleVar();
 
         if (ImGui::BeginPopupContextItem("##componentctx")) {
             if (ImGui::MenuItem("Copy Component")) {

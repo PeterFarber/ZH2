@@ -140,8 +140,8 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
         ctx.selection.Clear();
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Preferences...")) {
-        app.OpenPreferences();
+    if (ImGui::MenuItem("Project Settings...")) {
+        app.OpenProjectSettings();
     }
 }
 
