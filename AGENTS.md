@@ -63,10 +63,6 @@ At the start of a coding task, read the relevant current source/CMake/tests and
 the matching `docs/phase_status/` file before editing. Use `docs/ai-onboarding.md`
 for the full orientation checklist when the task spans multiple subsystems.
 
-Use `rg`, Serena, and Graphify as accelerators, but verify behavior against
-source, builds, tests, logs, and screenshots. Generated tool output is never a
-substitute for repository truth.
-
 Prefer the root `justfile` command surface:
 
 - `just tools-check` for local tool inventory.
@@ -195,20 +191,3 @@ Avoid:
 - Keep Windows/Linux compatibility.
 - Do not create monolithic systems.
 - Do not silently change architecture.
-
-## Graphify
-
-This project can maintain a local code knowledge graph in `graphify-out/`.
-The generated graph is ignored by git and should be refreshed on demand.
-
-Use Graphify before broad architecture questions, large refactors, dependency
-tracing, or unfamiliar subsystem work:
-
-- `graphify query "<question>"` for a scoped subgraph.
-- `graphify path "<A>" "<B>"` for relationships between symbols or files.
-- `graphify explain "<concept>"` for focused neighborhood context.
-
-Direct source inspection is still expected for precise edits, tests, CMake
-changes, and line-level debugging. If Graphify output is missing or stale, run
-`graphify update . --force --no-cluster` and then continue with normal repo
-inspection.
