@@ -7,7 +7,7 @@ Source material:
 - [x] Read `docs/phase-plans/phase-07-hockey-gameplay.md`.
 - [x] Read `docs/phase-rules/110-phase-7-hockey-gameplay.mdc`.
 - [x] Checked `docs/project-structure.md`.
-- [x] Checked `README.md` known-gap notes.
+- [x] Checked current source/CMake/test state.
 
 ## What This Phase Implements
 

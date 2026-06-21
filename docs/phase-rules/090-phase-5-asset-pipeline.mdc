@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Phase 5 — Complete Asset Pipeline
 
-Current phase: Phase 5.
+Phase scope: Phase 5.
 
 This phase builds the complete asset import/loading/cooking system.
 

@@ -1,22 +1,18 @@
 # Build output
-build/
-out/*
-!out/.gitkeep
-.vcpkg/
-vcpkg_installed/
-.vs/
-.idea/
-CMakeUserPresets.json
-
-# Notes
-_notes/*
-!_notes/.gitkeep
+/build/
+/out/*
+!/out/.gitkeep
+/.vcpkg/
+/vcpkg_installed/
+/.vs/
+/.idea/
+/CMakeUserPresets.json
 
 # Logs/temp
-data/logs/*
-!data/logs/.gitkeep
-data/temp/*
-!data/temp/.gitkeep
+/data/logs/*
+!/data/logs/.gitkeep
+/data/temp/*
+!/data/temp/.gitkeep
 
 # OS/editor
 .DS_Store
@@ -26,19 +22,24 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 
-# Local agent/tool state
-agents.lock
-.agents/.gitignore
-.cache/
-.beads/
+# Local AI, agent, MCP, and generated tool state
+/.ai/
+/.agents/
+/.codex/
+/.cursor/
+/.beads/
+/.serena/
+/graphify-out/
 graphify-out/
-.serena/project.local.yml
-.serena/.gitignore
-.serena/cache/
-.serena/logs/
-.serena/memories/
-.codex/
-.mcp.json
+/.graphifyignore
+/.mcp.json
+/agents.lock
+/.cache/
+
+# Beads / Dolt local state
+/.dolt/
+*.db
+/.beads-credential-key
 
 # Binaries
 *.exe
@@ -52,12 +53,5 @@ graphify-out/
 *.a
 *.lib
 
-
-# _save
-_save/
-
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
-.beads/proxieddb/
+# Local saves
+/_save/

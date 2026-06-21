@@ -35,10 +35,10 @@ Do not implement systems from future phases unless explicitly requested.
 
 No placeholders unless the user explicitly asks for temporary scaffolding.
 
-After every repo-tracked change, check whether `docs/phase_status/` needs to be
+After every repo-tracked change, check whether `docs/phase-status/` needs to be
 updated. If the change completes, starts, removes, invalidates, or changes the
 verification state of a phase item, update the matching
-`docs/phase_status/phase-*.md` file in the same change. If no phase status
+`docs/phase-status/phase-*.md` file in the same change. If no phase status
 changed, explicitly say "No phase status change needed" in the final response.
 
 ## Agent tooling files
@@ -49,9 +49,9 @@ agents working in this repo.
 `agents.toml` is the dotagents machine-readable manifest for Codex-oriented
 tool and skill configuration. It does not replace `AGENTS.md`.
 
-Supporting AI context belongs in `docs/ai-rules/`, `docs/phase-plans/`, and
-`docs/ai-agent-tooling.md`. Treat those files as supporting guidance unless
-they are promoted into this file.
+Supporting AI context belongs in `docs/ai/`, `docs/ai-rules/`,
+`docs/phase-rules/`, and `docs/phase-plans/`. Treat those files as
+supporting guidance unless they are promoted into this file.
 
 Do not add repo-managed `.agents` skills just to mirror these instructions.
 Only add a skill when the project has a repeatable workflow with concrete,
@@ -60,7 +60,7 @@ versionable instructions that should travel through dotagents.
 ## AI working loop
 
 At the start of a coding task, read the relevant current source/CMake/tests and
-the matching `docs/phase_status/` file before editing. Use `docs/ai-onboarding.md`
+the matching `docs/phase-status/` file before editing. Use `docs/ai/onboarding.md`
 for the full orientation checklist when the task spans multiple subsystems.
 
 Prefer the root `justfile` command surface:
@@ -191,3 +191,82 @@ Avoid:
 - Keep Windows/Linux compatibility.
 - Do not create monolithic systems.
 - Do not silently change architecture.
+
+<!-- BEGIN AI BOOTSTRAP TOOLING -->
+## Bootstrap-installed local AI tooling
+
+The external Windows AI bootstrap may install developer-local tools and skills
+for this checkout. These tools accelerate work but do not replace repository
+source, CMake configuration, tests, phase status, logs, captures, or screenshots
+as the source of truth.
+
+For cross-subsystem work, read `docs/ai/onboarding.md`. Follow
+`docs/ai/workflow.md` and `docs/ai/debugging.md` when applicable.
+Read the matching `docs/phase-status/`, `docs/phase-rules/`, and
+`docs/phase-plans/` files before changing a phase-owned subsystem.
+
+### Local skills
+
+Use an installed local skill when it matches the task:
+
+- `vulkan-renderer`: Vulkan lifetime, synchronization, descriptors, pipelines,
+  swapchain, GPU resources, and validation.
+- `shader-programming`: shader interfaces, GLSL/HLSL/SPIR-V, PBR, lighting,
+  shadows, post-processing, and material GPU data.
+- `renderdoc-debugging`: evidence-driven frame and resource inspection.
+- `tracy-profiling`: CPU/GPU performance work backed by measurements.
+- `blender-asset-pipeline`: Blender MCP and game-ready asset preparation.
+- `hockey-gameplay`: hockey rules, scoring, possession, player actions, and game
+  state.
+- `hockey-physics`: puck/player movement, collisions, fixed timestep, and
+  deterministic simulation concerns.
+- `hockey-ai-behavior`: CPU skaters, goalies, positioning, steering, tactics,
+  and difficulty tuning.
+- `hockey-networking`: authoritative server, input commands, snapshots,
+  prediction, reconciliation, serialization, and finite network tests.
+- `hockey-arena-editor`: rink data, goals, boards, spawns, validation,
+  serialization, and editor/runtime agreement.
+- `hockey-asset-pipeline`: hockey-specific scale, orientation, naming,
+  collision proxies, and import/export expectations.
+
+Local skills provide repeatable workflows. They do not override this file,
+project architecture, phase discipline, or explicit user instructions.
+
+### Serena
+
+Use Serena for semantic C++ symbol lookup, references, diagnostics, and precise
+symbol-level edits. Ensure it uses a project compilation database rather than a
+`compile_commands.json` generated only for a dependency.
+
+### Beads
+
+Use Beads for multi-session features, bugs, blockers, dependencies, and
+follow-up work discovered during implementation. Do not create a Beads task for
+trivial one-line edits. Beads state under `.beads/` is local unless explicitly
+exported or shared.
+
+### Graphify
+
+Graphify is configured for on-demand architecture and impact analysis. Use it
+manually before broad refactors, dependency tracing, or unfamiliar subsystem
+work, then verify its conclusions against source and semantic references. If
+generated community labels are generic, use `just graphify-name-communities`.
+
+### Local-only state
+
+Do not commit generated local AI/tool state:
+
+- `.ai/`
+- `.agents/`
+- `.codex/`
+- `.cursor/`
+- `.beads/`
+- `.serena/`
+- `.graphifyignore`
+- `graphify-out/`
+- `.mcp.json`
+- `agents.lock`
+
+The tracked `AGENTS.md`, project documentation, `.gitignore`, and `justfile`
+remain the portable repository guidance and command surface.
+<!-- END AI BOOTSTRAP TOOLING -->

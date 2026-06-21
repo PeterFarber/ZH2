@@ -85,7 +85,7 @@ HockeyGame/
       020-cpp-cmake-style.mdc
       030-cross-platform-linux-windows.mdc
       040-phase-discipline.mdc
-      050-current-phase.mdc
+      050-phase-selection.mdc
     plans/
       phase-01-foundation-core.md
 

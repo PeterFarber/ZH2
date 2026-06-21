@@ -1,14 +1,14 @@
-# AI Debugging Playbook
+# AI Debugging
 
-Use this when a Codex session needs to debug, visually verify, or
-collect evidence for this project.
+Use this playbook when debugging, visually verifying, or collecting evidence.
 
 ## Diagnostic Output
 
 - Use `out/ai_diagnostics/` for AI-created bundles.
-- Treat `_save/` as runtime/user output. Engine screenshots are still created
-  under `_save/screenshots/`, but AI smoke scripts move only their own `ai_*`
-  captures into `out/ai_diagnostics/<timestamp>/screenshots/`.
+- Treat `_save/` as runtime/user output.
+- Engine screenshots are created under `_save/screenshots/`.
+- AI smoke scripts move only their own `ai_*` captures into
+  `out/ai_diagnostics/<timestamp>/screenshots/`.
 - Runtime logs are written under `data/logs/` unless a command uses `--log`.
 
 ## First Pass
@@ -17,8 +17,8 @@ collect evidence for this project.
 - Inspect the latest relevant log before editing runtime code.
 - Prefer bounded runs: `--max-frames` for client/editor and `--max-ticks` for
   the dedicated server.
-- Prefer the closest subsystem test before the full suite.
-- Report exact commands, exit codes, log paths, and screenshots used.
+- Prefer subsystem test executables before the full suite.
+- Capture exact commands, exit codes, log paths, and screenshots used.
 
 ## Common Flows
 
@@ -44,13 +44,13 @@ Renderer/editor/visual issue:
 
 - Use a built-in screenshot command or AI visual smoke run.
 - Do not claim visual correctness from source inspection alone.
-- If a GPU/display is unavailable, report that limitation and the command for a
-  follow-up visual run.
+- If no GPU/display is available, report that limitation and give the follow-up
+  command.
 
 Physics/gameplay issue:
 
 - Start with `HockeyPhysicsTests` or `HockeyGameplayTests`.
-- Use the dedicated server bounded run for headless authoritative simulation.
+- Use a bounded dedicated server run for headless authoritative simulation.
 - Check scene validation before changing simulation rules.
 
 Asset/shader issue:
@@ -61,39 +61,23 @@ Asset/shader issue:
 
 ## Useful Commands
 
-Windows text diagnostics:
+Windows:
 
 ```powershell
 .\scripts\windows\ai_smoke.ps1 -Mode Text
-```
-
-Windows visual diagnostics:
-
-```powershell
 .\scripts\windows\ai_smoke.ps1 -Mode Visual
-```
-
-Windows full diagnostics:
-
-```powershell
 .\scripts\windows\ai_smoke.ps1 -Mode Full
 ```
 
-Linux text diagnostics:
+Linux:
 
 ```bash
 ./scripts/linux/ai_smoke.sh --mode Text
-```
-
-Linux visual diagnostics:
-
-```bash
 ./scripts/linux/ai_smoke.sh --mode Visual
+./scripts/linux/ai_smoke.sh --mode Full
 ```
 
-## Report Template
-
-Use this shape in final responses after debugging:
+## Report Shape
 
 ```text
 Changed:

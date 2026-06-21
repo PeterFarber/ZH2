@@ -6,7 +6,7 @@ Source material:
 
 - [x] Read `docs/phase-plans/phase-09-polish-animation-audio-ui.md`.
 - [x] Read `docs/phase-rules/130-phase-9-polish-animation-audio-ui.mdc`.
-- [x] Checked `docs/phase-rules/130-phase-9-polish-animation-audio-ui.mdc`.
+- [x] Checked current source/CMake/test state.
 - [x] Checked `docs/project-structure.md`.
 
 ## What This Phase Implements

@@ -6,6 +6,8 @@ alwaysApply: true
 
 # Visual Verification
 
+Canonical debugging and capture workflow: `docs/ai/debugging.md`.
+
 For renderer, editor UI, scene, shader, camera, viewport, or screenshot changes:
 
 - Use visual evidence when feasible; do not claim visual correctness from code
@@ -14,14 +16,6 @@ For renderer, editor UI, scene, shader, camera, viewport, or screenshot changes:
   `scripts/linux/ai_smoke.sh --mode Visual` for automated captures.
 - Store AI diagnostic bundles under `out/ai_diagnostics/`.
 - Treat `_save/` as engine/user runtime output, not as the AI diagnostics home.
-
-Screenshot facts:
-
-- Built-in engine screenshots are produced under `_save/screenshots/`.
-- AI smoke scripts use unique `ai_*` prefixes and move only their own captures
-  into `out/ai_diagnostics/<timestamp>/screenshots/`.
-- If manual screenshots are necessary, use a unique `ai_*` prefix and keep any
-  AI-owned copies under `out/ai_diagnostics/`.
 
 When visual verification is not possible:
 

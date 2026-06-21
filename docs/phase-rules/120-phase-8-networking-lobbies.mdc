@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Phase 8 — Complete Networking, Dedicated Server, Lobbies, and Replication
 
-Current phase: Phase 8.
+Phase scope: Phase 8.
 
 This phase builds the real-time multiplayer layer using GameNetworkingSockets.
 

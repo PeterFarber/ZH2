@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Phase 7 — Complete Hockey Gameplay Simulation
 
-Current phase: Phase 7.
+Phase scope: Phase 7.
 
 This phase builds the full hockey gameplay simulation without final networking.
 

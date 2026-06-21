@@ -7,7 +7,7 @@ Source material:
 - [x] Read `docs/phase-plans/phase-03-vulkan-renderer.md`.
 - [x] Read `docs/phase-rules/070-phase-3-vulkan-renderer.mdc`.
 - [x] Checked `docs/project-structure.md`.
-- [x] Checked `README.md` known-gap notes.
+- [x] Checked current source/CMake/test state.
 
 ## What This Phase Implements
 

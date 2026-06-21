@@ -87,3 +87,6 @@ run-server:
 
 # Completion contract for most changes.
 verify: build-debug test smoke-text
+
+# Optional local AI bootstrap recipes
+import? '.ai/setup/justfile.ai'

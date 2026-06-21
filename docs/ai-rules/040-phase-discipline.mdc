@@ -24,4 +24,4 @@ Do not add placeholder systems unless the user explicitly asks for temporary sca
 - Do not mix systems into `core`.
 - Do not rewrite the architecture without explaining why.
 - Do not create monolithic files.
-- Do not add dependencies not listed for the current phase unless the user approves.
+- Do not add dependencies outside the active phase scope unless the user approves.

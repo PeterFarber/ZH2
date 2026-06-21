@@ -7,7 +7,7 @@ Source material:
 - [x] Read `docs/phase-plans/phase-06-physics.md`.
 - [x] Read `docs/phase-rules/100-phase-6-physics.mdc`.
 - [x] Checked `docs/project-structure.md`.
-- [x] Checked `README.md` known-gap notes.
+- [x] Checked current source/CMake/test state.
 
 ## What This Phase Implements
 

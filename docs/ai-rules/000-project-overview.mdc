@@ -8,77 +8,29 @@ alwaysApply: true
 
 This repository is a custom C++ hockey game and engine project.
 
-The goal is to build a high-quality real-time 4v4 hockey game.
+Goal: build a high-quality real-time 4v4 hockey game with a Vulkan renderer,
+SDL3 platform layer, Unity-style editor, ECS, physics, gameplay simulation, and
+eventual authoritative networking.
 
-For target graph, build/run commands, scripts, and screenshot workflow, read:
+Canonical references:
 
+- `AGENTS.md`
 - `docs/project-structure.md`
+- `docs/phase-status/README.md`
+- `docs/ai/README.md`
 
-For current implementation status, read:
+Core game shape:
 
-- `docs/phase_status/README.md`
+- 2 teams
+- 3 skaters plus 1 goalie per team
+- 1 puck and 2 goals
+- dedicated authoritative server model
+- clients send input and receive snapshots
 
-After every repo-tracked change, check whether `docs/phase_status/` needs an
-update. If it does not, report "No phase status change needed" in the final
-response.
+Hard reminders:
 
-Game design:
-
-- 2 teams.
-- 3 skaters + 1 goalie per team.
-- 8 players total.
-- 1 puck.
-- 2 goals.
-- Dedicated authoritative server.
-- Clients send input.
-- Server simulates authoritative state.
-- Clients receive snapshots.
-- Client prediction/interpolation/reconciliation will be used later.
-
-Long-term engine systems:
-
-- Vulkan renderer.
-- SDL3 platform/window/input layer.
-- Unity-style map editor.
-- Entity Component System.
-- Dedicated server.
-- GameNetworkingSockets networking.
-- Asset pipeline.
-- Physics system.
-- Hockey gameplay simulation.
-- Cross-platform Windows/Linux support.
-
-Target apps:
-
-- `HockeyGameClient`: playable game client.
-- `HockeyMapEditor`: Unity-style map editor.
-- `HockeyDedicatedServer`: headless authoritative server.
-- `HockeyCoreTests`: foundation/core tests.
-- `HockeyECSTests`: ECS, scene, prefab, and serialization tests.
-- `HockeyAssetTests`: asset pipeline tests.
-- `HockeyRendererTests`: renderer settings, shader, render graph, and smoke tests.
-- `HockeyEditorTests`: editor workflow/tool/preview tests.
-- `HockeyPhysicsTests`: physics tests.
-- `HockeyGameplayTests`: hockey gameplay simulation tests.
-- `HockeyAssetTool`: asset discovery/import/cook/validation CLI.
-- `HockeyShaderTool`: shader compilation CLI.
-
-Current libraries:
-
-- `libs/core`: platform, logging, config, paths, input, windowing, jobs, timing.
-- `libs/ecs`: entity/component/scene/prefab data.
-- `libs/assets`: asset loading/import/cooking.
-- `libs/renderer`: Vulkan renderer using Volk and Vulkan Memory Allocator.
-- `libs/physics`: physics integration.
-- `libs/gameplay`: hockey simulation/rules.
-- `libs/editor`: editor panels/tools.
-
-Future library:
-
-- `libs/networking`: GameNetworkingSockets wrapper, protocol, lobbies, replication.
-
-Development is phase-based.
-
-Do not implement systems from future phases unless explicitly asked.
-Do not create monolithic code.
-Keep systems separated by library.
+- Development is phase-based.
+- Do not implement future-phase systems unless explicitly requested.
+- Keep systems separated by library boundary.
+- Source, CMake, tests, runtime data, and `docs/phase-status/` win over older
+  summary text.

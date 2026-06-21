@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Phase 2 — Complete ECS, GameObject Model, Scene System, Prefabs, and Component Metadata
 
-Current phase: Phase 2.
+Phase scope: Phase 2.
 
 This phase builds the complete entity/component foundation for the game, editor, and server.
 

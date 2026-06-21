@@ -1,0 +1,29 @@
+---
+description: How AI agents should determine the active phase for a task.
+globs:
+alwaysApply: true
+---
+
+# Phase Selection
+
+Do not assume a hardcoded current phase from this rule file.
+
+Determine the active phase from:
+
+1. The user's explicit request.
+2. The owning subsystem, library, app, script, or data path.
+3. The matching `docs/phase-status/phase-*.md` file.
+4. Current source, CMake, tests, and runtime data.
+
+Read `docs/phase-status/README.md` for checkbox semantics and update rules.
+
+If the task is ambiguous, infer the narrowest owning phase from the files and
+subsystem named by the user. If that inference would allow future-phase work
+that was not explicitly requested, stop and ask for clarification.
+
+For phase-owned work, read the matching compact rule in `docs/phase-rules/`.
+Read the matching detailed plan in `docs/phase-plans/` only when the task needs
+detailed phase context.
+
+Do not treat unchecked future-phase items as permission to implement them.
+Future-phase systems require an explicit user request.

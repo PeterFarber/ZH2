@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Phase 3 — Complete Vulkan Renderer Subsystem
 
-Current phase: Phase 3.
+Phase scope: Phase 3.
 
 This phase builds the complete shared Vulkan renderer for the game client and map editor. The dedicated server must not link the renderer.
 

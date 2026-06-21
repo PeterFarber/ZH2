@@ -5,7 +5,7 @@ data live, how CMake targets relate to each other, and which scripts are used fo
 common workflows.
 
 It intentionally does not track phase progress or implementation checklists.
-Use [docs/phase_status/README.md](phase_status/README.md) and the per-phase files
+Use [docs/phase-status/README.md](phase-status/README.md) and the per-phase files
 for what is finished, started, and left to do.
 
 ## Project Shape
@@ -248,25 +248,23 @@ Common shader source groups:
 ```text
 docs/
 |-- project-structure.md             This repository structure guide
-|-- ai-onboarding.md                 AI orientation checklist
-|-- ai-workflow-guide.md             Day-to-day Codex and AI tool workflow
-|-- ai-agent-tooling.md              AI tool stack and command policy
-|-- ai-debugging-playbook.md         Debug/build/test/screenshot workflow
+|-- ai/                              AI onboarding, workflow, tooling, debugging,
+|                                    and hockey-domain guidance
 |-- ai-rules/                        Shared AI project rules
 |-- phase-plans/                     Detailed phase implementation plans
-|-- phase_status/                    Per-phase checkbox status
+|-- phase-status/                    Per-phase checkbox status
 `-- phase-rules/                     Phase-specific agent rule sources
 ```
 
-The `docs/ai-rules/` and `docs/phase-plans/` directories are retained as shared
-AI guidance. Codex sessions should use the relevant files as supporting context
-while treating `AGENTS.md`, source/CMake truth, and `docs/phase_status/` as
-authoritative.
+The `docs/ai-rules/`, `docs/phase-rules/`, and `docs/phase-plans/` directories
+are retained as supporting AI guidance. Codex sessions should use the relevant
+files only when they match the task while treating `AGENTS.md`, source/CMake
+truth, and `docs/phase-status/` as authoritative.
 
 Phase status files:
 
 ```text
-docs/phase_status/
+docs/phase-status/
 |-- README.md
 |-- phase-01-foundation-core.md
 |-- phase-02-ecs-scene-prefab.md
@@ -279,7 +277,7 @@ docs/phase_status/
 `-- phase-09-polish-animation-audio-ui.md
 ```
 
-Before making status-sensitive changes, read `docs/phase_status/README.md` and
+Before making status-sensitive changes, read `docs/phase-status/README.md` and
 the phase file for the subsystem being touched.
 
 ## Scripts

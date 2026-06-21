@@ -6,7 +6,7 @@ Source material:
 
 - [x] Read `docs/phase-plans/phase-08-networking-lobbies.md`.
 - [x] Read `docs/phase-rules/120-phase-8-networking-lobbies.mdc`.
-- [x] Checked `docs/phase-rules/120-phase-8-networking-lobbies.mdc`.
+- [x] Checked current source/CMake/test state.
 - [x] Checked `docs/project-structure.md`.
 
 ## What This Phase Implements

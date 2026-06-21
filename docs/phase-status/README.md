@@ -28,9 +28,9 @@ phase-09-polish-animation-audio-ui.md Not-started polish/animation/audio/UI chec
 - `[ ]` under `Left To Do` means work that remains before that phase or gap can
   be considered complete.
 - `Finished Prerequisites From Earlier Phases` means supporting work exists, not
-  that the current phase feature itself is implemented.
+  that the listed phase feature itself is implemented.
 
-## Current Phase Interpretation
+## Project Phase Interpretation
 
 - Phases 1 through 7 are implemented in this checkout.
 - Phase 8 is next but should only be implemented when explicitly requested.

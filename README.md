@@ -7,13 +7,10 @@ Current status: phases 1-7 are substantially implemented, covering foundation/co
 ## Start Here
 
 - [Project structure](docs/project-structure.md) - module layout, target graph, app list, scripts, build/run commands, and screenshot workflow.
-- [Phase status index](docs/phase_status/README.md) - per-phase checkbox status files with finished, started, and remaining work.
+- [Phase status index](docs/phase-status/README.md) - per-phase checkbox status files with finished, started, and remaining work.
 - [Agent instructions](AGENTS.md) - architecture boundaries, dependency rules, phase order, and coding expectations.
-- [AI onboarding](docs/ai-onboarding.md) - how AI agents should orient themselves before making changes.
-- [AI workflow guide](docs/ai-workflow-guide.md) - day-to-day instructions for using Codex and local AI tools.
-- [AI agent tooling](docs/ai-agent-tooling.md) - shared command surface and optional agent tool policy.
-- [AI debugging playbook](docs/ai-debugging-playbook.md) - build/test/screenshot/debug workflow for AI-assisted development.
-- [AI rules](docs/ai-rules/), [phase plans](docs/phase-plans/), and [phase rules](docs/phase-rules/) - AI workflow and phase-specific guidance.
+- [AI docs](docs/ai/README.md) - onboarding, workflow, tooling, debugging, and focused hockey guidance for AI-assisted work.
+- [AI rule fragments](docs/ai-rules/README.md), [phase rules](docs/phase-rules/README.md), and [phase plans](docs/phase-plans/README.md) - supporting guidance for tools and phase-owned work.
 
 ## Quick Build
 
@@ -67,7 +64,9 @@ libs/       Engine libraries: core, ecs, assets, renderer, physics, gameplay, ed
 data/       Config, raw/cooked assets, shaders, editor state
 scripts/    Windows and Linux build/run/test helpers
 docs/       Project documentation, phase status, AI workflow docs
+  ai/           AI onboarding, workflow, tooling, debugging, and hockey guides
   ai-rules/     Shared AI project rules
+  phase-rules/  Compact phase-specific constraints
   phase-plans/  Detailed phase implementation plans
 justfile    Shared build/test/run/verify command recipes
 agents.toml Shared Codex agent-tool declarations
@@ -97,7 +96,7 @@ Development is phase-based. Each subsystem should be completed in order and arch
 8. Networking/lobbies
 9. Animation/audio/UI/polish
 
-Use [docs/phase_status](docs/phase_status) for current phase details before starting work.
+Use [docs/phase-status](docs/phase-status) for current phase details before starting work.
 
 ## License
 

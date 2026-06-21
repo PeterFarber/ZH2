@@ -7,7 +7,7 @@ Source material:
 - [x] Read `docs/phase-plans/phase-05-asset-pipeline.md`.
 - [x] Read `docs/phase-rules/090-phase-5-asset-pipeline.mdc`.
 - [x] Checked `docs/project-structure.md`.
-- [x] Checked `README.md` known-gap notes.
+- [x] Checked current source/CMake/test state.
 
 ## What This Phase Implements
 

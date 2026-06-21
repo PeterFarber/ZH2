@@ -7,7 +7,7 @@ Source material:
 - [x] Read `docs/phase-plans/phase-01-foundation-core.md`.
 - [x] Read `docs/phase-rules/050-phase-1-foundation-core.mdc`.
 - [x] Checked `docs/project-structure.md`.
-- [x] Checked `README.md` known-gap notes.
+- [x] Checked current source/CMake/test state.
 
 ## What This Phase Implements
 
