@@ -33,7 +33,7 @@ def _occupied_asset_names(output_root: Path, reserved_names: set[str] | None) ->
     occupied = {name.lower() for name in reserved_names or set()}
     root = Path(output_root)
     if root.exists():
-        occupied.update(child.name.lower() for child in root.iterdir() if child.is_dir())
+        occupied.update(child.name.lower() for child in root.iterdir())
     return occupied
 
 

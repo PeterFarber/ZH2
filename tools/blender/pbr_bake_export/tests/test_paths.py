@@ -49,6 +49,15 @@ class PathTests(unittest.TestCase):
 
             self.assertEqual(paths.asset_name, "wall_panel_2")
 
+    def test_build_asset_paths_suffixes_existing_output_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "wall_panel").write_text("", encoding="utf-8")
+
+            paths = build_asset_paths(root, "Wall Panel")
+
+            self.assertEqual(paths.asset_name, "wall_panel_2")
+
 
 if __name__ == "__main__":
     unittest.main()
