@@ -237,8 +237,13 @@ def _validate_download_url(role: str, url: str) -> str:
         raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
     if parts.scheme not in _DOWNLOAD_URL_SCHEMES:
         raise PolyhavenError(f"invalid download URL for texture role {role}: unsupported scheme")
-    if not parts.netloc:
-        raise PolyhavenError(f"invalid download URL for texture role {role}: missing host")
+    try:
+        hostname = parts.hostname
+        _ = parts.port
+    except ValueError as exc:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
+    if not hostname or hostname.strip() != hostname:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: missing or blank host")
     return clean
 
 

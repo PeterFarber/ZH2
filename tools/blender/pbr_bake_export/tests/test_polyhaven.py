@@ -297,6 +297,34 @@ class PolyhavenTests(unittest.TestCase):
                         client.download_selection(selection, Path(temp), "brick")
                     self.assertEqual(calls, [])
 
+    def test_download_selection_rejects_malformed_hosts_and_ports_before_fetching(self):
+        cases = (
+            ("https://@/x", "missing or blank host"),
+            ("https://:443/x", "missing or blank host"),
+            ("https://user:pass@/x", "missing or blank host"),
+            ("https:// /x", "missing or blank host"),
+            ("https://example.com:bad/x", "Port could not be cast"),
+        )
+        for url, expected_error in cases:
+            with self.subTest(url=url):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    raise AssertionError("download should not start for malformed hosts")
+
+                selection = TextureFileSelection(
+                    resolution=TextureResolution.FOUR_K,
+                    urls={"basecolor": url},
+                    warnings=[],
+                )
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                with tempfile.TemporaryDirectory() as temp:
+                    with self.assertRaisesRegex(PolyhavenError, f"basecolor.*{expected_error}"):
+                        client.download_selection(selection, Path(temp), "brick")
+                    self.assertEqual(calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()
