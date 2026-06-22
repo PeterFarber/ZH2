@@ -12,6 +12,7 @@
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Editor/Tools/ToolManager.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
 
 using namespace Hockey;
 
@@ -156,6 +157,30 @@ void RunToolTests() {
             HK_CHECK_EQ(player.playerIndex, 0u);
             HK_CHECK_EQ(player.slot, PlayerSlot::HomeSkater0);
             HK_CHECK_MSG(player.controlledByLocalInput, "home skater 0 receives local input");
+        }
+        if (homeSkater && homeSkater.HasComponent<RigidBodyComponent>() &&
+            homeSkater.HasComponent<CapsuleColliderComponent>()) {
+            const RigidBodyComponent& body = homeSkater.GetComponent<RigidBodyComponent>();
+            const CapsuleColliderComponent& capsule = homeSkater.GetComponent<CapsuleColliderComponent>();
+            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "skater body is dynamic");
+            HK_CHECK_MSG(body.layer == PhysicsLayer::Player, "skater body uses Player collision layer");
+            HK_CHECK_EQ(body.materialName, std::string("PlayerBody"));
+            HK_CHECK_MSG(!capsule.isTrigger, "skater capsule is solid");
+            HK_CHECK_MSG(capsule.radius > 0.0f && capsule.halfHeight > 0.0f, "skater capsule dimensions are valid");
+        } else {
+            HK_CHECK_MSG(false, "skater has role-specific solid capsule body");
+        }
+        if (homeGoalie && homeGoalie.HasComponent<RigidBodyComponent>() &&
+            homeGoalie.HasComponent<CapsuleColliderComponent>()) {
+            const RigidBodyComponent& body = homeGoalie.GetComponent<RigidBodyComponent>();
+            const CapsuleColliderComponent& capsule = homeGoalie.GetComponent<CapsuleColliderComponent>();
+            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "goalie body is dynamic");
+            HK_CHECK_MSG(body.layer == PhysicsLayer::Goalie, "goalie body uses Goalie collision layer");
+            HK_CHECK_EQ(body.materialName, std::string("GoalieBody"));
+            HK_CHECK_MSG(!capsule.isTrigger, "goalie capsule is solid");
+            HK_CHECK_MSG(capsule.radius > 0.0f && capsule.halfHeight > 0.0f, "goalie capsule dimensions are valid");
+        } else {
+            HK_CHECK_MSG(false, "goalie has role-specific solid capsule body");
         }
     }
 

@@ -1,6 +1,6 @@
 # Phase 7 - Hockey Gameplay
 
-Status: Implemented for local client, editor preview, and headless server use, with most GAMEPLAY.md action-design follow-ups implemented.
+Status: Implemented for local client, editor preview, and headless server use, with GAMEPLAY.md action-design follow-ups covered outside future networking/presentation phases.
 
 Source material:
 
@@ -60,6 +60,7 @@ Source material:
 - [x] Gameplay components have editor metadata.
 - [x] Gameplay-ready scene validation exists.
 - [x] Main rink gameplay validation exists.
+- [x] Hockey player authoring creates role-specific solid skater and goalie capsule bodies.
 
 ## Finished - Match And Rules
 
@@ -125,10 +126,10 @@ Source material:
 - [x] Snapshot tests exist.
 - [x] Main rink regression coverage exists.
 - [x] Headless server gameplay path is covered.
+- [x] Editor Hockey Players tool tests cover role-specific skater and goalie collider authoring.
 
 ## Started / Partial
 
-- [ ] Role-specific solid skater-only/goalie-only collider authoring still needs clearer editor-facing workflow and dedicated tests.
 - [ ] Gameplay snapshots exist locally, but are not replicated over a network transport.
 - [ ] Input model exists locally, but input streaming over the network is not implemented.
 - [ ] `SceneMode::ClientPrediction` exists, but prediction/reconciliation are not implemented.
@@ -137,7 +138,6 @@ Source material:
 
 ## Left To Do
 
-- [ ] Add the remaining role-specific solid collider authoring workflow/tests before treating collider authoring as final.
 - [ ] Connect input frames and snapshots to Phase 8 networking.
 - [ ] Add server-side network input validation during Phase 8.
 - [ ] Add snapshot interpolation, prediction, and reconciliation during Phase 8.
