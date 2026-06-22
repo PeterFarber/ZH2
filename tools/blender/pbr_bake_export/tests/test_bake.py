@@ -48,7 +48,71 @@ class FakeImages:
 class FakeNode:
     def __init__(self, node_type):
         self.node_type = node_type
+        self.bl_idname = node_type
+        self.type = {
+            "ShaderNodeBsdfPrincipled": "BSDF_PRINCIPLED",
+            "ShaderNodeEmission": "EMISSION",
+            "ShaderNodeOutputMaterial": "OUTPUT_MATERIAL",
+            "ShaderNodeTexImage": "TEX_IMAGE",
+            "ShaderNodeValue": "VALUE",
+        }.get(node_type, node_type)
         self.image = None
+        self.inputs = FakeSocketCollection()
+        self.outputs = FakeSocketCollection()
+        self.is_active_output = node_type == "ShaderNodeOutputMaterial"
+
+        if node_type == "ShaderNodeBsdfPrincipled":
+            self.inputs.add("Metallic", 0.0, self)
+            self.outputs.add("BSDF", None, self)
+        elif node_type == "ShaderNodeEmission":
+            self.inputs.add("Color", (1.0, 1.0, 1.0, 1.0), self)
+            self.inputs.add("Strength", 1.0, self)
+            self.outputs.add("Emission", None, self)
+        elif node_type == "ShaderNodeOutputMaterial":
+            self.inputs.add("Surface", None, self)
+        elif node_type == "ShaderNodeValue":
+            self.outputs.add("Value", 0.0, self)
+
+
+class FakeSocket:
+    def __init__(self, name, default_value, node):
+        self.name = name
+        self.default_value = default_value
+        self.node = node
+        self.links = []
+
+
+class FakeSocketCollection(dict):
+    def add(self, name, default_value, node):
+        socket = FakeSocket(name, default_value, node)
+        self[name] = socket
+        return socket
+
+
+class FakeLink:
+    def __init__(self, from_socket, to_socket):
+        self.from_socket = from_socket
+        self.to_socket = to_socket
+
+
+class FakeLinks:
+    def __init__(self):
+        self._links = []
+
+    def __iter__(self):
+        return iter(self._links)
+
+    def new(self, from_socket, to_socket):
+        link = FakeLink(from_socket, to_socket)
+        self._links.append(link)
+        from_socket.links.append(link)
+        to_socket.links.append(link)
+        return link
+
+    def remove(self, link):
+        self._links.remove(link)
+        link.from_socket.links.remove(link)
+        link.to_socket.links.remove(link)
 
 
 class FakeNodes:
@@ -89,14 +153,22 @@ class FakeNodes:
 
 
 class FakeMaterial:
-    def __init__(self, name, use_nodes=True, has_node_tree=True):
+    def __init__(self, name, use_nodes=True, has_node_tree=True, with_shader_nodes=False, metallic=0.0):
         self.name = name
         self.use_nodes = use_nodes
-        self.node_tree = types.SimpleNamespace(nodes=FakeNodes()) if has_node_tree else None
+        self.node_tree = types.SimpleNamespace(nodes=FakeNodes(), links=FakeLinks()) if has_node_tree else None
         if self.node_tree is not None:
             self.previous_active = FakeNode("PreviousActive")
             self.node_tree.nodes._nodes.append(self.previous_active)
             self.node_tree.nodes.active = self.previous_active
+            if with_shader_nodes:
+                self.principled = self.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+                self.output = self.node_tree.nodes.new("ShaderNodeOutputMaterial")
+                self.principled.inputs["Metallic"].default_value = metallic
+                self.original_surface_link = self.node_tree.links.new(
+                    self.principled.outputs["BSDF"],
+                    self.output.inputs["Surface"],
+                )
 
 
 class FakeObject:
@@ -127,6 +199,7 @@ class FakeObjectOps:
     def bake(self, type, margin):
         active_object = self._context.view_layer.objects.active
         targets = {}
+        emit_sources = {}
         for slot in active_object.material_slots:
             material = slot.material
             if material is None or not material.use_nodes or material.node_tree is None:
@@ -134,8 +207,30 @@ class FakeObjectOps:
 
             active_node = material.node_tree.nodes.active
             targets[material.name] = active_node.image.name if active_node and active_node.image else None
+            output_nodes = [
+                node for node in material.node_tree.nodes if node.node_type == "ShaderNodeOutputMaterial"
+            ]
+            if output_nodes:
+                surface_input = output_nodes[0].inputs["Surface"]
+                surface_link = surface_input.links[0] if surface_input.links else None
+                surface_node = surface_link.from_socket.node if surface_link is not None else None
+                color_default = None
+                color_link_from = None
+                if surface_node is not None and surface_node.node_type == "ShaderNodeEmission":
+                    color_input = surface_node.inputs["Color"]
+                    color_default = color_input.default_value
+                    if color_input.links:
+                        from_socket = color_input.links[0].from_socket
+                        color_link_from = f"{from_socket.node.node_type}.{from_socket.name}"
+                emit_sources[material.name] = {
+                    "surface_from": getattr(surface_node, "node_type", None),
+                    "color_default": color_default,
+                    "color_link_from": color_link_from,
+                }
 
-        self.bake_calls.append({"type": type, "margin": margin, "targets": targets})
+        self.bake_calls.append(
+            {"type": type, "margin": margin, "targets": targets, "emit_sources": emit_sources}
+        )
         if self.bake_error is not None:
             raise self.bake_error
 
@@ -178,15 +273,21 @@ class BakeTests(unittest.TestCase):
     def test_bake_map_specs_include_required_pbr_outputs(self):
         specs = bake_map_specs()
         self.assertEqual(
-            [(spec.role, spec.blender_bake_type, spec.color_space) for spec in specs],
+            [(spec.role, spec.blender_bake_type, spec.color_space, spec.emit_source_input) for spec in specs],
             [
-                ("basecolor", "DIFFUSE", "sRGB"),
-                ("normal", "NORMAL", "Non-Color"),
-                ("roughness", "ROUGHNESS", "Non-Color"),
-                ("metallic", "EMIT", "Non-Color"),
-                ("ao", "AO", "Non-Color"),
+                ("basecolor", "DIFFUSE", "sRGB", None),
+                ("normal", "NORMAL", "Non-Color", None),
+                ("roughness", "ROUGHNESS", "Non-Color", None),
+                ("metallic", "EMIT", "Non-Color", "Metallic"),
+                ("ao", "AO", "Non-Color", None),
             ],
         )
+
+    def test_metallic_bake_spec_declares_emit_rewire_source(self):
+        metallic_spec = next(spec for spec in bake_map_specs() if spec.role == "metallic")
+
+        self.assertEqual(metallic_spec.blender_bake_type, "EMIT")
+        self.assertEqual(metallic_spec.emit_source_input, "Metallic")
 
     def test_every_bake_map_has_png_filename_suffix(self):
         for spec in bake_map_specs():
@@ -203,6 +304,18 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
     def assert_material_restored(self, material):
         self.assertIs(material.node_tree.nodes.active, material.previous_active)
         self.assertEqual(material.node_tree.nodes.as_list(), [material.previous_active])
+
+    def assert_shader_material_restored(self, material):
+        self.assertIs(material.node_tree.nodes.active, material.previous_active)
+        self.assertEqual(
+            material.node_tree.nodes.as_list(),
+            [material.previous_active, material.principled, material.output],
+        )
+        restored_links = list(material.node_tree.links)
+        self.assertEqual(len(restored_links), 1)
+        self.assertIs(restored_links[0].from_socket, material.principled.outputs["BSDF"])
+        self.assertIs(restored_links[0].to_socket, material.output.inputs["Surface"])
+        self.assertEqual(material.output.inputs["Surface"].links, restored_links)
 
     def test_bake_object_maps_targets_all_node_material_slots_and_cleans_up_each_map(self):
         first_material = FakeMaterial("first")
@@ -232,6 +345,27 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
             self.bpy.data.images.removed_names,
             [f"test_asset_{spec.role}" for spec in bake_map_specs()],
         )
+
+    def test_metallic_bake_rewires_principled_value_to_emission_and_restores_nodes(self):
+        material = FakeMaterial("metal_material", with_shader_nodes=True, metallic=0.72)
+        obj = FakeObject("metal_asset", [material], self.bpy.context)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            warnings = bake_object_maps(obj, self.texture_paths(temp_dir), TextureResolution.TEST)
+
+        self.assertEqual(warnings, [])
+        metallic_call = next(call for call in self.bpy.ops.object.bake_calls if call["type"] == "EMIT")
+        self.assertEqual(
+            metallic_call["emit_sources"]["metal_material"],
+            {
+                "surface_from": "ShaderNodeEmission",
+                "color_default": (0.72, 0.72, 0.72, 1.0),
+                "color_link_from": None,
+            },
+        )
+        self.assertEqual(metallic_call["targets"], {"metal_material": "metal_asset_metallic"})
+        self.assert_shader_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
 
     def test_bake_object_maps_warns_for_missing_slots_but_targets_available_node_materials(self):
         node_material = FakeMaterial("node_material")

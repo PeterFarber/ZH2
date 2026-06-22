@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 from tools.blender.pbr_bake_export.addon import operators
-from tools.blender.pbr_bake_export.addon.types import MaterialSource
+from tools.blender.pbr_bake_export.addon.export import ExportPreflightError
+from tools.blender.pbr_bake_export.addon.types import AssetMode, MaterialSource
 
 
 class OperatorPathTests(unittest.TestCase):
@@ -132,6 +133,136 @@ class OperatorPreferencesTests(unittest.TestCase):
 
         self.assertEqual(prefs.user_agent, "ZH2-Blender-PBR-Bake-Export/0.1")
         self.assertEqual(prefs.cache_root, "//assets/_polyhaven_cache")
+
+
+class OperatorPreflightTests(unittest.TestCase):
+    def _validate_export_prerequisites(self, *args, **kwargs):
+        self.assertTrue(
+            hasattr(operators, "_validate_export_prerequisites"),
+            "operators should expose export prerequisite validation before output side effects",
+        )
+        return operators._validate_export_prerequisites(*args, **kwargs)
+
+    def test_low_poly_export_requires_autogenerate_before_output_side_effects(self):
+        settings = types.SimpleNamespace(
+            autogenerate_low_poly=False,
+            selected_polyhaven_asset="",
+        )
+
+        with self.assertRaisesRegex(ExportPreflightError, "Low-poly export requires autogenerate low poly"):
+            self._validate_export_prerequisites(
+                settings,
+                mode=AssetMode.LOW_POLY,
+                material_source=MaterialSource.EXISTING,
+            )
+
+    def test_polyhaven_export_requires_selected_asset_before_output_side_effects(self):
+        settings = types.SimpleNamespace(
+            autogenerate_low_poly=True,
+            selected_polyhaven_asset=" ",
+        )
+
+        with self.assertRaisesRegex(ExportPreflightError, "Select a Poly Haven material before exporting"):
+            self._validate_export_prerequisites(
+                settings,
+                mode=AssetMode.HIGH_POLY,
+                material_source=MaterialSource.POLY_HAVEN,
+            )
+
+    def test_valid_prerequisites_return_stripped_polyhaven_asset_id(self):
+        settings = types.SimpleNamespace(
+            autogenerate_low_poly=True,
+            selected_polyhaven_asset="  wall_plaster  ",
+        )
+
+        asset_id = self._validate_export_prerequisites(
+            settings,
+            mode=AssetMode.LOW_POLY,
+            material_source=MaterialSource.POLY_HAVEN,
+        )
+
+        self.assertEqual(asset_id, "wall_plaster")
+
+
+class _FakeSelectableObject:
+    def __init__(self, name, context):
+        self.name = name
+        self._context = context
+        self.removed = False
+
+    def select_set(self, selected):
+        if self.removed:
+            raise ReferenceError(f"{self.name} has been removed")
+        if selected and self not in self._context.selected_objects:
+            self._context.selected_objects.append(self)
+        elif not selected and self in self._context.selected_objects:
+            self._context.selected_objects.remove(self)
+
+
+class _FakeActiveObjects:
+    def __init__(self):
+        self._active = None
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        if getattr(value, "removed", False):
+            raise ReferenceError(f"{value.name} has been removed")
+        self._active = value
+
+
+class OperatorSelectionRestoreTests(unittest.TestCase):
+    def _restore_object_selection(self, *args, **kwargs):
+        self.assertTrue(
+            hasattr(operators, "_restore_object_selection"),
+            "operators should expose object selection restoration",
+        )
+        return operators._restore_object_selection(*args, **kwargs)
+
+    def test_restore_object_selection_reinstates_original_selection_and_active_object(self):
+        context = types.SimpleNamespace(
+            selected_objects=[],
+            view_layer=types.SimpleNamespace(objects=_FakeActiveObjects()),
+        )
+        first = _FakeSelectableObject("first", context)
+        second = _FakeSelectableObject("second", context)
+        temporary = _FakeSelectableObject("temporary", context)
+        first.select_set(True)
+        second.select_set(True)
+        context.view_layer.objects.active = second
+        original_selection = list(context.selected_objects)
+        original_active = context.view_layer.objects.active
+
+        first.select_set(False)
+        temporary.select_set(True)
+        context.view_layer.objects.active = temporary
+
+        self._restore_object_selection(context, original_selection, original_active)
+
+        self.assertEqual(context.selected_objects, [first, second])
+        self.assertIs(context.view_layer.objects.active, second)
+
+    def test_restore_object_selection_ignores_removed_objects(self):
+        context = types.SimpleNamespace(
+            selected_objects=[],
+            view_layer=types.SimpleNamespace(objects=_FakeActiveObjects()),
+        )
+        kept = _FakeSelectableObject("kept", context)
+        removed = _FakeSelectableObject("removed", context)
+        temporary = _FakeSelectableObject("temporary", context)
+        kept.select_set(True)
+        removed.select_set(True)
+        original_selection = list(context.selected_objects)
+        removed.removed = True
+        temporary.select_set(True)
+        context.view_layer.objects.active = temporary
+
+        self._restore_object_selection(context, original_selection, removed)
+
+        self.assertEqual(context.selected_objects, [kept])
 
 
 if __name__ == "__main__":
