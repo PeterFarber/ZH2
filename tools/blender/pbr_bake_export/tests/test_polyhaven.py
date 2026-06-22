@@ -94,6 +94,9 @@ class PolyhavenTests(unittest.TestCase):
         self.assertEqual(match_texture_role("red_brick_floor_ao_4k.png"), "ao")
 
     def test_match_texture_role_uses_map_suffix_tokens_not_asset_slug_tokens(self):
+        self.assertEqual(match_texture_role("metal_4k.png"), "")
+        self.assertEqual(match_texture_role("ao_4k.png"), "")
+        self.assertEqual(match_texture_role("normal_4k.png"), "")
         self.assertEqual(match_texture_role("metal_plate_4k.png"), "")
         self.assertEqual(match_texture_role("metal_plate_ao_4k.png"), "ao")
         self.assertEqual(match_texture_role("rough_concrete_ao_4k.png"), "ao")
@@ -103,11 +106,11 @@ class PolyhavenTests(unittest.TestCase):
         file_tree = {
             "4k": {
                 "png": {
-                    "metal_plate_diff_4k.png": {"url": "https://cdn/basecolor.png"},
-                    "metal_plate_nor_gl_4k.png": {"url": "https://cdn/normal.png"},
-                    "metal_plate_rough_4k.png": {"url": "https://cdn/roughness.png"},
-                    "metal_plate_4k.png": {"url": "https://cdn/slug-only.png"},
-                    "metal_plate_ao_4k.png": {"url": "https://cdn/ao.png"},
+                    "red_brick_floor_diff_4k.png": {"url": "https://cdn/basecolor.png"},
+                    "red_brick_floor_nor_gl_4k.png": {"url": "https://cdn/normal.png"},
+                    "red_brick_floor_rough_4k.png": {"url": "https://cdn/roughness.png"},
+                    "metal_4k.png": {"url": "https://cdn/metal_4k.png"},
+                    "red_brick_floor_ao_4k.png": {"url": "https://cdn/ao.png"},
                 }
             }
         }

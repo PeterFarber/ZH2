@@ -88,9 +88,9 @@ def _filename_role_tokens(filename: str) -> list[str]:
     return tokens
 
 
-def _tokens_end_with(tokens: list[str], sequence: tuple[str, ...]) -> bool:
+def _tokens_end_with_role_suffix(tokens: list[str], sequence: tuple[str, ...]) -> bool:
     sequence_length = len(sequence)
-    return len(tokens) >= sequence_length and tuple(tokens[-sequence_length:]) == sequence
+    return len(tokens) > sequence_length and tuple(tokens[-sequence_length:]) == sequence
 
 
 def match_texture_role(filename: str) -> str:
@@ -101,10 +101,10 @@ def match_texture_role(filename: str) -> str:
             role == "normal"
             and tokens
             and tokens[-1] in normal_direction_tokens
-            and _tokens_end_with(tokens[:-1], sequence)
+            and _tokens_end_with_role_suffix(tokens[:-1], sequence)
         ):
             return role
-        if _tokens_end_with(tokens, sequence):
+        if _tokens_end_with_role_suffix(tokens, sequence):
             return role
     return ""
 
