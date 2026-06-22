@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
             "HockeyDedicatedServer - headless authoritative game server\n\n"
             "Usage: HockeyDedicatedServer [options]\n\n"
             "Options:\n"
-            "  --root <dir>      Project root directory (default: .)\n"
+            "  --root <dir>      Project root directory (default: inferred from executable)\n"
             "  --config <file>   Override server config TOML path\n"
             "  --log <file>      Override server log file path\n"
             "  --tick-rate <hz>  Override the fixed simulation tick rate\n"

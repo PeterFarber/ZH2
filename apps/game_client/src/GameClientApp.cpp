@@ -112,7 +112,8 @@ bool ProjectMouseToIcePlane(Hockey::Scene& scene, std::uint32_t width, std::uint
 
 bool GameClientApp::OnInit() {
     const auto& cmd = GetCommandLine();
-    auto root = cmd.GetString("--root", ".");
+    const std::filesystem::path root =
+        cmd.Has("--root") ? std::filesystem::path(cmd.GetString("--root", "")) : std::filesystem::path{};
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
     m_AutoScreenshotPending = cmd.Has("--screenshot") || cmd.Has("--screenshot-prefix");
     m_ScreenshotPrefix = cmd.GetString("--screenshot-prefix", cmd.GetString("--screenshot", "game"));

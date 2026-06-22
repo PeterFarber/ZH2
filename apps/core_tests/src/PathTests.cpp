@@ -1,6 +1,7 @@
 #include "Test.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
+#include <filesystem>
 using namespace Hockey;
 void RunPathTests() {
     HockeyTest::BeginSuite("PathTests");
@@ -33,4 +34,18 @@ void RunPathTests() {
     HK_CHECK_EQ(Paths::Resolve(paths.logs / "core_tests.log"),
                 (paths.logs / "core_tests.log").lexically_normal());
     HK_CHECK(Paths::Resolve("relative/thing").is_absolute());
+
+    // Root inference prefers a build-local data directory when no --root
+    // override is supplied.
+    const std::filesystem::path originalRoot = paths.root;
+    const std::filesystem::path fakeBuildRoot = Paths::TempFile("path_inference_build_root");
+    const std::filesystem::path fakeExe = fakeBuildRoot / "apps" / "game_client" / "HockeyGameClient.exe";
+    std::filesystem::remove_all(fakeBuildRoot);
+    std::filesystem::create_directories(fakeBuildRoot / "data" / "config");
+    std::filesystem::create_directories(fakeExe.parent_path());
+    HK_CHECK(Paths::Init(fakeExe, {}));
+    HK_CHECK_EQ(Paths::Get().root, fakeBuildRoot.lexically_normal());
+    HK_CHECK_EQ(Paths::ConfigFile("client.toml"), fakeBuildRoot / "data" / "config" / "client.toml");
+    HK_CHECK(Paths::Init(originalRoot / "build" / "windows-debug" / "apps" / "core_tests" / "HockeyCoreTests.exe",
+                         originalRoot));
 }

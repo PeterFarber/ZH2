@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
             "HockeyGameClient - playable hockey game client\n\n"
             "Usage: HockeyGameClient [options]\n\n"
             "Options:\n"
-            "  --root <dir>      Project root directory (default: .)\n"
+            "  --root <dir>      Project root directory (default: inferred from executable)\n"
             "  --config <file>   Override client config TOML path\n"
             "  --log <file>      Override client log file path\n"
             "  --fps-limit <n>   Override the frame-rate cap\n"

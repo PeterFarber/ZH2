@@ -20,7 +20,8 @@
 
 bool DedicatedServerApp::OnInit() {
     const auto& cmd = GetCommandLine();
-    auto root = cmd.GetString("--root", ".");
+    const std::filesystem::path root =
+        cmd.Has("--root") ? std::filesystem::path(cmd.GetString("--root", "")) : std::filesystem::path{};
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
     const auto logPath = cmd.Has("--log") ? Hockey::Paths::Resolve(cmd.GetString("--log"))
                                           : Hockey::Paths::LogFile("server.log");

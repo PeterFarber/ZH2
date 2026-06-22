@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
             "HockeyMapEditor - Unity-style scene/map editor\n\n"
             "Usage: HockeyMapEditor [options]\n\n"
             "Options:\n"
-            "  --root <dir>      Project root directory (default: .)\n"
+            "  --root <dir>      Project root directory (default: inferred from executable)\n"
             "  --config <file>   Override editor config TOML path\n"
             "  --log <file>      Override editor log file path\n"
             "  --scene <file>    Open the given scene on startup\n"
