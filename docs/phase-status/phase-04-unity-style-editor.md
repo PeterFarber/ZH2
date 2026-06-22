@@ -57,6 +57,7 @@ Source material:
 - [x] Scene validation panel exists.
 - [x] Prefab panel exists.
 - [x] Project Settings panel exists.
+- [x] Project Settings exposes Editor/Client advanced lighting and shadow settings while keeping Server headless settings separate.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 

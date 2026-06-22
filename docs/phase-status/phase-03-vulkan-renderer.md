@@ -33,6 +33,7 @@ Source material:
 - [x] Renderer pimpl API exists.
 - [x] Opaque handles exist for renderer resources.
 - [x] Renderer settings load/save from TOML.
+- [x] Advanced renderer lighting/shadow settings persist through TOML and drive directional/local shadow tuning.
 - [x] Renderer stats include CPU frame timing.
 - [x] Material preview support exists for editor UI.
 - [x] Built-in screenshot request/readback API exists.
