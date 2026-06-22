@@ -1,11 +1,12 @@
 # Phase 7 - Hockey Gameplay
 
-Status: Implemented for local client, editor preview, and headless server use.
+Status: Implemented for local client, editor preview, and headless server use, with GAMEPLAY.md action-design follow-ups pending.
 
 Source material:
 
 - [x] Read `docs/phase-plans/phase-07-hockey-gameplay.md`.
 - [x] Read `docs/phase-rules/110-phase-7-hockey-gameplay.mdc`.
+- [x] Reviewed `GAMEPLAY.md` target action design.
 - [x] Checked `docs/project-structure.md`.
 - [x] Checked current source/CMake/test state.
 
@@ -116,6 +117,7 @@ Source material:
 
 ## Started / Partial
 
+- [ ] `GAMEPLAY.md` now defines follow-up action rules not fully implemented yet: 180-second periods, pregame countdown, contextual steal/shoot input, impulse boosts, goalie shield, double-tap stop, and role-specific solid collider authoring.
 - [ ] Gameplay snapshots exist locally, but are not replicated over a network transport.
 - [ ] Input model exists locally, but input streaming over the network is not implemented.
 - [ ] `SceneMode::ClientPrediction` exists, but prediction/reconciliation are not implemented.
@@ -124,6 +126,7 @@ Source material:
 
 ## Left To Do
 
+- [ ] Implement and test the new `GAMEPLAY.md` action-design deltas before treating gameplay controls as final.
 - [ ] Connect input frames and snapshots to Phase 8 networking.
 - [ ] Add server-side network input validation during Phase 8.
 - [ ] Add snapshot interpolation, prediction, and reconciliation during Phase 8.
