@@ -114,15 +114,15 @@ def bake_object_maps(
                 height=resolution.pixel_size,
                 alpha=False,
             )
-            image.colorspace_settings.name = spec.color_space
-
-            texture_path = texture_paths[spec.role]
-            texture_path.parent.mkdir(parents=True, exist_ok=True)
-
-            if has_missing_node_material or not node_materials:
-                warnings.append(f"{spec.role} baked from object without node material")
-
             try:
+                image.colorspace_settings.name = spec.color_space
+
+                texture_path = texture_paths[spec.role]
+                texture_path.parent.mkdir(parents=True, exist_ok=True)
+
+                if has_missing_node_material or not node_materials:
+                    warnings.append(f"{spec.role} baked from object without node material")
+
                 targets = _attach_bake_image_nodes(node_materials, image)
 
                 if spec.blender_bake_type == "DIFFUSE":

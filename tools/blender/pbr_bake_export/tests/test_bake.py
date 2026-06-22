@@ -9,7 +9,7 @@ from tools.blender.pbr_bake_export.addon.types import TextureResolution
 
 
 class FakeImage:
-    def __init__(self, name, width, height, alpha):
+    def __init__(self, name, width, height, alpha, save_error=None):
         self.name = name
         self.width = width
         self.height = height
@@ -18,8 +18,11 @@ class FakeImage:
         self.filepath_raw = ""
         self.file_format = ""
         self.saved = False
+        self.save_error = save_error
 
     def save(self):
+        if self.save_error is not None:
+            raise self.save_error
         self.saved = True
 
 
@@ -28,9 +31,10 @@ class FakeImages:
         self.active_images = []
         self.saved_names = []
         self.removed_names = []
+        self.next_save_error = None
 
     def new(self, name, width, height, alpha):
-        image = FakeImage(name, width, height, alpha)
+        image = FakeImage(name, width, height, alpha, self.next_save_error)
         self.active_images.append(image)
         return image
 
@@ -98,6 +102,7 @@ class FakeObjectOps:
     def __init__(self, context):
         self._context = context
         self.bake_calls = []
+        self.bake_error = None
 
     def select_all(self, action):
         if action == "DESELECT":
@@ -116,6 +121,8 @@ class FakeObjectOps:
             targets[material.name] = active_node.image.name if active_node and active_node.image else None
 
         self.bake_calls.append({"type": type, "margin": margin, "targets": targets})
+        if self.bake_error is not None:
+            raise self.bake_error
 
 
 class FakeBpy(types.SimpleNamespace):
@@ -178,6 +185,10 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
             for spec in bake_map_specs()
         }
 
+    def assert_material_restored(self, material):
+        self.assertIs(material.node_tree.nodes.active, material.previous_active)
+        self.assertEqual(material.node_tree.nodes.as_list(), [material.previous_active])
+
     def test_bake_object_maps_targets_all_node_material_slots_and_cleans_up_each_map(self):
         first_material = FakeMaterial("first")
         second_material = FakeMaterial("second")
@@ -195,8 +206,7 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
             )
 
         for material in [first_material, second_material]:
-            self.assertIs(material.node_tree.nodes.active, material.previous_active)
-            self.assertEqual(material.node_tree.nodes.as_list(), [material.previous_active])
+            self.assert_material_restored(material)
 
         self.assertEqual(self.bpy.data.images.active_images, [])
         self.assertEqual(
@@ -228,9 +238,60 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
         for spec, bake_call in zip(bake_map_specs(), self.bpy.ops.object.bake_calls):
             self.assertEqual(bake_call["targets"], {"node_material": f"mixed_asset_{spec.role}"})
 
-        self.assertIs(node_material.node_tree.nodes.active, node_material.previous_active)
-        self.assertEqual(node_material.node_tree.nodes.as_list(), [node_material.previous_active])
+        self.assert_material_restored(node_material)
         self.assertEqual(self.bpy.data.images.active_images, [])
+
+    def test_missing_texture_path_cleans_up_allocated_image(self):
+        material = FakeMaterial("node_material")
+        obj = FakeObject("missing_path_asset", [material], self.bpy.context)
+
+        with self.assertRaises(KeyError):
+            bake_object_maps(obj, {}, TextureResolution.TEST)
+
+        self.assert_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
+
+    def test_directory_creation_failure_cleans_up_allocated_image(self):
+        material = FakeMaterial("node_material")
+        obj = FakeObject("bad_directory_asset", [material], self.bpy.context)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            blocked_directory = Path(temp_dir) / "basecolor_parent"
+            blocked_directory.write_text("not a directory", encoding="utf-8")
+            texture_paths = self.texture_paths(temp_dir)
+            texture_paths["basecolor"] = blocked_directory / "basecolor.png"
+
+            with self.assertRaises(FileExistsError):
+                bake_object_maps(obj, texture_paths, TextureResolution.TEST)
+
+        self.assert_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
+
+    def test_bake_failure_cleans_up_temporary_nodes_and_images(self):
+        material = FakeMaterial("node_material")
+        obj = FakeObject("bake_failure_asset", [material], self.bpy.context)
+        self.bpy.ops.object.bake_error = RuntimeError("forced bake failure")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(RuntimeError, "forced bake failure"):
+                bake_object_maps(obj, self.texture_paths(temp_dir), TextureResolution.TEST)
+
+        self.assert_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
+        self.assertEqual(self.bpy.data.images.removed_names, ["bake_failure_asset_basecolor"])
+
+    def test_image_save_failure_cleans_up_temporary_nodes_and_images(self):
+        material = FakeMaterial("node_material")
+        obj = FakeObject("save_failure_asset", [material], self.bpy.context)
+        self.bpy.data.images.next_save_error = RuntimeError("forced save failure")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(RuntimeError, "forced save failure"):
+                bake_object_maps(obj, self.texture_paths(temp_dir), TextureResolution.TEST)
+
+        self.assert_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
+        self.assertEqual(self.bpy.data.images.removed_names, ["save_failure_asset_basecolor"])
 
 
 if __name__ == "__main__":
