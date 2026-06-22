@@ -19,6 +19,7 @@ REQUIRED_ROLES = ("basecolor", "normal", "roughness", "metallic", "ao")
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _DOWNLOAD_URL_SCHEMES = {"http", "https"}
 _DOWNLOAD_FORMAT_TOKENS = {"png", "jpg", "jpeg"}
+_WINDOWS_RESERVED_FILENAME_CHARACTERS = frozenset('<>:"/\\|?*')
 _NORMAL_BASE_TOKENS = {"nor", "normal", "nrm"}
 _NORMAL_GL_TOKENS = {"gl", "opengl"}
 _NORMAL_DX_TOKENS = {"dx", "directx"}
@@ -320,10 +321,14 @@ def _validate_download_label(label: str, label_name: str) -> str:
     clean = label.strip()
     if not clean:
         raise PolyhavenError(f"{label_name} cannot be empty")
+    if any(ord(character) < 32 or ord(character) == 127 for character in clean):
+        raise PolyhavenError(f"{label_name} must not contain control characters")
     if "/" in clean or "\\" in clean:
         raise PolyhavenError(f"{label_name} must not contain path separators")
     if clean in (".", "..") or ":" in clean:
         raise PolyhavenError(f"{label_name} must be a simple file name segment")
+    if any(character in _WINDOWS_RESERVED_FILENAME_CHARACTERS for character in clean):
+        raise PolyhavenError(f"{label_name} must not contain Windows-reserved filename characters")
     return clean
 
 

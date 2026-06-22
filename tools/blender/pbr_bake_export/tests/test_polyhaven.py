@@ -304,6 +304,29 @@ class PolyhavenTests(unittest.TestCase):
 
                     self.assertEqual(sorted(path.relative_to(root) for path in root.rglob("*")), [Path("cache")])
 
+    def test_download_selection_rejects_reserved_prefix_characters_before_fetching(self):
+        selection = TextureFileSelection(
+            resolution=TextureResolution.FOUR_K,
+            urls={"basecolor": "https://cdn/basecolor.png"},
+            warnings=[],
+        )
+
+        for prefix in ("bad*name", "bad?name", "bad<name", "bad|name", "bad\nname", "bad\x00name"):
+            with self.subTest(prefix=prefix):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    raise AssertionError("download should not start for unsafe prefixes")
+
+                with tempfile.TemporaryDirectory() as temp:
+                    client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                    with self.assertRaises(PolyhavenError):
+                        client.download_selection(selection, Path(temp), prefix)
+
+                    self.assertEqual(calls, [])
+
     def test_download_selection_rejects_unsafe_roles_before_writing(self):
         selection = TextureFileSelection(
             resolution=TextureResolution.FOUR_K,
@@ -323,6 +346,26 @@ class PolyhavenTests(unittest.TestCase):
                 client.download_selection(selection, cache, "brick")
 
             self.assertEqual(sorted(path.relative_to(root) for path in root.rglob("*")), [Path("cache")])
+
+    def test_download_selection_rejects_reserved_role_characters_before_fetching(self):
+        selection = TextureFileSelection(
+            resolution=TextureResolution.FOUR_K,
+            urls={"bad*role": "https://cdn/basecolor.png"},
+            warnings=[],
+        )
+        calls = []
+
+        def fetcher(request, timeout=None):
+            calls.append(request)
+            raise AssertionError("download should not start for unsafe roles")
+
+        with tempfile.TemporaryDirectory() as temp:
+            client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+            with self.assertRaises(PolyhavenError):
+                client.download_selection(selection, Path(temp), "brick")
+
+            self.assertEqual(calls, [])
 
     def test_search_textures_wraps_fetch_failures_as_polyhaven_errors(self):
         def failing_fetcher(request, timeout=None):
