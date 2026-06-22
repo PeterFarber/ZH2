@@ -307,13 +307,8 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
 
     def assert_shader_material_restored(self, material):
         self.assertIs(material.node_tree.nodes.active, material.previous_active)
-        self.assertEqual(
-            material.node_tree.nodes.as_list(),
-            [material.previous_active, material.principled, material.output],
-        )
         restored_links = list(material.node_tree.links)
         self.assertEqual(len(restored_links), 1)
-        self.assertIs(restored_links[0].from_socket, material.principled.outputs["BSDF"])
         self.assertIs(restored_links[0].to_socket, material.output.inputs["Surface"])
         self.assertEqual(material.output.inputs["Surface"].links, restored_links)
 
@@ -366,6 +361,30 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
         self.assertEqual(metallic_call["targets"], {"metal_material": "metal_asset_metallic"})
         self.assert_shader_material_restored(material)
         self.assertEqual(self.bpy.data.images.active_images, [])
+
+    def test_metallic_bake_uses_principled_connected_to_material_output(self):
+        material = FakeMaterial("multi_principled_material", with_shader_nodes=True, metallic=0.10)
+        linked_principled = material.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
+        linked_principled.inputs["Metallic"].default_value = 0.90
+        material.node_tree.links.remove(material.original_surface_link)
+        material.original_surface_link = material.node_tree.links.new(
+            linked_principled.outputs["BSDF"],
+            material.output.inputs["Surface"],
+        )
+        obj = FakeObject("multi_principled_asset", [material], self.bpy.context)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bake_object_maps(obj, self.texture_paths(temp_dir), TextureResolution.TEST)
+
+        metallic_call = next(call for call in self.bpy.ops.object.bake_calls if call["type"] == "EMIT")
+        self.assertEqual(
+            metallic_call["emit_sources"]["multi_principled_material"]["color_default"],
+            (0.90, 0.90, 0.90, 1.0),
+        )
+        restored_links = list(material.node_tree.links)
+        self.assertEqual(len(restored_links), 1)
+        self.assertIs(restored_links[0].from_socket, linked_principled.outputs["BSDF"])
+        self.assertIs(restored_links[0].to_socket, material.output.inputs["Surface"])
 
     def test_bake_object_maps_warns_for_missing_slots_but_targets_available_node_materials(self):
         node_material = FakeMaterial("node_material")

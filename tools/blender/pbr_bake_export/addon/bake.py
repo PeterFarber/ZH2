@@ -121,7 +121,20 @@ def _socket_links(socket) -> list[object]:
     return list(getattr(socket, "links", []) or [])
 
 
-def _find_principled_bsdf(nodes):
+def _linked_node(socket):
+    links = _socket_links(socket)
+    if not links:
+        return None
+    return getattr(links[0].from_socket, "node", None)
+
+
+def _find_principled_bsdf(nodes, output=None):
+    if output is not None:
+        surface_input = _socket_by_name(getattr(output, "inputs", None), "Surface")
+        surface_node = _linked_node(surface_input)
+        if _node_matches(surface_node, "BSDF_PRINCIPLED", "ShaderNodeBsdfPrincipled"):
+            return surface_node
+
     for node in nodes:
         if _node_matches(node, "BSDF_PRINCIPLED", "ShaderNodeBsdfPrincipled"):
             return node
@@ -193,8 +206,8 @@ def _configure_emit_source_nodes(materials: list[object], source_input_name: str
             if node_tree is None or nodes is None or links is None:
                 continue
 
-            principled = _find_principled_bsdf(nodes)
             output = _find_material_output(nodes)
+            principled = _find_principled_bsdf(nodes, output)
             if principled is None or output is None:
                 continue
 
