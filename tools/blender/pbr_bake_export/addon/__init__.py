@@ -10,10 +10,19 @@ bl_info = {
     "category": "Import-Export",
 }
 
+from . import operators, panel, preferences
+
+
+MODULES = (preferences, operators, panel)
+
 
 def register():
     """Register Blender addon types."""
+    for module in MODULES:
+        module.register()
 
 
 def unregister():
     """Unregister Blender addon types."""
+    for module in reversed(MODULES):
+        module.unregister()
