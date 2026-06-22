@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterator
-from urllib.parse import quote, urlencode, urlsplit
+from urllib.parse import quote, unquote, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from .types import TextureResolution
@@ -17,6 +17,10 @@ API_ROOT = "https://api.polyhaven.com"
 REQUIRED_ROLES = ("basecolor", "normal", "roughness", "metallic", "ao")
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _DOWNLOAD_URL_SCHEMES = {"http", "https"}
+_DOWNLOAD_FORMAT_TOKENS = {"png", "jpg", "jpeg"}
+_NORMAL_BASE_TOKENS = {"nor", "normal", "nrm"}
+_NORMAL_GL_TOKENS = {"gl", "opengl"}
+_NORMAL_DX_TOKENS = {"dx", "directx"}
 _ROLE_TOKEN_SEQUENCES = (
     ("basecolor", ("diff",)),
     ("basecolor", ("diffuse",)),
@@ -62,6 +66,7 @@ class _TextureCandidate:
     file_format: str
     url: str
     labels: tuple[str, ...]
+    normal_preference: int
 
 
 def _tokens(value: str) -> list[str]:
@@ -86,6 +91,82 @@ def _is_resolution_token(token: str) -> bool:
     return token == "test" or bool(re.fullmatch(r"\d+k", token))
 
 
+def _is_container_label(label: str) -> bool:
+    tokens = _tokens(label)
+    return not tokens or all(token.isdigit() or _is_resolution_token(token) or token in _DOWNLOAD_FORMAT_TOKENS for token in tokens)
+
+
+def _role_label_tokens(label: str) -> list[str]:
+    return [
+        token
+        for token in _tokens(label)
+        if not token.isdigit() and not _is_resolution_token(token) and token not in _DOWNLOAD_FORMAT_TOKENS
+    ]
+
+
+def _match_role_label(label: str) -> str:
+    tokens = _role_label_tokens(label)
+    for role, sequence in _ROLE_TOKEN_SEQUENCES:
+        sequence_length = len(sequence)
+        if tuple(tokens[:sequence_length]) != sequence:
+            continue
+        remaining = tokens[sequence_length:]
+        if not remaining or (role == "normal" and all(token in _NORMAL_GL_TOKENS | _NORMAL_DX_TOKENS for token in remaining)):
+            return role
+    return ""
+
+
+def _url_basename(url: str) -> str:
+    try:
+        path = urlsplit(url).path
+    except ValueError:
+        return ""
+    return Path(unquote(path)).name
+
+
+def _record_role(labels: tuple[str, ...], url: str) -> str:
+    if labels and not _is_container_label(labels[-1]):
+        if Path(labels[-1]).suffix:
+            role = match_texture_role(labels[-1])
+        else:
+            role = _match_role_label(labels[-1])
+        if role:
+            return role
+
+    for label in reversed(labels[:-1]):
+        if _is_container_label(label):
+            continue
+        role = _match_role_label(label)
+        if role:
+            return role
+
+    basename = _url_basename(url)
+    if basename and not _is_container_label(basename):
+        return match_texture_role(basename)
+    return ""
+
+
+def _normal_preference(labels: tuple[str, ...], url: str) -> int:
+    tokens: list[str] = []
+    for label in labels:
+        if not _is_container_label(label):
+            tokens.extend(_role_label_tokens(label))
+    basename = _url_basename(url)
+    if basename and not _is_container_label(basename):
+        tokens.extend(_role_label_tokens(basename))
+
+    preference = 1
+    for index, token in enumerate(tokens[:-1]):
+        if token not in _NORMAL_BASE_TOKENS:
+            continue
+        next_token = tokens[index + 1]
+        if next_token in _NORMAL_GL_TOKENS:
+            return 0
+        if next_token in _NORMAL_DX_TOKENS:
+            preference = 2
+    return preference
+
+
 def _record_resolution(labels: tuple[str, ...]) -> str:
     for label in labels[:-1]:
         for token in _tokens(label):
@@ -98,13 +179,21 @@ def _record_resolution(labels: tuple[str, ...]) -> str:
     return ""
 
 
-def _record_format(labels: tuple[str, ...]) -> str:
+def _record_format(labels: tuple[str, ...], url: str) -> str:
     if labels:
         suffix = Path(labels[-1]).suffix.lower().lstrip(".")
         if suffix:
             return suffix
     for label in labels:
         for token in _tokens(label):
+            if token in _FORMAT_PREFERENCE:
+                return token
+    basename = _url_basename(url)
+    if basename:
+        suffix = Path(basename).suffix.lower().lstrip(".")
+        if suffix:
+            return suffix
+        for token in _tokens(basename):
             if token in _FORMAT_PREFERENCE:
                 return token
     return ""
@@ -131,7 +220,7 @@ def _resolution_label(resolution: TextureResolution) -> str:
 
 def _requested_candidate_key(candidate: _TextureCandidate) -> tuple[int, str, str]:
     labels = "/".join(candidate.labels)
-    return (_FORMAT_PREFERENCE.get(candidate.file_format, 99), labels, candidate.url)
+    return (candidate.normal_preference, labels, candidate.url)
 
 
 def _fallback_resolution_key(resolution_label: str) -> tuple[int, int | str]:
@@ -151,7 +240,7 @@ def _fallback_candidate_key(candidate: _TextureCandidate) -> tuple[tuple[int, in
     labels = "/".join(candidate.labels)
     return (
         _fallback_resolution_key(candidate.resolution_label),
-        _FORMAT_PREFERENCE.get(candidate.file_format, 99),
+        candidate.normal_preference,
         labels,
         candidate.url,
     )
@@ -168,14 +257,18 @@ def select_texture_files(
 
     for labels, record in _iter_file_records(file_tree):
         url = str(record["url"])
-        role = match_texture_role(labels[-1] if labels else "")
+        file_format = _record_format(labels, url)
+        if file_format != "png":
+            continue
+        role = _record_role(labels, url)
         if not role:
             continue
         candidate = _TextureCandidate(
             resolution_label=_record_resolution(labels),
-            file_format=_record_format(labels),
+            file_format=file_format,
             url=url,
             labels=labels,
+            normal_preference=_normal_preference(labels, url),
         )
         fallback_candidates.setdefault(role, []).append(candidate)
         if candidate.resolution_label == requested_label:
@@ -229,8 +322,20 @@ def _safe_download_path(cache_dir: Path, cache_root: Path, prefix: str, role: st
     return path
 
 
+def _contains_whitespace_or_control(value: str) -> bool:
+    return any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in value)
+
+
+def _raw_url_authority(url: str) -> str:
+    scheme_separator = url.find("://")
+    if scheme_separator < 0:
+        return ""
+    return re.split(r"[/?#]", url[scheme_separator + 3 :], maxsplit=1)[0]
+
+
 def _validate_download_url(role: str, url: str) -> str:
     clean = url.strip()
+    raw_authority = _raw_url_authority(clean)
     try:
         parts = urlsplit(clean)
     except ValueError as exc:
@@ -244,6 +349,15 @@ def _validate_download_url(role: str, url: str) -> str:
         raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
     if not hostname or hostname.strip() != hostname:
         raise PolyhavenError(f"invalid download URL for texture role {role}: missing or blank host")
+    decoded_hostname = unquote(hostname)
+    if (
+        not decoded_hostname
+        or decoded_hostname.strip() != decoded_hostname
+        or _contains_whitespace_or_control(hostname)
+        or _contains_whitespace_or_control(decoded_hostname)
+        or _contains_whitespace_or_control(raw_authority)
+    ):
+        raise PolyhavenError(f"invalid download URL for texture role {role}: invalid host")
     return clean
 
 

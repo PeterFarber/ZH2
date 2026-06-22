@@ -136,6 +136,36 @@ class PolyhavenTests(unittest.TestCase):
         self.assertEqual(reversed_selection.urls["basecolor"], "https://cdn/4k/basecolor.png")
         self.assertEqual(first_selection.urls, reversed_selection.urls)
 
+    def test_select_texture_files_handles_live_polyhaven_role_key_shape(self):
+        file_tree = {
+            "Diffuse": {"4k": {"png": {"url": "https://cdn/diff.png"}}},
+            "nor_gl": {"4k": {"png": {"url": "https://cdn/nor_gl.png"}}},
+            "nor_dx": {"4k": {"png": {"url": "https://cdn/nor_dx.png"}}},
+            "Rough": {"4k": {"png": {"url": "https://cdn/rough.png"}}},
+            "Metal": {"4k": {"png": {"url": "https://cdn/metal.png"}}},
+            "AO": {"4k": {"png": {"url": "https://cdn/ao.png"}}},
+        }
+
+        selection = select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
+
+        self.assertEqual(selection.urls["basecolor"], "https://cdn/diff.png")
+        self.assertEqual(selection.urls["normal"], "https://cdn/nor_gl.png")
+        self.assertEqual(selection.urls["roughness"], "https://cdn/rough.png")
+        self.assertEqual(selection.urls["metallic"], "https://cdn/metal.png")
+        self.assertEqual(selection.urls["ao"], "https://cdn/ao.png")
+
+    def test_select_texture_files_requires_png_records_for_v1_downloads(self):
+        file_tree = {
+            "Diffuse": {"4k": {"jpg": {"url": "https://cdn/diff.jpg"}}},
+            "nor_gl": {"4k": {"jpg": {"url": "https://cdn/nor_gl.jpg"}}},
+            "Rough": {"4k": {"jpeg": {"url": "https://cdn/rough.jpeg"}}},
+            "Metal": {"4k": {"jpg": {"url": "https://cdn/metal.jpg"}}},
+            "AO": {"4k": {"jpg": {"url": "https://cdn/ao.jpg"}}},
+        }
+
+        with self.assertRaises(PolyhavenError):
+            select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
+
     def test_files_for_asset_url_encodes_asset_id_path_segment(self):
         fetcher = FakeFetcher()
         client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
@@ -304,6 +334,9 @@ class PolyhavenTests(unittest.TestCase):
             ("https://user:pass@/x", "missing or blank host"),
             ("https:// /x", "missing or blank host"),
             ("https://example.com:bad/x", "Port could not be cast"),
+            ("https://exa mple.com/x", "invalid host"),
+            ("https://%20/x", "invalid host"),
+            ("https://example.com\t/x", "invalid host"),
         )
         for url, expected_error in cases:
             with self.subTest(url=url):
