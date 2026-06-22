@@ -12,11 +12,17 @@ class TextureResolution(Enum):
     EIGHT_K = ("8K", 8192)
     TEST = ("Test 128", 128)
 
-    def __new__(cls, label: str, pixel_size: int):
-        value = object.__new__(cls)
-        value._value_ = label
-        value.pixel_size = pixel_size
-        return value
+    def __init__(self, label: str, pixel_size: int):
+        self._label = label
+        self._pixel_size = pixel_size
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def pixel_size(self) -> int:
+        return self._pixel_size
 
 
 class AssetMode(Enum):
@@ -25,7 +31,7 @@ class AssetMode(Enum):
 
 
 class MaterialSource(Enum):
-    BLENDER = "Blender"
+    EXISTING = "Existing Material"
     POLY_HAVEN = "Poly Haven"
 
 
