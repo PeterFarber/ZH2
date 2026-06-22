@@ -9,7 +9,7 @@ docs/phase-plans/phase-07-hockey-gameplay.md
 AI instruction:
 
 ```text
-Read `docs/phase-plans/phase-07-hockey-gameplay.md` and implement Phase 7 exactly. Build the complete local/headless hockey gameplay simulation on top of the existing core, ECS, asset, renderer, editor, and physics systems. Do not implement GameNetworkingSockets transport, online lobby networking, replication protocol, final animation runtime, final audio runtime, or final game UI during this phase. Gameplay must be server-authoritative-ready, fixed-tick, deterministic-minded, and independent from SDL, Vulkan, ImGui, and networking transport. Keep the dedicated server headless and keep Windows/Linux compatibility.
+Read `GAMEPLAY.md` and `docs/phase-plans/phase-07-hockey-gameplay.md`, then implement Phase 7 exactly. Build the complete local/headless hockey gameplay simulation on top of the existing core, ECS, asset, renderer, editor, and physics systems. Do not implement GameNetworkingSockets transport, online lobby networking, replication protocol, final animation runtime, final audio runtime, or final game UI during this phase. Gameplay must be server-authoritative-ready, fixed-tick, deterministic-minded, and independent from SDL, Vulkan, ImGui, and networking transport. Keep the dedicated server headless and keep Windows/Linux compatibility.
 ```
 
 ---
@@ -31,19 +31,26 @@ team assignment
 role assignment
 spawn assignment
 faceoffs
-period clock
+pregame countdown
+period clock with 3 periods at 180 seconds each
 score
 goal detection
 reset flow
 player movement model
 goalie movement model
+waypoint movement and clearing
+skater boost impulses
+goalie boost charges
+goalie shield
 stick handling
 puck possession/contact model
+contextual steal/shoot actions
 shooting
 passing
 checking/body-contact hooks
+role-specific collider/trigger authoring
 out-of-play handling
-gameplay input model independent from SDL
+semantic gameplay input model independent from SDL
 server-authoritative-ready fixed tick simulation
 editor validation and preview hooks
 client local play path
@@ -86,6 +93,8 @@ final polished game UI/HUD
 ```
 
 This phase must make the gameplay simulation complete enough that Phase 8 can wrap it in networking rather than rewriting it.
+
+`GAMEPLAY.md` is the player-facing gameplay design source for action behavior. This plan owns implementation shape, dependency boundaries, tests, and phase verification. When these files differ, update the plan/rules/status in the same change as the gameplay design update.
 
 ---
 
@@ -508,8 +517,10 @@ struct GameplaySettings {
 
     float fixedDeltaSeconds = 1.0f / 60.0f;
 
-    float periodLengthSeconds = 300.0f;
+    float periodLengthSeconds = 180.0f;
     uint32_t periodCount = 3;
+    float pregameCountdownSeconds = 10.0f;
+    float countdownBeepStartSeconds = 4.0f;
 
     bool stopClockAfterGoal = true;
     bool autoFaceoffAfterGoal = true;
@@ -554,8 +565,10 @@ authoritative = true
 target_player_count = 8
 skaters_per_team = 3
 goalies_per_team = 1
-period_length_seconds = 300.0
+period_length_seconds = 180.0
 period_count = 3
+pregame_countdown_seconds = 10.0
+countdown_beep_start_seconds = 4.0
 log_gameplay_events = true
 ```
 
@@ -583,14 +596,26 @@ Skater:
   Acceleration: 32.0
   Deceleration: 20.0
   TurnSpeedDegrees: 720.0
-  SprintMultiplier: 1.2
+  BoostImpulse: 7.5
+  BoostCooldownSeconds: 1.25
+  SlideStopDamping: 0.35
+  DoubleStopWindowSeconds: 0.30
   PuckControlRadius: 1.25
+  StealRadius: 1.5
+  StealCooldownSeconds: 0.35
 
 Goalie:
   MaxSpeed: 6.5
   Acceleration: 28.0
   CreaseMoveMultiplier: 1.0
   SaveReachRadius: 1.8
+  BoostCharges: 2
+  BoostRechargeSeconds: 4.0
+  BoostImpulse: 8.0
+  ShieldRadius: 2.0
+  ShieldDurationSeconds: 1.0
+  ShieldCooldownSeconds: 5.0
+  ShieldReflectImpulse: 22.0
 
 Puck:
   MaxSpeed: 45.0
@@ -625,7 +650,9 @@ Rules should include:
 ```yaml
 Match:
   PeriodCount: 3
-  PeriodLengthSeconds: 300.0
+  PeriodLengthSeconds: 180.0
+  PregameCountdownSeconds: 10.0
+  CountdownBeepStartSeconds: 4.0
   SkatersPerTeam: 3
   GoaliesPerTeam: 1
 
@@ -720,7 +747,7 @@ struct MatchStateComponent {
     uint32_t period = 1;
     uint32_t periodCount = 3;
 
-    float periodTimeRemaining = 300.0f;
+    float periodTimeRemaining = 180.0f;
     float phaseTimer = 0.0f;
 
     uint32_t homeScore = 0;
@@ -730,6 +757,10 @@ struct MatchStateComponent {
     bool matchInitialized = false;
 };
 ```
+
+`MatchPhase::Warmup` represents the 10-second pregame countdown. It locks
+player movement and puck interaction, emits countdown tick/beep events, then
+transitions to `FaceoffSetup`.
 
 ## 5.3 Team State
 
@@ -764,6 +795,8 @@ Implement:
 enum class GameplayEventType {
     MatchInitialized,
     MatchStarted,
+    CountdownTick,
+    CountdownBeep,
     PeriodStarted,
     PeriodEnded,
     FaceoffStarted,
@@ -771,6 +804,10 @@ enum class GameplayEventType {
     GoalScored,
     ScoreChanged,
     PuckPossessionChanged,
+    StealAttempted,
+    PlayerBoosted,
+    GoalieShieldStarted,
+    GoalieShieldEnded,
     PuckShot,
     PuckPassed,
     PlayerChecked,
@@ -815,8 +852,20 @@ struct GameplayInputFrame {
 
     glm::vec2 move{0.0f};
     glm::vec2 aim{0.0f};
+    glm::vec3 moveTarget{0.0f};
 
-    bool sprint = false;
+    bool setMoveTarget = false;
+    bool clearMoveTarget = false;
+
+    bool stealPressed = false;
+    bool stealHeld = false;
+    bool stealReleased = false;
+
+    bool boostPressed = false;
+    bool brakePressed = false;
+    bool brakeHeld = false;
+    bool quickTurnPressed = false;
+
     bool shootPressed = false;
     bool shootHeld = false;
     bool shootReleased = false;
@@ -829,7 +878,7 @@ struct GameplayInputFrame {
     bool pokeCheckPressed = false;
     bool switchPlayerPressed = false;
 
-    bool goalieActionPressed = false;
+    bool goalieShieldPressed = false;
     bool pausePressed = false;
 };
 ```
@@ -853,8 +902,10 @@ Rules:
 ```text
 Gameplay receives input per fixed tick.
 Input is independent from SDL.
+Input represents semantic gameplay actions, not mouse/key names.
 Input sequence fields prepare for Phase 8 networking.
 No networking code is implemented in Phase 7.
+Client mapping follows `GAMEPLAY.md`: left click is contextual steal without puck and shot charge/release with puck, right click sets a waypoint, Z boosts, X quick-turns skaters or shields goalies, and S brakes/clears waypoint/double-tap stops.
 ```
 
 ## 6.4 Client Input Translation
@@ -910,11 +961,19 @@ struct GoalieComponent {
 struct PlayerRuntimeComponent {
     glm::vec3 velocity{0.0f};
     glm::vec3 facingDirection{0.0f, 0.0f, 1.0f};
+    glm::vec3 moveTarget{0.0f};
 
-    float sprintEnergy = 1.0f;
+    float boostCooldown = 0.0f;
+    uint32_t goalieBoostCharges = 2;
+    float goalieBoostRechargeTimer = 0.0f;
+    float shieldTimer = 0.0f;
+    float shieldCooldown = 0.0f;
+    float lastBrakePressedTime = -1000.0f;
     float checkCooldown = 0.0f;
     float pokeCheckCooldown = 0.0f;
 
+    bool hasMoveTarget = false;
+    bool shieldActive = false;
     bool inputEnabled = true;
     bool movementEnabled = true;
 };
@@ -1208,7 +1267,8 @@ spawn/create player entities if needed
 assign players to slots
 place players at spawn points
 place puck at faceoff/puck spawn
-set phase to FaceoffSetup or Warmup
+first match start sets phase to Warmup for the 10-second countdown
+goal/reset flow sets phase to FaceoffSetup after reset placement
 emit MatchInitialized
 ```
 
@@ -1467,11 +1527,17 @@ public:
 Movement behavior:
 
 ```text
-input move vector controls desired skating direction
+input move vector controls desired skating direction when no waypoint is active
+right-click/setMoveTarget moves player toward a waypoint on the ice plane
+reaching waypoint clears target
+brakePressed clears current waypoint
+double-tap brake within tuning window fully stops player
+quickTurnPressed clears current waypoint
 acceleration toward desired velocity
 deceleration when no input
 max speed clamp
-sprint multiplier if enabled
+boostPressed applies a short impulse in facing direction
+boost cooldown prevents repeated impulse spam
 turn/facing direction follows aim or movement
 movement disabled during faceoff lock/reset
 write velocity/force to physics body
@@ -1517,7 +1583,10 @@ Behavior:
 goalie uses movement input
 lower max speed than skater
 can be constrained to crease if lockToCrease enabled
-goalie action can trigger save reach/check style interaction
+boostPressed consumes one of two goalie boost charges
+goalie boost charges recharge one at a time every 4 seconds
+goalieShieldPressed activates temporary shield if off cooldown
+goalie shield reflects pucks and bounces players inside its sphere
 goalie can block puck physically
 ```
 
@@ -1575,7 +1644,7 @@ Only one player can possess puck.
 Puck possession follows stick/control radius.
 Possession sets PuckGameplayComponent state to Possessed.
 Possessed puck position follows player/stick offset.
-Shot/pass/check releases possession.
+Shot/pass/steal/check/goal/reset/out-of-play releases possession.
 Loose puck can be touched/controlled.
 ```
 
@@ -1625,8 +1694,8 @@ public:
 Behavior:
 
 ```text
-shootHeld charges shot
-shootReleased shoots if player has puck or puck is in stick range
+shootPressed/shootHeld charges only while player has puck
+shootReleased shoots only if player has puck
 shot direction uses aim vector/facing direction
 shot power depends on charge
 shot releases possession
@@ -1697,6 +1766,7 @@ Implement:
 class CheckingSystem {
 public:
     static void TryBodyCheck(Scene& scene, PhysicsWorld& physics, Entity player, const GameplayInputFrame& input, const GameplayTuning& tuning);
+    static void TrySteal(Scene& scene, PhysicsWorld& physics, Entity player, Entity puck, const GameplayInputFrame& input, const GameplayTuning& tuning);
     static void TryPokeCheck(Scene& scene, PhysicsWorld& physics, Entity player, Entity puck, const GameplayInputFrame& input, const GameplayTuning& tuning);
 };
 ```
@@ -1704,12 +1774,17 @@ public:
 Behavior:
 
 ```text
+stealPressed/stealHeld attempts puck-first steal when player does not possess puck
+steal uses stick/control volume in front of player
+steal has cooldown even on failed attempts
+steal can release opponent possession when in range
 body check has cooldown
 body check applies impulse/interaction to nearby opposing player
 poke check has cooldown
 poke check can knock puck loose if in stick range
 checking disabled if settings disallow body checking
 emit PlayerChecked
+emit StealAttempted when useful for feedback/presentation
 ```
 
 No penalties system yet unless trivially represented as future field.
@@ -1946,6 +2021,9 @@ puck missing physics body/collider
 goal trigger missing trigger collider
 player missing rigid body/capsule
 goalie missing rigid body/capsule
+skater-only collider has player/skater filtering
+goalie-only collider has goalie filtering
+goal trigger detects puck and ignores non-puck scoring
 ```
 
 Integrate with:
@@ -2067,11 +2145,14 @@ No final game UI is required.
 Minimum temporary controls:
 
 ```text
-WASD/left stick movement
+WASD/left stick direct movement fallback
 mouse/right stick aim
-shoot button/key
+right click set waypoint
+left click contextual steal or shot charge/release
 pass button/key
-check button/key
+Z boost
+X skater slide stop / goalie shield
+S brake, clear waypoint, double-tap full stop
 reset match key for development
 ```
 
@@ -2196,6 +2277,8 @@ Test:
 
 ```text
 input frame stores move/aim/actions
+input frame stores move target set/clear actions
+input frame stores semantic steal/boost/brake/quick-turn/goalie-shield actions
 input buffer stores per-player input
 latest input retrieved
 clear for tick works
@@ -2208,9 +2291,13 @@ Test:
 
 ```text
 movement input accelerates skater
+waypoint target moves skater toward target
+brake clears waypoint
+double-tap brake fully stops skater
 no input decelerates skater
 speed clamps to max speed
-sprint increases target speed
+boost applies impulse and respects cooldown
+quick turn clears waypoint and damps velocity
 facing direction updates
 movement disabled blocks movement
 ```
@@ -2223,7 +2310,12 @@ Test:
 goalie movement works
 goalie max speed lower than skater
 crease lock constrains movement
-goalie action path works
+goalie starts with two boost charges
+goalie boost consumes one charge
+goalie boost recharges one charge every 4 seconds
+goalie shield starts, expires, and respects cooldown
+goalie shield reflects puck
+goalie shield bounces players
 ```
 
 ## 29.8 PuckInteractionTests
@@ -2257,6 +2349,7 @@ Test:
 shoot charge increases while held
 shoot release applies puck velocity
 shoot releases possession
+left click with possession maps to charge/release shot in client input
 shot direction follows aim
 shot power clamps
 PuckShot event emitted
@@ -2281,9 +2374,13 @@ Test:
 ```text
 body check cooldown works
 body check affects nearby opponent
+left click without possession attempts steal in client input
+steal releases opponent possession when in range
+steal cooldown applies on failed attempts
 poke check can release puck
 checking disabled setting prevents body check
 PlayerChecked event emitted
+StealAttempted event emitted when useful
 ```
 
 ## 29.13 GoalDetectionTests
@@ -2331,7 +2428,13 @@ Test:
 ```text
 clock starts in Playing
 clock does not run in Faceoff
+pregame countdown starts at 10 seconds
+pregame countdown locks player movement and puck interaction
+pregame countdown emits tick events every second
+pregame countdown emits beep events for the last 4 seconds
+pregame countdown transitions to faceoff setup
 clock stops after goal if enabled
+period starts at 180 seconds
 period ends at zero
 match ends after final period
 ```
@@ -2362,6 +2465,9 @@ missing spawn error
 invalid role/team error
 goal trigger missing warning/error
 puck physics setup invalid warning/error
+skater-only collider authoring works
+goalie-only collider authoring works
+goal trigger scores only puck
 ```
 
 ## 29.19 GameplaySnapshotTests
@@ -2483,22 +2589,29 @@ Implement in this exact order.
 ```text
 1. Add MatchClock.
 2. Add PeriodSystem.
-3. Add FaceoffSystem.
-4. Add ResetSystem.
-5. Add PeriodClockTests.
-6. Add FaceoffTests.
-7. Add ResetSystemTests.
+3. Add pregame countdown state/events.
+4. Add FaceoffSystem.
+5. Add ResetSystem.
+6. Add PeriodClockTests, including 180-second period defaults.
+7. Add pregame countdown tests.
+8. Add FaceoffTests.
+9. Add ResetSystemTests.
 ```
 
-## Step 8 — Player and Goalie Movement
+## Step 8 — Player and Goalie Movement / Abilities
 
 ```text
 1. Add PlayerMovement.
 2. Add SkaterController.
 3. Add GoalieController.
 4. Apply movement to physics bodies.
-5. Add SkaterMovementTests.
-6. Add GoalieMovementTests.
+5. Add waypoint set/clear behavior.
+6. Add skater boost impulse and cooldown.
+7. Add S double-tap stop.
+8. Add goalie boost charges and recharge.
+9. Add goalie shield state, reflection, and bounce response.
+10. Add SkaterMovementTests.
+11. Add GoalieMovementTests.
 ```
 
 ## Step 9 — Puck, Stick, Shot, Pass, Check
@@ -2509,12 +2622,12 @@ Implement in this exact order.
 3. Add StickHandling.
 4. Add ShootingSystem.
 5. Add PassingSystem.
-6. Add CheckingSystem.
+6. Add CheckingSystem with explicit steal action.
 7. Add PuckInteractionTests.
 8. Add StickHandlingTests.
 9. Add ShootingTests.
 10. Add PassingTests.
-11. Add CheckingTests.
+11. Add CheckingTests and StealTests if split out.
 ```
 
 ## Step 10 — Goal, Score, Out-of-Play
@@ -2553,10 +2666,11 @@ Implement in this exact order.
 2. Initialize gameplay and physics.
 3. Initialize local match.
 4. Translate local input to GameplayInputFrame in client code.
-5. Feed input to GameplayWorld.
-6. Run fixed gameplay simulation.
-7. Render resulting scene.
-8. Add temporary reset/development controls.
+5. Map local controls according to `GAMEPLAY.md` contextual action rules.
+6. Feed input to GameplayWorld.
+7. Run fixed gameplay simulation.
+8. Render resulting scene.
+9. Add temporary reset/development controls.
 ```
 
 ## Step 14 — Server Integration
@@ -2661,17 +2775,27 @@ spawn assignment works
 puck setup works
 faceoff works
 period clock works
+3x180-second period defaults work
+pregame countdown works
+countdown tick/beep gameplay events work
 score works
 goal detection works
 reset flow works
 out-of-play handling works
 skater movement works
+skater boost impulse works
+S clears waypoint and double-tap stops
 goalie movement works
+goalie two-charge boost works
+goalie shield reflects puck and bounces players
 stick control works
 puck possession works
+contextual left-click steal-or-shot behavior works
 shooting works
 passing works
 checking/poke check hooks work
+role-specific skater-only and goalie-only collider authoring works
+goal trigger scoring is puck-only
 gameplay snapshots work
 client can run local gameplay
 editor can validate gameplay scene

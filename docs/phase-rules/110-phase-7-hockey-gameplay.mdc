@@ -22,7 +22,9 @@ hockey_gameplay -> hockey_core, hockey_ecs, hockey_physics
 
 ## Required gameplay model
 
-Implement 4v4 hockey with 2 teams, 3 skaters + 1 goalie per team, 1 puck, 2 goals, periods/timer, score, faceoffs, goals, spawn/reset flow.
+Implement arcade 4v4 hockey with 2 teams, 3 skaters + 1 goalie per team, 1 puck, 2 goals, 3 periods at 180 seconds each, score, faceoffs, goals, spawn/reset flow, and the `GAMEPLAY.md` action model.
+
+The match starts with a 10-second pregame countdown. Gameplay emits countdown tick events every second and countdown beep events for the final 4 seconds. Gameplay does not play audio directly; Phase 9 presentation systems consume those events.
 
 ## Required components
 
@@ -30,11 +32,15 @@ Implement `PlayerComponent`, `SkaterComponent`, `GoalieComponent`, `PuckGameplay
 
 ## Required systems
 
-Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, shooting, passing, checking/contact, goal detection, score, match clock, periods, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
+Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, contextual steal/shoot input, charged shooting, passing, checking/contact, skater boost impulses, goalie two-charge boosts, goalie shield, goal detection, score, match clock, periods, pregame countdown, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
 
 ## Input model
 
-Define gameplay input data independent from SDL. Gameplay must not directly read SDL input.
+Define semantic gameplay input data independent from SDL. Gameplay must not directly read SDL input or infer behavior from mouse/key names.
+
+Required input concepts include move/aim, set or clear move target, steal pressed/held/released, shoot pressed/held/released, pass actions, boost pressed, brake held/pressed, quick turn pressed, goalie shield pressed, switch player, and pause.
+
+Client input translation maps local controls from `GAMEPLAY.md`: left click is contextual steal without puck and shot charge/release with puck; right click sets a waypoint; Z boosts; X quick-turns skaters and shields goalies; S brakes, clears waypoints, and double-tap stops.
 
 ## Server-readiness
 
@@ -42,8 +48,8 @@ Gameplay must use fixed timestep, have no renderer/editor dependency, no direct 
 
 ## Required tests
 
-Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, skater/goalie movement, shooting/pass/check paths, and server-mode fixed tick.
+Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, 180-second periods, pregame countdown events, skater/goalie movement, contextual steal/shoot paths, shooting/pass/check paths, skater boost impulses, goalie boost charges, goalie shield reflection/bounce, waypoint clearing, S double-tap stop, role-specific collider authoring, and server-mode fixed tick.
 
 ## Definition of done
 
-Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/shooting/passing/checking/faceoffs work, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.
+Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/shooting/passing/checking/faceoffs work, the `GAMEPLAY.md` action model is implemented or explicitly tracked as follow-up, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.
