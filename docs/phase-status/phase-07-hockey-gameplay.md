@@ -95,6 +95,7 @@ Source material:
 - [x] Checking/poke check hooks exist.
 - [x] Explicit steal action exists.
 - [x] Contextual left-click steal-or-shot mapping exists in local client/editor preview input translation.
+- [x] Local client/editor preview shots aim toward the mouse cursor projected onto the ice.
 
 ## Finished - World, Snapshots, Integration
 

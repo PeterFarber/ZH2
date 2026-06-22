@@ -76,4 +76,14 @@ void RunInputModelTests() {
     buffer.PushInput(input);
     buffer.Reset();
     HK_CHECK_EQ(buffer.Size(), static_cast<std::size_t>(0));
+
+    glm::vec2 aim{0.0f};
+    HK_CHECK(TryBuildAimFromWorldTarget({2.0f, 1.0f, 3.0f}, {5.0f, 0.0f, 7.0f}, aim));
+    HK_CHECK_NEAR(aim.x, 0.6f, 0.0001f);
+    HK_CHECK_NEAR(aim.y, 0.8f, 0.0001f);
+
+    aim = {0.25f, 0.5f};
+    HK_CHECK(!TryBuildAimFromWorldTarget({1.0f, 0.0f, 1.0f}, {1.0f, 2.0f, 1.0f}, aim));
+    HK_CHECK_NEAR(aim.x, 0.25f, 0.0001f);
+    HK_CHECK_NEAR(aim.y, 0.5f, 0.0001f);
 }

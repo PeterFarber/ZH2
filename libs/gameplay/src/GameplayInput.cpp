@@ -1,6 +1,17 @@
 #include "Hockey/Gameplay/GameplayInput.hpp"
 
+#include <glm/geometric.hpp>
+
 namespace Hockey {
+
+bool TryBuildAimFromWorldTarget(glm::vec3 sourcePosition, glm::vec3 targetPosition, glm::vec2& outAim) {
+    const glm::vec2 delta{targetPosition.x - sourcePosition.x, targetPosition.z - sourcePosition.z};
+    if (glm::dot(delta, delta) <= 0.0001f) {
+        return false;
+    }
+    outAim = glm::normalize(delta);
+    return true;
+}
 
 void GameplayInputBuffer::PushInput(const GameplayInputFrame& input) {
     auto it = m_LatestByPlayer.find(input.playerIndex);

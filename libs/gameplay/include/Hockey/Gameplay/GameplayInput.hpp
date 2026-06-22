@@ -44,6 +44,8 @@ struct GameplayInputFrame {
     bool pausePressed = false;
 };
 
+bool TryBuildAimFromWorldTarget(glm::vec3 sourcePosition, glm::vec3 targetPosition, glm::vec2& outAim);
+
 class GameplayInputBuffer {
 public:
     void PushInput(const GameplayInputFrame& input);

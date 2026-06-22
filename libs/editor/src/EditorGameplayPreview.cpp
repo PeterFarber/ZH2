@@ -173,6 +173,11 @@ void EditorGameplayPreview::SetMoveTarget(const glm::vec3& target) {
     m_HasMoveTarget = true;
 }
 
+void EditorGameplayPreview::SetAimTarget(const glm::vec3& target) {
+    m_AimTarget = target;
+    m_HasAimTarget = true;
+}
+
 Status EditorGameplayPreview::SaveAuthoringSnapshot(Scene& scene) {
     const std::filesystem::path dir = Paths::DataFile("temp/editor_gameplay_preview");
     if (Status created = FileSystem::CreateDirectories(dir); !created) {
@@ -246,6 +251,14 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(Scene& scene, std::uin
     const bool leftHeld = Input::IsMouseButtonDown(MouseButton::Left);
     const bool leftReleased = Input::WasMouseButtonReleased(MouseButton::Left);
     if (localHasPuck) {
+        if ((leftPressed || leftHeld || leftReleased) && m_HasAimTarget &&
+            localPlayer.HasComponent<TransformComponent>()) {
+            glm::vec2 targetAim{0.0f};
+            if (TryBuildAimFromWorldTarget(localPlayer.GetComponent<TransformComponent>().localPosition, m_AimTarget,
+                                           targetAim)) {
+                input.aim = targetAim;
+            }
+        }
         input.shootPressed = leftPressed;
         input.shootHeld = leftHeld;
         input.shootReleased = leftReleased;

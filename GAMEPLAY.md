@@ -129,6 +129,8 @@ Left click while holding puck charges and releases a shot.
 - Press starts charge.
 - Hold increases charge up to a tuned maximum.
 - Release shoots in aim direction or facing direction if no aim exists.
+- In local client/editor preview, the mouse cursor projected onto the ice is the
+  primary shot aim while pressing, holding, or releasing left click.
 - Shot releases possession.
 - Shot sets puck state to `Shot`.
 - The shooter has a short tuned grace window after release where the puck cannot

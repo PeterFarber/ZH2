@@ -344,6 +344,15 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     const bool leftHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
     const bool leftReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
     if (localHasPuck) {
+        if ((leftPressed || leftHeld || leftReleased) && localPlayer.HasComponent<Hockey::TransformComponent>()) {
+            glm::vec3 aimTarget{0.0f};
+            glm::vec2 mouseAim{0.0f};
+            if (ProjectMouseToIcePlane(m_Scene, GetWindow().Width(), GetWindow().Height(), aimTarget) &&
+                Hockey::TryBuildAimFromWorldTarget(localPlayer.GetComponent<Hockey::TransformComponent>().localPosition,
+                                                   aimTarget, mouseAim)) {
+                input.aim = mouseAim;
+            }
+        }
         input.shootPressed = leftPressed;
         input.shootHeld = leftHeld;
         input.shootReleased = leftReleased;

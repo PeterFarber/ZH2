@@ -219,11 +219,13 @@ void GameViewportPanel::DrawViewport(EditorContext& context) {
         const bool gameViewActive = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) || imageHovered;
         context.gameplayView.gameInputActive =
             context.playMode && hasCamera && gameViewActive && !ImGui::GetIO().WantTextInput;
-        if (context.gameplayView.gameInputActive && imageHovered && context.gameplayPreview != nullptr &&
-            Input::WasMouseButtonPressed(MouseButton::Right)) {
+        if (context.gameplayView.gameInputActive && imageHovered && context.gameplayPreview != nullptr) {
             glm::vec3 target{0.0f};
             if (ProjectViewportMouseToIcePlane(camera, imagePos, imageSize, target)) {
-                context.gameplayPreview->SetMoveTarget(target);
+                context.gameplayPreview->SetAimTarget(target);
+                if (Input::WasMouseButtonPressed(MouseButton::Right)) {
+                    context.gameplayPreview->SetMoveTarget(target);
+                }
             }
         }
         const ImVec2 captureSize = ImGui::CalcTextSize("Capture");

@@ -39,6 +39,7 @@ public:
     void Reset(Scene& scene, EditorPhysicsPreview& physicsPreview);
     void Update(Scene& scene, EditorPhysicsPreview& physicsPreview, float deltaTime);
     void SetMoveTarget(const glm::vec3& target);
+    void SetAimTarget(const glm::vec3& target);
     void SetInputEnabled(bool enabled) {
         m_InputEnabled = enabled;
     }
@@ -64,10 +65,12 @@ private:
     std::uint64_t m_LocalInputSequence = 0;
     std::uint64_t m_Tick = 0;
     glm::vec3 m_MoveTarget{0.0f};
+    glm::vec3 m_AimTarget{0.0f};
     bool m_Active = false;
     bool m_Running = false;
     bool m_StartedPhysicsPreview = false;
     bool m_HasMoveTarget = false;
+    bool m_HasAimTarget = false;
     bool m_InputEnabled = false;
 };
 

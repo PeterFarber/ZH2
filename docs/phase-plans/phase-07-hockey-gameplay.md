@@ -907,7 +907,7 @@ Input is independent from SDL.
 Input represents semantic gameplay actions, not mouse/key names.
 Input sequence fields prepare for Phase 8 networking.
 No networking code is implemented in Phase 7.
-Client mapping follows `GAMEPLAY.md`: left click is contextual steal without puck and shot charge/release with puck, right click sets a waypoint, Z boosts, X quick-turns skaters or shields goalies, and S brakes/clears waypoint/double-tap stops.
+Client mapping follows `GAMEPLAY.md`: left click is contextual steal without puck and shot charge/release with puck, mouse cursor on the ice sets shot aim while shooting, right click sets a waypoint, Z boosts, X quick-turns skaters or shields goalies, and S brakes/clears waypoint/double-tap stops.
 ```
 
 ## 6.4 Client Input Translation
