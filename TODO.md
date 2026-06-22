@@ -107,6 +107,8 @@ Current state:
 
 - [x] Shared tooltip helper exists and defines timing/disabled-control behavior.
 - [x] First-pass tooltip coverage exists for high-traffic editor panels and controls.
+- [x] Project Settings renderer, lighting/shadow, physics, gameplay, startup
+      scene, asset, and preference tooltips describe scene impact.
 - [~] Some lower-traffic workflow controls may still need follow-up hover text
       during live UI review.
 
@@ -120,6 +122,8 @@ Tasks:
 - [~] Add detailed tooltips for transform tools, hockey placement tools,
       lighting/shadow settings, asset import actions, save/open actions, and
       validation issue navigation.
+  - [x] Project Settings graphics, lighting/shadow, physics, gameplay, startup
+        scene, asset, and preference controls have scene-impact tooltip copy.
 - [x] Keep tooltip text concise but useful; describe what the control changes,
       not generic UI behavior.
 - [x] Add lightweight contract tests for tooltip helper usage on key panels.

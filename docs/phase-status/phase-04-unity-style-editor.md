@@ -61,6 +61,7 @@ Source material:
 - [x] Project Settings navigation scopes repeated page labels to avoid Dear ImGui ID conflicts.
 - [x] Project Settings lighting/shadow controls scope repeated tuning labels to avoid Dear ImGui ID conflicts.
 - [x] Shared editor tooltip helper exists and covers first-pass Toolbar, Hierarchy, Inspector, Project Settings, Project Panel, Scene View Overlay, Prefab, Stats, Console, and Scene Validation controls.
+- [x] Project Settings tooltips describe scene impact for renderer, lighting/shadow, physics, gameplay, startup scene, asset, and preference controls.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 
@@ -122,7 +123,7 @@ Source material:
 - [x] Undo/redo tests exist.
 - [x] Hierarchy reorder command and panel wiring tests exist.
 - [x] Hierarchy drop-preview panel wiring tests exist.
-- [x] Editor tooltip helper contract tests cover high-traffic panels.
+- [x] Editor tooltip helper contract tests cover high-traffic panels and Project Settings scene-impact tooltip copy.
 - [x] Inspector field tests exist.
 - [x] Scene command tests exist.
 - [x] Project browser tests exist.

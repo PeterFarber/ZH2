@@ -88,6 +88,24 @@ void RunEditorTooltipContractTests() {
                  "Project Settings lighting budget controls expose hover text");
     HK_CHECK_MSG(Contains(projectSettings, "Directional shadow atlas resolution"),
                  "Project Settings shadow atlas controls expose hover text");
+    HK_CHECK_MSG(Contains(projectSettings, "Changing render scale changes how sharp the scene appears"),
+                 "Project Settings render scale tooltip explains scene sharpness");
+    HK_CHECK_MSG(Contains(projectSettings, "Directional atlas controls how much texel detail the sun shadow map has"),
+                 "Project Settings directional atlas tooltip explains shadow detail");
+    HK_CHECK_MSG(Contains(projectSettings, "Cascade count controls how far directional shadows stay detailed"),
+                 "Project Settings cascade tooltip explains camera-distance shadow detail");
+    HK_CHECK_MSG(Contains(projectSettings, "Contact shadows add small grounding shadows under skates"),
+                 "Project Settings contact shadow tooltip explains object grounding");
+    HK_CHECK_MSG(Contains(projectSettings, "Ice reflection changes how clearly lights, players, and boards reflect"),
+                 "Project Settings ice reflection tooltip explains rink reflection impact");
+    HK_CHECK_MSG(Contains(projectSettings, "Physics fixed delta controls how often preview collisions"),
+                 "Project Settings physics tooltip explains simulation cadence");
+    HK_CHECK_MSG(Contains(projectSettings, "Startup scene is the scene loaded when players launch the build"),
+                 "Project Settings startup scene tooltip explains build behavior");
+    HK_CHECK_MSG(Contains(projectSettings, "Validate on load checks the scene for missing required gameplay objects"),
+                 "Project Settings validation tooltip explains scene safety");
+    HK_CHECK_MSG(Contains(projectSettings, "Target player count controls how many skaters and goalies"),
+                 "Project Settings gameplay tooltip explains roster expectations");
     HK_CHECK_MSG(Contains(projectPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
                  "Project Panel includes tooltip helper");
     HK_CHECK_MSG(CountOccurrences(projectPanel, "EditorTooltip::ForLastItem") >= 12,
