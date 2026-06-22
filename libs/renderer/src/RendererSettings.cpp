@@ -219,6 +219,14 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.shadowQuality = ShadowQuality::Low;
         base.shadowDistance = 50.0f;
         base.contactShadows = false;
+        base.maxRenderedLights = 8;
+        base.maxLocalShadowTiles = 6;
+        base.directionalShadowAtlasResolution = 0;
+        base.localShadowAtlasResolution = 0;
+        base.shadowCascadeCount = 0;
+        base.shadowCascadeSplitLambda = 0.90f;
+        base.directionalShadowPcfRadius = 1;
+        base.localShadowPcfRadius = 1;
         base.aoQuality = AmbientOcclusionQuality::Off;
         base.reflectionQuality = ReflectionQuality::Low;
         base.globalIlluminationQuality = DetailQuality::Low;
@@ -248,6 +256,14 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.shadowQuality = ShadowQuality::Medium;
         base.shadowDistance = 80.0f;
         base.contactShadows = false;
+        base.maxRenderedLights = 12;
+        base.maxLocalShadowTiles = 10;
+        base.directionalShadowAtlasResolution = 0;
+        base.localShadowAtlasResolution = 0;
+        base.shadowCascadeCount = 0;
+        base.shadowCascadeSplitLambda = 0.92f;
+        base.directionalShadowPcfRadius = 1;
+        base.localShadowPcfRadius = 1;
         base.aoQuality = AmbientOcclusionQuality::Medium;
         base.reflectionQuality = ReflectionQuality::Medium;
         base.globalIlluminationQuality = DetailQuality::Medium;
@@ -277,6 +293,14 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.shadowQuality = ShadowQuality::High;
         base.shadowDistance = 100.0f;
         base.contactShadows = true;
+        base.maxRenderedLights = 16;
+        base.maxLocalShadowTiles = 16;
+        base.directionalShadowAtlasResolution = 0;
+        base.localShadowAtlasResolution = 0;
+        base.shadowCascadeCount = 0;
+        base.shadowCascadeSplitLambda = 0.95f;
+        base.directionalShadowPcfRadius = 1;
+        base.localShadowPcfRadius = 1;
         base.aoQuality = AmbientOcclusionQuality::High;
         base.reflectionQuality = ReflectionQuality::High;
         base.globalIlluminationQuality = DetailQuality::Medium;
@@ -306,6 +330,14 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.shadowQuality = ShadowQuality::Ultra;
         base.shadowDistance = 150.0f;
         base.contactShadows = true;
+        base.maxRenderedLights = 16;
+        base.maxLocalShadowTiles = 16;
+        base.directionalShadowAtlasResolution = 0;
+        base.localShadowAtlasResolution = 0;
+        base.shadowCascadeCount = 0;
+        base.shadowCascadeSplitLambda = 0.95f;
+        base.directionalShadowPcfRadius = 2;
+        base.localShadowPcfRadius = 2;
         base.aoQuality = AmbientOcclusionQuality::Ultra;
         base.reflectionQuality = ReflectionQuality::Ultra;
         base.globalIlluminationQuality = DetailQuality::High;
@@ -353,7 +385,130 @@ uint32_t LoadU32(const Config& config, std::string_view key, uint32_t fallback) 
     return static_cast<uint32_t>(config.GetInt(key, static_cast<int>(fallback)));
 }
 
+uint32_t LoadU32Clamped(const Config& config, std::string_view key, uint32_t fallback, uint32_t minValue,
+                        uint32_t maxValue) {
+    const int loaded = config.GetInt(key, static_cast<int>(fallback));
+    if (loaded < 0) {
+        return minValue;
+    }
+    return std::clamp(static_cast<uint32_t>(loaded), minValue, maxValue);
+}
+
+float LoadFloatClamped(const Config& config, std::string_view key, float fallback, float minValue, float maxValue) {
+    const float loaded = static_cast<float>(config.GetDouble(key, fallback));
+    return std::clamp(loaded, minValue, maxValue);
+}
+
+uint32_t QualityDirectionalAtlas(ShadowQuality quality) {
+    switch (quality) {
+    case ShadowQuality::Off:
+        return 1;
+    case ShadowQuality::Low:
+        return 1024;
+    case ShadowQuality::Medium:
+        return 2048;
+    case ShadowQuality::High:
+        return 4096;
+    case ShadowQuality::Ultra:
+        return 8192;
+    }
+    return 2048;
+}
+
+uint32_t QualityLocalAtlas(ShadowQuality quality) {
+    switch (quality) {
+    case ShadowQuality::Off:
+        return 1;
+    case ShadowQuality::Low:
+        return 1024;
+    case ShadowQuality::Medium:
+    case ShadowQuality::High:
+        return 2048;
+    case ShadowQuality::Ultra:
+        return 4096;
+    }
+    return 2048;
+}
+
+uint32_t QualityCascadeCount(ShadowQuality quality) {
+    switch (quality) {
+    case ShadowQuality::Off:
+        return 0;
+    case ShadowQuality::Low:
+        return 2;
+    case ShadowQuality::Medium:
+        return 3;
+    case ShadowQuality::High:
+    case ShadowQuality::Ultra:
+        return 4;
+    }
+    return 4;
+}
+
 } // namespace
+
+RendererSettings ClampRendererSettings(RendererSettings s) {
+    s.maxRenderedLights = std::clamp(s.maxRenderedLights, 0u, kRendererMaxLights);
+    s.maxLocalShadowTiles = std::clamp(s.maxLocalShadowTiles, 0u, kRendererMaxLocalShadowTiles);
+    s.directionalShadowAtlasResolution = std::clamp(s.directionalShadowAtlasResolution, 0u, 16384u);
+    s.localShadowAtlasResolution = std::clamp(s.localShadowAtlasResolution, 0u, 16384u);
+    s.shadowCascadeCount = std::clamp(s.shadowCascadeCount, 0u, kRendererMaxCascades);
+    s.shadowCascadeSplitLambda = std::clamp(s.shadowCascadeSplitLambda, 0.0f, 1.0f);
+    s.shadowCascadeOverlapScale = std::clamp(s.shadowCascadeOverlapScale, 0.0f, 1.0f);
+    s.shadowCascadeMinOverlap = std::clamp(s.shadowCascadeMinOverlap, 0.0f, 100.0f);
+    s.shadowCascadeMaxOverlapScale = std::clamp(s.shadowCascadeMaxOverlapScale, 0.0f, 1.0f);
+    s.shadowCascadeBlendScale = std::clamp(s.shadowCascadeBlendScale, 0.0f, 1.0f);
+    s.shadowCascadeMinBlend = std::clamp(s.shadowCascadeMinBlend, 0.0f, 50.0f);
+    s.directionalShadowPcfRadius = std::clamp(s.directionalShadowPcfRadius, 0u, 3u);
+    s.directionalShadowNormalOffsetScale = std::clamp(s.directionalShadowNormalOffsetScale, 0.0f, 4.0f);
+    s.directionalShadowNormalOffsetMin = std::clamp(s.directionalShadowNormalOffsetMin, 0.0f, 0.25f);
+    s.directionalShadowNormalOffsetMax =
+        std::max(s.directionalShadowNormalOffsetMin, std::clamp(s.directionalShadowNormalOffsetMax, 0.0f, 1.0f));
+    s.directionalShadowBiasBase = std::clamp(s.directionalShadowBiasBase, 0.0f, 0.02f);
+    s.directionalShadowBiasSlope = std::clamp(s.directionalShadowBiasSlope, 0.0f, 0.05f);
+    s.directionalShadowBiasMin = std::clamp(s.directionalShadowBiasMin, 0.0f, 0.02f);
+    s.directionalShadowBiasMax =
+        std::max(s.directionalShadowBiasMin, std::clamp(s.directionalShadowBiasMax, 0.0f, 0.05f));
+    s.directionalShadowDepthBiasConstant = std::clamp(s.directionalShadowDepthBiasConstant, 0.0f, 8.0f);
+    s.directionalShadowDepthBiasSlope = std::clamp(s.directionalShadowDepthBiasSlope, 0.0f, 8.0f);
+    s.contactShadowDistance = std::clamp(s.contactShadowDistance, 0.0f, 500.0f);
+    s.contactShadowStrength = std::clamp(s.contactShadowStrength, 0.0f, 1.0f);
+    s.contactShadowNormalOffsetScale = std::clamp(s.contactShadowNormalOffsetScale, 0.0f, 2.0f);
+    s.contactShadowNormalOffsetMin = std::clamp(s.contactShadowNormalOffsetMin, 0.0f, 0.25f);
+    s.contactShadowBiasBase = std::clamp(s.contactShadowBiasBase, 0.0f, 0.02f);
+    s.contactShadowBiasSlope = std::clamp(s.contactShadowBiasSlope, 0.0f, 0.05f);
+    s.contactShadowBiasMin = std::clamp(s.contactShadowBiasMin, 0.0f, 0.02f);
+    s.contactShadowBiasMax = std::max(s.contactShadowBiasMin, std::clamp(s.contactShadowBiasMax, 0.0f, 0.05f));
+    s.localShadowPcfRadius = std::clamp(s.localShadowPcfRadius, 0u, 3u);
+    s.localShadowBiasScale = std::clamp(s.localShadowBiasScale, 0.0f, 0.05f);
+    s.localShadowBiasMin = std::clamp(s.localShadowBiasMin, 0.0f, 0.02f);
+    s.localShadowBiasMax = std::max(s.localShadowBiasMin, std::clamp(s.localShadowBiasMax, 0.0f, 0.05f));
+    return s;
+}
+
+uint32_t ResolveDirectionalShadowAtlasResolution(const RendererSettings& settings) {
+    const RendererSettings s = ClampRendererSettings(settings);
+    return s.directionalShadowAtlasResolution == 0 ? QualityDirectionalAtlas(s.shadowQuality)
+                                                   : s.directionalShadowAtlasResolution;
+}
+
+uint32_t ResolveLocalShadowAtlasResolution(const RendererSettings& settings) {
+    const RendererSettings s = ClampRendererSettings(settings);
+    return s.localShadowAtlasResolution == 0 ? QualityLocalAtlas(s.shadowQuality) : s.localShadowAtlasResolution;
+}
+
+uint32_t ResolveShadowCascadeCount(const RendererSettings& settings) {
+    const RendererSettings s = ClampRendererSettings(settings);
+    return s.shadowCascadeCount == 0 ? QualityCascadeCount(s.shadowQuality) : s.shadowCascadeCount;
+}
+
+uint32_t ResolveDirectionalShadowPcfRadius(const RendererSettings& settings) {
+    return ClampRendererSettings(settings).directionalShadowPcfRadius;
+}
+
+uint32_t ResolveLocalShadowPcfRadius(const RendererSettings& settings) {
+    return ClampRendererSettings(settings).localShadowPcfRadius;
+}
 
 Status LoadRendererSettings(const Config& config, RendererSettings& s) {
     LoadEnum(config, "renderer.display_mode", s.displayMode);
@@ -385,6 +540,79 @@ Status LoadRendererSettings(const Config& config, RendererSettings& s) {
     LoadEnum(config, "renderer.ao_quality", s.aoQuality);
     LoadEnum(config, "renderer.reflection_quality", s.reflectionQuality);
     LoadEnum(config, "renderer.global_illumination_quality", s.globalIlluminationQuality);
+    s.maxRenderedLights = LoadU32Clamped(config, "renderer.max_rendered_lights", s.maxRenderedLights, 0,
+                                         kRendererMaxLights);
+    s.maxLocalShadowTiles = LoadU32Clamped(config, "renderer.max_local_shadow_tiles", s.maxLocalShadowTiles, 0,
+                                           kRendererMaxLocalShadowTiles);
+    s.directionalShadowAtlasResolution =
+        LoadU32Clamped(config, "renderer.directional_shadow_atlas_resolution", s.directionalShadowAtlasResolution, 0,
+                       16384);
+    s.localShadowAtlasResolution =
+        LoadU32Clamped(config, "renderer.local_shadow_atlas_resolution", s.localShadowAtlasResolution, 0, 16384);
+    s.shadowCascadeCount =
+        LoadU32Clamped(config, "renderer.shadow_cascade_count", s.shadowCascadeCount, 0, kRendererMaxCascades);
+    s.shadowCascadeSplitLambda =
+        LoadFloatClamped(config, "renderer.shadow_cascade_split_lambda", s.shadowCascadeSplitLambda, 0.0f, 1.0f);
+    s.shadowCascadeOverlapScale =
+        LoadFloatClamped(config, "renderer.shadow_cascade_overlap_scale", s.shadowCascadeOverlapScale, 0.0f, 1.0f);
+    s.shadowCascadeMinOverlap =
+        LoadFloatClamped(config, "renderer.shadow_cascade_min_overlap", s.shadowCascadeMinOverlap, 0.0f, 100.0f);
+    s.shadowCascadeMaxOverlapScale = LoadFloatClamped(config, "renderer.shadow_cascade_max_overlap_scale",
+                                                      s.shadowCascadeMaxOverlapScale, 0.0f, 1.0f);
+    s.shadowCascadeBlendScale =
+        LoadFloatClamped(config, "renderer.shadow_cascade_blend_scale", s.shadowCascadeBlendScale, 0.0f, 1.0f);
+    s.shadowCascadeMinBlend =
+        LoadFloatClamped(config, "renderer.shadow_cascade_min_blend", s.shadowCascadeMinBlend, 0.0f, 50.0f);
+    s.directionalShadowPcfRadius =
+        LoadU32Clamped(config, "renderer.directional_shadow_pcf_radius", s.directionalShadowPcfRadius, 0, 3);
+    s.directionalShadowNormalOffsetScale =
+        LoadFloatClamped(config, "renderer.directional_shadow_normal_offset_scale",
+                         s.directionalShadowNormalOffsetScale, 0.0f, 4.0f);
+    s.directionalShadowNormalOffsetMin =
+        LoadFloatClamped(config, "renderer.directional_shadow_normal_offset_min",
+                         s.directionalShadowNormalOffsetMin, 0.0f, 0.25f);
+    s.directionalShadowNormalOffsetMax =
+        LoadFloatClamped(config, "renderer.directional_shadow_normal_offset_max",
+                         s.directionalShadowNormalOffsetMax, 0.0f, 1.0f);
+    s.directionalShadowBiasBase =
+        LoadFloatClamped(config, "renderer.directional_shadow_bias_base", s.directionalShadowBiasBase, 0.0f, 0.02f);
+    s.directionalShadowBiasSlope =
+        LoadFloatClamped(config, "renderer.directional_shadow_bias_slope", s.directionalShadowBiasSlope, 0.0f, 0.05f);
+    s.directionalShadowBiasMin =
+        LoadFloatClamped(config, "renderer.directional_shadow_bias_min", s.directionalShadowBiasMin, 0.0f, 0.02f);
+    s.directionalShadowBiasMax =
+        LoadFloatClamped(config, "renderer.directional_shadow_bias_max", s.directionalShadowBiasMax, 0.0f, 0.05f);
+    s.directionalShadowDepthBiasConstant =
+        LoadFloatClamped(config, "renderer.directional_shadow_depth_bias_constant",
+                         s.directionalShadowDepthBiasConstant, 0.0f, 8.0f);
+    s.directionalShadowDepthBiasSlope =
+        LoadFloatClamped(config, "renderer.directional_shadow_depth_bias_slope", s.directionalShadowDepthBiasSlope,
+                         0.0f, 8.0f);
+    s.contactShadowDistance =
+        LoadFloatClamped(config, "renderer.contact_shadow_distance", s.contactShadowDistance, 0.0f, 500.0f);
+    s.contactShadowStrength =
+        LoadFloatClamped(config, "renderer.contact_shadow_strength", s.contactShadowStrength, 0.0f, 1.0f);
+    s.contactShadowNormalOffsetScale = LoadFloatClamped(config, "renderer.contact_shadow_normal_offset_scale",
+                                                        s.contactShadowNormalOffsetScale, 0.0f, 2.0f);
+    s.contactShadowNormalOffsetMin =
+        LoadFloatClamped(config, "renderer.contact_shadow_normal_offset_min", s.contactShadowNormalOffsetMin, 0.0f,
+                         0.25f);
+    s.contactShadowBiasBase =
+        LoadFloatClamped(config, "renderer.contact_shadow_bias_base", s.contactShadowBiasBase, 0.0f, 0.02f);
+    s.contactShadowBiasSlope =
+        LoadFloatClamped(config, "renderer.contact_shadow_bias_slope", s.contactShadowBiasSlope, 0.0f, 0.05f);
+    s.contactShadowBiasMin =
+        LoadFloatClamped(config, "renderer.contact_shadow_bias_min", s.contactShadowBiasMin, 0.0f, 0.02f);
+    s.contactShadowBiasMax =
+        LoadFloatClamped(config, "renderer.contact_shadow_bias_max", s.contactShadowBiasMax, 0.0f, 0.05f);
+    s.localShadowPcfRadius =
+        LoadU32Clamped(config, "renderer.local_shadow_pcf_radius", s.localShadowPcfRadius, 0, 3);
+    s.localShadowBiasScale =
+        LoadFloatClamped(config, "renderer.local_shadow_bias_scale", s.localShadowBiasScale, 0.0f, 0.05f);
+    s.localShadowBiasMin =
+        LoadFloatClamped(config, "renderer.local_shadow_bias_min", s.localShadowBiasMin, 0.0f, 0.02f);
+    s.localShadowBiasMax =
+        LoadFloatClamped(config, "renderer.local_shadow_bias_max", s.localShadowBiasMax, 0.0f, 0.05f);
 
     LoadEnum(config, "renderer.model_quality", s.modelQuality);
     s.lodDistanceMultiplier =
@@ -419,6 +647,7 @@ Status LoadRendererSettings(const Config& config, RendererSettings& s) {
     s.showGPUStats = config.GetBool("renderer.show_gpu_stats", s.showGPUStats);
     s.showNetworkStats = config.GetBool("renderer.show_network_stats", s.showNetworkStats);
 
+    s = ClampRendererSettings(s);
     return Status::Ok();
 }
 
@@ -452,6 +681,40 @@ void SaveRendererSettings(Config& config, const RendererSettings& s) {
     config.SetString("renderer.ao_quality", ToString(s.aoQuality));
     config.SetString("renderer.reflection_quality", ToString(s.reflectionQuality));
     config.SetString("renderer.global_illumination_quality", ToString(s.globalIlluminationQuality));
+    config.SetInt("renderer.max_rendered_lights", static_cast<int>(s.maxRenderedLights));
+    config.SetInt("renderer.max_local_shadow_tiles", static_cast<int>(s.maxLocalShadowTiles));
+    config.SetInt("renderer.directional_shadow_atlas_resolution",
+                  static_cast<int>(s.directionalShadowAtlasResolution));
+    config.SetInt("renderer.local_shadow_atlas_resolution", static_cast<int>(s.localShadowAtlasResolution));
+    config.SetInt("renderer.shadow_cascade_count", static_cast<int>(s.shadowCascadeCount));
+    config.SetDouble("renderer.shadow_cascade_split_lambda", s.shadowCascadeSplitLambda);
+    config.SetDouble("renderer.shadow_cascade_overlap_scale", s.shadowCascadeOverlapScale);
+    config.SetDouble("renderer.shadow_cascade_min_overlap", s.shadowCascadeMinOverlap);
+    config.SetDouble("renderer.shadow_cascade_max_overlap_scale", s.shadowCascadeMaxOverlapScale);
+    config.SetDouble("renderer.shadow_cascade_blend_scale", s.shadowCascadeBlendScale);
+    config.SetDouble("renderer.shadow_cascade_min_blend", s.shadowCascadeMinBlend);
+    config.SetInt("renderer.directional_shadow_pcf_radius", static_cast<int>(s.directionalShadowPcfRadius));
+    config.SetDouble("renderer.directional_shadow_normal_offset_scale", s.directionalShadowNormalOffsetScale);
+    config.SetDouble("renderer.directional_shadow_normal_offset_min", s.directionalShadowNormalOffsetMin);
+    config.SetDouble("renderer.directional_shadow_normal_offset_max", s.directionalShadowNormalOffsetMax);
+    config.SetDouble("renderer.directional_shadow_bias_base", s.directionalShadowBiasBase);
+    config.SetDouble("renderer.directional_shadow_bias_slope", s.directionalShadowBiasSlope);
+    config.SetDouble("renderer.directional_shadow_bias_min", s.directionalShadowBiasMin);
+    config.SetDouble("renderer.directional_shadow_bias_max", s.directionalShadowBiasMax);
+    config.SetDouble("renderer.directional_shadow_depth_bias_constant", s.directionalShadowDepthBiasConstant);
+    config.SetDouble("renderer.directional_shadow_depth_bias_slope", s.directionalShadowDepthBiasSlope);
+    config.SetDouble("renderer.contact_shadow_distance", s.contactShadowDistance);
+    config.SetDouble("renderer.contact_shadow_strength", s.contactShadowStrength);
+    config.SetDouble("renderer.contact_shadow_normal_offset_scale", s.contactShadowNormalOffsetScale);
+    config.SetDouble("renderer.contact_shadow_normal_offset_min", s.contactShadowNormalOffsetMin);
+    config.SetDouble("renderer.contact_shadow_bias_base", s.contactShadowBiasBase);
+    config.SetDouble("renderer.contact_shadow_bias_slope", s.contactShadowBiasSlope);
+    config.SetDouble("renderer.contact_shadow_bias_min", s.contactShadowBiasMin);
+    config.SetDouble("renderer.contact_shadow_bias_max", s.contactShadowBiasMax);
+    config.SetInt("renderer.local_shadow_pcf_radius", static_cast<int>(s.localShadowPcfRadius));
+    config.SetDouble("renderer.local_shadow_bias_scale", s.localShadowBiasScale);
+    config.SetDouble("renderer.local_shadow_bias_min", s.localShadowBiasMin);
+    config.SetDouble("renderer.local_shadow_bias_max", s.localShadowBiasMax);
 
     config.SetString("renderer.model_quality", ToString(s.modelQuality));
     config.SetDouble("renderer.lod_distance_multiplier", s.lodDistanceMultiplier);

@@ -76,6 +76,83 @@ void RunRendererSettingsTests() {
     HK_CHECK(loaded.bloom == false);
     HK_CHECK(loaded.shadowQuality == ShadowQuality::Ultra);
     HK_CHECK(loaded.toneMapper == saved.toneMapper);
+
+    // Advanced lighting/shadow settings round-trip and clamp through TOML.
+    Config advancedConfig;
+    RendererSettings advanced = MakeDefaultRendererSettings();
+    advanced.maxRenderedLights = 12;
+    advanced.maxLocalShadowTiles = 10;
+    advanced.directionalShadowAtlasResolution = 6144;
+    advanced.localShadowAtlasResolution = 3072;
+    advanced.shadowCascadeCount = 3;
+    advanced.shadowCascadeSplitLambda = 0.92f;
+    advanced.shadowCascadeOverlapScale = 0.30f;
+    advanced.shadowCascadeMinOverlap = 3.0f;
+    advanced.shadowCascadeMaxOverlapScale = 0.12f;
+    advanced.shadowCascadeBlendScale = 0.18f;
+    advanced.shadowCascadeMinBlend = 1.25f;
+    advanced.directionalShadowPcfRadius = 2;
+    advanced.directionalShadowNormalOffsetScale = 0.65f;
+    advanced.directionalShadowNormalOffsetMin = 0.002f;
+    advanced.directionalShadowNormalOffsetMax = 0.05f;
+    advanced.directionalShadowBiasBase = 0.0005f;
+    advanced.directionalShadowBiasSlope = 0.0016f;
+    advanced.directionalShadowBiasMin = 0.0003f;
+    advanced.directionalShadowBiasMax = 0.004f;
+    advanced.directionalShadowDepthBiasConstant = 1.5f;
+    advanced.directionalShadowDepthBiasSlope = 2.0f;
+    advanced.contactShadowDistance = 42.0f;
+    advanced.contactShadowStrength = 0.65f;
+    advanced.contactShadowNormalOffsetScale = 0.25f;
+    advanced.contactShadowNormalOffsetMin = 0.001f;
+    advanced.contactShadowBiasBase = 0.0001f;
+    advanced.contactShadowBiasSlope = 0.0007f;
+    advanced.contactShadowBiasMin = 0.00008f;
+    advanced.contactShadowBiasMax = 0.001f;
+    advanced.localShadowPcfRadius = 2;
+    advanced.localShadowBiasScale = 0.0009f;
+    advanced.localShadowBiasMin = 0.00015f;
+    advanced.localShadowBiasMax = 0.003f;
+    SaveRendererSettings(advancedConfig, advanced);
+
+    RendererSettings advancedLoaded = MakeDefaultRendererSettings();
+    HK_CHECK(static_cast<bool>(LoadRendererSettings(advancedConfig, advancedLoaded)));
+    HK_CHECK_EQ(advancedLoaded.maxRenderedLights, 12u);
+    HK_CHECK_EQ(advancedLoaded.maxLocalShadowTiles, 10u);
+    HK_CHECK_EQ(advancedLoaded.directionalShadowAtlasResolution, 6144u);
+    HK_CHECK_EQ(advancedLoaded.localShadowAtlasResolution, 3072u);
+    HK_CHECK_EQ(advancedLoaded.shadowCascadeCount, 3u);
+    HK_CHECK_NEAR(advancedLoaded.shadowCascadeSplitLambda, 0.92f, 0.0001f);
+    HK_CHECK_NEAR(advancedLoaded.shadowCascadeOverlapScale, 0.30f, 0.0001f);
+    HK_CHECK_NEAR(advancedLoaded.shadowCascadeBlendScale, 0.18f, 0.0001f);
+    HK_CHECK_EQ(advancedLoaded.directionalShadowPcfRadius, 2u);
+    HK_CHECK_NEAR(advancedLoaded.directionalShadowNormalOffsetScale, 0.65f, 0.0001f);
+    HK_CHECK_NEAR(advancedLoaded.directionalShadowBiasSlope, 0.0016f, 0.00001f);
+    HK_CHECK_NEAR(advancedLoaded.directionalShadowDepthBiasSlope, 2.0f, 0.0001f);
+    HK_CHECK_NEAR(advancedLoaded.contactShadowDistance, 42.0f, 0.001f);
+    HK_CHECK_NEAR(advancedLoaded.contactShadowStrength, 0.65f, 0.0001f);
+    HK_CHECK_EQ(advancedLoaded.localShadowPcfRadius, 2u);
+    HK_CHECK_NEAR(advancedLoaded.localShadowBiasMax, 0.003f, 0.00001f);
+
+    Config unsafeConfig;
+    unsafeConfig.SetInt("renderer.max_rendered_lights", 1000);
+    unsafeConfig.SetInt("renderer.max_local_shadow_tiles", 1000);
+    unsafeConfig.SetInt("renderer.directional_shadow_atlas_resolution", -4);
+    unsafeConfig.SetInt("renderer.local_shadow_atlas_resolution", -8);
+    unsafeConfig.SetInt("renderer.shadow_cascade_count", 20);
+    unsafeConfig.SetDouble("renderer.shadow_cascade_split_lambda", 5.0);
+    unsafeConfig.SetDouble("renderer.contact_shadow_strength", 9.0);
+    unsafeConfig.SetInt("renderer.directional_shadow_pcf_radius", 99);
+    RendererSettings clamped = MakeDefaultRendererSettings();
+    HK_CHECK(static_cast<bool>(LoadRendererSettings(unsafeConfig, clamped)));
+    HK_CHECK_EQ(clamped.maxRenderedLights, 16u);
+    HK_CHECK_EQ(clamped.maxLocalShadowTiles, 16u);
+    HK_CHECK_EQ(clamped.directionalShadowAtlasResolution, 0u);
+    HK_CHECK_EQ(clamped.localShadowAtlasResolution, 0u);
+    HK_CHECK_EQ(clamped.shadowCascadeCount, 4u);
+    HK_CHECK_NEAR(clamped.shadowCascadeSplitLambda, 1.0f, 0.0001f);
+    HK_CHECK_NEAR(clamped.contactShadowStrength, 1.0f, 0.0001f);
+    HK_CHECK_EQ(clamped.directionalShadowPcfRadius, 3u);
 }
 
 void RunShadowQualityTests() {
@@ -99,4 +176,24 @@ void RunShadowQualityTests() {
     // Higher quality never reduces resolution or cascade count.
     HK_CHECK(ShadowAtlasResolution(ShadowQuality::Medium) > ShadowAtlasResolution(ShadowQuality::Low));
     HK_CHECK(ShadowCascadeCount(ShadowQuality::High) > ShadowCascadeCount(ShadowQuality::Low));
+
+    RendererSettings qualityFallback = MakeDefaultRendererSettings();
+    qualityFallback.shadowQuality = ShadowQuality::High;
+    HK_CHECK_EQ(ResolveDirectionalShadowAtlasResolution(qualityFallback), 4096u);
+    HK_CHECK_EQ(ResolveLocalShadowAtlasResolution(qualityFallback), 2048u);
+    HK_CHECK_EQ(ResolveShadowCascadeCount(qualityFallback), 4u);
+    HK_CHECK_EQ(ResolveDirectionalShadowPcfRadius(qualityFallback), 1u);
+    HK_CHECK_EQ(ResolveLocalShadowPcfRadius(qualityFallback), 1u);
+
+    RendererSettings explicitShadows = qualityFallback;
+    explicitShadows.directionalShadowAtlasResolution = 6144;
+    explicitShadows.localShadowAtlasResolution = 3072;
+    explicitShadows.shadowCascadeCount = 2;
+    explicitShadows.directionalShadowPcfRadius = 0;
+    explicitShadows.localShadowPcfRadius = 0;
+    HK_CHECK_EQ(ResolveDirectionalShadowAtlasResolution(explicitShadows), 6144u);
+    HK_CHECK_EQ(ResolveLocalShadowAtlasResolution(explicitShadows), 3072u);
+    HK_CHECK_EQ(ResolveShadowCascadeCount(explicitShadows), 2u);
+    HK_CHECK_EQ(ResolveDirectionalShadowPcfRadius(explicitShadows), 0u);
+    HK_CHECK_EQ(ResolveLocalShadowPcfRadius(explicitShadows), 0u);
 }
