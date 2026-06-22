@@ -172,6 +172,12 @@ struct SceneGPU {
     glm::mat4 cascadeViewProj[kMaxCascades];
     GpuLight lights[kMaxLights];
     glm::vec4 localShadowParams{0.0f}; // x 1/atlasRes, y pcf radius, z grid dim, w enabled
+    glm::vec4 cascadeShadowParams{0.12f, 0.75f, 0.0f, 0.0f};       // x blend scale, y min blend
+    glm::vec4 directionalShadowParams{0.75f, 0.003f, 0.03f, 0.0f}; // x normal scale, y min, z max
+    glm::vec4 directionalShadowBias{0.00045f, 0.0018f, 0.00045f, 0.003f};
+    glm::vec4 contactShadowParams{35.0f, 0.75f, 0.20f, 0.0015f}; // distance, strength, normal scale, min
+    glm::vec4 contactShadowBias{0.00012f, 0.0008f, 0.00012f, 0.0012f};
+    glm::vec4 localShadowBias{0.0012f, 0.0002f, 0.004f, 0.0f}; // scale, min, max
     glm::mat4 localShadowViewProj[kMaxLocalShadowTiles];
 };
 
@@ -281,7 +287,8 @@ struct CascadeResult {
 
 CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& lightDir, uint32_t cascadeCount,
                               float shadowDistance, uint32_t atlasResolution,
-                              const std::vector<ShadowCasterBounds>& shadowCasters) {
+                              const std::vector<ShadowCasterBounds>& shadowCasters,
+                              const RendererSettings& settings) {
     CascadeResult result;
     result.count = std::min(cascadeCount, kMaxCascades);
     if (result.count == 0) {
@@ -298,7 +305,7 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
     const float tileResolution =
         result.count == 1 ? static_cast<float>(atlasResolution) : static_cast<float>(atlasResolution) * 0.5f;
 
-    constexpr float lambda = 0.95f; // favor log splits so long far clips keep dense near-cascade shadows
+    const float lambda = std::clamp(settings.shadowCascadeSplitLambda, 0.0f, 1.0f);
     float prevSplit = nearClip;
     for (uint32_t c = 0; c < result.count; ++c) {
         const float p = static_cast<float>(c + 1) / static_cast<float>(result.count);
@@ -312,7 +319,11 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
         // wider slice than the selection range so each cascade contains nearby
         // casters on both sides of its split.
         const float selectionRange = std::max(splitFar - prevSplit, 0.001f);
-        const float casterOverlap = glm::clamp(selectionRange * 0.25f, 4.0f, std::max(4.0f, shadowDistance * 0.10f));
+        const float overlapScale = std::clamp(settings.shadowCascadeOverlapScale, 0.0f, 1.0f);
+        const float minOverlap = std::max(settings.shadowCascadeMinOverlap, 0.0f);
+        const float maxOverlap =
+            std::max(minOverlap, shadowDistance * std::clamp(settings.shadowCascadeMaxOverlapScale, 0.0f, 1.0f));
+        const float casterOverlap = glm::clamp(selectionRange * overlapScale, minOverlap, maxOverlap);
         const float fitNear = c == 0 ? nearClip : std::max(nearClip, prevSplit - casterOverlap);
         const float fitFar =
             std::min(farClip, splitFar + std::min(casterOverlap, selectionRange * 0.5f));
@@ -1651,6 +1662,25 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
 
     // --- Lights + environment -----------------------------------------------
     frameScene = SceneGPU{};
+    const RendererSettings clampedSettings = ClampRendererSettings(settings);
+    frameScene.cascadeShadowParams =
+        glm::vec4(clampedSettings.shadowCascadeBlendScale, clampedSettings.shadowCascadeMinBlend, 0.0f, 0.0f);
+    frameScene.directionalShadowParams =
+        glm::vec4(clampedSettings.directionalShadowNormalOffsetScale,
+                  clampedSettings.directionalShadowNormalOffsetMin,
+                  clampedSettings.directionalShadowNormalOffsetMax, 0.0f);
+    frameScene.directionalShadowBias =
+        glm::vec4(clampedSettings.directionalShadowBiasBase, clampedSettings.directionalShadowBiasSlope,
+                  clampedSettings.directionalShadowBiasMin, clampedSettings.directionalShadowBiasMax);
+    frameScene.contactShadowParams =
+        glm::vec4(clampedSettings.contactShadowDistance, clampedSettings.contactShadowStrength,
+                  clampedSettings.contactShadowNormalOffsetScale, clampedSettings.contactShadowNormalOffsetMin);
+    frameScene.contactShadowBias =
+        glm::vec4(clampedSettings.contactShadowBiasBase, clampedSettings.contactShadowBiasSlope,
+                  clampedSettings.contactShadowBiasMin, clampedSettings.contactShadowBiasMax);
+    frameScene.localShadowBias =
+        glm::vec4(clampedSettings.localShadowBiasScale, clampedSettings.localShadowBiasMin,
+                  clampedSettings.localShadowBiasMax, 0.0f);
     for (glm::mat4& matrix : frameScene.cascadeViewProj) {
         matrix = glm::mat4(1.0f);
     }
@@ -1772,17 +1802,17 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
               [](const DrawItem& a, const DrawItem& b) { return a.viewDepth > b.viewDepth; });
 
     // --- Directional cascaded shadows ---------------------------------------
-    const uint32_t cascadeCount = ResolveShadowCascadeCount(settings);
-    if (settings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
+    const uint32_t cascadeCount = ResolveShadowCascadeCount(clampedSettings);
+    if (clampedSettings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
         const uint32_t atlasRes = curTargets->ShadowResolution();
-        const CascadeResult cascades =
-            ComputeCascades(camera, sunDir, cascadeCount, settings.shadowDistance, atlasRes, shadowCasters);
+        const CascadeResult cascades = ComputeCascades(camera, sunDir, cascadeCount, clampedSettings.shadowDistance,
+                                                       atlasRes, shadowCasters, clampedSettings);
         for (uint32_t c = 0; c < cascades.count; ++c) {
             frameScene.cascadeViewProj[c] = cascades.viewProj[c];
             frameScene.cascadeSplits[c] = cascades.splitFar[c];
             frameScene.cascadeTexelSizes[c] = cascades.texelWorldSize[c];
         }
-        const float pcfRadius = static_cast<float>(ResolveDirectionalShadowPcfRadius(settings));
+        const float pcfRadius = static_cast<float>(ResolveDirectionalShadowPcfRadius(clampedSettings));
         frameScene.params.y = static_cast<float>(cascades.count);
         frameScene.params.z = 1.0f / static_cast<float>(std::max(atlasRes, 1u));
         frameScene.params.w = pcfRadius;
@@ -1793,7 +1823,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     // Pack each shadow-casting spot light into one atlas tile and each point
     // light into six cube-face tiles, greedily until the atlas is full.
     const uint32_t localAtlasRes = curTargets->LocalShadowResolution();
-    if (settings.shadowQuality != ShadowQuality::Off && localCasterCount > 0 && curTargets->IsValid() &&
+    if (clampedSettings.shadowQuality != ShadowQuality::Off && localCasterCount > 0 && curTargets->IsValid() &&
         localAtlasRes > 1) {
         uint32_t tileCursor = 0;
         for (uint32_t i = 0; i < localCasterCount; ++i) {
@@ -1816,7 +1846,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         }
         frameLocalShadowTiles = tileCursor;
         if (tileCursor > 0) {
-            const float pcfRadius = static_cast<float>(ResolveLocalShadowPcfRadius(settings));
+            const float pcfRadius = static_cast<float>(ResolveLocalShadowPcfRadius(clampedSettings));
             frameScene.localShadowParams = glm::vec4(1.0f / static_cast<float>(localAtlasRes), pcfRadius,
                                                      static_cast<float>(kLocalShadowGrid), 1.0f);
         }

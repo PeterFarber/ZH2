@@ -38,6 +38,12 @@ layout(set = 0, binding = 1) uniform SceneUBO {
     mat4 cascadeViewProj[HK_MAX_CASCADES];
     GpuLight lights[HK_MAX_LIGHTS];
     vec4 localShadowParams;                       // x 1/atlasRes, y pcf radius, z grid dim, w enabled
+    vec4 cascadeShadowParams;      // x blend scale, y min blend
+    vec4 directionalShadowParams;  // x normal offset scale, y min, z max
+    vec4 directionalShadowBias;    // x base, y slope, z min, w max
+    vec4 contactShadowParams;      // x distance, y strength, z normal offset scale, w normal offset min
+    vec4 contactShadowBias;        // x base, y slope, z min, w max
+    vec4 localShadowBias;          // x scale, y min, z max
     mat4 localShadowViewProj[HK_MAX_LOCAL_TILES]; // per-tile light view-proj
 } uScene;
 
@@ -132,23 +138,33 @@ float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL, bool contactShado
     // A fixed world-space offset makes near cascades visibly detach contact
     // shadows, while far cascades need a little more room to avoid acne.
     float texelWorld = max(uScene.cascadeTexelSizes[cascade], 0.001);
-    float normalOffset = clamp(texelWorld * 0.75, 0.003, 0.03);
+    float normalOffset = clamp(texelWorld * uScene.directionalShadowParams.x,
+                               uScene.directionalShadowParams.y,
+                               uScene.directionalShadowParams.z);
     vec3 unitNormal = normalize(normal);
     vec3 shadowPos = worldPos + unitNormal * normalOffset;
-    float bias = clamp(0.00045 + 0.0018 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.00045, 0.003);
+    float bias = clamp(uScene.directionalShadowBias.x +
+                       uScene.directionalShadowBias.y * (1.0 - clamp(NdotL, 0.0, 1.0)),
+                       uScene.directionalShadowBias.z,
+                       uScene.directionalShadowBias.w);
     float currentValid = 0.0;
     float shadow = SampleSunShadowCascade(cascade, cascadeCount, shadowPos, bias, currentValid);
 
     // Optional contact shadowing re-samples close receivers with a smaller
     // normal offset/bias. This keeps the broad stable cascade sample while
     // tightening object-to-ground contact when the quality setting enables it.
-    if (contactShadows && viewDepth < 35.0) {
-        vec3 contactPos = worldPos + unitNormal * clamp(texelWorld * 0.20, 0.0015, normalOffset);
-        float contactBias = clamp(0.00012 + 0.0008 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.00012, 0.0012);
+    if (contactShadows && viewDepth < uScene.contactShadowParams.x) {
+        vec3 contactPos = worldPos + unitNormal * clamp(texelWorld * uScene.contactShadowParams.z,
+                                                        uScene.contactShadowParams.w,
+                                                        normalOffset);
+        float contactBias = clamp(uScene.contactShadowBias.x +
+                                  uScene.contactShadowBias.y * (1.0 - clamp(NdotL, 0.0, 1.0)),
+                                  uScene.contactShadowBias.z,
+                                  uScene.contactShadowBias.w);
         float contactValid = 0.0;
         float contact = SampleSunShadowCascade(cascade, cascadeCount, contactPos, contactBias, contactValid);
         if (contactValid > 0.5) {
-            shadow = min(shadow, mix(1.0, contact, 0.75));
+            shadow = min(shadow, mix(1.0, contact, uScene.contactShadowParams.y));
         }
     }
 
@@ -158,7 +174,8 @@ float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL, bool contactShado
     if (cascade + 1 < cascadeCount) {
         float split = uScene.cascadeSplits[cascade];
         float prevSplit = cascade == 0 ? uCamera.clip.x : uScene.cascadeSplits[cascade - 1];
-        float blendRange = max((split - prevSplit) * 0.12, 0.75);
+        float blendRange = max((split - prevSplit) * uScene.cascadeShadowParams.x,
+                               uScene.cascadeShadowParams.y);
         float blend = clamp((viewDepth - (split - blendRange)) / blendRange, 0.0, 1.0);
         if (blend > 0.0) {
             float nextValid = 0.0;
@@ -213,9 +230,9 @@ float SampleLocalShadow(GpuLight light, vec3 worldPos, float NdotL, bool contact
     vec2 tileMin = tileCoord * invGrid;
     vec2 atlasUV = tileMin + uv * invGrid;
 
-    float biasScale = contactShadows ? 0.00075 : 0.0012;
-    float biasMax = contactShadows ? 0.0025 : 0.004;
-    float bias = clamp(biasScale * tan(acos(clamp(NdotL, 0.0, 1.0))), 0.0002, biasMax);
+    float bias = clamp(uScene.localShadowBias.x * tan(acos(clamp(NdotL, 0.0, 1.0))),
+                       uScene.localShadowBias.y,
+                       uScene.localShadowBias.z);
     float texel = uScene.localShadowParams.x;
     int radius = int(uScene.localShadowParams.y + 0.5);
     // Keep PCF taps inside this tile so they cannot bleed into a neighbour.
