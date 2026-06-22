@@ -285,6 +285,28 @@ class PolyhavenTests(unittest.TestCase):
             self.assertEqual(expected_path.read_bytes(), b"base")
             self.assertFalse(wrong_path.exists())
 
+    def test_download_selection_wraps_cache_directory_preparation_failures_before_fetching(self):
+        selection = TextureFileSelection(
+            resolution=TextureResolution.FOUR_K,
+            urls={"basecolor": "https://cdn/basecolor.png"},
+            warnings=[],
+        )
+        calls = []
+
+        def fetcher(request, timeout=None):
+            calls.append(request)
+            raise AssertionError("download should not start when cache directory preparation fails")
+
+        with tempfile.TemporaryDirectory() as temp:
+            cache_dir = Path(temp) / "cache"
+            cache_dir.write_text("not a directory", encoding="utf-8")
+            client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+            with self.assertRaisesRegex(PolyhavenError, "cache"):
+                client.download_selection(selection, cache_dir, "brick")
+
+            self.assertEqual(calls, [])
+
     def test_download_selection_rejects_unsafe_prefixes_before_writing(self):
         selection = TextureFileSelection(
             resolution=TextureResolution.FOUR_K,

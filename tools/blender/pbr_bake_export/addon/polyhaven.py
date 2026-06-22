@@ -443,8 +443,11 @@ class PolyhavenClient:
         return self._request_json(f"/files/{quote(asset_id, safe='')}")
 
     def download_selection(self, selection: TextureFileSelection, cache_dir: Path, prefix: str) -> dict[str, Path]:
-        cache_root = cache_dir.resolve()
-        cache_root.mkdir(parents=True, exist_ok=True)
+        try:
+            cache_root = cache_dir.resolve()
+            cache_root.mkdir(parents=True, exist_ok=True)
+        except (OSError, RuntimeError) as exc:
+            raise PolyhavenError(f"failed to prepare Poly Haven cache directory {cache_dir}: {exc}") from exc
         paths = {role: _safe_download_path(cache_root, cache_root, prefix, role) for role in selection.urls}
         urls = {role: _validate_download_url(role, url) for role, url in selection.urls.items()}
         written: dict[str, Path] = {}
