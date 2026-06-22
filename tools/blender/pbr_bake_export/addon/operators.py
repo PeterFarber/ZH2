@@ -22,8 +22,17 @@ from .polyhaven import PolyhavenClient, PolyhavenError, select_texture_files
 from .types import AssetMode, AssetPaths, MaterialSource, TextureResolution
 
 
+DEFAULT_USER_AGENT = "ZH2-Blender-PBR-Bake-Export/0.1"
+DEFAULT_CACHE_ROOT = "//assets/_polyhaven_cache"
+
+
 class _ClassStore:
     classes: list[type] = []
+
+
+class _DefaultAddonPreferences:
+    user_agent = DEFAULT_USER_AGENT
+    cache_root = DEFAULT_CACHE_ROOT
 
 
 def _resolution_from_settings(value: str) -> TextureResolution:
@@ -41,10 +50,11 @@ def _abspath(blender_path: str) -> Path:
 
 
 def _addon_preferences(context):
-    import bpy  # noqa: F401
-
     addon_name = __package__
-    return context.preferences.addons[addon_name].preferences
+    try:
+        return context.preferences.addons[addon_name].preferences
+    except (AttributeError, KeyError, TypeError):
+        return _DefaultAddonPreferences()
 
 
 def _selected_mesh_objects(context):
@@ -229,7 +239,6 @@ def register():
 
             resolution = _resolution_from_settings(settings.texture_resolution)
             output_root = _abspath(settings.output_root)
-            cache_root = _abspath(_addon_preferences(context).cache_root)
             mode = _asset_mode_from_settings(settings.asset_mode)
             material_source = _material_source_from_settings(settings.material_source)
             reserved_names: set[str] = set()
@@ -267,6 +276,7 @@ def register():
                         if not polyhaven_asset_id:
                             self.report({"ERROR"}, "Select a Poly Haven material before exporting")
                             return {"CANCELLED"}
+                        cache_root = _abspath(_addon_preferences(context).cache_root)
                         material_texture_paths = _polyhaven_cache_texture_paths(cache_root, polyhaven_asset_id)
 
                     _apply_material_source(

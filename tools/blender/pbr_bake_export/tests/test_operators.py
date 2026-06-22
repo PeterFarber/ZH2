@@ -1,4 +1,5 @@
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
@@ -119,6 +120,18 @@ class OperatorMaterialTests(unittest.TestCase):
         self.assertEqual(calls["plan"].polyhaven_asset_id, "wall_plaster")
         self.assertIs(calls["assigned_obj"], export_obj)
         self.assertIs(calls["assigned_material"], generated_material)
+
+
+class OperatorPreferencesTests(unittest.TestCase):
+    def test_addon_preferences_falls_back_for_direct_repo_registration(self):
+        context = types.SimpleNamespace(
+            preferences=types.SimpleNamespace(addons={}),
+        )
+
+        prefs = operators._addon_preferences(context)
+
+        self.assertEqual(prefs.user_agent, "ZH2-Blender-PBR-Bake-Export/0.1")
+        self.assertEqual(prefs.cache_root, "//assets/_polyhaven_cache")
 
 
 if __name__ == "__main__":
