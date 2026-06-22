@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterator
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from .types import TextureResolution
@@ -16,6 +16,7 @@ from .types import TextureResolution
 API_ROOT = "https://api.polyhaven.com"
 REQUIRED_ROLES = ("basecolor", "normal", "roughness", "metallic", "ao")
 _DEFAULT_TIMEOUT_SECONDS = 30.0
+_DOWNLOAD_URL_SCHEMES = {"http", "https"}
 _ROLE_TOKEN_SEQUENCES = (
     ("basecolor", ("diff",)),
     ("basecolor", ("diffuse",)),
@@ -228,6 +229,19 @@ def _safe_download_path(cache_dir: Path, cache_root: Path, prefix: str, role: st
     return path
 
 
+def _validate_download_url(role: str, url: str) -> str:
+    clean = url.strip()
+    try:
+        parts = urlsplit(clean)
+    except ValueError as exc:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
+    if parts.scheme not in _DOWNLOAD_URL_SCHEMES:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: unsupported scheme")
+    if not parts.netloc:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: missing host")
+    return clean
+
+
 class PolyhavenClient:
     def __init__(
         self,
@@ -281,11 +295,12 @@ class PolyhavenClient:
         cache_dir.mkdir(parents=True, exist_ok=True)
         cache_root = cache_dir.resolve()
         paths = {role: _safe_download_path(cache_dir, cache_root, prefix, role) for role in selection.urls}
+        urls = {role: _validate_download_url(role, url) for role, url in selection.urls.items()}
         written: dict[str, Path] = {}
-        for role, url in selection.urls.items():
+        for role, url in urls.items():
             path = paths[role]
-            request = Request(url, headers={"User-Agent": self.user_agent})
             try:
+                request = Request(url, headers={"User-Agent": self.user_agent})
                 with self.fetcher(request, timeout=self.timeout_seconds) as response:
                     path.write_bytes(response.read())
             except Exception as exc:

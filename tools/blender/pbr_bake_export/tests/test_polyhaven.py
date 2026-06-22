@@ -271,6 +271,32 @@ class PolyhavenTests(unittest.TestCase):
             with self.assertRaisesRegex(PolyhavenError, "basecolor"):
                 client.download_selection(selection, Path(temp), "brick")
 
+    def test_download_selection_rejects_invalid_url_schemes_and_hosts_before_fetching(self):
+        cases = (
+            "file:///tmp/secret.png",
+            "",
+            "https:///missing-host.png",
+        )
+        for url in cases:
+            with self.subTest(url=url):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    raise AssertionError("download should not start for invalid URLs")
+
+                selection = TextureFileSelection(
+                    resolution=TextureResolution.FOUR_K,
+                    urls={"basecolor": url},
+                    warnings=[],
+                )
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                with tempfile.TemporaryDirectory() as temp:
+                    with self.assertRaisesRegex(PolyhavenError, "basecolor"):
+                        client.download_selection(selection, Path(temp), "brick")
+                    self.assertEqual(calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()
