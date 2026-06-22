@@ -63,20 +63,35 @@ Entity FindMatch(Scene& scene) {
     return it == view.end() ? Entity{} : Entity(*it, &scene);
 }
 
+Entity FindPuck(Scene& scene) {
+    auto view = scene.Registry().view<PuckComponent>();
+    const auto it = view.begin();
+    return it == view.end() ? Entity{} : Entity(*it, &scene);
+}
+
+bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) {
+    for (const GameplayEvent& event : events) {
+        if (event.type == type) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SetPlaying(Scene& scene) {
     MatchStateComponent& match = FindMatch(scene).GetComponent<MatchStateComponent>();
     match.phase = MatchPhase::Playing;
     match.clockRunning = true;
 }
 
-void PushMove(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, const glm::vec2& move, bool sprint = false) {
+void PushMove(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, const glm::vec2& move, bool boost = false) {
     GameplayInputFrame input;
     input.playerIndex = playerIndex;
     input.inputSequence = tick;
     input.simulationTick = tick;
     input.move = move;
     input.aim = move;
-    input.sprint = sprint;
+    input.boostPressed = boost;
     world.PushInput(input);
 }
 
@@ -92,10 +107,31 @@ void PushWaypoint(GameplayWorld& world,
     input.inputSequence = tick;
     input.simulationTick = tick;
     input.moveTarget = target;
-    input.hasMoveTarget = true;
-    input.boostForward = boost;
-    input.brake = brake;
+    input.setMoveTarget = true;
+    input.boostPressed = boost;
+    input.brakePressed = brake;
+    input.brakeHeld = brake;
     input.quickTurnPressed = quickTurn;
+    world.PushInput(input);
+}
+
+void PushBrake(GameplayWorld& world, uint32_t playerIndex, uint64_t tick) {
+    GameplayInputFrame input;
+    input.playerIndex = playerIndex;
+    input.inputSequence = tick;
+    input.simulationTick = tick;
+    input.brakePressed = true;
+    input.brakeHeld = true;
+    input.clearMoveTarget = true;
+    world.PushInput(input);
+}
+
+void PushGoalieShield(GameplayWorld& world, uint32_t playerIndex, uint64_t tick) {
+    GameplayInputFrame input;
+    input.playerIndex = playerIndex;
+    input.inputSequence = tick;
+    input.simulationTick = tick;
+    input.goalieShieldPressed = true;
     world.PushInput(input);
 }
 
@@ -137,13 +173,21 @@ void RunSkaterMovementTests() {
     brakeInput.playerIndex = playerIndex;
     brakeInput.inputSequence = 3;
     brakeInput.simulationTick = 3;
-    brakeInput.brake = true;
+    brakeInput.brakePressed = true;
+    brakeInput.brakeHeld = true;
+    brakeInput.clearMoveTarget = true;
     world.PushInput(brakeInput);
     world.FixedUpdate(scene, settings.fixedDeltaSeconds, 3);
     const float speedAfterNoInput = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
     HK_CHECK(speedAfterNoInput < speedAfterInput);
+    HK_CHECK(!skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
 
-    for (uint64_t tick = 4; tick < 90; ++tick) {
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{4.0f, 0.0f, 0.0f};
+    PushBrake(world, playerIndex, 4);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 4);
+    HK_CHECK_EQ(skater.GetComponent<PlayerRuntimeComponent>().velocity, glm::vec3{0.0f});
+
+    for (uint64_t tick = 6; tick < 90; ++tick) {
         PushMove(world, playerIndex, tick, {1.0f, 0.0f});
         world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
     }
@@ -151,19 +195,24 @@ void RunSkaterMovementTests() {
     HK_CHECK(clampedSpeed <= skater.GetComponent<SkaterComponent>().maxSpeed + 0.001f);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
-    for (uint64_t tick = 90; tick < 150; ++tick) {
-        PushMove(world, playerIndex, tick, {1.0f, 0.0f}, true);
-        world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
-    }
-    const float sprintSpeed = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
-    HK_CHECK(sprintSpeed > skater.GetComponent<SkaterComponent>().maxSpeed);
+    skater.GetComponent<PlayerRuntimeComponent>().facingDirection = glm::vec3{1.0f, 0.0f, 0.0f};
+    PushMove(world, playerIndex, 90, {0.0f, 0.0f}, true);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 90);
+    const float boostedSpeed = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
+    HK_CHECK(boostedSpeed >= world.GetTuning().skater.boostImpulse * 0.9f);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().boostCooldown > 0.0f);
+    HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::PlayerBoosted));
+
+    PushMove(world, playerIndex, 91, {0.0f, 0.0f}, true);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 91);
+    HK_CHECK(glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity) <= boostedSpeed);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{4.0f, 0.0f, 0.0f};
     skater.GetComponent<PlayerRuntimeComponent>().facingDirection = glm::vec3{1.0f, 0.0f, 0.0f};
     PushWaypoint(world, playerIndex, 150, {10.0f, 0.0f, -5.0f}, false, false, true);
     world.FixedUpdate(scene, settings.fixedDeltaSeconds, 150);
     HK_CHECK(!skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
-    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x < 0.0f);
+    HK_CHECK(glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity) < 4.0f);
     HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, -1.0f, 0.001);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
@@ -205,4 +254,44 @@ void RunGoalieMovementTests() {
     const float goalieSpeed = glm::length(goalie.GetComponent<PlayerRuntimeComponent>().velocity);
     HK_CHECK(goalieSpeed <= goalie.GetComponent<GoalieComponent>().maxSpeed + 0.001f);
     HK_CHECK(goalie.GetComponent<GoalieComponent>().maxSpeed < FindPlayer(scene, PlayerSlot::HomeSkater0).GetComponent<SkaterComponent>().maxSpeed);
+
+    goalie.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+    goalie.GetComponent<PlayerRuntimeComponent>().facingDirection = glm::vec3{1.0f, 0.0f, 0.0f};
+    HK_CHECK_EQ(goalie.GetComponent<PlayerRuntimeComponent>().goalieBoostCharges, 2u);
+    PushMove(world, playerIndex, 90, {0.0f, 0.0f}, true);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 90);
+    HK_CHECK_EQ(goalie.GetComponent<PlayerRuntimeComponent>().goalieBoostCharges, 1u);
+    HK_CHECK(glm::length(goalie.GetComponent<PlayerRuntimeComponent>().velocity) >= world.GetTuning().goalie.boostImpulse * 0.9f);
+
+    for (uint64_t tick = 91; tick < 331; ++tick) {
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
+    }
+    HK_CHECK_EQ(goalie.GetComponent<PlayerRuntimeComponent>().goalieBoostCharges, 2u);
+
+    Entity puck = FindPuck(scene);
+    Entity awaySkater = FindPlayer(scene, PlayerSlot::AwaySkater0);
+    goalie.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, -24.0f};
+    goalie.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+    puck.GetComponent<TransformComponent>().localPosition = {1.0f, 0.0f, -24.0f};
+    puck.GetComponent<PuckGameplayComponent>().state = PuckState::Loose;
+    puck.GetComponent<PuckGameplayComponent>().possessingPlayer = {};
+    puck.GetComponent<PuckRuntimeComponent>().velocity = {-2.0f, 0.0f, 0.0f};
+    awaySkater.GetComponent<TransformComponent>().localPosition = {0.5f, 0.0f, -24.0f};
+    awaySkater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+
+    PushGoalieShield(world, playerIndex, 331);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 331);
+    HK_CHECK(goalie.GetComponent<PlayerRuntimeComponent>().shieldActive);
+    HK_CHECK(goalie.GetComponent<PlayerRuntimeComponent>().shieldTimer > 0.0f);
+    HK_CHECK(goalie.GetComponent<PlayerRuntimeComponent>().shieldCooldown > 0.0f);
+    HK_CHECK(puck.GetComponent<PuckRuntimeComponent>().velocity.x > 0.0f);
+    HK_CHECK(glm::length(puck.GetComponent<PuckRuntimeComponent>().velocity) > 10.0f);
+    HK_CHECK(glm::length(awaySkater.GetComponent<PlayerRuntimeComponent>().velocity) > 0.0f);
+    HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::GoalieShieldStarted));
+
+    for (uint64_t tick = 332; tick < 400; ++tick) {
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
+    }
+    HK_CHECK(!goalie.GetComponent<PlayerRuntimeComponent>().shieldActive);
+    HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::GoalieShieldEnded));
 }

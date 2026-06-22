@@ -1,6 +1,8 @@
 Match:
   PeriodCount: 3
-  PeriodLengthSeconds: 300.0
+  PeriodLengthSeconds: 180.0
+  PregameCountdownSeconds: 10.0
+  CountdownBeepStartSeconds: 4.0
   SkatersPerTeam: 3
   GoaliesPerTeam: 1
 Faceoff:

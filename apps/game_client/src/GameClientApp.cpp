@@ -108,6 +108,35 @@ bool ProjectMouseToIcePlane(Hockey::Scene& scene, std::uint32_t width, std::uint
     return true;
 }
 
+Hockey::Entity FindLocalGameplayPlayer(Hockey::Scene& scene, uint32_t playerIndex) {
+    auto view = scene.Registry().view<Hockey::PlayerComponent>();
+    for (const entt::entity handle : view) {
+        Hockey::Entity player(handle, &scene);
+        if (player.GetComponent<Hockey::PlayerComponent>().playerIndex == playerIndex) {
+            return player;
+        }
+    }
+    return {};
+}
+
+bool PlayerHasPuck(Hockey::Scene& scene, Hockey::Entity player) {
+    if (!player.IsValid()) {
+        return false;
+    }
+    if (player.HasComponent<Hockey::SkaterComponent>() && player.GetComponent<Hockey::SkaterComponent>().hasPuck) {
+        return true;
+    }
+
+    auto pucks = scene.Registry().view<Hockey::PuckGameplayComponent>();
+    for (const entt::entity handle : pucks) {
+        Hockey::Entity puck(handle, &scene);
+        if (puck.GetComponent<Hockey::PuckGameplayComponent>().possessingPlayer == player.GetUUID()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 bool GameClientApp::OnInit() {
@@ -271,18 +300,23 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
+    const Hockey::Entity localPlayer = FindLocalGameplayPlayer(m_Scene, input.playerIndex);
+    const bool localHasPuck = PlayerHasPuck(m_Scene, localPlayer);
+    const bool localIsGoalie = localPlayer.IsValid() && localPlayer.HasComponent<Hockey::GoalieComponent>();
 
     if (Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Right)) {
         glm::vec3 target{0.0f};
         if (ProjectMouseToIcePlane(m_Scene, GetWindow().Width(), GetWindow().Height(), target)) {
-            m_LocalMoveTarget = target;
-            m_HasLocalMoveTarget = true;
+            input.moveTarget = target;
+            input.setMoveTarget = true;
         }
     }
 
-    if (m_HasLocalMoveTarget) {
-        input.moveTarget = m_LocalMoveTarget;
-        input.hasMoveTarget = true;
+    input.move.x = (Hockey::Input::IsKeyDown(Hockey::KeyCode::D) ? 1.0f : 0.0f) -
+                   (Hockey::Input::IsKeyDown(Hockey::KeyCode::A) ? 1.0f : 0.0f);
+    input.move.y = Hockey::Input::IsKeyDown(Hockey::KeyCode::W) ? 1.0f : 0.0f;
+    if (glm::dot(input.move, input.move) > 1.0f) {
+        input.move = glm::normalize(input.move);
     }
 
     input.aim.x = (Hockey::Input::IsKeyDown(Hockey::KeyCode::Right) ? 1.0f : 0.0f) -
@@ -293,13 +327,30 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
         input.aim = glm::normalize(input.aim);
     }
 
-    input.boostForward = Hockey::Input::IsKeyDown(Hockey::KeyCode::Z);
-    input.brake = Hockey::Input::IsKeyDown(Hockey::KeyCode::S);
-    input.quickTurnPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::X);
-    input.shootPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Left);
-    input.shootHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
-    input.shootReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
-    input.pokeCheckPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Middle);
+    input.boostPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::Z);
+    input.brakePressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::S);
+    input.brakeHeld = Hockey::Input::IsKeyDown(Hockey::KeyCode::S);
+    if (input.brakePressed) {
+        input.clearMoveTarget = true;
+    }
+
+    const bool xPressed = Hockey::Input::WasKeyPressed(Hockey::KeyCode::X);
+    input.quickTurnPressed = xPressed && !localIsGoalie;
+    input.goalieShieldPressed = xPressed && localIsGoalie;
+
+    const bool leftPressed = Hockey::Input::WasMouseButtonPressed(Hockey::MouseButton::Left);
+    const bool leftHeld = Hockey::Input::IsMouseButtonDown(Hockey::MouseButton::Left);
+    const bool leftReleased = Hockey::Input::WasMouseButtonReleased(Hockey::MouseButton::Left);
+    if (localHasPuck) {
+        input.shootPressed = leftPressed;
+        input.shootHeld = leftHeld;
+        input.shootReleased = leftReleased;
+    } else {
+        input.stealPressed = leftPressed;
+        input.stealHeld = leftHeld;
+        input.stealReleased = leftReleased;
+        input.pokeCheckPressed = leftPressed;
+    }
 
     return input;
 }

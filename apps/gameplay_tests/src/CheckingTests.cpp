@@ -89,6 +89,16 @@ void PushCheck(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, bool b
     world.PushInput(input);
 }
 
+void PushSteal(GameplayWorld& world, uint32_t playerIndex, uint64_t tick) {
+    GameplayInputFrame input;
+    input.playerIndex = playerIndex;
+    input.inputSequence = tick;
+    input.simulationTick = tick;
+    input.stealPressed = true;
+    input.stealHeld = true;
+    world.PushInput(input);
+}
+
 } // namespace
 
 void RunCheckingTests() {
@@ -176,5 +186,63 @@ void RunCheckingTests() {
         HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
         HK_CHECK(!carrier.GetComponent<SkaterComponent>().hasPuck);
         HK_CHECK(checker.GetComponent<PlayerRuntimeComponent>().pokeCheckCooldown > 0.0f);
+    }
+
+    {
+        Scene scene("StealScene");
+        BuildValidGameplayScene(scene);
+
+        GameplaySettings settings;
+        GameplayWorld world;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+        FindMatch(scene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+
+        Entity checker = FindPlayer(scene, PlayerSlot::HomeSkater0);
+        Entity carrier = FindPlayer(scene, PlayerSlot::AwaySkater0);
+        Entity puck = FindPuck(scene);
+        checker.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
+        checker.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+        carrier.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 1.0f};
+        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, -1.0f};
+        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
+
+        GameplayEventQueue events;
+        HK_CHECK(PuckPossession::TryAcquire(scene, carrier, puck, events));
+        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(checker);
+
+        PushSteal(world, checker.GetComponent<PlayerComponent>().playerIndex, 1);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+        std::vector<GameplayEvent> stealEvents = world.DrainEvents();
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
+        HK_CHECK(!carrier.GetComponent<SkaterComponent>().hasPuck);
+        HK_CHECK(checker.GetComponent<PlayerRuntimeComponent>().pokeCheckCooldown > 0.0f);
+        HK_CHECK(SawEvent(stealEvents, GameplayEventType::StealAttempted));
+
+        PushSteal(world, checker.GetComponent<PlayerComponent>().playerIndex, 2);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
+        HK_CHECK(!SawEvent(world.DrainEvents(), GameplayEventType::StealAttempted));
+    }
+
+    {
+        Scene scene("FailedStealCooldownScene");
+        BuildValidGameplayScene(scene);
+
+        GameplaySettings settings;
+        GameplayWorld world;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+        FindMatch(scene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+
+        Entity checker = FindPlayer(scene, PlayerSlot::HomeSkater0);
+        Entity puck = FindPuck(scene);
+        checker.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
+        checker.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+        puck.GetComponent<TransformComponent>().localPosition = {10.0f, 0.0f, 10.0f};
+
+        PushSteal(world, checker.GetComponent<PlayerComponent>().playerIndex, 1);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+        HK_CHECK(checker.GetComponent<PlayerRuntimeComponent>().pokeCheckCooldown > 0.0f);
+        HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::StealAttempted));
     }
 }

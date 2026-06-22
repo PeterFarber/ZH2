@@ -92,6 +92,7 @@ void RunHeadlessServerGameplayTests() {
 
     GameplaySettings settings;
     settings.periodLengthSeconds = 10.0f;
+    settings.pregameCountdownSeconds = 0.0f;
     settings.logGameplayEvents = true;
 
     GameplayWorld world;

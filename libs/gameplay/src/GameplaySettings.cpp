@@ -15,6 +15,10 @@ GameplaySettings LoadGameplaySettings(const Config& config) {
     settings.periodLengthSeconds =
         static_cast<float>(config.GetDouble("gameplay.period_length_seconds", settings.periodLengthSeconds));
     settings.periodCount = static_cast<uint32_t>(config.GetInt("gameplay.period_count", static_cast<int>(settings.periodCount)));
+    settings.pregameCountdownSeconds =
+        static_cast<float>(config.GetDouble("gameplay.pregame_countdown_seconds", settings.pregameCountdownSeconds));
+    settings.countdownBeepStartSeconds =
+        static_cast<float>(config.GetDouble("gameplay.countdown_beep_start_seconds", settings.countdownBeepStartSeconds));
     settings.stopClockAfterGoal = config.GetBool("gameplay.stop_clock_after_goal", settings.stopClockAfterGoal);
     settings.autoFaceoffAfterGoal = config.GetBool("gameplay.auto_faceoff_after_goal", settings.autoFaceoffAfterGoal);
     settings.postGoalDelaySeconds =
@@ -35,6 +39,8 @@ void SaveGameplaySettings(Config& config, const GameplaySettings& settings) {
     config.SetDouble("gameplay.fixed_delta_seconds", settings.fixedDeltaSeconds);
     config.SetDouble("gameplay.period_length_seconds", settings.periodLengthSeconds);
     config.SetInt("gameplay.period_count", static_cast<int>(settings.periodCount));
+    config.SetDouble("gameplay.pregame_countdown_seconds", settings.pregameCountdownSeconds);
+    config.SetDouble("gameplay.countdown_beep_start_seconds", settings.countdownBeepStartSeconds);
     config.SetBool("gameplay.stop_clock_after_goal", settings.stopClockAfterGoal);
     config.SetBool("gameplay.auto_faceoff_after_goal", settings.autoFaceoffAfterGoal);
     config.SetDouble("gameplay.post_goal_delay_seconds", settings.postGoalDelaySeconds);

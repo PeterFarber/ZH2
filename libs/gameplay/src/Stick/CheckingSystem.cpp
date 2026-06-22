@@ -66,6 +66,11 @@ Entity FindCheckTarget(Scene& scene, Entity checker, const GameplayTuning& tunin
     return best;
 }
 
+bool PlayerPossessesPuck(Entity player, Entity puck) {
+    return player.IsValid() && puck.IsValid() && puck.HasComponent<PuckGameplayComponent>() &&
+           puck.GetComponent<PuckGameplayComponent>().possessingPlayer == player.GetUUID();
+}
+
 void TickCooldowns(PlayerRuntimeComponent& runtime, CheckComponent& check, float fixedDeltaSeconds) {
     runtime.checkCooldown = glm::max(0.0f, runtime.checkCooldown - fixedDeltaSeconds);
     runtime.pokeCheckCooldown = glm::max(0.0f, runtime.pokeCheckCooldown - fixedDeltaSeconds);
@@ -95,6 +100,21 @@ void CheckingSystem::FixedUpdate(Scene& scene,
         }
 
         const StickComponent& stick = checker.GetComponent<StickComponent>();
+        const bool wantsSteal = input.stealPressed || input.stealHeld;
+        if (wantsSteal && stick.canCheck && puck.IsValid() && puck.HasComponent<PuckGameplayComponent>() &&
+            runtime.pokeCheckCooldown <= 0.0f && !PlayerPossessesPuck(checker, puck)) {
+            const bool canReachPuck = StickHandling::CanControlPuck(checker, puck);
+            if (canReachPuck) {
+                PuckPossession::Release(scene, puck, events);
+            }
+            runtime.pokeCheckCooldown = tuning.skater.stealCooldownSeconds;
+            events.Push({GameplayEventType::StealAttempted,
+                         checker.GetUUID(),
+                         puck.GetUUID(),
+                         checker.GetComponent<PlayerComponent>().team,
+                         checker.GetComponent<TransformComponent>().localPosition});
+        }
+
         if (input.pokeCheckPressed && stick.canCheck && puck.IsValid() && puck.HasComponent<PuckGameplayComponent>() &&
             runtime.pokeCheckCooldown <= 0.0f && StickHandling::CanControlPuck(checker, puck)) {
             PuckPossession::Release(scene, puck, events);

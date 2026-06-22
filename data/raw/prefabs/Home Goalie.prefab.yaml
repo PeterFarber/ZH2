@@ -65,10 +65,16 @@ Entities:
       Velocity: [0, 0, 0]
       FacingDirection: [0, 0, 1]
       MoveTarget: [0, 0, 0]
-      SprintEnergy: 1
+      BoostCooldown: 0
+      GoalieBoostCharges: 2
+      GoalieBoostRechargeTimer: 0
+      ShieldTimer: 0
+      ShieldCooldown: 0
+      LastBrakePressedTime: -1000
       CheckCooldown: 0
       PokeCheckCooldown: 0
       HasMoveTarget: false
+      ShieldActive: false
       InputEnabled: true
       MovementEnabled: true
     StickComponent:

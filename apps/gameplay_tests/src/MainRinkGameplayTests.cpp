@@ -48,6 +48,7 @@ void RunMainRinkGameplayTests() {
     HK_CHECK_MSG(!HasIssueContaining(issues, "Puck entity is missing a RigidBody"), "main_rink puck has physics setup");
 
     GameplaySettings settings;
+    settings.pregameCountdownSeconds = 0.0f;
     GameplayWorld world;
     HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "main_rink initializes gameplay");
     HK_CHECK(world.IsInitialized());

@@ -54,7 +54,7 @@ private:
     Status SaveAuthoringSnapshot(Scene& scene);
     Status RestoreAuthoringSnapshot(Scene& scene);
     void ClearSnapshot();
-    GameplayInputFrame BuildLocalInput(std::uint64_t simulationTick);
+    GameplayInputFrame BuildLocalInput(Scene& scene, std::uint64_t simulationTick);
     void StepFixed(Scene& scene, EditorPhysicsPreview& physicsPreview, float fixedDeltaSeconds);
 
     GameplaySettings m_Settings{};

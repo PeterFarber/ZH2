@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <glm/glm.hpp>
 
 namespace Hockey {
@@ -9,8 +11,13 @@ struct SkaterTuning {
     float acceleration = 32.0f;
     float deceleration = 20.0f;
     float turnSpeedDegrees = 720.0f;
-    float sprintMultiplier = 1.2f;
+    float boostImpulse = 7.5f;
+    float boostCooldownSeconds = 1.25f;
+    float slideStopDamping = 0.35f;
+    float doubleStopWindowSeconds = 0.30f;
     float puckControlRadius = 1.25f;
+    float stealRadius = 1.5f;
+    float stealCooldownSeconds = 0.35f;
 };
 
 struct GoalieTuning {
@@ -18,6 +25,13 @@ struct GoalieTuning {
     float acceleration = 28.0f;
     float creaseMoveMultiplier = 1.0f;
     float saveReachRadius = 1.8f;
+    uint32_t boostCharges = 2;
+    float boostRechargeSeconds = 4.0f;
+    float boostImpulse = 8.0f;
+    float shieldRadius = 2.0f;
+    float shieldDurationSeconds = 1.0f;
+    float shieldCooldownSeconds = 5.0f;
+    float shieldReflectImpulse = 22.0f;
 };
 
 struct PuckTuning {

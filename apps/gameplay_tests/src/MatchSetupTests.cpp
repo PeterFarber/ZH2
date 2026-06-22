@@ -119,9 +119,10 @@ void RunMatchSetupTests() {
     Entity match = scene.FindEntityByName("Match State");
     HK_CHECK(match.IsValid());
     HK_CHECK(match.HasComponent<MatchStateComponent>());
-    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::FaceoffSetup);
+    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::Warmup);
     HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().periodCount, settings.periodCount);
     HK_CHECK_NEAR(match.GetComponent<MatchStateComponent>().periodTimeRemaining, 180.0f, 0.0001f);
+    HK_CHECK_NEAR(match.GetComponent<MatchStateComponent>().phaseTimer, settings.pregameCountdownSeconds, 0.0001f);
     HK_CHECK(match.GetComponent<MatchStateComponent>().matchInitialized);
 
     int homeSkaters = 0;

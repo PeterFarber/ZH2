@@ -1,6 +1,6 @@
 # Phase 7 - Hockey Gameplay
 
-Status: Implemented for local client, editor preview, and headless server use, with GAMEPLAY.md action-design follow-ups pending.
+Status: Implemented for local client, editor preview, and headless server use, with most GAMEPLAY.md action-design follow-ups implemented.
 
 Source material:
 
@@ -39,6 +39,7 @@ Source material:
 - [x] Input buffering exists.
 - [x] Gameplay event queue exists.
 - [x] Gameplay event names exist.
+- [x] Countdown, steal, boost, and goalie shield gameplay event names exist.
 - [x] Optional gameplay event logging exists.
 
 ## Finished - Components And Validation
@@ -67,13 +68,20 @@ Source material:
 - [x] 4v4 setup exists.
 - [x] Match clock exists.
 - [x] Period clock behavior exists.
+- [x] 3x180-second period defaults exist.
+- [x] Pregame countdown exists.
+- [x] Countdown tick/beep gameplay events exist.
 - [x] Faceoff flow exists.
 - [x] Reset flow exists.
 - [x] Score system exists.
 - [x] Goal detection exists.
 - [x] Out-of-play handling exists.
 - [x] Skater movement exists.
+- [x] Skater impulse boost exists.
+- [x] Brake clears waypoints and double-tap stops skaters.
 - [x] Goalie movement support exists.
+- [x] Goalie two-charge boost exists.
+- [x] Goalie shield reflects pucks and bounces players.
 - [x] Puck gameplay state exists.
 - [x] Puck controller exists.
 - [x] Puck possession exists.
@@ -81,6 +89,8 @@ Source material:
 - [x] Shooting exists.
 - [x] Passing exists.
 - [x] Checking/poke check hooks exist.
+- [x] Explicit steal action exists.
+- [x] Contextual left-click steal-or-shot mapping exists in local client/editor preview input translation.
 
 ## Finished - World, Snapshots, Integration
 
@@ -110,6 +120,7 @@ Source material:
 - [x] Passing tests exist.
 - [x] Checking tests exist.
 - [x] Goal tests exist.
+- [x] Goal trigger tests cover puck-only scoring.
 - [x] Out-of-play tests exist.
 - [x] Snapshot tests exist.
 - [x] Main rink regression coverage exists.
@@ -117,7 +128,7 @@ Source material:
 
 ## Started / Partial
 
-- [ ] `GAMEPLAY.md` now defines follow-up action rules not fully implemented yet: 180-second periods, pregame countdown, contextual steal/shoot input, impulse boosts, goalie shield, double-tap stop, and role-specific solid collider authoring.
+- [ ] Role-specific solid skater-only/goalie-only collider authoring still needs clearer editor-facing workflow and dedicated tests.
 - [ ] Gameplay snapshots exist locally, but are not replicated over a network transport.
 - [ ] Input model exists locally, but input streaming over the network is not implemented.
 - [ ] `SceneMode::ClientPrediction` exists, but prediction/reconciliation are not implemented.
@@ -126,7 +137,7 @@ Source material:
 
 ## Left To Do
 
-- [ ] Implement and test the new `GAMEPLAY.md` action-design deltas before treating gameplay controls as final.
+- [ ] Add the remaining role-specific solid collider authoring workflow/tests before treating collider authoring as final.
 - [ ] Connect input frames and snapshots to Phase 8 networking.
 - [ ] Add server-side network input validation during Phase 8.
 - [ ] Add snapshot interpolation, prediction, and reconciliation during Phase 8.

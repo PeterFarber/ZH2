@@ -15,8 +15,10 @@ struct GameplaySettings {
 
     float fixedDeltaSeconds = 1.0f / 60.0f;
 
-    float periodLengthSeconds = 300.0f;
+    float periodLengthSeconds = 180.0f;
     uint32_t periodCount = 3;
+    float pregameCountdownSeconds = 10.0f;
+    float countdownBeepStartSeconds = 4.0f;
 
     bool stopClockAfterGoal = true;
     bool autoFaceoffAfterGoal = true;

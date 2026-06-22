@@ -1,5 +1,7 @@
 #include "Test.hpp"
 
+#include <entt/entt.hpp>
+
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
@@ -52,6 +54,27 @@ bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) 
     return false;
 }
 
+int CountEvents(const std::vector<GameplayEvent>& events, GameplayEventType type) {
+    int count = 0;
+    for (const GameplayEvent& event : events) {
+        if (event.type == type) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+Entity FindPlayer(Scene& scene, PlayerSlot slot) {
+    auto view = scene.Registry().view<PlayerComponent>();
+    for (const entt::entity handle : view) {
+        Entity player(handle, &scene);
+        if (player.GetComponent<PlayerComponent>().slot == slot) {
+            return player;
+        }
+    }
+    return {};
+}
+
 } // namespace
 
 void RunGameplayWorldTests() {
@@ -62,20 +85,43 @@ void RunGameplayWorldTests() {
 
     GameplaySettings settings;
     settings.periodLengthSeconds = 1.2f;
+    settings.pregameCountdownSeconds = 2.0f;
+    settings.countdownBeepStartSeconds = 1.0f;
     GameplayWorld world;
     HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
     HK_CHECK(world.IsInitialized());
     HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::MatchInitialized));
 
     Entity match = scene.FindEntityByName("Match State");
-    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::FaceoffSetup);
+    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::Warmup);
+    HK_CHECK_NEAR(match.GetComponent<MatchStateComponent>().phaseTimer, 2.0f, 0.0001f);
 
-    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+    Entity skater = FindPlayer(scene, PlayerSlot::HomeSkater0);
+    GameplayInputFrame warmupInput;
+    warmupInput.playerIndex = skater.GetComponent<PlayerComponent>().playerIndex;
+    warmupInput.inputSequence = 1;
+    warmupInput.simulationTick = 1;
+    warmupInput.move = {1.0f, 0.0f};
+    world.PushInput(warmupInput);
+    world.FixedUpdate(scene, 1.0f, 1);
+    std::vector<GameplayEvent> countdownEvents = world.DrainEvents();
+    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::Warmup);
+    HK_CHECK_EQ(skater.GetComponent<PlayerRuntimeComponent>().velocity, glm::vec3{0.0f});
+    HK_CHECK_EQ(CountEvents(countdownEvents, GameplayEventType::CountdownTick), 1);
+    HK_CHECK_EQ(CountEvents(countdownEvents, GameplayEventType::CountdownBeep), 1);
+
+    world.FixedUpdate(scene, 1.0f, 2);
+    std::vector<GameplayEvent> countdownEndEvents = world.DrainEvents();
+    HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::FaceoffSetup);
+    HK_CHECK_EQ(CountEvents(countdownEndEvents, GameplayEventType::CountdownTick), 1);
+    HK_CHECK_EQ(CountEvents(countdownEndEvents, GameplayEventType::CountdownBeep), 1);
+
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 3);
     HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::Faceoff);
     HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::FaceoffStarted));
 
     for (int i = 0; i < 61; ++i) {
-        world.FixedUpdate(scene, settings.fixedDeltaSeconds, static_cast<uint64_t>(2 + i));
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, static_cast<uint64_t>(4 + i));
     }
     std::vector<GameplayEvent> faceoffEvents = world.DrainEvents();
     HK_CHECK_EQ(match.GetComponent<MatchStateComponent>().phase, MatchPhase::Playing);

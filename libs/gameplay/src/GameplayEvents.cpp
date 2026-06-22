@@ -8,6 +8,8 @@ const char* GameplayEventTypeToString(GameplayEventType type) {
     switch (type) {
     case GameplayEventType::MatchInitialized: return "MatchInitialized";
     case GameplayEventType::MatchStarted: return "MatchStarted";
+    case GameplayEventType::CountdownTick: return "CountdownTick";
+    case GameplayEventType::CountdownBeep: return "CountdownBeep";
     case GameplayEventType::PeriodStarted: return "PeriodStarted";
     case GameplayEventType::PeriodEnded: return "PeriodEnded";
     case GameplayEventType::FaceoffStarted: return "FaceoffStarted";
@@ -15,6 +17,10 @@ const char* GameplayEventTypeToString(GameplayEventType type) {
     case GameplayEventType::GoalScored: return "GoalScored";
     case GameplayEventType::ScoreChanged: return "ScoreChanged";
     case GameplayEventType::PuckPossessionChanged: return "PuckPossessionChanged";
+    case GameplayEventType::StealAttempted: return "StealAttempted";
+    case GameplayEventType::PlayerBoosted: return "PlayerBoosted";
+    case GameplayEventType::GoalieShieldStarted: return "GoalieShieldStarted";
+    case GameplayEventType::GoalieShieldEnded: return "GoalieShieldEnded";
     case GameplayEventType::PuckShot: return "PuckShot";
     case GameplayEventType::PuckPassed: return "PuckPassed";
     case GameplayEventType::PlayerChecked: return "PlayerChecked";

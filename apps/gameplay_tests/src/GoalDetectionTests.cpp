@@ -120,6 +120,17 @@ void RunGoalDetectionTests() {
     HK_CHECK_EQ(ScoreSystem::GetScore(scene, GameplayTeam::Away), 1u);
     HK_CHECK(SawEvent(events.Drain(), GameplayEventType::GoalScored));
 
+    Entity playerBody = scene.FindEntityByName("HomeSkater0");
+    if (!playerBody.IsValid()) {
+        auto view = scene.Registry().view<PlayerComponent>();
+        const auto it = view.begin();
+        playerBody = it == view.end() ? Entity{} : Entity(*it, &scene);
+    }
+    HK_CHECK(playerBody.IsValid());
+    match.phase = MatchPhase::Playing;
+    HK_CHECK(!GoalDetection::HandleGoalTrigger(scene, homeGoal, playerBody, settings, events));
+    HK_CHECK_EQ(ScoreSystem::GetScore(scene, GameplayTeam::Away), 1u);
+
     match.phase = MatchPhase::Playing;
     match.homeScore = 0;
     match.awayScore = 0;

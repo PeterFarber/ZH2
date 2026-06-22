@@ -1,5 +1,7 @@
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 
+#include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Match/FaceoffSystem.hpp"
 #include "Hockey/Gameplay/Match/MatchClock.hpp"
 #include "Hockey/Gameplay/Match/MatchSystem.hpp"
@@ -14,6 +16,18 @@
 #include "Hockey/Gameplay/Stick/ShootingSystem.hpp"
 
 namespace Hockey {
+namespace {
+
+bool IsActiveGameplayPhase(Scene& scene) {
+    auto view = scene.Registry().view<MatchStateComponent>();
+    const auto it = view.begin();
+    if (it == view.end()) {
+        return true;
+    }
+    return view.get<MatchStateComponent>(*it).phase == MatchPhase::Playing;
+}
+
+} // namespace
 
 Status GameplayWorld::Init(Scene& scene, PhysicsWorld* physicsWorld, const GameplaySettings& settings) {
     m_Settings = settings;
@@ -58,15 +72,17 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     }
 
     FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
-    PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds);
-    PuckPossession::FixedUpdate(scene, m_Events);
-    ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
-    PassingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, m_Events);
-    CheckingSystem::FixedUpdate(scene, m_InputBuffer, m_Settings, m_Tuning, fixedDeltaSeconds, m_Events);
-    PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);
-    GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
-    OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);
-    MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
+    PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
+    if (IsActiveGameplayPhase(scene)) {
+        PuckPossession::FixedUpdate(scene, m_Events);
+        ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
+        PassingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, m_Events);
+        CheckingSystem::FixedUpdate(scene, m_InputBuffer, m_Settings, m_Tuning, fixedDeltaSeconds, m_Events);
+        PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);
+        GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
+        OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);
+    }
+    MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     m_InputBuffer.ClearForTick(tick);
 }

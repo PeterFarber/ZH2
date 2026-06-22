@@ -38,10 +38,16 @@ struct PlayerRuntimeComponent {
     glm::vec3 velocity{0.0f};
     glm::vec3 facingDirection{0.0f, 0.0f, 1.0f};
     glm::vec3 moveTarget{0.0f};
-    float sprintEnergy = 1.0f;
+    float boostCooldown = 0.0f;
+    uint32_t goalieBoostCharges = 2;
+    float goalieBoostRechargeTimer = 0.0f;
+    float shieldTimer = 0.0f;
+    float shieldCooldown = 0.0f;
+    float lastBrakePressedTime = -1000.0f;
     float checkCooldown = 0.0f;
     float pokeCheckCooldown = 0.0f;
     bool hasMoveTarget = false;
+    bool shieldActive = false;
     bool inputEnabled = true;
     bool movementEnabled = true;
 };

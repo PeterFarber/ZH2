@@ -139,10 +139,11 @@ Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settin
 
     Entity match = FindOrCreateNamed(scene, "Match State");
     MatchStateComponent matchState;
-    matchState.phase = MatchPhase::FaceoffSetup;
+    matchState.phase = settings.pregameCountdownSeconds > 0.0f ? MatchPhase::Warmup : MatchPhase::FaceoffSetup;
     matchState.period = 1;
     matchState.periodCount = settings.periodCount;
     matchState.periodTimeRemaining = settings.periodLengthSeconds;
+    matchState.phaseTimer = settings.pregameCountdownSeconds > 0.0f ? settings.pregameCountdownSeconds : 0.0f;
     matchState.homeScore = 0;
     matchState.awayScore = 0;
     matchState.clockRunning = false;

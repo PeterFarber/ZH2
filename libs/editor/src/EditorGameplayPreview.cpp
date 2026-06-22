@@ -2,18 +2,53 @@
 
 #include <filesystem>
 
+#include <entt/entt.hpp>
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Input.hpp"
 #include "Hockey/Core/Keyboard.hpp"
 #include "Hockey/Core/Paths.hpp"
+#include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
+#include "Hockey/Gameplay/GameplayComponents.hpp"
 
 #include <glm/geometric.hpp>
 #include <imgui.h>
 
 namespace Hockey {
+namespace {
+
+Entity FindPreviewPlayer(Scene& scene, uint32_t playerIndex) {
+    auto view = scene.Registry().view<PlayerComponent>();
+    for (const entt::entity handle : view) {
+        Entity player(handle, &scene);
+        if (player.GetComponent<PlayerComponent>().playerIndex == playerIndex) {
+            return player;
+        }
+    }
+    return {};
+}
+
+bool PlayerHasPuck(Scene& scene, Entity player) {
+    if (!player.IsValid()) {
+        return false;
+    }
+    if (player.HasComponent<SkaterComponent>() && player.GetComponent<SkaterComponent>().hasPuck) {
+        return true;
+    }
+
+    auto pucks = scene.Registry().view<PuckGameplayComponent>();
+    for (const entt::entity handle : pucks) {
+        Entity puck(handle, &scene);
+        if (puck.GetComponent<PuckGameplayComponent>().possessingPlayer == player.GetUUID()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
 
 void EditorGameplayPreview::Configure(const GameplaySettings& settings) {
     m_Settings = settings;
@@ -162,11 +197,14 @@ void EditorGameplayPreview::ClearSnapshot() {
     }
 }
 
-GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulationTick) {
+GameplayInputFrame EditorGameplayPreview::BuildLocalInput(Scene& scene, std::uint64_t simulationTick) {
     GameplayInputFrame input;
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
+    const Entity localPlayer = FindPreviewPlayer(scene, input.playerIndex);
+    const bool localHasPuck = PlayerHasPuck(scene, localPlayer);
+    const bool localIsGoalie = localPlayer.IsValid() && localPlayer.HasComponent<GoalieComponent>();
 
     if (!m_InputEnabled || (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput)) {
         return input;
@@ -174,7 +212,14 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulati
 
     if (m_HasMoveTarget) {
         input.moveTarget = m_MoveTarget;
-        input.hasMoveTarget = true;
+        input.setMoveTarget = true;
+        m_HasMoveTarget = false;
+    }
+
+    input.move.x = (Input::IsKeyDown(KeyCode::D) ? 1.0f : 0.0f) - (Input::IsKeyDown(KeyCode::A) ? 1.0f : 0.0f);
+    input.move.y = Input::IsKeyDown(KeyCode::W) ? 1.0f : 0.0f;
+    if (glm::dot(input.move, input.move) > 1.0f) {
+        input.move = glm::normalize(input.move);
     }
 
     input.aim.x = (Input::IsKeyDown(KeyCode::Right) ? 1.0f : 0.0f) -
@@ -185,13 +230,31 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(std::uint64_t simulati
         input.aim = glm::normalize(input.aim);
     }
 
-    input.boostForward = Input::IsKeyDown(KeyCode::Z);
-    input.brake = Input::IsKeyDown(KeyCode::S);
-    input.quickTurnPressed = Input::WasKeyPressed(KeyCode::X);
-    input.shootPressed = Input::WasMouseButtonPressed(MouseButton::Left);
-    input.shootHeld = Input::IsMouseButtonDown(MouseButton::Left);
-    input.shootReleased = Input::WasMouseButtonReleased(MouseButton::Left);
-    input.pokeCheckPressed = Input::WasMouseButtonPressed(MouseButton::Middle);
+    input.boostPressed = Input::WasKeyPressed(KeyCode::Z);
+    input.brakePressed = Input::WasKeyPressed(KeyCode::S);
+    input.brakeHeld = Input::IsKeyDown(KeyCode::S);
+    if (input.brakePressed) {
+        m_HasMoveTarget = false;
+        input.clearMoveTarget = true;
+    }
+
+    const bool xPressed = Input::WasKeyPressed(KeyCode::X);
+    input.quickTurnPressed = xPressed && !localIsGoalie;
+    input.goalieShieldPressed = xPressed && localIsGoalie;
+
+    const bool leftPressed = Input::WasMouseButtonPressed(MouseButton::Left);
+    const bool leftHeld = Input::IsMouseButtonDown(MouseButton::Left);
+    const bool leftReleased = Input::WasMouseButtonReleased(MouseButton::Left);
+    if (localHasPuck) {
+        input.shootPressed = leftPressed;
+        input.shootHeld = leftHeld;
+        input.shootReleased = leftReleased;
+    } else {
+        input.stealPressed = leftPressed;
+        input.stealHeld = leftHeld;
+        input.stealReleased = leftReleased;
+        input.pokeCheckPressed = leftPressed;
+    }
 
     return input;
 }
@@ -200,7 +263,7 @@ void EditorGameplayPreview::StepFixed(Scene& scene, EditorPhysicsPreview& physic
     if (!m_World.IsInitialized() || !physicsPreview.IsActive()) {
         return;
     }
-    m_World.PushInput(BuildLocalInput(m_Tick));
+    m_World.PushInput(BuildLocalInput(scene, m_Tick));
     m_World.FixedUpdate(scene, fixedDeltaSeconds, m_Tick);
     physicsPreview.AdvanceFixed(scene, fixedDeltaSeconds);
     ++m_Tick;

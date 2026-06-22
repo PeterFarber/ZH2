@@ -16,11 +16,18 @@ struct GameplayInputFrame {
     glm::vec2 aim{0.0f};
     glm::vec3 moveTarget{0.0f};
 
-    bool sprint = false;
-    bool boostForward = false;
-    bool brake = false;
+    bool setMoveTarget = false;
+    bool clearMoveTarget = false;
+
+    bool stealPressed = false;
+    bool stealHeld = false;
+    bool stealReleased = false;
+
+    bool boostPressed = false;
+    bool brakePressed = false;
+    bool brakeHeld = false;
     bool quickTurnPressed = false;
-    bool hasMoveTarget = false;
+
     bool shootPressed = false;
     bool shootHeld = false;
     bool shootReleased = false;
@@ -33,7 +40,7 @@ struct GameplayInputFrame {
     bool pokeCheckPressed = false;
     bool switchPlayerPressed = false;
 
-    bool goalieActionPressed = false;
+    bool goalieShieldPressed = false;
     bool pausePressed = false;
 };
 

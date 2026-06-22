@@ -56,7 +56,6 @@ struct MovementConfig {
     float maxSpeed = 0.0f;
     float acceleration = 0.0f;
     float deceleration = 0.0f;
-    float boostMultiplier = 1.0f;
     bool lockGoalieDepth = false;
 };
 
@@ -66,12 +65,102 @@ MovementConfig ConfigFor(Entity player, const GameplayTuning& tuning) {
         return {goalie.maxSpeed,
                 goalie.acceleration,
                 tuning.skater.deceleration,
-                1.0f,
                 goalie.lockToCrease};
     }
 
     const SkaterComponent& skater = player.GetComponent<SkaterComponent>();
-    return {skater.maxSpeed, skater.acceleration, skater.deceleration, tuning.skater.sprintMultiplier, false};
+    return {skater.maxSpeed, skater.acceleration, skater.deceleration, false};
+}
+
+glm::vec3 NormalizedOrForward(const glm::vec3& value) {
+    return glm::length(value) > 0.0001f ? glm::normalize(value) : glm::vec3{0.0f, 0.0f, 1.0f};
+}
+
+void TickAbilityTimers(Entity player,
+                       PlayerRuntimeComponent& runtime,
+                       const GameplayTuning& tuning,
+                       float fixedDeltaSeconds,
+                       GameplayEventQueue& events) {
+    runtime.boostCooldown = glm::max(0.0f, runtime.boostCooldown - fixedDeltaSeconds);
+    runtime.shieldCooldown = glm::max(0.0f, runtime.shieldCooldown - fixedDeltaSeconds);
+
+    if (runtime.lastBrakePressedTime >= 0.0f) {
+        runtime.lastBrakePressedTime += fixedDeltaSeconds;
+        if (runtime.lastBrakePressedTime > tuning.skater.doubleStopWindowSeconds) {
+            runtime.lastBrakePressedTime = -1000.0f;
+        }
+    }
+
+    if (player.HasComponent<GoalieComponent>()) {
+        const uint32_t maxCharges = std::max(1u, tuning.goalie.boostCharges);
+        runtime.goalieBoostCharges = std::min(runtime.goalieBoostCharges, maxCharges);
+        if (runtime.goalieBoostCharges < maxCharges && tuning.goalie.boostRechargeSeconds > 0.0f) {
+            runtime.goalieBoostRechargeTimer += fixedDeltaSeconds;
+            while (runtime.goalieBoostRechargeTimer + 0.0001f >= tuning.goalie.boostRechargeSeconds &&
+                   runtime.goalieBoostCharges < maxCharges) {
+                runtime.goalieBoostRechargeTimer -= tuning.goalie.boostRechargeSeconds;
+                ++runtime.goalieBoostCharges;
+            }
+        } else if (runtime.goalieBoostCharges >= maxCharges) {
+            runtime.goalieBoostRechargeTimer = 0.0f;
+        }
+
+        if (runtime.shieldActive) {
+            runtime.shieldTimer = glm::max(0.0f, runtime.shieldTimer - fixedDeltaSeconds);
+            if (runtime.shieldTimer <= 0.0f) {
+                runtime.shieldActive = false;
+                events.Push({GameplayEventType::GoalieShieldEnded,
+                             player.GetUUID(),
+                             {},
+                             player.GetComponent<PlayerComponent>().team,
+                             player.GetComponent<TransformComponent>().localPosition});
+            }
+        }
+    }
+}
+
+void ApplyGoalieShield(Scene& scene,
+                       Entity goalie,
+                       PlayerRuntimeComponent& goalieRuntime,
+                       const GameplayTuning& tuning) {
+    if (!goalieRuntime.shieldActive || !goalie.HasComponent<TransformComponent>()) {
+        return;
+    }
+
+    const glm::vec3 goaliePosition = goalie.GetComponent<TransformComponent>().localPosition;
+    const float radius = std::max(0.0f, tuning.goalie.shieldRadius);
+    if (radius <= 0.0f) {
+        return;
+    }
+
+    auto pucks = scene.Registry().view<PuckComponent, PuckGameplayComponent, PuckRuntimeComponent, TransformComponent>();
+    for (const entt::entity handle : pucks) {
+        Entity puck(handle, &scene);
+        const glm::vec3 offset = puck.GetComponent<TransformComponent>().localPosition - goaliePosition;
+        if (glm::length(offset) > radius) {
+            continue;
+        }
+
+        const glm::vec3 direction = NormalizedOrForward(offset);
+        puck.GetComponent<PuckRuntimeComponent>().velocity = direction * tuning.goalie.shieldReflectImpulse;
+        puck.GetComponent<PuckGameplayComponent>().state = PuckState::Shot;
+    }
+
+    auto players = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent>();
+    for (const entt::entity handle : players) {
+        Entity player(handle, &scene);
+        if (player == goalie) {
+            continue;
+        }
+
+        const glm::vec3 offset = player.GetComponent<TransformComponent>().localPosition - goaliePosition;
+        if (glm::length(offset) > radius) {
+            continue;
+        }
+
+        player.GetComponent<PlayerRuntimeComponent>().velocity +=
+            NormalizedOrForward(offset) * (tuning.goalie.shieldReflectImpulse * 0.35f);
+    }
 }
 
 } // namespace
@@ -80,7 +169,8 @@ void PlayerMovement::FixedUpdate(Scene& scene,
                                  PhysicsWorld* physicsWorld,
                                  const GameplayInputBuffer& inputs,
                                  const GameplayTuning& tuning,
-                                 float fixedDeltaSeconds) {
+                                 float fixedDeltaSeconds,
+                                 GameplayEventQueue& events) {
     const bool matchAllowsMovement = CanMoveInCurrentMatchPhase(scene);
     auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent>();
 
@@ -89,10 +179,14 @@ void PlayerMovement::FixedUpdate(Scene& scene,
         const PlayerComponent& playerComponent = player.GetComponent<PlayerComponent>();
         PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
         TransformComponent& transform = player.GetComponent<TransformComponent>();
+        TickAbilityTimers(player, runtime, tuning, fixedDeltaSeconds, events);
 
         GameplayInputFrame input;
         inputs.GetInput(playerComponent.playerIndex, input);
-        if (input.hasMoveTarget) {
+        if (input.clearMoveTarget || input.brakePressed) {
+            runtime.hasMoveTarget = false;
+        }
+        if (input.setMoveTarget) {
             runtime.moveTarget = input.moveTarget;
             runtime.hasMoveTarget = true;
         }
@@ -114,31 +208,64 @@ void PlayerMovement::FixedUpdate(Scene& scene,
         }
 
         const bool canMove = matchAllowsMovement && playerComponent.activeInMatch && runtime.inputEnabled && runtime.movementEnabled;
-        const bool braking = input.brake || !canMove;
-        const bool boosting = input.boostForward || input.sprint;
-        const float speedMultiplier = boosting ? config.boostMultiplier : 1.0f;
-        glm::vec3 targetVelocity =
-            canMove && !braking ? Xz(moveInput) * config.maxSpeed * speedMultiplier : glm::vec3{0.0f};
+        const bool braking = input.brakeHeld || !canMove;
+        glm::vec3 targetVelocity = canMove && !braking ? Xz(moveInput) * config.maxSpeed : glm::vec3{0.0f};
         const bool hasMoveInput = LengthSq(moveInput) > 0.0001f;
         const float rate = hasMoveInput && canMove && !braking ? config.acceleration : config.deceleration;
 
-        if (input.quickTurnPressed) {
-            const glm::vec3 facing = glm::length(runtime.facingDirection) > 0.0001f
-                                         ? glm::normalize(runtime.facingDirection)
-                                         : glm::vec3{0.0f, 0.0f, 1.0f};
+        if (input.brakePressed) {
+            if (runtime.lastBrakePressedTime >= 0.0f &&
+                runtime.lastBrakePressedTime <= tuning.skater.doubleStopWindowSeconds) {
+                runtime.velocity = glm::vec3{0.0f};
+                targetVelocity = glm::vec3{0.0f};
+            }
+            runtime.lastBrakePressedTime = 0.0f;
+        }
+
+        bool quickTurned = false;
+        if (canMove && input.quickTurnPressed && !player.HasComponent<GoalieComponent>()) {
+            const glm::vec3 facing = NormalizedOrForward(runtime.facingDirection);
             runtime.facingDirection = -facing;
-            runtime.velocity *= -0.35f;
+            runtime.velocity *= std::clamp(tuning.skater.slideStopDamping, 0.0f, 1.0f);
             runtime.hasMoveTarget = false;
             targetVelocity = glm::vec3{0.0f};
+            quickTurned = true;
         }
 
         runtime.velocity = MoveToward(runtime.velocity, targetVelocity, std::max(0.0f, rate) * fixedDeltaSeconds);
 
-        if (LengthSq(input.aim) > 0.0001f) {
+        if (canMove && input.boostPressed) {
+            const glm::vec3 direction = NormalizedOrForward(runtime.facingDirection);
+            if (player.HasComponent<GoalieComponent>()) {
+                if (runtime.goalieBoostCharges > 0) {
+                    --runtime.goalieBoostCharges;
+                    runtime.velocity += direction * tuning.goalie.boostImpulse;
+                    runtime.hasMoveTarget = false;
+                    events.Push({GameplayEventType::PlayerBoosted, player.GetUUID(), {}, playerComponent.team, transform.localPosition});
+                }
+            } else if (runtime.boostCooldown <= 0.0f) {
+                runtime.velocity += direction * tuning.skater.boostImpulse;
+                runtime.boostCooldown = tuning.skater.boostCooldownSeconds;
+                runtime.hasMoveTarget = false;
+                events.Push({GameplayEventType::PlayerBoosted, player.GetUUID(), {}, playerComponent.team, transform.localPosition});
+            }
+        }
+
+        if (canMove && player.HasComponent<GoalieComponent>() && input.goalieShieldPressed && !runtime.shieldActive &&
+            runtime.shieldCooldown <= 0.0f) {
+            runtime.shieldActive = true;
+            runtime.shieldTimer = tuning.goalie.shieldDurationSeconds;
+            runtime.shieldCooldown = tuning.goalie.shieldCooldownSeconds;
+            events.Push({GameplayEventType::GoalieShieldStarted, player.GetUUID(), {}, playerComponent.team, transform.localPosition});
+        }
+
+        ApplyGoalieShield(scene, player, runtime, tuning);
+
+        if (!quickTurned && LengthSq(input.aim) > 0.0001f) {
             runtime.facingDirection = glm::normalize(Xz(ClampedInput(input.aim)));
-        } else if (hasMoveInput && !braking) {
+        } else if (!quickTurned && hasMoveInput && !braking) {
             runtime.facingDirection = glm::normalize(Xz(moveInput));
-        } else if (glm::length(runtime.velocity) > 0.0001f) {
+        } else if (!quickTurned && glm::length(runtime.velocity) > 0.0001f) {
             runtime.facingDirection = glm::normalize(runtime.velocity);
         }
 

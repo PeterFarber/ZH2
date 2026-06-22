@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hockey/Gameplay/GameplayEvents.hpp"
 #include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 
@@ -14,7 +15,8 @@ public:
                             PhysicsWorld* physicsWorld,
                             const GameplayInputBuffer& inputs,
                             const GameplayTuning& tuning,
-                            float fixedDeltaSeconds);
+                            float fixedDeltaSeconds,
+                            GameplayEventQueue& events);
 };
 
 }

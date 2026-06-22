@@ -14,13 +14,18 @@ void RunInputModelTests() {
     input.move = {0.5f, -1.0f};
     input.aim = {1.0f, 0.0f};
     input.moveTarget = {4.0f, 0.0f, 8.0f};
-    input.hasMoveTarget = true;
-    input.sprint = true;
-    input.boostForward = true;
-    input.brake = true;
+    input.setMoveTarget = true;
+    input.clearMoveTarget = true;
+    input.stealPressed = true;
+    input.stealHeld = true;
+    input.stealReleased = true;
+    input.boostPressed = true;
+    input.brakePressed = true;
+    input.brakeHeld = true;
     input.quickTurnPressed = true;
     input.shootPressed = true;
     input.passReleased = true;
+    input.goalieShieldPressed = true;
 
     GameplayInputBuffer buffer;
     buffer.PushInput(input);
@@ -31,14 +36,19 @@ void RunInputModelTests() {
     HK_CHECK_EQ(out.inputSequence, 10ull);
     HK_CHECK_EQ(out.simulationTick, 42ull);
     HK_CHECK_NEAR(out.move.y, -1.0f, 0.0001f);
-    HK_CHECK(out.hasMoveTarget);
+    HK_CHECK(out.setMoveTarget);
+    HK_CHECK(out.clearMoveTarget);
     HK_CHECK_NEAR(out.moveTarget.z, 8.0f, 0.0001f);
-    HK_CHECK(out.sprint);
-    HK_CHECK(out.boostForward);
-    HK_CHECK(out.brake);
+    HK_CHECK(out.stealPressed);
+    HK_CHECK(out.stealHeld);
+    HK_CHECK(out.stealReleased);
+    HK_CHECK(out.boostPressed);
+    HK_CHECK(out.brakePressed);
+    HK_CHECK(out.brakeHeld);
     HK_CHECK(out.quickTurnPressed);
     HK_CHECK(out.shootPressed);
     HK_CHECK(out.passReleased);
+    HK_CHECK(out.goalieShieldPressed);
 
     GameplayInputFrame older = input;
     older.inputSequence = 9;

@@ -20,6 +20,14 @@ void RunEventTests() {
     HK_CHECK(!queue.Empty());
     HK_CHECK_EQ(queue.Size(), static_cast<std::size_t>(1));
     HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::GoalScored)), std::string("GoalScored"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::CountdownTick)), std::string("CountdownTick"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::CountdownBeep)), std::string("CountdownBeep"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::StealAttempted)), std::string("StealAttempted"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::PlayerBoosted)), std::string("PlayerBoosted"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::GoalieShieldStarted)),
+                std::string("GoalieShieldStarted"));
+    HK_CHECK_EQ(std::string(GameplayEventTypeToString(GameplayEventType::GoalieShieldEnded)),
+                std::string("GoalieShieldEnded"));
 
     std::vector<GameplayEvent> drained = queue.Drain();
     HK_CHECK(queue.Empty());
