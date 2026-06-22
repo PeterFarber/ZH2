@@ -18,8 +18,12 @@ class PathTests(unittest.TestCase):
         self.assertEqual(paths.asset_name, "wall_panel")
         self.assertEqual(paths.asset_dir, Path("assets") / "wall_panel")
         self.assertEqual(paths.glb_path, Path("assets") / "wall_panel" / "wall_panel.glb")
+        self.assertEqual(paths.texture_dir, Path("assets") / "wall_panel" / "textures")
         self.assertEqual(paths.textures["basecolor"], Path("assets") / "wall_panel" / "textures" / "wall_panel_basecolor.png")
         self.assertEqual(paths.textures["normal"], Path("assets") / "wall_panel" / "textures" / "wall_panel_normal.png")
+        self.assertEqual(paths.textures["roughness"], Path("assets") / "wall_panel" / "textures" / "wall_panel_roughness.png")
+        self.assertEqual(paths.textures["metallic"], Path("assets") / "wall_panel" / "textures" / "wall_panel_metallic.png")
+        self.assertEqual(paths.textures["ao"], Path("assets") / "wall_panel" / "textures" / "wall_panel_ao.png")
         self.assertEqual(paths.manifest_path, Path("assets") / "wall_panel" / "manifest.json")
 
 
