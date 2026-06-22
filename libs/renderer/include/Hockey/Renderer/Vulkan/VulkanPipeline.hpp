@@ -42,6 +42,8 @@ struct GraphicsPipelineDesc {
     bool depthWrite = true;
     VkCompareOp depthCompare = VK_COMPARE_OP_LESS_OR_EQUAL;
     bool depthBias = false; // shadow passes
+    float depthBiasConstantFactor = 1.25f;
+    float depthBiasSlopeFactor = 1.75f;
     BlendMode blend = BlendMode::Opaque;
 
     const char* debugName = nullptr;

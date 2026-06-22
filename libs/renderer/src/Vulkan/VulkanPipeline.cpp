@@ -81,8 +81,8 @@ VulkanPipeline CreateGraphicsPipeline(const RenderDevice& device, const Graphics
     raster.lineWidth = 1.0f;
     if (desc.depthBias) {
         raster.depthBiasEnable = VK_TRUE;
-        raster.depthBiasConstantFactor = 1.25f;
-        raster.depthBiasSlopeFactor = 1.75f;
+        raster.depthBiasConstantFactor = desc.depthBiasConstantFactor;
+        raster.depthBiasSlopeFactor = desc.depthBiasSlopeFactor;
     }
 
     VkPipelineMultisampleStateCreateInfo multisample{};

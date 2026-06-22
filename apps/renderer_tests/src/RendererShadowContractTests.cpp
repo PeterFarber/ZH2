@@ -58,6 +58,12 @@ void RunRendererShadowContractTests() {
     HK_CHECK_MSG(Contains(renderer, "ResolveDirectionalShadowPcfRadius("),
                  "renderer uses explicit directional PCF radius");
     HK_CHECK_MSG(Contains(renderer, "ResolveLocalShadowPcfRadius("), "renderer uses explicit local PCF radius");
+    HK_CHECK_MSG(Contains(renderer, "maxRenderedLights"), "renderer honors configurable rendered light budget");
+    HK_CHECK_MSG(Contains(renderer, "maxLocalShadowTiles"), "renderer honors configurable local shadow tile budget");
+    HK_CHECK_MSG(Contains(renderer, "directionalShadowDepthBiasConstant"),
+                 "renderer routes configurable shadow depth bias constant");
+    HK_CHECK_MSG(Contains(renderer, "directionalShadowDepthBiasSlope"),
+                 "renderer routes configurable shadow depth bias slope");
     HK_CHECK_MSG(Contains(frameTargets, "ResolveDirectionalShadowAtlasResolution(settings)"),
                  "frame targets use explicit directional shadow atlas resolution");
     HK_CHECK_MSG(Contains(frameTargets, "ResolveLocalShadowAtlasResolution(settings)"),

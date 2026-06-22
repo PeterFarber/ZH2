@@ -718,6 +718,7 @@ struct Renderer::Impl {
     Status CreateDepthTarget(uint32_t width, uint32_t height);
     Status BuildBuiltInPipelines();
     Status BuildMeshPipelines();
+    void DestroyMeshPipelines();
     Status SetupDescriptors();
     Status RebuildTargets();
     void UpdateGlobalImageBindings();
@@ -1266,6 +1267,17 @@ Status Renderer::Impl::CreateDepthTarget(uint32_t width, uint32_t height) {
     return Status::Ok();
 }
 
+void Renderer::Impl::DestroyMeshPipelines() {
+    DestroyPipeline(device, opaquePipeline);
+    DestroyPipeline(device, transparentPipeline);
+    DestroyPipeline(device, shadowPipeline);
+    DestroyPipeline(device, depthPrepassPipeline);
+    DestroyPipelineLayout(device, meshPipelineLayout);
+    meshPipelineLayout = VK_NULL_HANDLE;
+    DestroyPipelineLayout(device, shadowPipelineLayout);
+    shadowPipelineLayout = VK_NULL_HANDLE;
+}
+
 Status Renderer::Impl::BuildMeshPipelines() {
     if (swapchain.Get() == VK_NULL_HANDLE) {
         return Status::Ok(); // headless / minimized; built once a swapchain exists
@@ -1380,6 +1392,8 @@ Status Renderer::Impl::BuildMeshPipelines() {
     shadow.depthTest = true;
     shadow.depthWrite = true;
     shadow.depthBias = true;
+    shadow.depthBiasConstantFactor = settings.directionalShadowDepthBiasConstant;
+    shadow.depthBiasSlopeFactor = settings.directionalShadowDepthBiasSlope;
     shadow.debugName = "ShadowPipeline";
     shadowPipeline = CreateGraphicsPipeline(device, shadow);
 
@@ -1416,7 +1430,7 @@ Status Renderer::Init(const RendererInitInfo& info) {
         return Status::Fail("Renderer::Init requires a window (headless rendering not supported in Phase 3)");
     }
     r.window = info.window;
-    r.settings = info.settings;
+    r.settings = ClampRendererSettings(info.settings);
     r.shaderSourceDir = info.shaderSourceDirectory;
     r.shaderBinaryDir = info.shaderBinaryDirectory;
 
@@ -1525,15 +1539,8 @@ void Renderer::Shutdown() {
         DestroyBuffer(r.device, mat.ubo);
     }
     r.materials.clear();
-    DestroyPipeline(r.device, r.opaquePipeline);
-    DestroyPipeline(r.device, r.transparentPipeline);
+    r.DestroyMeshPipelines();
     DestroyPipeline(r.device, r.debugLinePipeline);
-    DestroyPipeline(r.device, r.shadowPipeline);
-    DestroyPipeline(r.device, r.depthPrepassPipeline);
-    DestroyPipelineLayout(r.device, r.meshPipelineLayout);
-    r.meshPipelineLayout = VK_NULL_HANDLE;
-    DestroyPipelineLayout(r.device, r.shadowPipelineLayout);
-    r.shadowPipelineLayout = VK_NULL_HANDLE;
     for (Impl::OffscreenTarget& t : r.renderTargets) {
         if (t.valid) {
             r.DestroyOffscreenTarget(t);
@@ -1699,6 +1706,8 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     };
     std::array<LocalCaster, kMaxLights> localCasters{};
     uint32_t localCasterCount = 0;
+    const uint32_t maxRenderedLights = std::min(clampedSettings.maxRenderedLights, kMaxLights);
+    const uint32_t maxLocalShadowTiles = std::min(clampedSettings.maxLocalShadowTiles, kMaxLocalShadowTiles);
     {
         const auto envView = scene.Registry().view<EnvironmentComponent>();
         for (const entt::entity handle : envView) {
@@ -1714,7 +1723,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         uint32_t lightCount = 0;
         const auto lightView = scene.Registry().view<TransformComponent, LightComponent>();
         for (const entt::entity handle : lightView) {
-            if (lightCount >= kMaxLights) {
+            if (lightCount >= maxRenderedLights) {
                 break;
             }
             const Entity entity{handle, &scene};
@@ -1829,7 +1838,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         for (uint32_t i = 0; i < localCasterCount; ++i) {
             const LightRenderData& data = localCasters[i].data;
             const uint32_t needed = data.type == 1 ? 6u : 1u;
-            if (tileCursor + needed > kMaxLocalShadowTiles) {
+            if (tileCursor + needed > maxLocalShadowTiles) {
                 break; // atlas full; remaining casters fall back to no shadow
             }
             if (data.type == 2) {
@@ -2842,16 +2851,31 @@ const RendererSettings& Renderer::GetSettings() const {
 
 Status Renderer::ApplySettings(const RendererSettings& settings) {
     Impl& r = *m_Impl;
-    const bool vsyncChanged = r.settings.vsync != settings.vsync;
+    const RendererSettings currentSettings = ClampRendererSettings(r.settings);
+    const RendererSettings nextSettings = ClampRendererSettings(settings);
+    const bool vsyncChanged = currentSettings.vsync != nextSettings.vsync;
     // Changes that resize/relayout the offscreen targets (shadow atlas size,
     // bloom chain length) require a target rebuild before the next frame.
-    const bool targetsChanged = r.settings.shadowQuality != settings.shadowQuality ||
-                                r.settings.aoQuality != settings.aoQuality || r.settings.preset != settings.preset;
-    r.settings = settings;
+    const bool targetsChanged =
+        currentSettings.shadowQuality != nextSettings.shadowQuality ||
+        currentSettings.aoQuality != nextSettings.aoQuality || currentSettings.preset != nextSettings.preset ||
+        ResolveDirectionalShadowAtlasResolution(currentSettings) !=
+            ResolveDirectionalShadowAtlasResolution(nextSettings) ||
+        ResolveLocalShadowAtlasResolution(currentSettings) != ResolveLocalShadowAtlasResolution(nextSettings) ||
+        ResolveShadowCascadeCount(currentSettings) != ResolveShadowCascadeCount(nextSettings);
+    const bool shadowPipelineChanged =
+        currentSettings.directionalShadowDepthBiasConstant != nextSettings.directionalShadowDepthBiasConstant ||
+        currentSettings.directionalShadowDepthBiasSlope != nextSettings.directionalShadowDepthBiasSlope;
+    r.settings = nextSettings;
     if (vsyncChanged) {
         r.pendingResize = true; // present mode change requires swapchain rebuild
     } else if (targetsChanged) {
         r.pendingTargetRebuild = true;
+    }
+    if (shadowPipelineChanged && r.initialized && r.device.device != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(r.device.device);
+        r.DestroyMeshPipelines();
+        return r.BuildMeshPipelines();
     }
     return Status::Ok();
 }
