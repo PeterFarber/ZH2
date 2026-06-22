@@ -74,22 +74,38 @@ def _tokens(value: str) -> list[str]:
     return [token for token in re.split(r"[^a-z0-9]+", value.lower()) if token]
 
 
-def match_texture_role(filename: str) -> str:
-    tokens = _tokens(filename)
-    best_match: tuple[int, int, str] | None = None
-    for role, sequence in _ROLE_TOKEN_SEQUENCES:
-        sequence_length = len(sequence)
-        for index in range(0, len(tokens) - sequence_length + 1):
-            if tuple(tokens[index : index + sequence_length]) != sequence:
-                continue
-            candidate = (index, sequence_length, role)
-            if best_match is None or candidate[:2] > best_match[:2]:
-                best_match = candidate
-    return best_match[2] if best_match else ""
-
-
 def _is_resolution_token(token: str) -> bool:
     return token == "test" or bool(re.fullmatch(r"\d+k", token))
+
+
+def _filename_role_tokens(filename: str) -> list[str]:
+    tokens = _tokens(Path(filename).name)
+    while tokens and (
+        tokens[-1].isdigit() or _is_resolution_token(tokens[-1]) or tokens[-1] in _DOWNLOAD_FORMAT_TOKENS
+    ):
+        tokens.pop()
+    return tokens
+
+
+def _tokens_end_with(tokens: list[str], sequence: tuple[str, ...]) -> bool:
+    sequence_length = len(sequence)
+    return len(tokens) >= sequence_length and tuple(tokens[-sequence_length:]) == sequence
+
+
+def match_texture_role(filename: str) -> str:
+    tokens = _filename_role_tokens(filename)
+    normal_direction_tokens = _NORMAL_GL_TOKENS | _NORMAL_DX_TOKENS
+    for role, sequence in _ROLE_TOKEN_SEQUENCES:
+        if (
+            role == "normal"
+            and tokens
+            and tokens[-1] in normal_direction_tokens
+            and _tokens_end_with(tokens[:-1], sequence)
+        ):
+            return role
+        if _tokens_end_with(tokens, sequence):
+            return role
+    return ""
 
 
 def _is_container_label(label: str) -> bool:
@@ -343,6 +359,10 @@ def _validate_download_url(role: str, url: str) -> str:
         raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
     if parts.scheme not in _DOWNLOAD_URL_SCHEMES:
         raise PolyhavenError(f"invalid download URL for texture role {role}: unsupported scheme")
+    if "\\" in raw_authority:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: invalid authority")
+    if parts.username is not None or parts.password is not None or "@" in raw_authority:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: userinfo not allowed")
     try:
         hostname = parts.hostname
         _ = parts.port

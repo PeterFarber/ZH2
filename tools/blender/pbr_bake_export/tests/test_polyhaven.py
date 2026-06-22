@@ -94,9 +94,26 @@ class PolyhavenTests(unittest.TestCase):
         self.assertEqual(match_texture_role("red_brick_floor_ao_4k.png"), "ao")
 
     def test_match_texture_role_uses_map_suffix_tokens_not_asset_slug_tokens(self):
+        self.assertEqual(match_texture_role("metal_plate_4k.png"), "")
         self.assertEqual(match_texture_role("metal_plate_ao_4k.png"), "ao")
         self.assertEqual(match_texture_role("rough_concrete_ao_4k.png"), "ao")
         self.assertEqual(match_texture_role("nordic_wall_rough_4k.png"), "roughness")
+
+    def test_select_texture_files_rejects_slug_only_role_tokens(self):
+        file_tree = {
+            "4k": {
+                "png": {
+                    "metal_plate_diff_4k.png": {"url": "https://cdn/basecolor.png"},
+                    "metal_plate_nor_gl_4k.png": {"url": "https://cdn/normal.png"},
+                    "metal_plate_rough_4k.png": {"url": "https://cdn/roughness.png"},
+                    "metal_plate_4k.png": {"url": "https://cdn/slug-only.png"},
+                    "metal_plate_ao_4k.png": {"url": "https://cdn/ao.png"},
+                }
+            }
+        }
+
+        with self.assertRaisesRegex(PolyhavenError, "metallic"):
+            select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
 
     def test_select_texture_files_requires_all_roles_at_requested_resolution(self):
         client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=FakeFetcher())
@@ -379,9 +396,9 @@ class PolyhavenTests(unittest.TestCase):
 
     def test_download_selection_rejects_malformed_hosts_and_ports_before_fetching(self):
         cases = (
-            ("https://@/x", "missing or blank host"),
+            ("https://@/x", "userinfo"),
             ("https://:443/x", "missing or blank host"),
-            ("https://user:pass@/x", "missing or blank host"),
+            ("https://user:pass@/x", "userinfo"),
             ("https:// /x", "missing or blank host"),
             ("https://example.com:bad/x", "Port could not be cast"),
             ("https://exa mple.com/x", "invalid host"),
@@ -421,6 +438,32 @@ class PolyhavenTests(unittest.TestCase):
                 def fetcher(request, timeout=None):
                     calls.append(request)
                     raise AssertionError("download should not start for encoded hosts")
+
+                selection = TextureFileSelection(
+                    resolution=TextureResolution.FOUR_K,
+                    urls={"basecolor": url},
+                    warnings=[],
+                )
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                with tempfile.TemporaryDirectory() as temp:
+                    with self.assertRaises(PolyhavenError):
+                        client.download_selection(selection, Path(temp), "brick")
+                    self.assertEqual(calls, [])
+
+    def test_download_selection_rejects_ambiguous_authorities_before_fetching(self):
+        cases = (
+            r"https://good.com\@evil.com/x",
+            r"https://good.com\evil.com/x",
+            "https://user:pass@example.com/x",
+        )
+        for url in cases:
+            with self.subTest(url=url):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    raise AssertionError("download should not start for ambiguous authorities")
 
                 selection = TextureFileSelection(
                     resolution=TextureResolution.FOUR_K,
