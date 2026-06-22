@@ -22,6 +22,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 
 namespace Hockey {
@@ -168,6 +169,7 @@ void HierarchyPanel::OnImGui(EditorContext& context) {
         if (ImGui::MenuItem("Create Empty")) {
             m_PendingKind = PendingKind::CreateEmpty;
         }
+        EditorTooltip::ForLastItem("Creates a new root entity in the active scene.");
         ImGui::EndPopup();
     }
 
@@ -203,6 +205,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
         const bool committed =
             ImGui::InputText("##rename", m_RenameBuffer, sizeof(m_RenameBuffer),
                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+        EditorTooltip::ForLastItem("Renames this entity when editing finishes.");
         if (committed || ImGui::IsItemDeactivated()) {
             if (Entity target = scene.FindEntityByUUID(id); target && m_RenameBuffer != m_RenameOriginal) {
                 context.undoRedo.Execute(EditorCommands::RenameEntity(id, m_RenameOriginal, m_RenameBuffer), context);
@@ -213,6 +216,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
     } else {
         open = ImGui::TreeNodeEx(NodeId(id), flags, "%s", entity.GetName().c_str());
         const ImRect rowRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+        EditorTooltip::ForLastItem("Drag to reorder or parent this entity. Double-click to rename.");
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
             if (ImGui::GetIO().KeyCtrl) {
@@ -292,22 +296,27 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
             if (ImGui::MenuItem("Create Empty")) {
                 m_PendingKind = PendingKind::CreateEmpty;
             }
+            EditorTooltip::ForLastItem("Creates a new root entity in the active scene.");
             if (ImGui::MenuItem("Create Empty Child")) {
                 m_PendingKind = PendingKind::CreateChild;
                 m_PendingTarget = id;
             }
+            EditorTooltip::ForLastItem("Creates a child under the selected entity.");
             if (ImGui::MenuItem("Duplicate")) {
                 m_PendingKind = PendingKind::Duplicate;
                 m_PendingTarget = id;
             }
+            EditorTooltip::ForLastItem("Duplicates this entity and its child hierarchy.");
             if (ImGui::MenuItem("Rename")) {
                 BeginRename(id, entity.GetName());
             }
+            EditorTooltip::ForLastItem("Starts inline rename for this hierarchy row.");
             const bool hasParent = static_cast<bool>(scene.GetParent(entity));
             if (ImGui::MenuItem("Unparent", nullptr, false, hasParent)) {
                 m_PendingKind = PendingKind::Unparent;
                 m_PendingTarget = id;
             }
+            EditorTooltip::ForLastItem("Moves this entity to the scene root while preserving its world transform.");
             if (ImGui::MenuItem("Focus In Viewport", "F", false, entity.HasComponent<TransformComponent>())) {
                 const glm::mat4 world = scene.GetWorldTransform(entity);
                 const glm::vec3 position{world[3]};
@@ -317,24 +326,29 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                 const float radius = std::max({sx, sy, sz, 1.0f}) * 0.75f;
                 context.editorCamera.Focus(position, radius);
             }
+            EditorTooltip::ForLastItem("Frames this entity in the Scene viewport camera.");
             ImGui::Separator();
             if (ImGui::MenuItem("Copy")) {
                 context.clipboard.CopyEntities(scene, {id});
             }
+            EditorTooltip::ForLastItem("Copies this entity hierarchy to the editor clipboard.");
             if (ImGui::MenuItem("Paste Child", nullptr, false, context.clipboard.HasEntities())) {
                 for (const std::string& snapshot : context.clipboard.EntitySnapshots()) {
                     context.undoRedo.Execute(EditorCommands::PasteEntity(snapshot, id), context);
                 }
             }
+            EditorTooltip::ForLastItem("Pastes copied entities as children of this entity.");
             if (ImGui::MenuItem("Create Prefab From Entity")) {
                 m_PendingKind = PendingKind::CreatePrefab;
                 m_PendingTarget = id;
             }
+            EditorTooltip::ForLastItem("Writes this entity hierarchy as a prefab asset.");
             ImGui::Separator();
             if (ImGui::MenuItem("Delete")) {
                 m_PendingKind = PendingKind::Delete;
                 m_PendingTarget = id;
             }
+            EditorTooltip::ForLastItem("Deletes this entity hierarchy with undo support.");
             ImGui::EndPopup();
         }
     }

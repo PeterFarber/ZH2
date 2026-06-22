@@ -60,7 +60,7 @@ Source material:
 - [x] Project Settings exposes Editor/Client advanced lighting and shadow settings while keeping Server headless settings separate.
 - [x] Project Settings navigation scopes repeated page labels to avoid Dear ImGui ID conflicts.
 - [x] Project Settings lighting/shadow controls scope repeated tuning labels to avoid Dear ImGui ID conflicts.
-- [x] Shared editor tooltip helper exists and covers first-pass Toolbar, Project Settings, Project Panel, and Scene View Overlay controls.
+- [x] Shared editor tooltip helper exists and covers first-pass Toolbar, Hierarchy, Inspector, Project Settings, Project Panel, Scene View Overlay, Prefab, Stats, Console, and Scene Validation controls.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 
@@ -122,6 +122,7 @@ Source material:
 - [x] Undo/redo tests exist.
 - [x] Hierarchy reorder command and panel wiring tests exist.
 - [x] Hierarchy drop-preview panel wiring tests exist.
+- [x] Editor tooltip helper contract tests cover high-traffic panels.
 - [x] Inspector field tests exist.
 - [x] Scene command tests exist.
 - [x] Project browser tests exist.

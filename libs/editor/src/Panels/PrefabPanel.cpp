@@ -17,6 +17,7 @@
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/FileDialog.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
 
 namespace Hockey {
@@ -67,6 +68,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
                     m_StatusError = false;
                 }
             }
+            EditorTooltip::ForLastItem("Instantiates a prefab asset as a new root entity.");
             ImGui::Separator();
         }
 
@@ -97,10 +99,12 @@ void PrefabPanel::OnImGui(EditorContext& context) {
             if (ImGui::Button("Open Prefab Source")) {
                 ProjectBrowser::Reveal(prefab.sourcePath);
             }
+            EditorTooltip::ForLastItem("Reveals the prefab source asset in the operating system file browser.");
             ImGui::SameLine();
             if (ImGui::Button("Instantiate Copy")) {
                 context.undoRedo.Execute(EditorCommands::InstantiatePrefab(prefab.sourcePath), context);
             }
+            EditorTooltip::ForLastItem("Creates another scene instance from this prefab source.");
             ImGui::EndDisabled();
             if (!sourceExists) {
                 ImGui::SameLine();
@@ -128,6 +132,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
             if (ImGui::SmallButton("Refresh")) {
                 RefreshOverrides(context, entity);
             }
+            EditorTooltip::ForLastItem("Recomputes the selected instance's differences from its prefab source.");
 
             ImGui::BeginDisabled(!sourceExists);
             if (ImGui::Button("Apply Overrides")) {
@@ -147,6 +152,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
                 }
                 RefreshOverrides(context, entity);
             }
+            EditorTooltip::ForLastItem("Writes this instance's overridden fields back to the prefab source asset.");
             ImGui::SameLine();
             if (ImGui::Button("Revert Overrides")) {
                 context.undoRedo.Execute(EditorCommands::RevertPrefabOverrides(*scene, entity.GetUUID()), context);
@@ -154,6 +160,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
                 m_StatusError = false;
                 RefreshOverrides(context, entity);
             }
+            EditorTooltip::ForLastItem("Restores this instance from the prefab source while preserving undo.");
             ImGui::EndDisabled();
             if (!sourceExists) {
                 ImGui::TextDisabled("Apply/Revert need the prefab source file.");
@@ -169,6 +176,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
         }
         ImGui::SetNextItemWidth(220.0f);
         ImGui::InputText("Name", m_NameBuffer, sizeof(m_NameBuffer));
+        EditorTooltip::ForLastItem("Sets the prefab file name written under data/raw/prefabs.");
         ImGui::SameLine();
         if (ImGui::Button("Create Prefab")) {
             const std::string stem = SanitizeFileStem(m_NameBuffer);
@@ -182,6 +190,7 @@ void PrefabPanel::OnImGui(EditorContext& context) {
                 m_StatusError = true;
             }
         }
+        EditorTooltip::ForLastItem("Creates a prefab asset from the selected entity and its children.");
 
         if (!m_Status.empty()) {
             ImGui::TextColored(m_StatusError ? ImVec4(1.0f, 0.45f, 0.42f, 1.0f) : ImVec4(0.55f, 0.85f, 0.55f, 1.0f),

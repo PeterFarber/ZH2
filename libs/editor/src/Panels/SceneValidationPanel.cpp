@@ -9,6 +9,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
 
@@ -33,8 +34,10 @@ void SceneValidationPanel::OnImGui(EditorContext& context) {
         if (ImGui::Button("Validate")) {
             Validate(context);
         }
+        EditorTooltip::ForLastItem("Runs scene validation for required hockey markers and authored scene data.");
         ImGui::SameLine();
         ImGui::Checkbox("Auto", &m_AutoValidate);
+        EditorTooltip::ForLastItem("Runs validation automatically while this panel is visible.");
 
         std::size_t errors = 0;
         std::size_t warnings = 0;
@@ -49,9 +52,11 @@ void SceneValidationPanel::OnImGui(EditorContext& context) {
         ImGui::SameLine();
         ImGui::TextColored(errors > 0 ? ImVec4(1.0f, 0.45f, 0.42f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "%zu errors",
                            errors);
+        EditorTooltip::ForLastItem("Errors block a valid authored scene until fixed.");
         ImGui::SameLine();
         ImGui::TextColored(warnings > 0 ? ImVec4(1.0f, 0.82f, 0.36f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
                            "%zu warnings", warnings);
+        EditorTooltip::ForLastItem("Warnings flag risky or incomplete scene data.");
 
         ImGui::Separator();
 
@@ -78,6 +83,7 @@ void SceneValidationPanel::OnImGui(EditorContext& context) {
 
                     ImGui::PushStyleColor(ImGuiCol_Text, color);
                     const bool clicked = ImGui::Selectable(label.c_str());
+                    EditorTooltip::ForLastItem("Selects the related entity when this validation issue has one.");
                     ImGui::PopStyleColor();
                     if (clicked && issue.entityId.IsValid()) {
                         context.selection.Select(issue.entityId);

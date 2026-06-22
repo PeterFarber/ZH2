@@ -56,6 +56,12 @@ void RunEditorTooltipContractTests() {
     const std::string projectSettings = ReadProjectFile("libs/editor/src/Panels/ProjectSettingsPanel.cpp");
     const std::string projectPanel = ReadProjectFile("libs/editor/src/Panels/ProjectPanel.cpp");
     const std::string sceneViewOverlay = ReadProjectFile("libs/editor/src/SceneViewOverlay.cpp");
+    const std::string hierarchyPanel = ReadProjectFile("libs/editor/src/Panels/HierarchyPanel.cpp");
+    const std::string inspectorPanel = ReadProjectFile("libs/editor/src/Panels/InspectorPanel.cpp");
+    const std::string prefabPanel = ReadProjectFile("libs/editor/src/Panels/PrefabPanel.cpp");
+    const std::string statsPanel = ReadProjectFile("libs/editor/src/Panels/StatsPanel.cpp");
+    const std::string consolePanel = ReadProjectFile("libs/editor/src/Panels/ConsolePanel.cpp");
+    const std::string sceneValidationPanel = ReadProjectFile("libs/editor/src/Panels/SceneValidationPanel.cpp");
 
     HK_CHECK_MSG(Contains(editorCMake, "src/ImGui/EditorTooltip.cpp"), "hockey_editor builds EditorTooltip.cpp");
     HK_CHECK_MSG(Contains(helperHeader, "namespace Hockey::EditorTooltip"), "shared tooltip helper namespace exists");
@@ -91,4 +97,40 @@ void RunEditorTooltipContractTests() {
                  "Scene View overlay includes tooltip helper");
     HK_CHECK_MSG(!Contains(sceneViewOverlay, "ImGui::SetTooltip"),
                  "Scene View overlay routes its local helper through EditorTooltip");
+
+    HK_CHECK_MSG(Contains(hierarchyPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Hierarchy Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(hierarchyPanel, "EditorTooltip::ForLastItem") >= 8,
+                 "Hierarchy Panel exposes hover text for tree and context menu actions");
+    HK_CHECK_MSG(Contains(hierarchyPanel, "Drag to reorder or parent this entity"),
+                 "Hierarchy entity rows describe drag/drop organization");
+
+    HK_CHECK_MSG(Contains(inspectorPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Inspector Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(inspectorPanel, "EditorTooltip::ForLastItem") >= 6,
+                 "Inspector header controls expose hover text");
+    HK_CHECK_MSG(!Contains(inspectorPanel, "ImGui::SetTooltip"),
+                 "Inspector Panel routes touched tooltips through EditorTooltip");
+
+    HK_CHECK_MSG(Contains(prefabPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Prefab Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(prefabPanel, "EditorTooltip::ForLastItem") >= 7,
+                 "Prefab Panel workflow buttons expose hover text");
+    HK_CHECK_MSG(Contains(prefabPanel, "Creates a prefab asset from the selected entity"),
+                 "Prefab creation explains what will be written");
+
+    HK_CHECK_MSG(Contains(statsPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Stats Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(statsPanel, "EditorTooltip::ForLastItem") >= 3,
+                 "Stats Panel sections explain the performance counters");
+
+    HK_CHECK_MSG(Contains(consolePanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Console Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(consolePanel, "EditorTooltip::ForLastItem") >= 8,
+                 "Console Panel filters and actions expose hover text");
+
+    HK_CHECK_MSG(Contains(sceneValidationPanel, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Scene Validation Panel includes tooltip helper");
+    HK_CHECK_MSG(CountOccurrences(sceneValidationPanel, "EditorTooltip::ForLastItem") >= 4,
+                 "Scene Validation Panel actions and issue rows expose hover text");
 }

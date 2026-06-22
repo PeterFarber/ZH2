@@ -105,24 +105,24 @@ Likely files:
 
 Current state:
 
-- [x] Some spot tooltips exist in Inspector and Project panels.
-- [ ] No consistent tooltip helper or coverage standard exists yet.
-- [ ] Main map-editor workflows need hover descriptions for controls, buttons,
-      toggles, tool modes, drag/drop targets, and advanced settings.
+- [x] Shared tooltip helper exists and defines timing/disabled-control behavior.
+- [x] First-pass tooltip coverage exists for high-traffic editor panels and controls.
+- [~] Some lower-traffic workflow controls may still need follow-up hover text
+      during live UI review.
 
 Tasks:
 
 - [x] Add a small editor UI tooltip helper so tooltip timing and formatting are
       consistent.
-- [~] Cover high-traffic panels first: toolbar, hierarchy, inspector, scene
+- [x] Cover high-traffic panels first: toolbar, hierarchy, inspector, scene
       viewport overlay, project panel, project settings, prefab panel, stats,
       console, and scene validation.
 - [~] Add detailed tooltips for transform tools, hockey placement tools,
       lighting/shadow settings, asset import actions, save/open actions, and
       validation issue navigation.
-- [ ] Keep tooltip text concise but useful; describe what the control changes,
+- [x] Keep tooltip text concise but useful; describe what the control changes,
       not generic UI behavior.
-- [ ] Add lightweight contract tests for tooltip helper usage on key panels.
+- [x] Add lightweight contract tests for tooltip helper usage on key panels.
 
 Acceptance criteria:
 

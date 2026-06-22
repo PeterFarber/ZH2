@@ -9,6 +9,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 namespace Hockey {
@@ -47,7 +48,9 @@ void StatsPanel::OnImGui(EditorContext& context) {
         const float fps = io.Framerate;
         const float frameMs = fps > 0.0f ? 1000.0f / fps : 0.0f;
 
-        if (ImGui::CollapsingHeader("Frame", ImGuiTreeNodeFlags_DefaultOpen) && BeginStatsTable("##frame")) {
+        const bool frameOpen = ImGui::CollapsingHeader("Frame", ImGuiTreeNodeFlags_DefaultOpen);
+        EditorTooltip::ForLastItem("Shows editor frame timing from ImGui and renderer frame stats.");
+        if (frameOpen && BeginStatsTable("##frame")) {
             Row("FPS", "%.1f", fps);
             Row("Frame time", "%.2f ms", frameMs);
             if (context.renderer != nullptr) {
@@ -62,36 +65,41 @@ void StatsPanel::OnImGui(EditorContext& context) {
             ImGui::EndTable();
         }
 
-        if (context.renderer != nullptr && ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen) &&
-            BeginStatsTable("##renderer")) {
-            const RendererStats& stats = context.renderer->GetStats();
-            Row("Draw calls", "%u", stats.drawCalls);
-            Row("Triangles", "%u", stats.triangleCount);
-            Row("Shadow draw calls", "%u", stats.shadowDrawCalls);
-            Row("Meshes", "%u", stats.meshCount);
-            Row("Materials", "%u", stats.materialCount);
-            Row("Textures", "%u", stats.textureCount);
-            if (stats.budgetVRAMBytes > 0) {
-                const double usedMb = static_cast<double>(stats.usedVRAMBytes) / (1024.0 * 1024.0);
-                const double budgetMb = static_cast<double>(stats.budgetVRAMBytes) / (1024.0 * 1024.0);
-                Row("VRAM", "%.1f / %.1f MB", usedMb, budgetMb);
-            } else if (stats.usedVRAMBytes > 0) {
-                Row("VRAM", "%.1f MB", static_cast<double>(stats.usedVRAMBytes) / (1024.0 * 1024.0));
-            } else {
-                Row("VRAM", "n/a");
+        if (context.renderer != nullptr) {
+            const bool rendererOpen = ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen);
+            EditorTooltip::ForLastItem("Shows renderer workload, resource, and viewport counters.");
+            if (rendererOpen && BeginStatsTable("##renderer")) {
+                const RendererStats& stats = context.renderer->GetStats();
+                Row("Draw calls", "%u", stats.drawCalls);
+                Row("Triangles", "%u", stats.triangleCount);
+                Row("Shadow draw calls", "%u", stats.shadowDrawCalls);
+                Row("Meshes", "%u", stats.meshCount);
+                Row("Materials", "%u", stats.materialCount);
+                Row("Textures", "%u", stats.textureCount);
+                if (stats.budgetVRAMBytes > 0) {
+                    const double usedMb = static_cast<double>(stats.usedVRAMBytes) / (1024.0 * 1024.0);
+                    const double budgetMb = static_cast<double>(stats.budgetVRAMBytes) / (1024.0 * 1024.0);
+                    Row("VRAM", "%.1f / %.1f MB", usedMb, budgetMb);
+                } else if (stats.usedVRAMBytes > 0) {
+                    Row("VRAM", "%.1f MB", static_cast<double>(stats.usedVRAMBytes) / (1024.0 * 1024.0));
+                } else {
+                    Row("VRAM", "n/a");
+                }
+                if (context.window != nullptr) {
+                    Row("Renderer resolution", "%u x %u", context.window->Width(), context.window->Height());
+                }
+                if (context.viewportWidth > 0 && context.viewportHeight > 0) {
+                    Row("Viewport resolution", "%u x %u", context.viewportWidth, context.viewportHeight);
+                } else {
+                    Row("Viewport resolution", "n/a");
+                }
+                ImGui::EndTable();
             }
-            if (context.window != nullptr) {
-                Row("Renderer resolution", "%u x %u", context.window->Width(), context.window->Height());
-            }
-            if (context.viewportWidth > 0 && context.viewportHeight > 0) {
-                Row("Viewport resolution", "%u x %u", context.viewportWidth, context.viewportHeight);
-            } else {
-                Row("Viewport resolution", "n/a");
-            }
-            ImGui::EndTable();
         }
 
-        if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen) && BeginStatsTable("##scene")) {
+        const bool sceneOpen = ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen);
+        EditorTooltip::ForLastItem("Shows active scene entity and selection counts.");
+        if (sceneOpen && BeginStatsTable("##scene")) {
             const std::size_t entityCount = context.activeScene != nullptr ? context.activeScene->EntityCount() : 0;
             Row("Entities", "%zu", entityCount);
             Row("Selected", "%zu", context.selection.Count());

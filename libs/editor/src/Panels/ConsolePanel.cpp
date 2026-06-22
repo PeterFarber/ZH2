@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include "Hockey/Editor/Dockspace.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
 
@@ -82,6 +83,7 @@ void ConsolePanel::DrawToolbar() {
         EditorConsoleStore::Get().Clear();
         m_SelectedLine.clear();
     }
+    EditorTooltip::ForLastItem("Clears all captured editor log entries.");
     ImGui::SameLine();
     if (ImGui::Button("Copy")) {
         if (!m_SelectedLine.empty()) {
@@ -97,21 +99,29 @@ void ConsolePanel::DrawToolbar() {
             ImGui::SetClipboardText(all.c_str());
         }
     }
+    EditorTooltip::ForLastItem("Copies the selected log line, or all visible filtered lines if none is selected.");
     ImGui::SameLine();
     ImGui::Checkbox("Trace", &m_ShowTrace);
+    EditorTooltip::ForLastItem("Shows trace and debug log messages.");
     ImGui::SameLine();
     ImGui::Checkbox("Info", &m_ShowInfo);
+    EditorTooltip::ForLastItem("Shows informational log messages.");
     ImGui::SameLine();
     ImGui::Checkbox("Warn", &m_ShowWarn);
+    EditorTooltip::ForLastItem("Shows warning log messages.");
     ImGui::SameLine();
     ImGui::Checkbox("Error", &m_ShowError);
+    EditorTooltip::ForLastItem("Shows error and critical log messages.");
     ImGui::SameLine();
     ImGui::Checkbox("Collapse", &m_Collapse);
+    EditorTooltip::ForLastItem("Combines consecutive identical log lines into one visible entry.");
     ImGui::SameLine();
     ImGui::Checkbox("Auto-scroll", &m_AutoScroll);
+    EditorTooltip::ForLastItem("Scrolls to the newest log entry when new messages arrive.");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(180.0f);
     ImGui::InputTextWithHint("##console-search", "Filter...", m_Search, sizeof(m_Search));
+    EditorTooltip::ForLastItem("Filters visible logs by message text or logger name.");
 }
 
 void ConsolePanel::OnImGui(EditorContext& /*context*/) {
@@ -158,6 +168,7 @@ void ConsolePanel::OnImGui(EditorContext& /*context*/) {
                 if (ImGui::Selectable(id.c_str(), m_SelectedLine == label)) {
                     m_SelectedLine = label;
                 }
+                EditorTooltip::ForLastItem("Selects this log line so Copy captures only this entry.");
                 ImGui::PopStyleColor();
             }
 

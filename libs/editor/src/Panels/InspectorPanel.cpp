@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include <imgui.h>
@@ -13,6 +14,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
 
@@ -47,9 +49,8 @@ void DrawObjectIcon(const UUID uuid, float size) {
     draw->AddLine(ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f),
                   ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.0f);
 
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("UUID: %s", uuid.ToString().c_str());
-    }
+    const std::string tooltip = "Entity UUID: " + uuid.ToString();
+    EditorTooltip::ForLastItem(std::string_view{tooltip});
 }
 
 template <std::size_t Count>
@@ -165,6 +166,7 @@ void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {
     if (ImGui::Checkbox("##active", &active)) {
         context.undoRedo.Execute(EditorCommands::SetActive(uuid, !active, active), context);
     }
+    EditorTooltip::ForLastItem("Toggles whether this entity is active in the scene hierarchy.");
 
     ImGui::SameLine();
     // Only refresh the buffer from the entity while not mid-edit, otherwise each
@@ -178,6 +180,7 @@ void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {
     const float nameWidth = ImGui::GetContentRegionAvail().x - staticWidth - style.ItemSpacing.x;
     ImGui::SetNextItemWidth(nameWidth > 96.0f ? nameWidth : 96.0f);
     ImGui::InputText("##name", m_NameBuffer, sizeof(m_NameBuffer));
+    EditorTooltip::ForLastItem("Renames the selected entity after editing finishes.");
     if (ImGui::IsItemActivated()) {
         m_NameEditing = true;
         m_NameOriginal = entity.GetName();
@@ -198,6 +201,7 @@ void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {
         entity.GetComponent<ObjectSettingsComponent>().isStatic = isStatic;
         ExecuteObjectSettingsEdit(context, entity, "Static", before);
     }
+    EditorTooltip::ForLastItem("Marks the entity as static editor data for later validation and systems.");
 
     ImGui::Spacing();
 
@@ -212,7 +216,9 @@ void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {
     ImGui::SameLine();
     ImGui::SetNextItemWidth(controlWidth > 72.0f ? controlWidth : 72.0f);
     std::string tag = settings.tag;
-    if (DrawPresetCombo("##tag", tag, kDefaultTags, m_TagBuffer, sizeof(m_TagBuffer))) {
+    const bool tagChanged = DrawPresetCombo("##tag", tag, kDefaultTags, m_TagBuffer, sizeof(m_TagBuffer));
+    EditorTooltip::ForLastItem("Sets the entity tag used by editor tools and scene validation.");
+    if (tagChanged) {
         const std::string before = EntitySnapshot::CaptureEntity(*scene, uuid);
         settings.tag = std::move(tag);
         ExecuteObjectSettingsEdit(context, entity, "Tag", before);
@@ -224,7 +230,9 @@ void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {
     ImGui::SameLine();
     ImGui::SetNextItemWidth(-1.0f);
     std::string layer = settings.layer;
-    if (DrawPresetCombo("##layer", layer, kDefaultLayers, m_LayerBuffer, sizeof(m_LayerBuffer))) {
+    const bool layerChanged = DrawPresetCombo("##layer", layer, kDefaultLayers, m_LayerBuffer, sizeof(m_LayerBuffer));
+    EditorTooltip::ForLastItem("Sets the entity layer used by editor tools and future filtering.");
+    if (layerChanged) {
         const std::string before = EntitySnapshot::CaptureEntity(*scene, uuid);
         settings.layer = std::move(layer);
         ExecuteObjectSettingsEdit(context, entity, "Layer", before);
