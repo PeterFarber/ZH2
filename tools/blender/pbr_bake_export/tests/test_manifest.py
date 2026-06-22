@@ -33,13 +33,16 @@ class ManifestTests(unittest.TestCase):
 
             write_manifest(root / "manifest.json", manifest)
 
-            data = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+            text = (root / "manifest.json").read_text(encoding="utf-8")
+            data = json.loads(text)
             self.assertEqual(data["asset_name"], "wall_panel")
             self.assertEqual(data["mode"], "Low Poly")
             self.assertEqual(data["resolution"], 4096)
             self.assertEqual(data["material_source"], "Poly Haven")
             self.assertEqual(data["textures"]["normal"], "textures/wall_panel_normal.png")
             self.assertEqual(data["warnings"], ["roughness used constant 0.5"])
+            self.assertTrue(text.endswith("\n"))
+            self.assertEqual(list(data.keys()), sorted(data.keys()))
 
 
 if __name__ == "__main__":
