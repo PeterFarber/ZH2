@@ -61,6 +61,7 @@ target_sources(hockey_editor
         src/Panels/SceneValidationPanel.cpp
         src/Panels/PrefabPanel.cpp
         src/Panels/ProjectSettingsPanel.cpp
+        src/ImGui/EditorTooltip.cpp
         src/ImGui/EditorTheme.cpp
         src/ImGui/ImGuiRendererBridge.cpp
         src/ImGui/ImGuiLayer.cpp

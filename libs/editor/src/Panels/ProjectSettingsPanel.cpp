@@ -15,6 +15,7 @@
 #include "Hockey/Editor/EditorGameplayPreview.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 namespace Hockey {
@@ -22,9 +23,11 @@ namespace Hockey {
 namespace {
 
 template <typename T, std::size_t Count>
-bool DrawEnumCombo(const char* label, T& value, const std::array<T, Count>& values) {
+bool DrawEnumCombo(const char* label, T& value, const std::array<T, Count>& values, const char* tooltip = nullptr) {
     bool changed = false;
-    if (ImGui::BeginCombo(label, ToString(value))) {
+    const bool open = ImGui::BeginCombo(label, ToString(value));
+    EditorTooltip::ForLastItem(tooltip);
+    if (open) {
         for (const T option : values) {
             const bool selected = value == option;
             if (ImGui::Selectable(ToString(option), selected)) {
@@ -40,18 +43,23 @@ bool DrawEnumCombo(const char* label, T& value, const std::array<T, Count>& valu
     return changed;
 }
 
-bool DrawUInt(const char* label, std::uint32_t& value, int minValue, int maxValue) {
+bool DrawUInt(const char* label, std::uint32_t& value, int minValue, int maxValue, const char* tooltip = nullptr) {
     int temp = static_cast<int>(std::min<std::uint32_t>(value, static_cast<std::uint32_t>(maxValue)));
-    if (ImGui::DragInt(label, &temp, 1.0f, minValue, maxValue)) {
+    const bool edited = ImGui::DragInt(label, &temp, 1.0f, minValue, maxValue);
+    EditorTooltip::ForLastItem(tooltip);
+    if (edited) {
         value = static_cast<std::uint32_t>(std::clamp(temp, minValue, maxValue));
         return true;
     }
     return false;
 }
 
-bool DrawUIntPowerOfTwoOrZero(const char* label, std::uint32_t& value, int minValue, int maxValue) {
+bool DrawUIntPowerOfTwoOrZero(const char* label, std::uint32_t& value, int minValue, int maxValue,
+                              const char* tooltip = nullptr) {
     int temp = static_cast<int>(std::min<std::uint32_t>(value, static_cast<std::uint32_t>(maxValue)));
-    if (ImGui::DragInt(label, &temp, 64.0f, 0, maxValue)) {
+    const bool edited = ImGui::DragInt(label, &temp, 64.0f, 0, maxValue);
+    EditorTooltip::ForLastItem(tooltip);
+    if (edited) {
         if (temp <= 0) {
             value = 0;
         } else {
@@ -62,8 +70,17 @@ bool DrawUIntPowerOfTwoOrZero(const char* label, std::uint32_t& value, int minVa
     return false;
 }
 
-bool DrawFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format) {
-    return ImGui::DragFloat(label, &value, speed, minValue, maxValue, format);
+bool DrawFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format,
+               const char* tooltip = nullptr) {
+    const bool changed = ImGui::DragFloat(label, &value, speed, minValue, maxValue, format);
+    EditorTooltip::ForLastItem(tooltip);
+    return changed;
+}
+
+bool DrawCheckbox(const char* label, bool& value, const char* tooltip = nullptr) {
+    const bool changed = ImGui::Checkbox(label, &value);
+    EditorTooltip::ForLastItem(tooltip);
+    return changed;
 }
 
 bool DrawConfigBool(Config& config, const char* key, const char* label, bool fallback) {
@@ -134,71 +151,99 @@ bool DrawRendererSettings(RendererSettings& settings) {
     constexpr std::array kToneMappers = {ToneMapper::Linear, ToneMapper::Reinhard, ToneMapper::ACES};
 
     if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
-        custom |= DrawEnumCombo("Display mode", settings.displayMode, kDisplayModes);
-        custom |= DrawUInt("Resolution width", settings.resolutionWidth, 320, 7680);
-        custom |= DrawUInt("Resolution height", settings.resolutionHeight, 240, 4320);
-        custom |= DrawUInt("Refresh rate", settings.refreshRate, 0, 480);
-        custom |= DrawUInt("Monitor index", settings.monitorIndex, 0, 16);
-        custom |= ImGui::Checkbox("VSync", &settings.vsync);
-        custom |= DrawUInt("FPS limit", settings.fpsLimit, 0, 1000);
-        custom |= ImGui::Checkbox("HDR", &settings.hdr);
-        custom |= DrawFloat("Brightness", settings.brightness, 0.01f, 0.1f, 4.0f, "%.2f");
-        custom |= DrawFloat("Field of view", settings.fieldOfView, 0.1f, 1.0f, 179.0f, "%.1f");
+        custom |= DrawEnumCombo("Display mode", settings.displayMode, kDisplayModes,
+                                "Choose windowed or fullscreen presentation");
+        custom |= DrawUInt("Resolution width", settings.resolutionWidth, 320, 7680, "Backbuffer width in pixels");
+        custom |= DrawUInt("Resolution height", settings.resolutionHeight, 240, 4320, "Backbuffer height in pixels");
+        custom |= DrawUInt("Refresh rate", settings.refreshRate, 0, 480,
+                           "Preferred display refresh rate; 0 uses default");
+        custom |= DrawUInt("Monitor index", settings.monitorIndex, 0, 16, "Target monitor for fullscreen modes");
+        custom |= DrawCheckbox("VSync", settings.vsync, "Synchronize presentation with display refresh");
+        custom |= DrawUInt("FPS limit", settings.fpsLimit, 0, 1000, "Frame rate cap; 0 leaves it uncapped");
+        custom |= DrawCheckbox("HDR", settings.hdr, "Request HDR rendering and presentation when supported");
+        custom |= DrawFloat("Brightness", settings.brightness, 0.01f, 0.1f, 4.0f, "%.2f",
+                            "Scene brightness multiplier");
+        custom |= DrawFloat("Field of view", settings.fieldOfView, 0.1f, 1.0f, 179.0f, "%.1f",
+                            "Default camera vertical field of view in degrees");
     }
 
     if (ImGui::CollapsingHeader("Scaling", ImGuiTreeNodeFlags_DefaultOpen)) {
-        custom |= DrawFloat("Render scale", settings.renderScale, 0.01f, 0.25f, 2.0f, "%.2f");
-        custom |= ImGui::Checkbox("Dynamic resolution", &settings.dynamicResolution);
-        custom |= DrawEnumCombo("Upscaler", settings.upscaler, kUpscalers);
-        custom |= DrawFloat("Sharpening", settings.sharpening, 0.01f, 0.0f, 2.0f, "%.2f");
+        custom |= DrawFloat("Render scale", settings.renderScale, 0.01f, 0.25f, 2.0f, "%.2f",
+                            "Internal render resolution multiplier");
+        custom |= DrawCheckbox("Dynamic resolution", settings.dynamicResolution,
+                               "Allow render scale to change at runtime");
+        custom |= DrawEnumCombo("Upscaler", settings.upscaler, kUpscalers,
+                                "Upscaling technique used after lower-resolution rendering");
+        custom |= DrawFloat("Sharpening", settings.sharpening, 0.01f, 0.0f, 2.0f, "%.2f",
+                            "Post-upscale sharpening strength");
     }
 
     if (ImGui::CollapsingHeader("Quality", ImGuiTreeNodeFlags_DefaultOpen)) {
         GraphicsPreset preset = settings.preset;
-        if (DrawEnumCombo("Preset", preset, kPresets)) {
+        if (DrawEnumCombo("Preset", preset, kPresets, "Apply a bundled graphics quality preset")) {
             settings = ApplyGraphicsPreset(preset, settings);
             changed = true;
         }
-        custom |= DrawEnumCombo("Texture quality", settings.textureQuality, kTextureQualities);
-        custom |= DrawUInt("Texture budget MB", settings.textureStreamingBudgetMB, 128, 32768);
-        custom |= DrawUInt("Anisotropy", settings.anisotropy, 1, 16);
-        custom |= DrawEnumCombo("Material quality", settings.materialQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Model quality", settings.modelQuality, kDetailQualities);
-        custom |= DrawFloat("LOD distance multiplier", settings.lodDistanceMultiplier, 0.01f, 0.1f, 10.0f, "%.2f");
+        custom |= DrawEnumCombo("Texture quality", settings.textureQuality, kTextureQualities,
+                                "Texture streaming and mip quality");
+        custom |= DrawUInt("Texture budget MB", settings.textureStreamingBudgetMB, 128, 32768,
+                           "Approximate texture streaming memory budget");
+        custom |= DrawUInt("Anisotropy", settings.anisotropy, 1, 16, "Maximum anisotropic filtering level");
+        custom |= DrawEnumCombo("Material quality", settings.materialQuality, kDetailQualities,
+                                "Material feature and shader quality");
+        custom |= DrawEnumCombo("Model quality", settings.modelQuality, kDetailQualities,
+                                "Mesh detail quality target");
+        custom |= DrawFloat("LOD distance multiplier", settings.lodDistanceMultiplier, 0.01f, 0.1f, 10.0f, "%.2f",
+                            "Scales model LOD switch distances");
     }
 
     if (ImGui::CollapsingHeader("Effects", ImGuiTreeNodeFlags_DefaultOpen)) {
-        custom |= ImGui::Checkbox("Bloom", &settings.bloom);
-        custom |= ImGui::Checkbox("Motion blur", &settings.motionBlur);
-        custom |= ImGui::Checkbox("Depth of field", &settings.depthOfField);
-        custom |= ImGui::Checkbox("Lens flare", &settings.lensFlare);
-        custom |= DrawEnumCombo("Volumetric lighting", settings.volumetricLighting, kDetailQualities);
-        custom |= DrawEnumCombo("Particle quality", settings.particleQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Anti-aliasing", settings.antiAliasing, kAntiAliasing);
-        custom |= DrawEnumCombo("Tone mapper", settings.toneMapper, kToneMappers);
-        custom |= ImGui::Checkbox("Film grain", &settings.filmGrain);
-        custom |= ImGui::Checkbox("Chromatic aberration", &settings.chromaticAberration);
-        custom |= ImGui::Checkbox("Vignette", &settings.vignette);
+        custom |= DrawCheckbox("Bloom", settings.bloom, "Enable bright highlight glow");
+        custom |= DrawCheckbox("Motion blur", settings.motionBlur, "Enable camera and object motion blur");
+        custom |= DrawCheckbox("Depth of field", settings.depthOfField, "Enable focus-based background blur");
+        custom |= DrawCheckbox("Lens flare", settings.lensFlare, "Enable lens flare effects");
+        custom |= DrawEnumCombo("Volumetric lighting", settings.volumetricLighting, kDetailQualities,
+                                "Quality for fog and light volumes");
+        custom |= DrawEnumCombo("Particle quality", settings.particleQuality, kDetailQualities,
+                                "Particle simulation and rendering quality");
+        custom |= DrawEnumCombo("Anti-aliasing", settings.antiAliasing, kAntiAliasing,
+                                "Edge smoothing technique");
+        custom |= DrawEnumCombo("Tone mapper", settings.toneMapper, kToneMappers,
+                                "HDR-to-display color mapping operator");
+        custom |= DrawCheckbox("Film grain", settings.filmGrain, "Enable film grain post effect");
+        custom |= DrawCheckbox("Chromatic aberration", settings.chromaticAberration,
+                               "Enable color fringing post effect");
+        custom |= DrawCheckbox("Vignette", settings.vignette, "Darken image corners");
     }
 
     if (ImGui::CollapsingHeader("Hockey", ImGuiTreeNodeFlags_DefaultOpen)) {
-        custom |= DrawEnumCombo("Ice quality", settings.iceQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Ice reflection", settings.iceReflectionQuality, kReflectionQualities);
-        custom |= DrawEnumCombo("Ice scratches", settings.iceScratchQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Skate spray", settings.skateSprayQuality, kEffectQualities);
-        custom |= DrawEnumCombo("Puck trail", settings.puckTrailQuality, kEffectQualities);
-        custom |= DrawEnumCombo("Jersey quality", settings.jerseyQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Goal net quality", settings.goalNetQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Crowd quality", settings.crowdQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Arena detail", settings.arenaDetail, kDetailQualities);
-        custom |= DrawEnumCombo("Board glass detail", settings.boardGlassDetail, kDetailQualities);
+        custom |= DrawEnumCombo("Ice quality", settings.iceQuality, kDetailQualities,
+                                "Ice surface shader and detail quality");
+        custom |= DrawEnumCombo("Ice reflection", settings.iceReflectionQuality, kReflectionQualities,
+                                "Reflection quality for the ice surface");
+        custom |= DrawEnumCombo("Ice scratches", settings.iceScratchQuality, kDetailQualities,
+                                "Scratch and wear detail on the ice");
+        custom |= DrawEnumCombo("Skate spray", settings.skateSprayQuality, kEffectQualities,
+                                "Skate spray particle quality");
+        custom |= DrawEnumCombo("Puck trail", settings.puckTrailQuality, kEffectQualities,
+                                "Puck trail effect quality");
+        custom |= DrawEnumCombo("Jersey quality", settings.jerseyQuality, kDetailQualities,
+                                "Player jersey material and mesh detail");
+        custom |= DrawEnumCombo("Goal net quality", settings.goalNetQuality, kDetailQualities,
+                                "Goal net mesh and material detail");
+        custom |= DrawEnumCombo("Crowd quality", settings.crowdQuality, kDetailQualities,
+                                "Crowd rendering detail");
+        custom |= DrawEnumCombo("Arena detail", settings.arenaDetail, kDetailQualities,
+                                "Arena prop and environment detail");
+        custom |= DrawEnumCombo("Board glass detail", settings.boardGlassDetail, kDetailQualities,
+                                "Board glass material and reflection detail");
     }
 
     if (ImGui::CollapsingHeader("Debug Overlays", ImGuiTreeNodeFlags_DefaultOpen)) {
-        custom |= ImGui::Checkbox("Show FPS", &settings.showFPS);
-        custom |= ImGui::Checkbox("Show frame time", &settings.showFrameTime);
-        custom |= ImGui::Checkbox("Show GPU stats", &settings.showGPUStats);
-        custom |= ImGui::Checkbox("Show network stats", &settings.showNetworkStats);
+        custom |= DrawCheckbox("Show FPS", settings.showFPS, "Display frames per second");
+        custom |= DrawCheckbox("Show frame time", settings.showFrameTime, "Display frame timing");
+        custom |= DrawCheckbox("Show GPU stats", settings.showGPUStats, "Display renderer GPU statistics");
+        custom |= DrawCheckbox("Show network stats", settings.showNetworkStats, "Display network statistics overlay");
     }
 
     if (custom) {
@@ -212,8 +257,10 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
 
     if (ImGui::CollapsingHeader("Budgets", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Budgets");
-        changed |= DrawUInt("Max rendered lights", settings.maxRenderedLights, 0, 16);
-        changed |= DrawUInt("Max local shadow tiles", settings.maxLocalShadowTiles, 0, 16);
+        changed |= DrawUInt("Max rendered lights", settings.maxRenderedLights, 0, 16,
+                            "Caps how many scene lights the renderer submits");
+        changed |= DrawUInt("Max local shadow tiles", settings.maxLocalShadowTiles, 0, 16,
+                            "Caps shadow atlas tiles for point and spot lights");
         ImGui::PopID();
     }
 
@@ -221,69 +268,92 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
         ImGui::PushID("Shadow Atlases");
         changed |= DrawEnumCombo("Shadow quality", settings.shadowQuality,
                                  std::array{ShadowQuality::Off, ShadowQuality::Low, ShadowQuality::Medium,
-                                            ShadowQuality::High, ShadowQuality::Ultra});
-        changed |= DrawFloat("Shadow distance", settings.shadowDistance, 1.0f, 0.0f, 5000.0f, "%.0f");
-        changed |=
-            DrawUIntPowerOfTwoOrZero("Directional atlas", settings.directionalShadowAtlasResolution, 256, 16384);
-        changed |= DrawUIntPowerOfTwoOrZero("Local atlas", settings.localShadowAtlasResolution, 256, 16384);
+                                            ShadowQuality::High, ShadowQuality::Ultra},
+                                 "Overall shadow quality preset");
+        changed |= DrawFloat("Shadow distance", settings.shadowDistance, 1.0f, 0.0f, 5000.0f, "%.0f",
+                             "Maximum distance for shadow rendering");
+        changed |= DrawUIntPowerOfTwoOrZero("Directional atlas", settings.directionalShadowAtlasResolution, 256, 16384,
+                                            "Directional shadow atlas resolution; 0 uses preset default");
+        changed |= DrawUIntPowerOfTwoOrZero("Local atlas", settings.localShadowAtlasResolution, 256, 16384,
+                                            "Local light shadow atlas resolution; 0 uses preset default");
         ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Directional Cascades", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Directional Cascades");
-        changed |= DrawUInt("Cascade count", settings.shadowCascadeCount, 0, 4);
-        changed |= DrawFloat("Split lambda", settings.shadowCascadeSplitLambda, 0.01f, 0.0f, 1.0f, "%.2f");
-        changed |= DrawFloat("Overlap scale", settings.shadowCascadeOverlapScale, 0.01f, 0.0f, 1.0f, "%.2f");
-        changed |= DrawFloat("Minimum overlap", settings.shadowCascadeMinOverlap, 0.25f, 0.0f, 100.0f, "%.2f");
+        changed |= DrawUInt("Cascade count", settings.shadowCascadeCount, 0, 4,
+                            "Number of directional shadow cascades");
+        changed |= DrawFloat("Split lambda", settings.shadowCascadeSplitLambda, 0.01f, 0.0f, 1.0f, "%.2f",
+                             "Blend between linear and logarithmic cascade splits");
+        changed |= DrawFloat("Overlap scale", settings.shadowCascadeOverlapScale, 0.01f, 0.0f, 1.0f, "%.2f",
+                             "Scales overlap between neighboring cascades");
+        changed |= DrawFloat("Minimum overlap", settings.shadowCascadeMinOverlap, 0.25f, 0.0f, 100.0f, "%.2f",
+                             "Minimum cascade overlap distance");
         changed |= DrawFloat("Max overlap scale", settings.shadowCascadeMaxOverlapScale, 0.01f, 0.0f, 1.0f,
-                             "%.2f");
-        changed |= DrawFloat("Blend scale", settings.shadowCascadeBlendScale, 0.01f, 0.0f, 1.0f, "%.2f");
-        changed |= DrawFloat("Minimum blend", settings.shadowCascadeMinBlend, 0.05f, 0.0f, 50.0f, "%.2f");
+                             "%.2f", "Upper bound for cascade overlap scaling");
+        changed |= DrawFloat("Blend scale", settings.shadowCascadeBlendScale, 0.01f, 0.0f, 1.0f, "%.2f",
+                             "Scales the soft blend region between cascades");
+        changed |= DrawFloat("Minimum blend", settings.shadowCascadeMinBlend, 0.05f, 0.0f, 50.0f, "%.2f",
+                             "Minimum distance used for cascade blending");
         ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Directional Filter & Bias", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Directional Filter & Bias");
-        changed |= DrawUInt("PCF radius", settings.directionalShadowPcfRadius, 0, 3);
+        changed |= DrawUInt("PCF radius", settings.directionalShadowPcfRadius, 0, 3,
+                            "Directional shadow filter radius");
         changed |= DrawFloat("Normal offset scale", settings.directionalShadowNormalOffsetScale, 0.01f, 0.0f,
-                             4.0f, "%.2f");
+                             4.0f, "%.2f", "Scales normal-based directional shadow offset");
         changed |= DrawFloat("Normal offset min", settings.directionalShadowNormalOffsetMin, 0.0005f, 0.0f,
-                             0.25f, "%.4f");
+                             0.25f, "%.4f", "Minimum normal offset for directional shadows");
         changed |= DrawFloat("Normal offset max", settings.directionalShadowNormalOffsetMax, 0.001f, 0.0f, 1.0f,
-                             "%.4f");
-        changed |= DrawFloat("Bias base", settings.directionalShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f");
-        changed |= DrawFloat("Bias slope", settings.directionalShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f");
-        changed |= DrawFloat("Bias min", settings.directionalShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
-        changed |= DrawFloat("Bias max", settings.directionalShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+                             "%.4f", "Maximum normal offset for directional shadows");
+        changed |= DrawFloat("Bias base", settings.directionalShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f",
+                             "Base depth bias for directional shadows");
+        changed |= DrawFloat("Bias slope", settings.directionalShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Slope-scaled depth bias for directional shadows");
+        changed |= DrawFloat("Bias min", settings.directionalShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f",
+                             "Minimum computed directional shadow bias");
+        changed |= DrawFloat("Bias max", settings.directionalShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Maximum computed directional shadow bias");
         changed |= DrawFloat("Depth bias constant", settings.directionalShadowDepthBiasConstant, 0.05f, 0.0f,
-                             8.0f, "%.2f");
+                             8.0f, "%.2f", "Rasterizer constant depth bias for directional shadows");
         changed |= DrawFloat("Depth bias slope", settings.directionalShadowDepthBiasSlope, 0.05f, 0.0f, 8.0f,
-                             "%.2f");
+                             "%.2f", "Rasterizer slope depth bias for directional shadows");
         ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Contact Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Contact Shadows");
-        changed |= ImGui::Checkbox("Contact shadows", &settings.contactShadows);
-        changed |= DrawFloat("Distance", settings.contactShadowDistance, 0.5f, 0.0f, 500.0f, "%.1f");
-        changed |= DrawFloat("Strength", settings.contactShadowStrength, 0.01f, 0.0f, 1.0f, "%.2f");
+        changed |= DrawCheckbox("Contact shadows", settings.contactShadows, "Enable short-range contact shadows");
+        changed |= DrawFloat("Distance", settings.contactShadowDistance, 0.5f, 0.0f, 500.0f, "%.1f",
+                             "Maximum contact shadow ray distance");
+        changed |= DrawFloat("Strength", settings.contactShadowStrength, 0.01f, 0.0f, 1.0f, "%.2f",
+                             "Contact shadow opacity multiplier");
         changed |= DrawFloat("Normal offset scale", settings.contactShadowNormalOffsetScale, 0.01f, 0.0f, 2.0f,
-                             "%.2f");
+                             "%.2f", "Scales normal-based contact shadow offset");
         changed |= DrawFloat("Normal offset min", settings.contactShadowNormalOffsetMin, 0.0005f, 0.0f, 0.25f,
-                             "%.4f");
-        changed |= DrawFloat("Bias base", settings.contactShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f");
-        changed |= DrawFloat("Bias slope", settings.contactShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f");
-        changed |= DrawFloat("Bias min", settings.contactShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
-        changed |= DrawFloat("Bias max", settings.contactShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+                             "%.4f", "Minimum normal offset for contact shadows");
+        changed |= DrawFloat("Bias base", settings.contactShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f",
+                             "Base depth bias for contact shadows");
+        changed |= DrawFloat("Bias slope", settings.contactShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Slope-scaled depth bias for contact shadows");
+        changed |= DrawFloat("Bias min", settings.contactShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f",
+                             "Minimum computed contact shadow bias");
+        changed |= DrawFloat("Bias max", settings.contactShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Maximum computed contact shadow bias");
         ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Local Light Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Local Light Shadows");
-        changed |= DrawUInt("PCF radius", settings.localShadowPcfRadius, 0, 3);
-        changed |= DrawFloat("Bias scale", settings.localShadowBiasScale, 0.00005f, 0.0f, 0.05f, "%.5f");
-        changed |= DrawFloat("Bias min", settings.localShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
-        changed |= DrawFloat("Bias max", settings.localShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+        changed |= DrawUInt("PCF radius", settings.localShadowPcfRadius, 0, 3, "Local light shadow filter radius");
+        changed |= DrawFloat("Bias scale", settings.localShadowBiasScale, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Scales depth bias for local light shadows");
+        changed |= DrawFloat("Bias min", settings.localShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f",
+                             "Minimum local light shadow bias");
+        changed |= DrawFloat("Bias max", settings.localShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f",
+                             "Maximum local light shadow bias");
         ImGui::PopID();
     }
 
@@ -292,14 +362,17 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
         changed |= DrawEnumCombo("Ambient occlusion", settings.aoQuality,
                                  std::array{AmbientOcclusionQuality::Off, AmbientOcclusionQuality::Low,
                                             AmbientOcclusionQuality::Medium, AmbientOcclusionQuality::High,
-                                            AmbientOcclusionQuality::Ultra});
+                                            AmbientOcclusionQuality::Ultra},
+                                 "Screen-space ambient occlusion quality");
         changed |= DrawEnumCombo("Reflection quality", settings.reflectionQuality,
                                  std::array{ReflectionQuality::Off, ReflectionQuality::Low,
                                             ReflectionQuality::Medium, ReflectionQuality::High,
-                                            ReflectionQuality::Ultra});
+                                            ReflectionQuality::Ultra},
+                                 "Reflection probe and screen reflection quality");
         changed |= DrawEnumCombo("Global illumination", settings.globalIlluminationQuality,
                                  std::array{DetailQuality::Low, DetailQuality::Medium, DetailQuality::High,
-                                            DetailQuality::Ultra});
+                                            DetailQuality::Ultra},
+                                 "Indirect lighting quality target");
         ImGui::PopID();
     }
 

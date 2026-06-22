@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <functional>
+#include <string>
 #include <system_error>
 #include <vector>
 
@@ -16,6 +17,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Editor/Project/EditorAssetPreview.hpp"
@@ -115,15 +117,18 @@ void ProjectPanel::OnImGui(EditorContext& context) {
 void ProjectPanel::DrawToolbar(EditorContext& context) {
     ImGui::SetNextItemWidth(220.0f);
     ImGui::InputTextWithHint("##search", "Search...", m_Browser.SearchBuffer(), m_Browser.SearchBufferSize());
+    EditorTooltip::ForLastItem("Filter project files by name");
     ImGui::SameLine();
     if (ImGui::Button("Clear")) {
         m_Browser.SearchBuffer()[0] = '\0';
     }
+    EditorTooltip::ForLastItem("Clear the project search filter");
     ImGui::SameLine();
     if (ImGui::Button("Refresh")) {
         m_Browser.ClearSelectionIfMissing();
         m_Status.clear();
     }
+    EditorTooltip::ForLastItem("Refresh the project browser selection state");
     if (context.assetManager != nullptr) {
         ImGui::SameLine();
         if (ImGui::Button("Scan")) {
@@ -133,6 +138,7 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
                 m_Status = "Scanned raw assets";
             }
         }
+        EditorTooltip::ForLastItem("Scan raw asset folders for new or changed files");
         ImGui::SameLine();
         if (ImGui::Button("Import All")) {
             if (const Status status = context.assetManager->ImportAll(); !status) {
@@ -141,6 +147,7 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
                 m_Status = "Imported assets";
             }
         }
+        EditorTooltip::ForLastItem("Import every discovered raw asset into the asset database");
         ImGui::SameLine();
         if (ImGui::Button("Cook Dirty")) {
             if (const Status status = context.assetManager->CookAllDirty(); !status) {
@@ -149,6 +156,7 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
                 m_Status = "Cooked dirty assets";
             }
         }
+        EditorTooltip::ForLastItem("Cook assets marked dirty by imports or edits");
     }
     if (!m_Status.empty()) {
         ImGui::SameLine();
@@ -212,8 +220,9 @@ void ProjectPanel::DrawFileLeaf(EditorContext& context, const ProjectEntry& entr
     ImGui::PopStyleColor();
     BeginFileDragSource(context, entry);
     HandleFileActivation(context, entry);
-    if (ImGui::IsItemHovered() && !entry.type.supported) {
-        ImGui::SetTooltip("%s (preview only, not imported)", entry.type.label);
+    if (!entry.type.supported) {
+        const std::string tooltip = std::string(entry.type.label) + " (preview only, not imported)";
+        EditorTooltip::ForLastItem(tooltip);
     }
     DrawContextMenu(context, entry);
 }
@@ -317,20 +326,28 @@ void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesyste
             m_Status.clear();
         }
     }
-    if (imported && ImGui::MenuItem("Cook")) {
-        if (const Status status = assets->CookAsset(meta->id); !status) {
-            m_Status = status.error;
-        } else {
-            m_Status.clear();
+    EditorTooltip::ForLastItem(imported ? "Reimport this raw asset and update its metadata"
+                                        : "Import this raw asset into the asset database");
+    if (imported) {
+        if (ImGui::MenuItem("Cook")) {
+            if (const Status status = assets->CookAsset(meta->id); !status) {
+                m_Status = status.error;
+            } else {
+                m_Status.clear();
+            }
         }
+        EditorTooltip::ForLastItem("Cook this asset using its current metadata");
     }
-    if (imported && ImGui::MenuItem("Recook")) {
-        assets->Database().MarkDirty(meta->id);
-        if (const Status status = assets->CookAsset(meta->id); !status) {
-            m_Status = status.error;
-        } else {
-            m_Status.clear();
+    if (imported) {
+        if (ImGui::MenuItem("Recook")) {
+            assets->Database().MarkDirty(meta->id);
+            if (const Status status = assets->CookAsset(meta->id); !status) {
+                m_Status = status.error;
+            } else {
+                m_Status.clear();
+            }
         }
+        EditorTooltip::ForLastItem("Mark this asset dirty and cook it immediately");
     }
     if (ImGui::MenuItem("Recook All Dirty")) {
         if (const Status status = assets->CookAllDirty(); !status) {
@@ -340,20 +357,27 @@ void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesyste
         }
         assets->SaveDatabase();
     }
-    if (imported && ImGui::MenuItem("Copy Asset ID")) {
-        ImGui::SetClipboardText(meta->id.ToString().c_str());
-    }
-    if (imported && ImGui::MenuItem("Delete Metadata")) {
-        const AssetID id = meta->id;
-        if (const Status status = assets->DeleteMetadata(id); !status) {
-            m_Status = status.error;
-        } else {
-            assets->SaveDatabase();
-            if (context.renderer != nullptr) {
-                context.renderer->InvalidateAsset(id.Value());
-            }
-            m_Status = "Deleted metadata";
+    EditorTooltip::ForLastItem("Cook every asset currently marked dirty");
+    if (imported) {
+        if (ImGui::MenuItem("Copy Asset ID")) {
+            ImGui::SetClipboardText(meta->id.ToString().c_str());
         }
+        EditorTooltip::ForLastItem("Copy this asset's stable ID to the clipboard");
+    }
+    if (imported) {
+        if (ImGui::MenuItem("Delete Metadata")) {
+            const AssetID id = meta->id;
+            if (const Status status = assets->DeleteMetadata(id); !status) {
+                m_Status = status.error;
+            } else {
+                assets->SaveDatabase();
+                if (context.renderer != nullptr) {
+                    context.renderer->InvalidateAsset(id.Value());
+                }
+                m_Status = "Deleted metadata";
+            }
+        }
+        EditorTooltip::ForLastItem("Remove this asset's metadata record without deleting the raw file");
     }
     if (ImGui::MenuItem("Validate References")) {
         std::vector<AssetValidationIssue> issues;
@@ -361,6 +385,7 @@ void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesyste
         m_Status = status ? "Validation passed (" + std::to_string(issues.size()) + " notes)"
                           : "Validation found issues: " + std::to_string(issues.size());
     }
+    EditorTooltip::ForLastItem("Check asset database references for missing or stale IDs");
 }
 
 void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path) {
@@ -387,16 +412,24 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
     if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
         m_EditMaterial.name = nameBuf;
     }
+    EditorTooltip::ForLastItem("Material display name written to the source asset");
 
     ImGui::SeparatorText("Surface");
     changed |= ImGui::ColorEdit4("Albedo", &m_EditMaterial.baseColor.x);
+    EditorTooltip::ForLastItem("Base color and alpha");
     changed |= ImGui::SliderFloat("Metallic", &m_EditMaterial.metallic, 0.0f, 1.0f);
+    EditorTooltip::ForLastItem("Metallic surface response");
     changed |= ImGui::SliderFloat("Roughness", &m_EditMaterial.roughness, 0.0f, 1.0f);
+    EditorTooltip::ForLastItem("Surface microsurface roughness");
     changed |= ImGui::SliderFloat("Normal Strength", &m_EditMaterial.normalStrength, 0.0f, 4.0f);
+    EditorTooltip::ForLastItem("Strength applied to the normal map");
     changed |= ImGui::SliderFloat("Occlusion", &m_EditMaterial.occlusionStrength, 0.0f, 1.0f);
+    EditorTooltip::ForLastItem("Ambient occlusion texture strength");
     changed |= ImGui::ColorEdit3("Emission", &m_EditMaterial.emissiveColor.x,
                                  ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+    EditorTooltip::ForLastItem("Emissive color contribution");
     changed |= ImGui::SliderFloat("Emission Strength", &m_EditMaterial.emissiveStrength, 0.0f, 16.0f);
+    EditorTooltip::ForLastItem("Emissive intensity multiplier");
 
     // Transparency: Opaque ignores alpha, Mask does a hard cutoff at AlphaCutoff,
     // Blend does order-dependent alpha blending. AlphaCutoff only applies to Mask.
@@ -413,8 +446,10 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
             m_EditMaterial.alphaMode = kAlphaModes[alphaModeIndex];
             changed = true;
         }
+        EditorTooltip::ForLastItem("Opaque ignores alpha, Mask clips by cutoff, Blend uses alpha blending");
         ImGui::BeginDisabled(m_EditMaterial.alphaMode != "Mask");
         changed |= ImGui::SliderFloat("Alpha Cutoff", &m_EditMaterial.alphaCutoff, 0.0f, 1.0f);
+        EditorTooltip::ForLastItem("Alpha threshold used by Mask rendering mode");
         ImGui::EndDisabled();
     }
 
@@ -442,6 +477,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
         } else {
             ImGui::Button("##empty", thumbSize); // empty drop box when no texture / no preview
         }
+        EditorTooltip::ForLastItem("Drop a texture asset here to assign this map");
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType);
                 payload != nullptr && payload->DataSize == static_cast<int>(sizeof(AssetDragPayload))) {
@@ -463,13 +499,12 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
             ImGui::TextDisabled("(none)");
         } else {
             ImGui::TextDisabled("%s", std::filesystem::path(slot).filename().string().c_str());
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", slot.c_str());
-            }
+            EditorTooltip::ForLastItem(slot.c_str());
             if (ImGui::SmallButton("Clear")) {
                 slot.clear();
                 slotChanged = true;
             }
+            EditorTooltip::ForLastItem("Clear this texture slot");
         }
         ImGui::EndGroup();
 
@@ -485,7 +520,9 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
 
     // UV transform shared by every map: tiling (scale) then offset.
     changed |= ImGui::DragFloat2("Tiling", &m_EditMaterial.tiling.x, 0.01f, 0.0f, 256.0f);
+    EditorTooltip::ForLastItem("UV tiling applied to every texture map");
     changed |= ImGui::DragFloat2("Offset", &m_EditMaterial.offset.x, 0.005f, -256.0f, 256.0f);
+    EditorTooltip::ForLastItem("UV offset applied to every texture map");
 
     // Live preview: push edits straight to the renderer (no disk write) so the
     // scene viewport updates as the user drags sliders / drops textures.
@@ -515,6 +552,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
             m_Status = "Saved material (no asset manager to cook)";
         }
     }
+    EditorTooltip::ForLastItem("Save material edits, reimport, and cook dependent assets");
     ImGui::SameLine();
     ImGui::BeginDisabled(!m_MaterialPreviewActive);
     if (ImGui::Button("Revert")) {
@@ -526,6 +564,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
         m_MaterialPreviewActive = false;
         m_Status = "Reverted";
     }
+    EditorTooltip::ForLastItem("Discard unsaved live preview edits and reload from disk");
     ImGui::EndDisabled();
 }
 

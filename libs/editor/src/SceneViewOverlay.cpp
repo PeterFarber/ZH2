@@ -16,6 +16,7 @@
 #include "Hockey/Editor/EditorCamera.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/Selection.hpp"
 #include "Hockey/Editor/Tools/ToolManager.hpp"
 #include "Hockey/Renderer/Camera.hpp"
@@ -91,9 +92,7 @@ const char* ToolNameForIndex(int index) {
 }
 
 void Tooltip(const char* text) {
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", text);
-    }
+    EditorTooltip::ForLastItem(text);
 }
 
 bool IconButton(const char* id, glm::vec2 pos, glm::vec2 size, bool active, const char* tooltip) {

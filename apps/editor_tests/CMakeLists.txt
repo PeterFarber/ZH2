@@ -13,6 +13,7 @@ add_executable(HockeyEditorTests
     src/SceneWorkflowTests.cpp
     src/ProjectBrowserTests.cpp
     src/ProjectSettingsPanelContractTests.cpp
+    src/EditorTooltipContractTests.cpp
 )
 
 target_link_libraries(HockeyEditorTests PRIVATE hockey_core hockey_ecs hockey_renderer hockey_editor hockey_physics hockey_gameplay)

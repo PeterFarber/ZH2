@@ -9,6 +9,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorApp.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
 
@@ -48,16 +49,19 @@ void Toolbar::Draw(EditorContext& ctx, EditorApp& app) {
     if (ToggleButton("Play", ctx.playMode)) {
         app.TogglePlaytestMode();
     }
+    EditorTooltip::ForLastItem(ctx.playMode ? "Stop the live gameplay preview" : "Start a live gameplay preview");
 
     VerticalSeparator();
 
     if (ImGui::Button("Save")) {
         app.SaveScene();
     }
+    EditorTooltip::ForLastItem("Save the active scene");
     ImGui::SameLine();
     if (ImGui::Button("Validate")) {
         app.ValidateActiveScene();
     }
+    EditorTooltip::ForLastItem("Run scene validation checks");
 
     // Right-aligned active scene name + dirty indicator.
     const char* sceneName = ctx.activeScene != nullptr ? ctx.activeScene->GetName().c_str() : "<no scene>";
@@ -72,6 +76,7 @@ void Toolbar::Draw(EditorContext& ctx, EditorApp& app) {
     }
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(label);
+    EditorTooltip::ForLastItem(ctx.sceneDirty ? "Active scene has unsaved changes" : "Active scene");
 
     ImGui::EndChild();
 }

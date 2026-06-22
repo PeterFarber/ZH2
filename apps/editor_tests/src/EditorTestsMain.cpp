@@ -19,6 +19,7 @@ void RunEditorGameplayPreviewTests();
 void RunSceneWorkflowTests();
 void RunProjectBrowserTests();
 void RunProjectSettingsPanelContractTests();
+void RunEditorTooltipContractTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -38,6 +39,7 @@ int main(int argc, char** argv) {
     RunSceneWorkflowTests();
     RunProjectBrowserTests();
     RunProjectSettingsPanelContractTests();
+    RunEditorTooltipContractTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Editor tests completed: {} passed, {} failed", stats.passed, stats.failed);
