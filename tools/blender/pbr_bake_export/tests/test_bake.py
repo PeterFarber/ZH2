@@ -54,10 +54,25 @@ class FakeNode:
 class FakeNodes:
     def __init__(self):
         self._nodes = []
-        self.active = None
+        self._active = None
+        self.active_assignment_error = None
 
     def __iter__(self):
         return iter(self._nodes)
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, node):
+        if self.active_assignment_error is not None and getattr(node, "node_type", None) == "ShaderNodeTexImage":
+            self._active = node
+            error = self.active_assignment_error
+            self.active_assignment_error = None
+            raise error
+
+        self._active = node
 
     def new(self, node_type):
         node = FakeNode(node_type)
@@ -66,8 +81,8 @@ class FakeNodes:
 
     def remove(self, node):
         self._nodes.remove(node)
-        if self.active is node:
-            self.active = None
+        if self._active is node:
+            self._active = None
 
     def as_list(self):
         return list(self._nodes)
@@ -279,6 +294,19 @@ class BakeObjectMapsTests(FakeBpyModuleTestCase):
         self.assert_material_restored(material)
         self.assertEqual(self.bpy.data.images.active_images, [])
         self.assertEqual(self.bpy.data.images.removed_names, ["bake_failure_asset_basecolor"])
+
+    def test_node_activation_failure_cleans_up_temporary_nodes_and_images(self):
+        material = FakeMaterial("node_material")
+        obj = FakeObject("activation_failure_asset", [material], self.bpy.context)
+        material.node_tree.nodes.active_assignment_error = RuntimeError("forced active assignment failure")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(RuntimeError, "forced active assignment failure"):
+                bake_object_maps(obj, self.texture_paths(temp_dir), TextureResolution.TEST)
+
+        self.assert_material_restored(material)
+        self.assertEqual(self.bpy.data.images.active_images, [])
+        self.assertEqual(self.bpy.data.images.removed_names, ["activation_failure_asset_basecolor"])
 
     def test_image_save_failure_cleans_up_temporary_nodes_and_images(self):
         material = FakeMaterial("node_material")

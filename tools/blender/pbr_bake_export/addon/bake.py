@@ -64,9 +64,9 @@ def _attach_bake_image_nodes(materials: list[object], image) -> list[tuple[objec
             nodes = material.node_tree.nodes
             previous_active_node = nodes.active
             texture_node = nodes.new("ShaderNodeTexImage")
+            targets.append((nodes, previous_active_node, texture_node))
             texture_node.image = image
             nodes.active = texture_node
-            targets.append((nodes, previous_active_node, texture_node))
     except Exception:
         _restore_bake_image_nodes(targets)
         raise
