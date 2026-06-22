@@ -16,7 +16,7 @@ themselves through hover tooltips.
 ## Implementation Order
 
 - [x] 1. Multi-object transform as a group
-- [ ] 2. Hierarchy drag sorting and reparent/reorder polish
+- [x] 2. Hierarchy drag sorting and reparent/reorder polish
 - [~] 3. Editor-wide tooltip pass
 - [~] 4. Focused editor verification and phase-status update
 
@@ -62,28 +62,34 @@ Current state:
 
 - [x] Hierarchy supports selection, context menus, inline rename, prefab drops,
       asset drops, and entity drag/drop reparenting.
-- [ ] Hierarchy drag/drop currently reparents to a target entity, but does not
-      expose explicit sibling ordering.
-- [ ] Need to confirm whether root and child order are stable in scene storage
-      and serialization before adding UI controls.
+- [x] Hierarchy drag/drop supports before, inside, and after row drop placement.
+- [x] Hierarchy drag/drop draws distinct previews for sibling insertion versus
+      parent/inside drops.
+- [x] Root and child order are stable in scene storage and scene serialization.
 
 Tasks:
 
-- [ ] Identify or add scene APIs for root and sibling ordering.
-- [ ] Add editor command support for reorder operations with undo/redo.
-- [ ] Support dragging an entity above, below, or into another entity.
-- [ ] Prevent invalid drops, including dropping an entity into itself or into one
+- [x] Identify or add scene APIs for root and sibling ordering.
+- [x] Add editor command support for reorder operations with undo/redo.
+- [x] Support dragging an entity above, below, or into another entity.
+- [x] Prevent invalid drops, including dropping an entity into itself or into one
       of its descendants.
-- [ ] Preserve scene dirty-state behavior after reorder operations.
-- [ ] Add tests for root reorder, sibling reorder, reparent+order, invalid drops,
+- [x] Preserve scene dirty-state behavior after reorder operations.
+- [x] Add tests for root reorder, sibling reorder, reparent+order, invalid drops,
       and undo/redo.
+- [x] Add custom drag/drop preview drawing so moving an entity does not look like
+      selecting or focusing a parent row.
 
 Acceptance criteria:
 
-- [ ] Dragging in the hierarchy changes visible order immediately.
-- [ ] Saved scenes reload with the same hierarchy order.
-- [ ] Undo/redo works for every supported reorder mode.
-- [ ] Existing prefab/entity drag-drop behavior remains intact.
+- [~] Dragging in the hierarchy changes visible order immediately; code path is
+      implemented and still needs real display/GPU verification.
+- [~] Hovering a drag target shows a distinct insertion line for reorder and a
+      filled/outlined row for parent drops; code path is implemented and still
+      needs real display/GPU verification.
+- [x] Saved scenes reload with the same hierarchy order.
+- [x] Undo/redo works for every supported reorder mode.
+- [x] Existing prefab/entity drag-drop behavior remains intact in covered tests.
 
 Likely files:
 
@@ -151,12 +157,11 @@ Likely files:
 - [~] Update `docs/phase-status/phase-04-unity-style-editor.md` if these items
       change Phase 4 completion or verification state.
 
-## Subagent Work Split
+## Work Notes
 
-- [x] Agent A: multi-object transform and undo/redo tests.
-- [ ] Agent B: hierarchy ordering research and implementation after Agent A if
-      it touches shared selection or command code.
-- [x] Agent C: tooltip helper and high-traffic panel coverage in parallel when
-      its write set does not overlap with active hierarchy work.
-- [~] Main agent: integrate subagent changes, resolve overlaps, run verification,
-      update phase status, and commit only the intended files.
+- [x] Multi-object transform and undo/redo tests were completed first.
+- [x] Hierarchy ordering was implemented manually in this pass; no subagents are
+      part of the current workflow.
+- [x] Tooltip helper and first-pass panel coverage are already in place.
+- [~] Finish focused verification, update phase status, and commit only the
+      intended hierarchy/order changes.

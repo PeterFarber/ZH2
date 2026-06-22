@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -100,6 +101,7 @@ std::unique_ptr<EditorCommand> RevertPrefabOverrides(Scene& scene, UUID instance
 std::unique_ptr<EditorCommand> RenameEntity(UUID entityId, std::string oldName, std::string newName);
 std::unique_ptr<EditorCommand> SetActive(UUID entityId, bool oldValue, bool newValue);
 std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newParentId);
+std::unique_ptr<EditorCommand> MoveEntity(Scene& scene, UUID entityId, UUID newParentId, std::size_t siblingIndex);
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,
                                                const TransformData& newValue);
 std::unique_ptr<EditorCommand> TransformEntities(std::vector<EntityTransformSnapshot> snapshots);

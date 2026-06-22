@@ -19,6 +19,15 @@ bool ChildrenContains(Scene& scene, Entity parent, Entity child) {
     return false;
 }
 
+std::vector<UUID> EntityIds(const std::vector<Entity>& entities) {
+    std::vector<UUID> ids;
+    ids.reserve(entities.size());
+    for (const Entity& entity : entities) {
+        ids.push_back(entity.GetUUID());
+    }
+    return ids;
+}
+
 } // namespace
 
 void RunHierarchyTests() {
@@ -79,4 +88,103 @@ void RunHierarchyTests() {
     scene.DestroyEntityRecursive(rp);
     HK_CHECK(!scene.ContainsUUID(rpId));
     HK_CHECK(!scene.ContainsUUID(rcId));
+
+    // Root creation order is stable.
+    {
+        Scene ordered("OrderedRoots");
+        Entity a = ordered.CreateEntity("A");
+        Entity b = ordered.CreateEntity("B");
+        Entity c = ordered.CreateEntity("C");
+
+        const std::vector<UUID> roots = EntityIds(ordered.GetRootEntities());
+        HK_CHECK_EQ(roots.size(), static_cast<std::size_t>(3));
+        HK_CHECK(roots[0] == a.GetUUID());
+        HK_CHECK(roots[1] == b.GetUUID());
+        HK_CHECK(roots[2] == c.GetUUID());
+    }
+
+    // Same-parent reorder changes child order.
+    {
+        Scene ordered("OrderedChildren");
+        Entity parent = ordered.CreateEntity("Parent");
+        Entity a = ordered.CreateEntity("A");
+        Entity b = ordered.CreateEntity("B");
+        Entity c = ordered.CreateEntity("C");
+        ordered.SetParent(a, parent, false);
+        ordered.SetParent(b, parent, false);
+        ordered.SetParent(c, parent, false);
+
+        ordered.MoveEntity(c, parent, 0, false);
+
+        const std::vector<UUID> children = EntityIds(ordered.GetChildren(parent));
+        HK_CHECK_EQ(children.size(), static_cast<std::size_t>(3));
+        HK_CHECK(children[0] == c.GetUUID());
+        HK_CHECK(children[1] == a.GetUUID());
+        HK_CHECK(children[2] == b.GetUUID());
+        HK_CHECK_EQ(ordered.GetSiblingIndex(a), static_cast<std::size_t>(1));
+    }
+
+    // Reparent at index places the child at the requested sibling slot.
+    {
+        Scene ordered("ReparentAtIndex");
+        Entity parentA = ordered.CreateEntity("ParentA");
+        Entity parentB = ordered.CreateEntity("ParentB");
+        Entity first = ordered.CreateEntity("First");
+        Entity second = ordered.CreateEntity("Second");
+        Entity moved = ordered.CreateEntity("Moved");
+        ordered.SetParent(first, parentB, false);
+        ordered.SetParent(second, parentB, false);
+        ordered.SetParent(moved, parentA, false);
+
+        ordered.MoveEntity(moved, parentB, 1, false);
+
+        const std::vector<UUID> children = EntityIds(ordered.GetChildren(parentB));
+        HK_CHECK_EQ(children.size(), static_cast<std::size_t>(3));
+        HK_CHECK(children[0] == first.GetUUID());
+        HK_CHECK(children[1] == moved.GetUUID());
+        HK_CHECK(children[2] == second.GetUUID());
+        HK_CHECK(ordered.GetParent(moved).GetUUID() == parentB.GetUUID());
+    }
+
+    // Move to root at index changes root order.
+    {
+        Scene ordered("RootAtIndex");
+        Entity a = ordered.CreateEntity("A");
+        Entity b = ordered.CreateEntity("B");
+        Entity parent = ordered.CreateEntity("Parent");
+        Entity child = ordered.CreateEntity("Child");
+        ordered.SetParent(child, parent, false);
+
+        ordered.MoveEntity(child, Entity{}, 1, false);
+
+        const std::vector<UUID> roots = EntityIds(ordered.GetRootEntities());
+        HK_CHECK_EQ(roots.size(), static_cast<std::size_t>(4));
+        HK_CHECK(roots[0] == a.GetUUID());
+        HK_CHECK(roots[1] == child.GetUUID());
+        HK_CHECK(roots[2] == b.GetUUID());
+        HK_CHECK(roots[3] == parent.GetUUID());
+        HK_CHECK(!child.HasComponent<ParentComponent>());
+    }
+
+    // Invalid self/descendant moves leave the hierarchy untouched.
+    {
+        Scene ordered("InvalidMoves");
+        Entity parent = ordered.CreateEntity("Parent");
+        Entity child = ordered.CreateEntity("Child");
+        Entity other = ordered.CreateEntity("Other");
+        ordered.SetParent(child, parent, false);
+
+        ordered.MoveEntity(parent, parent, 0, false);
+        HK_CHECK(!parent.HasComponent<ParentComponent>());
+        HK_CHECK(ordered.GetParent(child).GetUUID() == parent.GetUUID());
+
+        ordered.MoveEntity(parent, child, 0, false);
+        HK_CHECK(!parent.HasComponent<ParentComponent>());
+        HK_CHECK(ordered.GetParent(child).GetUUID() == parent.GetUUID());
+
+        const std::vector<UUID> roots = EntityIds(ordered.GetRootEntities());
+        HK_CHECK_EQ(roots.size(), static_cast<std::size_t>(2));
+        HK_CHECK(roots[0] == parent.GetUUID());
+        HK_CHECK(roots[1] == other.GetUUID());
+    }
 }

@@ -30,8 +30,96 @@ namespace {
 
 constexpr const char* kEntityDragType = "HOCKEY_HIERARCHY_ENTITY";
 
+enum class EntityDropPlacement {
+    Before,
+    Inside,
+    After,
+};
+
+constexpr float kHierarchyDropLineThickness = 2.5f;
+constexpr float kHierarchyDropHandleRadius = 3.0f;
+
 void* NodeId(UUID id) {
     return reinterpret_cast<void*>(static_cast<std::uintptr_t>(id.Value()));
+}
+
+EntityDropPlacement DropPlacementForCurrentItem() {
+    const ImVec2 min = ImGui::GetItemRectMin();
+    const ImVec2 max = ImGui::GetItemRectMax();
+    const float height = std::max(max.y - min.y, 1.0f);
+    const float band = height / 3.0f;
+    const float y = ImGui::GetMousePos().y;
+    if (y < min.y + band) {
+        return EntityDropPlacement::Before;
+    }
+    if (y > max.y - band) {
+        return EntityDropPlacement::After;
+    }
+    return EntityDropPlacement::Inside;
+}
+
+UUID ParentIdOf(Scene& scene, const Entity& entity) {
+    if (Entity parent = scene.GetParent(entity)) {
+        return parent.GetUUID();
+    }
+    return UUID(0);
+}
+
+std::size_t AdjustSiblingIndexForRemoval(Scene& scene, UUID movedId, UUID newParentId, std::size_t siblingIndex) {
+    Entity moved = scene.FindEntityByUUID(movedId);
+    if (!moved) {
+        return siblingIndex;
+    }
+
+    if (ParentIdOf(scene, moved) != newParentId) {
+        return siblingIndex;
+    }
+
+    const std::size_t oldIndex = scene.GetSiblingIndex(moved);
+    if (oldIndex < siblingIndex) {
+        return siblingIndex - 1;
+    }
+    return siblingIndex;
+}
+
+bool IsEntityDropValid(Scene& scene, UUID movedId, const Entity& target, EntityDropPlacement placement) {
+    Entity moved = scene.FindEntityByUUID(movedId);
+    if (!moved || !target || moved == target) {
+        return false;
+    }
+
+    Entity newParent;
+    if (placement == EntityDropPlacement::Inside) {
+        newParent = target;
+    } else {
+        newParent = scene.GetParent(target);
+    }
+
+    return !newParent || (moved != newParent && !scene.IsDescendantOf(newParent, moved));
+}
+
+void DrawHierarchyDropPreview(const ImRect& rowRect, EntityDropPlacement placement) {
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    if (draw == nullptr) {
+        return;
+    }
+
+    const ImU32 lineColor = ImGui::GetColorU32(ImVec4(1.0f, 0.72f, 0.18f, 0.95f));
+    const ImU32 insideFill = ImGui::GetColorU32(ImVec4(0.18f, 0.74f, 0.46f, 0.22f));
+    const ImU32 insideBorder = ImGui::GetColorU32(ImVec4(0.26f, 0.96f, 0.62f, 0.95f));
+
+    if (placement == EntityDropPlacement::Inside) {
+        draw->AddRectFilled(rowRect.Min, rowRect.Max, insideFill, 3.0f);
+        draw->AddRect(rowRect.Min, rowRect.Max, insideBorder, 3.0f, 0, 1.5f);
+        return;
+    }
+
+    const float y = placement == EntityDropPlacement::Before ? rowRect.Min.y : rowRect.Max.y;
+    const ImVec2 start(rowRect.Min.x + 2.0f, y);
+    const ImVec2 end(rowRect.Max.x - 2.0f, y);
+    draw->AddLine(start, end, lineColor, kHierarchyDropLineThickness);
+    draw->AddCircleFilled(start, kHierarchyDropHandleRadius, lineColor);
+    draw->AddCircleFilled(end, kHierarchyDropHandleRadius, lineColor);
 }
 
 } // namespace
@@ -61,10 +149,9 @@ void HierarchyPanel::OnImGui(EditorContext& context) {
     // Drop stale ids (e.g. entities deleted elsewhere) before drawing.
     context.selection.Validate(*scene);
 
-    // Window-wide prefab drop target (instantiate at scene root). Submitted before
-    // the entity nodes so a node's own "drop as child" target overrides it when a
-    // node is hovered.
-    DrawRootDropTarget();
+    // Window-wide drop target for moving entities to scene root or instantiating
+    // prefabs at scene root. Entity rows use smaller targets, so hovered rows win.
+    DrawRootDropTarget(*scene);
 
     for (const Entity& root : scene->GetRootEntities()) {
         DrawEntityNode(context, *scene, root);
@@ -125,6 +212,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
         }
     } else {
         open = ImGui::TreeNodeEx(NodeId(id), flags, "%s", entity.GetName().c_str());
+        const ImRect rowRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
             if (ImGui::GetIO().KeyCtrl) {
@@ -144,11 +232,32 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
             ImGui::EndDragDropSource();
         }
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kEntityDragType)) {
+            if (const ImGuiPayload* payload =
+                    ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
                 const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
-                m_PendingKind = PendingKind::Reparent;
-                m_PendingTarget = UUID(value);
-                m_PendingParent = id;
+                const UUID movedId(value);
+                const EntityDropPlacement placement = DropPlacementForCurrentItem();
+                if (IsEntityDropValid(scene, movedId, entity, placement)) {
+                    DrawHierarchyDropPreview(rowRect, placement);
+                    if (payload->IsDelivery()) {
+                        m_PendingKind = PendingKind::MoveEntity;
+                        m_PendingTarget = movedId;
+                        if (placement == EntityDropPlacement::Inside) {
+                            m_PendingParent = id;
+                            m_PendingSiblingIndex =
+                                AdjustSiblingIndexForRemoval(scene, movedId, id, scene.GetChildren(entity).size());
+                        } else {
+                            const UUID parentId = ParentIdOf(scene, entity);
+                            std::size_t siblingIndex = scene.GetSiblingIndex(entity);
+                            if (placement == EntityDropPlacement::After) {
+                                ++siblingIndex;
+                            }
+                            m_PendingParent = parentId;
+                            m_PendingSiblingIndex =
+                                AdjustSiblingIndexForRemoval(scene, movedId, parentId, siblingIndex);
+                        }
+                    }
+                }
             }
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
                 m_PendingKind = PendingKind::InstantiatePrefab;
@@ -238,12 +347,29 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
     }
 }
 
-void HierarchyPanel::DrawRootDropTarget() {
+void HierarchyPanel::DrawRootDropTarget(Scene& scene) {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window == nullptr) {
         return;
     }
     if (ImGui::BeginDragDropTargetCustom(window->InnerRect, window->ID)) {
+        if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
+            const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
+            const UUID movedId(value);
+            if (scene.FindEntityByUUID(movedId)) {
+                ImRect rootPreview = window->InnerRect;
+                rootPreview.Min.y = std::max(rootPreview.Min.y, rootPreview.Max.y - ImGui::GetFrameHeight());
+                DrawHierarchyDropPreview(rootPreview, EntityDropPlacement::After);
+                if (payload->IsDelivery()) {
+                    m_PendingKind = PendingKind::MoveEntity;
+                    m_PendingTarget = movedId;
+                    m_PendingParent = UUID(0);
+                    m_PendingSiblingIndex =
+                        AdjustSiblingIndexForRemoval(scene, movedId, UUID(0), scene.GetRootEntities().size());
+                }
+            }
+        }
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
             m_PendingKind = PendingKind::InstantiatePrefab;
             m_PendingPrefabPath = std::filesystem::path(static_cast<const char*>(payload->Data));
@@ -257,10 +383,12 @@ void HierarchyPanel::ApplyPending(EditorContext& context, Scene& scene) {
     const PendingKind kind = m_PendingKind;
     const UUID target = m_PendingTarget;
     const UUID parent = m_PendingParent;
+    const std::size_t siblingIndex = m_PendingSiblingIndex;
     const std::filesystem::path prefabPath = m_PendingPrefabPath;
     m_PendingKind = PendingKind::None;
     m_PendingTarget = UUID(0);
     m_PendingParent = UUID(0);
+    m_PendingSiblingIndex = 0;
     m_PendingPrefabPath.clear();
 
     switch (kind) {
@@ -287,12 +415,16 @@ void HierarchyPanel::ApplyPending(EditorContext& context, Scene& scene) {
             context.undoRedo.Execute(EditorCommands::SetParent(scene, target, UUID(0)), context);
         }
         break;
-    case PendingKind::Reparent: {
+    case PendingKind::MoveEntity: {
         Entity child = scene.FindEntityByUUID(target);
-        Entity newParent = scene.FindEntityByUUID(parent);
-        // Cannot parent an entity to itself or to one of its own descendants.
-        if (child && newParent && child != newParent && !scene.IsDescendantOf(newParent, child)) {
-            context.undoRedo.Execute(EditorCommands::SetParent(scene, target, parent), context);
+        Entity newParent;
+        if (parent.IsValid()) {
+            newParent = scene.FindEntityByUUID(parent);
+        }
+        // Cannot parent an entity to itself or to one of its own descendants. Invalid
+        // parent id means scene root.
+        if (child && (!parent.IsValid() || (newParent && child != newParent && !scene.IsDescendantOf(newParent, child)))) {
+            context.undoRedo.Execute(EditorCommands::MoveEntity(scene, target, parent, siblingIndex), context);
         }
         break;
     }

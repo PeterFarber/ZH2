@@ -46,6 +46,7 @@ Source material:
 - [x] Transform component stores local transform data.
 - [x] Parent and children hierarchy components exist.
 - [x] Parent/child relationships update consistently.
+- [x] Root and sibling hierarchy order are stable and serialize through scene YAML.
 - [x] Local/world transform propagation exists.
 - [x] Active-in-hierarchy propagation exists.
 - [x] Hierarchy metadata is registered as read-only/non-addable where appropriate.

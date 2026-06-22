@@ -34,6 +34,15 @@ glm::vec3 WorldPosition(Scene& scene, UUID id) {
     return entity ? glm::vec3(scene.GetWorldTransform(entity)[3]) : glm::vec3(0.0f);
 }
 
+std::vector<UUID> EntityIds(const std::vector<Entity>& entities) {
+    std::vector<UUID> ids;
+    ids.reserve(entities.size());
+    for (const Entity& entity : entities) {
+        ids.push_back(entity.GetUUID());
+    }
+    return ids;
+}
+
 } // namespace
 
 void RunUndoRedoTests() {
@@ -358,6 +367,81 @@ void RunUndoRedoTests() {
         HK_CHECK_MSG(!fix.scene.GetParent(fix.scene.FindEntityByUUID(aId)), "undo returns a to root");
         fix.context.undoRedo.Redo(fix.context);
         HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(aId)).GetUUID() == bId, "redo re-links a->b");
+    }
+
+    // --- move entity undo/redo restores sibling order -----------------------
+    {
+        CommandFixture fix;
+        Entity parent = fix.scene.CreateEntity("Parent");
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        Entity c = fix.scene.CreateEntity("C");
+        fix.scene.SetParent(a, parent, false);
+        fix.scene.SetParent(b, parent, false);
+        fix.scene.SetParent(c, parent, false);
+
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+        const UUID cId = c.GetUUID();
+
+        fix.context.undoRedo.Execute(EditorCommands::MoveEntity(fix.scene, cId, parent.GetUUID(), 0), fix.context);
+        {
+            const std::vector<UUID> children = EntityIds(fix.scene.GetChildren(parent));
+            HK_CHECK(children[0] == cId);
+            HK_CHECK(children[1] == aId);
+            HK_CHECK(children[2] == bId);
+        }
+
+        fix.context.undoRedo.Undo(fix.context);
+        {
+            const std::vector<UUID> children = EntityIds(fix.scene.GetChildren(parent));
+            HK_CHECK(children[0] == aId);
+            HK_CHECK(children[1] == bId);
+            HK_CHECK(children[2] == cId);
+        }
+
+        fix.context.undoRedo.Redo(fix.context);
+        {
+            const std::vector<UUID> children = EntityIds(fix.scene.GetChildren(parent));
+            HK_CHECK(children[0] == cId);
+            HK_CHECK(children[1] == aId);
+            HK_CHECK(children[2] == bId);
+        }
+    }
+
+    // --- move entity undo/redo restores root order --------------------------
+    {
+        CommandFixture fix;
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        Entity c = fix.scene.CreateEntity("C");
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+        const UUID cId = c.GetUUID();
+
+        fix.context.undoRedo.Execute(EditorCommands::MoveEntity(fix.scene, cId, UUID(0), 0), fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == cId);
+            HK_CHECK(roots[1] == aId);
+            HK_CHECK(roots[2] == bId);
+        }
+
+        fix.context.undoRedo.Undo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == aId);
+            HK_CHECK(roots[1] == bId);
+            HK_CHECK(roots[2] == cId);
+        }
+
+        fix.context.undoRedo.Redo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == cId);
+            HK_CHECK(roots[1] == aId);
+            HK_CHECK(roots[2] == bId);
+        }
     }
 
     // --- clipboard copy + paste creates a fresh-UUID copy -------------------

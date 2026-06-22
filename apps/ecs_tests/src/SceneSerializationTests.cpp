@@ -1,7 +1,10 @@
 #include "Test.hpp"
 
 #include <filesystem>
+#include <string>
+#include <vector>
 
+#include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -19,6 +22,15 @@ bool ChildrenContains(Scene& scene, Entity parent, UUID childId) {
         }
     }
     return false;
+}
+
+std::vector<UUID> EntityIds(const std::vector<Entity>& entities) {
+    std::vector<UUID> ids;
+    ids.reserve(entities.size());
+    for (const Entity& entity : entities) {
+        ids.push_back(entity.GetUUID());
+    }
+    return ids;
 }
 
 } // namespace
@@ -105,4 +117,70 @@ void RunSceneSerializationTests() {
     HK_CHECK(lpf.HasComponent<PrefabComponent>());
     HK_CHECK(lpf.GetComponent<PrefabComponent>().prefabAssetId == UUID(111ULL));
     HK_CHECK(lpf.GetComponent<PrefabComponent>().sourceEntityId == UUID(222ULL));
+
+    // Root and child order round-trip through scene serialization.
+    {
+        Scene ordered("Ordered Scene");
+        Entity a = ordered.CreateEntity("A");
+        Entity b = ordered.CreateEntity("B");
+        Entity parent = ordered.CreateEntity("Parent");
+        Entity c = ordered.CreateEntity("C");
+        Entity childA = ordered.CreateEntity("ChildA");
+        Entity childB = ordered.CreateEntity("ChildB");
+        ordered.SetParent(childA, parent, false);
+        ordered.SetParent(childB, parent, false);
+        ordered.MoveEntity(c, Entity{}, 1, false);
+        ordered.MoveEntity(childB, parent, 0, false);
+
+        const std::filesystem::path orderedPath = Hockey::Paths::TempFile("ordered_roundtrip.scene.yaml");
+        HK_CHECK(static_cast<bool>(SceneSerializer(ordered).Serialize(orderedPath)));
+
+        Scene loadedOrdered("Empty");
+        HK_CHECK(static_cast<bool>(SceneSerializer(loadedOrdered).Deserialize(orderedPath)));
+
+        const std::vector<UUID> roots = EntityIds(loadedOrdered.GetRootEntities());
+        HK_CHECK_EQ(roots.size(), static_cast<std::size_t>(4));
+        HK_CHECK(roots[0] == a.GetUUID());
+        HK_CHECK(roots[1] == c.GetUUID());
+        HK_CHECK(roots[2] == b.GetUUID());
+        HK_CHECK(roots[3] == parent.GetUUID());
+
+        Entity loadedParent = loadedOrdered.FindEntityByUUID(parent.GetUUID());
+        const std::vector<UUID> children = EntityIds(loadedOrdered.GetChildren(loadedParent));
+        HK_CHECK_EQ(children.size(), static_cast<std::size_t>(2));
+        HK_CHECK(children[0] == childB.GetUUID());
+        HK_CHECK(children[1] == childA.GetUUID());
+    }
+
+    // Legacy scenes without RootOrder still load and expose valid roots.
+    {
+        const std::filesystem::path legacyPath = Hockey::Paths::TempFile("legacy_no_root_order.scene.yaml");
+        const std::string yaml = R"(Scene:
+  Name: Legacy
+  Mode: Edit
+  Version: 1
+Entities:
+  - Entity: 1001
+    NameComponent: {Name: RootA}
+    ObjectSettingsComponent: {Tag: Untagged, Layer: Default, Static: false}
+    ActiveComponent: {Active: true}
+    TransformComponent: {Position: [0, 0, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}
+    ChildrenComponent: {Children: []}
+  - Entity: 1002
+    NameComponent: {Name: RootB}
+    ObjectSettingsComponent: {Tag: Untagged, Layer: Default, Static: false}
+    ActiveComponent: {Active: true}
+    TransformComponent: {Position: [0, 0, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}
+    ChildrenComponent: {Children: []}
+)";
+        HK_CHECK(static_cast<bool>(FileSystem::WriteTextFile(legacyPath, yaml)));
+
+        Scene legacy("Empty");
+        HK_CHECK(static_cast<bool>(SceneSerializer(legacy).Deserialize(legacyPath)));
+
+        const std::vector<UUID> roots = EntityIds(legacy.GetRootEntities());
+        HK_CHECK_EQ(roots.size(), static_cast<std::size_t>(2));
+        HK_CHECK(roots[0] == UUID(1001));
+        HK_CHECK(roots[1] == UUID(1002));
+    }
 }

@@ -1,5 +1,6 @@
 #include "Hockey/ECS/SceneSerializer.hpp"
 
+#include <cstdint>
 #include <exception>
 #include <vector>
 
@@ -26,6 +27,11 @@ Status SceneSerializer::Serialize(const std::filesystem::path& path) {
     out << YAML::Key << "Name" << YAML::Value << m_Scene.GetName();
     out << YAML::Key << "Mode" << YAML::Value << std::string(SceneModeToString(m_Scene.GetMode()));
     out << YAML::Key << "Version" << YAML::Value << kSceneVersion;
+    out << YAML::Key << "RootOrder" << YAML::Value << YAML::BeginSeq;
+    for (Entity root : m_Scene.GetRootEntities()) {
+        out << root.GetUUID().Value();
+    }
+    out << YAML::EndSeq;
     out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
@@ -90,6 +96,9 @@ Status SceneSerializer::Deserialize(const std::filesystem::path& path) {
 
     m_Scene.Clear();
 
+    std::vector<UUID> serializedRootOrder;
+    bool hasSerializedRootOrder = false;
+
     if (const auto sceneNode = root["Scene"]; sceneNode) {
         if (sceneNode["Name"]) {
             m_Scene.SetName(sceneNode["Name"].as<std::string>());
@@ -100,6 +109,12 @@ Status SceneSerializer::Deserialize(const std::filesystem::path& path) {
             m_Scene.SetMode(SceneModeFromString(sceneNode["Mode"].as<std::string>()));
         } else {
             m_Scene.SetMode(SceneMode::Edit);
+        }
+        if (const auto rootOrderNode = sceneNode["RootOrder"]) {
+            hasSerializedRootOrder = true;
+            for (const auto idNode : rootOrderNode) {
+                serializedRootOrder.push_back(UUID(idNode.as<std::uint64_t>()));
+            }
         }
     }
 
@@ -136,6 +151,16 @@ Status SceneSerializer::Deserialize(const std::filesystem::path& path) {
             }
             list = std::move(kept);
         }
+    }
+
+    if (hasSerializedRootOrder) {
+        m_Scene.SetRootEntityOrder(serializedRootOrder);
+    } else {
+        std::vector<UUID> legacyRootOrder;
+        for (Entity rootEntity : m_Scene.GetRootEntities()) {
+            legacyRootOrder.push_back(rootEntity.GetUUID());
+        }
+        m_Scene.SetRootEntityOrder(legacyRootOrder);
     }
 
     m_Scene.RecalculateAllActiveInHierarchy();

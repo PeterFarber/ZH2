@@ -57,8 +57,11 @@ public:
     // --- hierarchy ----------------------------------------------------------
     void SetParent(Entity child, Entity parent, bool keepWorldTransform = true);
     void RemoveParent(Entity child, bool keepWorldTransform = true);
+    void MoveEntity(Entity child, Entity newParent, std::size_t siblingIndex, bool keepWorldTransform = true);
     bool IsDescendantOf(Entity child, Entity possibleParent) const;
 
+    void SetRootEntityOrder(const std::vector<UUID>& rootOrder);
+    std::size_t GetSiblingIndex(Entity entity) const;
     std::vector<Entity> GetRootEntities() const;
     std::vector<Entity> GetChildren(Entity entity) const;
     Entity GetParent(Entity entity) const;
@@ -111,6 +114,10 @@ private:
     void DestroySubtree(entt::entity handle);
     void DetachChildToRoot(entt::entity childHandle);
     void RemoveFromParentChildList(entt::entity childHandle);
+    void RemoveFromRootOrder(UUID id);
+    void InsertRoot(UUID id, std::size_t index);
+    void AppendRoot(UUID id);
+    void NormalizeRootOrder();
     Entity MakeEntity(entt::entity handle);
     void ApplyActiveRecursive(entt::entity handle, bool parentActiveInHierarchy);
     entt::entity DuplicateRecursive(entt::entity sourceHandle);
@@ -120,6 +127,7 @@ private:
 
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
+    std::vector<UUID> m_RootOrder;
 
     std::unique_ptr<PrefabOverrideSet> m_PrefabOverrides;
 

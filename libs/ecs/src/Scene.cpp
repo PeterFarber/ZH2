@@ -1,6 +1,7 @@
 #include "Hockey/ECS/Scene.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <utility>
 
 #include "Hockey/ECS/Components.hpp"
@@ -59,6 +60,54 @@ entt::entity Scene::HandleFromUUID(UUID id) const {
     return it->second;
 }
 
+void Scene::RemoveFromRootOrder(UUID id) {
+    m_RootOrder.erase(std::remove(m_RootOrder.begin(), m_RootOrder.end(), id), m_RootOrder.end());
+}
+
+void Scene::InsertRoot(UUID id, std::size_t index) {
+    if (!id.IsValid()) {
+        return;
+    }
+    RemoveFromRootOrder(id);
+    const std::size_t clamped = std::min(index, m_RootOrder.size());
+    m_RootOrder.insert(m_RootOrder.begin() + static_cast<std::ptrdiff_t>(clamped), id);
+}
+
+void Scene::AppendRoot(UUID id) {
+    if (!id.IsValid() || std::find(m_RootOrder.begin(), m_RootOrder.end(), id) != m_RootOrder.end()) {
+        return;
+    }
+    m_RootOrder.push_back(id);
+}
+
+void Scene::NormalizeRootOrder() {
+    std::vector<UUID> normalized;
+    normalized.reserve(m_RootOrder.size());
+
+    for (const UUID id : m_RootOrder) {
+        const entt::entity handle = HandleFromUUID(id);
+        if (handle == entt::null || m_Registry.all_of<ParentComponent>(handle)) {
+            continue;
+        }
+        if (std::find(normalized.begin(), normalized.end(), id) == normalized.end()) {
+            normalized.push_back(id);
+        }
+    }
+
+    auto view = m_Registry.view<IDComponent>();
+    for (const entt::entity handle : view) {
+        if (m_Registry.all_of<ParentComponent>(handle)) {
+            continue;
+        }
+        const UUID id = m_Registry.get<IDComponent>(handle).id;
+        if (std::find(normalized.begin(), normalized.end(), id) == normalized.end()) {
+            normalized.push_back(id);
+        }
+    }
+
+    m_RootOrder = std::move(normalized);
+}
+
 Entity Scene::CreateEntity(const std::string& name) {
     UUID id;
     while (id.Value() == 0 || m_EntityMap.find(id) != m_EntityMap.end()) {
@@ -77,6 +126,7 @@ Entity Scene::CreateEntityWithUUID(UUID id, const std::string& name) {
     m_Registry.emplace<ChildrenComponent>(handle);
 
     m_EntityMap[id] = handle;
+    AppendRoot(id);
     PushEvent({SceneEventType::EntityCreated, id, {}});
     return Entity(handle, this);
 }
@@ -121,6 +171,7 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
             const entt::entity newChildHandle = DuplicateRecursive(childHandle);
             m_Registry.emplace_or_replace<ParentComponent>(newChildHandle, ParentComponent{newId});
             const UUID newChildId = m_Registry.get<IDComponent>(newChildHandle).id;
+            RemoveFromRootOrder(newChildId);
             m_Registry.get<ChildrenComponent>(newHandle).children.push_back(newChildId);
         }
     }
@@ -141,6 +192,7 @@ Entity Scene::DuplicateEntity(Entity source) {
 void Scene::DestroySingle(entt::entity handle) {
     const UUID id = m_Registry.get<IDComponent>(handle).id;
     PushEvent({SceneEventType::EntityDestroyed, id, {}});
+    RemoveFromRootOrder(id);
     m_EntityMap.erase(id);
     m_Registry.destroy(handle);
 }
@@ -177,10 +229,12 @@ void Scene::RemoveFromParentChildList(entt::entity handle) {
 }
 
 void Scene::DetachChildToRoot(entt::entity childHandle) {
+    const UUID childId = m_Registry.get<IDComponent>(childHandle).id;
     const glm::mat4 world = WorldMatrix(childHandle);
     if (m_Registry.all_of<ParentComponent>(childHandle)) {
         m_Registry.remove<ParentComponent>(childHandle);
     }
+    AppendRoot(childId);
     auto& transform = m_Registry.get<TransformComponent>(childHandle);
     DecomposeTransform(world, transform.localPosition, transform.localRotation, transform.localScale);
     RecalculateActiveInHierarchy(MakeEntity(childHandle));
@@ -216,6 +270,7 @@ void Scene::DestroyEntityRecursive(Entity entity) {
 void Scene::Clear() {
     m_Registry.clear();
     m_EntityMap.clear();
+    m_RootOrder.clear();
     m_PrefabOverrides->Clear();
 }
 

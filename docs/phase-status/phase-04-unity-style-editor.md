@@ -70,6 +70,8 @@ Source material:
 - [x] Multi-selection and primary selection behavior exist.
 - [x] Move gizmo translates selected top-level entities as one grouped undoable edit.
 - [x] Hierarchy context menu behavior exists.
+- [x] Hierarchy drag sorting supports root/sibling reorder, before/inside/after drops, and undo/redo.
+- [x] Hierarchy drag sorting uses distinct custom previews for sibling insertion versus parent/inside drops.
 - [x] Focus selected behavior exists.
 - [x] Metadata-driven inspector field drawers exist.
 - [x] Component add/remove workflow exists.
@@ -118,6 +120,8 @@ Source material:
 - [x] Editor settings tests exist.
 - [x] Selection tests exist.
 - [x] Undo/redo tests exist.
+- [x] Hierarchy reorder command and panel wiring tests exist.
+- [x] Hierarchy drop-preview panel wiring tests exist.
 - [x] Inspector field tests exist.
 - [x] Scene command tests exist.
 - [x] Project browser tests exist.

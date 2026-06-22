@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -643,6 +644,74 @@ private:
     TransformData m_OldLocal;
 };
 
+class MoveEntityCommand : public EditorCommand {
+public:
+    MoveEntityCommand(Scene& scene, UUID childId, UUID newParentId, std::size_t siblingIndex)
+        : m_ChildId(childId), m_NewParentId(newParentId), m_NewIndex(siblingIndex) {
+        if (Entity child = scene.FindEntityByUUID(childId)) {
+            if (Entity parent = scene.GetParent(child)) {
+                m_OldParentId = parent.GetUUID();
+            }
+            m_OldIndex = scene.GetSiblingIndex(child);
+            const auto& transform = child.GetComponent<TransformComponent>();
+            m_OldLocal = {transform.localPosition, transform.localRotation, transform.localScale};
+        }
+    }
+
+    void Execute(EditorContext& context) override {
+        Move(context, m_NewParentId, m_NewIndex, /*keepWorldTransform=*/true, std::nullopt);
+    }
+
+    void Undo(EditorContext& context) override {
+        Move(context, m_OldParentId, m_OldIndex, /*keepWorldTransform=*/false, m_OldLocal);
+    }
+
+    std::string Name() const override {
+        return "Move Entity";
+    }
+
+private:
+    void Move(EditorContext& context, UUID parentId, std::size_t siblingIndex, bool keepWorldTransform,
+              std::optional<TransformData> restoreLocal) {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr) {
+            return;
+        }
+
+        Entity child = scene->FindEntityByUUID(m_ChildId);
+        if (!child) {
+            return;
+        }
+
+        Entity parent;
+        if (parentId.IsValid()) {
+            parent = scene->FindEntityByUUID(parentId);
+            if (!parent || child == parent || scene->IsDescendantOf(parent, child)) {
+                return;
+            }
+        }
+
+        scene->MoveEntity(child, parent, siblingIndex, keepWorldTransform);
+
+        if (restoreLocal.has_value() && child.HasComponent<TransformComponent>()) {
+            auto& transform = child.GetComponent<TransformComponent>();
+            transform.localPosition = restoreLocal->position;
+            transform.localRotation = restoreLocal->rotation;
+            transform.localScale = restoreLocal->scale;
+            scene->RecalculateActiveInHierarchy(child);
+        }
+
+        context.MarkDirty();
+    }
+
+    UUID m_ChildId;
+    UUID m_NewParentId;
+    std::size_t m_NewIndex = 0;
+    UUID m_OldParentId{0};
+    std::size_t m_OldIndex = 0;
+    TransformData m_OldLocal;
+};
+
 class AddComponentCommand : public EditorCommand {
 public:
     AddComponentCommand(UUID entityId, std::string componentName)
@@ -1079,6 +1148,10 @@ std::unique_ptr<EditorCommand> SetActive(UUID entityId, bool oldValue, bool newV
 
 std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newParentId) {
     return std::make_unique<SetParentCommand>(scene, childId, newParentId);
+}
+
+std::unique_ptr<EditorCommand> MoveEntity(Scene& scene, UUID entityId, UUID newParentId, std::size_t siblingIndex) {
+    return std::make_unique<MoveEntityCommand>(scene, entityId, newParentId, siblingIndex);
 }
 
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,
