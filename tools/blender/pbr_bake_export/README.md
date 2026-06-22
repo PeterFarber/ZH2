@@ -10,10 +10,10 @@ This add-on bakes selected Blender mesh objects into modular PBR asset folders.
 
 ## Output
 
-Each selected object exports to:
+Each selected object exports under the configured output root. The default is `//assets/blender_exports`, and each selected object uses this layout:
 
 ```text
-assets/<object_name>/
+<configured-output-root>/<object_name>/
   <object_name>.glb
   textures/
     <object_name>_basecolor.png
