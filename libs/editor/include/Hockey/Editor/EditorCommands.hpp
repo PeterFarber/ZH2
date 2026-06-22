@@ -22,6 +22,12 @@ struct TransformData {
     glm::vec3 scale{1.0f};
 };
 
+struct EntityTransformSnapshot {
+    UUID entityId{0};
+    TransformData before;
+    TransformData after;
+};
+
 // Editor-side serialization helpers built on the ECS ComponentSerializer. These
 // capture/restore entities (and subtrees) as YAML so commands and the clipboard
 // can undo destructive edits or instantiate copies. "Restore" preserves the
@@ -96,6 +102,7 @@ std::unique_ptr<EditorCommand> SetActive(UUID entityId, bool oldValue, bool newV
 std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newParentId);
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,
                                                const TransformData& newValue);
+std::unique_ptr<EditorCommand> TransformEntities(std::vector<EntityTransformSnapshot> snapshots);
 
 std::unique_ptr<EditorCommand> AddComponent(UUID entityId, std::string componentName);
 std::unique_ptr<EditorCommand> RemoveComponent(Scene& scene, UUID entityId, std::string componentName);

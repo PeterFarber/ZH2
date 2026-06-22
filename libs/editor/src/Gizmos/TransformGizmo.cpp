@@ -1,6 +1,7 @@
 #include "Hockey/Editor/Gizmos/TransformGizmo.hpp"
 
 #include <array>
+#include <utility>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -12,6 +13,7 @@
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/EditorTransformOperations.hpp"
 
 namespace Hockey {
 
@@ -78,6 +80,7 @@ bool TransformGizmo::Manipulate(EditorContext& context, GizmoOperation operation
     const ImGuizmo::MODE mode = (context.transformSpace == TransformSpace::Local) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 
     glm::mat4 world = scene.GetWorldTransform(entity);
+    const glm::mat4 previousPrimaryWorld = world;
 
     const bool useSnap = context.settings.snapEnabled;
     const float snapScalar = SnapValue(operation, context.settings);
@@ -90,23 +93,58 @@ bool TransformGizmo::Manipulate(EditorContext& context, GizmoOperation operation
     if (usingNow && !m_Using) {
         m_Entity = primary;
         m_BeforeLocal = LocalOf(entity);
+        m_GroupTranslate = operation == GizmoOperation::Translate && context.selection.Count() > 1;
+        m_GroupEntities.clear();
+        m_GroupSnapshots.clear();
+        m_PreviousPrimaryWorld = previousPrimaryWorld;
+        if (m_GroupTranslate) {
+            m_GroupEntities = EditorTransformOperations::TopLevelTransformableSelection(scene, context.selection);
+            m_GroupSnapshots = EditorTransformOperations::CaptureLocalSnapshots(scene, m_GroupEntities);
+            if (m_GroupSnapshots.empty()) {
+                m_GroupTranslate = false;
+            }
+        }
     }
 
     if (changed) {
-        scene.SetWorldTransform(entity, world);
+        if (m_GroupTranslate) {
+            const glm::vec3 delta = glm::vec3(world[3]) - glm::vec3(m_PreviousPrimaryWorld[3]);
+            EditorTransformOperations::ApplyWorldTranslationDelta(scene, m_GroupEntities, delta);
+            if (Entity edited = scene.FindEntityByUUID(m_Entity)) {
+                m_PreviousPrimaryWorld = scene.GetWorldTransform(edited);
+            } else {
+                m_PreviousPrimaryWorld = world;
+            }
+        } else {
+            scene.SetWorldTransform(entity, world);
+        }
     }
 
     if (!usingNow && m_Using) {
-        Entity edited = scene.FindEntityByUUID(m_Entity);
-        if (edited && edited.HasComponent<TransformComponent>()) {
-            const TransformData after = LocalOf(edited);
-            if (Differs(m_BeforeLocal, after)) {
-                context.undoRedo.Execute(EditorCommands::TransformEntity(m_Entity, m_BeforeLocal, after), context);
+        if (m_GroupTranslate) {
+            EditorTransformOperations::CaptureCurrentAsAfter(scene, m_GroupSnapshots);
+            std::vector<EntityTransformSnapshot> changedSnapshots =
+                EditorTransformOperations::ChangedSnapshots(m_GroupSnapshots);
+            if (!changedSnapshots.empty()) {
+                context.undoRedo.Execute(EditorCommands::TransformEntities(std::move(changedSnapshots)), context);
+            }
+        } else {
+            Entity edited = scene.FindEntityByUUID(m_Entity);
+            if (edited && edited.HasComponent<TransformComponent>()) {
+                const TransformData after = LocalOf(edited);
+                if (Differs(m_BeforeLocal, after)) {
+                    context.undoRedo.Execute(EditorCommands::TransformEntity(m_Entity, m_BeforeLocal, after), context);
+                }
             }
         }
     }
 
     m_Using = usingNow;
+    if (!m_Using) {
+        m_GroupTranslate = false;
+        m_GroupEntities.clear();
+        m_GroupSnapshots.clear();
+    }
     return usingNow || ImGuizmo::IsOver();
 }
 

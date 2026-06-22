@@ -30,6 +30,7 @@ target_sources(hockey_editor
         src/Selection.cpp
         src/UndoRedo.cpp
         src/EditorCommands.cpp
+        src/EditorTransformOperations.cpp
         src/Clipboard.cpp
         src/Gizmos/CameraLightGizmo.cpp
         src/Gizmos/GridGizmo.cpp

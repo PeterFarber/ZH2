@@ -12,6 +12,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/EditorTransformOperations.hpp"
 #include "Hockey/Editor/UndoRedo.hpp"
 
 using namespace Hockey;
@@ -27,6 +28,11 @@ struct CommandFixture {
         context.activeScene = &scene;
     }
 };
+
+glm::vec3 WorldPosition(Scene& scene, UUID id) {
+    Entity entity = scene.FindEntityByUUID(id);
+    return entity ? glm::vec3(scene.GetWorldTransform(entity)[3]) : glm::vec3(0.0f);
+}
 
 } // namespace
 
@@ -144,6 +150,98 @@ void RunUndoRedoTests() {
             const auto& t = fix.scene.FindEntityByUUID(id).GetComponent<TransformComponent>();
             HK_CHECK_NEAR(t.localPosition.z, 3.0f, 1e-5);
         }
+    }
+
+    // --- grouped transform offsets selected roots together ------------------
+    {
+        CommandFixture fix;
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        auto& aTransform = a.GetComponent<TransformComponent>();
+        auto& bTransform = b.GetComponent<TransformComponent>();
+        aTransform.localPosition = glm::vec3(1.0f, 0.0f, -2.0f);
+        bTransform.localPosition = glm::vec3(-3.0f, 4.0f, 5.0f);
+
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+        fix.context.selection.Select(aId);
+        fix.context.selection.Add(bId);
+
+        std::vector<UUID> moved =
+            EditorTransformOperations::TopLevelTransformableSelection(fix.scene, fix.context.selection);
+        const glm::vec3 delta(5.0f, -1.0f, 2.0f);
+        std::vector<EntityTransformSnapshot> snapshots =
+            EditorTransformOperations::CaptureLocalSnapshots(fix.scene, moved);
+        EditorTransformOperations::ApplyWorldTranslationDelta(fix.scene, moved, delta);
+        EditorTransformOperations::CaptureCurrentAsAfter(fix.scene, snapshots);
+        std::vector<EntityTransformSnapshot> changed = EditorTransformOperations::ChangedSnapshots(snapshots);
+
+        HK_CHECK_NEAR(WorldPosition(fix.scene, aId).x, 6.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, aId).y, -1.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, aId).z, 0.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, bId).x, 2.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, bId).y, 3.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, bId).z, 7.0f, 1e-5);
+        HK_CHECK_EQ(changed.size(), static_cast<std::size_t>(2));
+    }
+
+    // --- grouped transform moves selected parent branch once ----------------
+    {
+        CommandFixture fix;
+        Entity parent = fix.scene.CreateEntity("Parent");
+        Entity child = fix.scene.CreateEntity("Child");
+        parent.GetComponent<TransformComponent>().localPosition =
+            glm::vec3(10.0f, 0.0f, 0.0f);
+        child.GetComponent<TransformComponent>().localPosition =
+            glm::vec3(1.0f, 0.0f, 0.0f);
+        fix.scene.SetParent(child, parent, /*keepWorldTransform=*/false);
+
+        const UUID parentId = parent.GetUUID();
+        const UUID childId = child.GetUUID();
+        fix.context.selection.Select(parentId);
+        fix.context.selection.Add(childId);
+
+        std::vector<UUID> moved =
+            EditorTransformOperations::TopLevelTransformableSelection(fix.scene, fix.context.selection);
+        EditorTransformOperations::ApplyWorldTranslationDelta(
+            fix.scene, moved, glm::vec3(3.0f, 0.0f, 0.0f));
+
+        HK_CHECK_EQ(moved.size(), static_cast<std::size_t>(1));
+        HK_CHECK_EQ(moved[0], parentId);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, parentId).x, 13.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, childId).x, 14.0f, 1e-5);
+        HK_CHECK_NEAR(child.GetComponent<TransformComponent>().localPosition.x,
+                      1.0f, 1e-5);
+    }
+
+    // --- grouped transform undo/redo restores every moved entity ------------
+    {
+        CommandFixture fix;
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+
+        TransformData aBefore;
+        TransformData bBefore;
+        TransformData aAfter;
+        TransformData bAfter;
+        aAfter.position = glm::vec3(2.0f, 0.0f, 0.0f);
+        bAfter.position = glm::vec3(-1.0f, 3.0f, 0.0f);
+
+        fix.context.undoRedo.Execute(
+            EditorCommands::TransformEntities({{aId, aBefore, aAfter}, {bId, bBefore, bAfter}}), fix.context);
+
+        HK_CHECK_NEAR(a.GetComponent<TransformComponent>().localPosition.x, 2.0f, 1e-5);
+        HK_CHECK_NEAR(b.GetComponent<TransformComponent>().localPosition.y, 3.0f, 1e-5);
+
+        fix.context.undoRedo.Undo(fix.context);
+        HK_CHECK_NEAR(a.GetComponent<TransformComponent>().localPosition.x, 0.0f, 1e-5);
+        HK_CHECK_NEAR(b.GetComponent<TransformComponent>().localPosition.y, 0.0f, 1e-5);
+
+        fix.context.undoRedo.Redo(fix.context);
+        HK_CHECK_NEAR(a.GetComponent<TransformComponent>().localPosition.x, 2.0f, 1e-5);
+        HK_CHECK_NEAR(b.GetComponent<TransformComponent>().localPosition.y, 3.0f, 1e-5);
     }
 
     // --- add component undo/redo --------------------------------------------

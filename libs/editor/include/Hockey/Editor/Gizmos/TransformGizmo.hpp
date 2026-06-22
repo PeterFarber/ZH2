@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <glm/glm.hpp>
 
 #include "Hockey/Core/UUID.hpp"
@@ -10,10 +12,10 @@ namespace Hockey {
 
 class EditorContext;
 
-// Wraps ImGuizmo for the primary selection. The viewport panel supplies the
-// camera matrices and the screen rect of the rendered image; the gizmo edits the
-// entity's world transform live and pushes a single TransformEntity command to
-// the undo stack when a manipulation completes.
+// Wraps ImGuizmo for the current transform selection. The viewport panel
+// supplies camera matrices and the screen rect of the rendered image. Single
+// target edits use TransformEntity; grouped translate edits use one
+// TransformEntities command so undo/redo restores the whole selection together.
 class TransformGizmo {
 public:
     // Returns true while the gizmo is hovered or actively used, so the viewport
@@ -25,6 +27,10 @@ private:
     bool m_Using = false;
     UUID m_Entity{0};
     TransformData m_BeforeLocal; // local TRS captured when manipulation started
+    bool m_GroupTranslate = false;
+    glm::mat4 m_PreviousPrimaryWorld{1.0f};
+    std::vector<UUID> m_GroupEntities;
+    std::vector<EntityTransformSnapshot> m_GroupSnapshots;
 };
 
 } // namespace Hockey

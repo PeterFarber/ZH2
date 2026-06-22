@@ -532,6 +532,50 @@ private:
     TransformData m_New;
 };
 
+class TransformEntitiesCommand : public EditorCommand {
+public:
+    explicit TransformEntitiesCommand(std::vector<EntityTransformSnapshot> snapshots)
+        : m_Snapshots(std::move(snapshots)) {}
+
+    void Execute(EditorContext& context) override {
+        Apply(context, /*useAfter=*/true);
+    }
+    void Undo(EditorContext& context) override {
+        Apply(context, /*useAfter=*/false);
+    }
+    std::string Name() const override {
+        return "Transform Entities";
+    }
+
+private:
+    void Apply(EditorContext& context, bool useAfter) {
+        if (context.activeScene == nullptr) {
+            return;
+        }
+
+        bool applied = false;
+        for (const EntityTransformSnapshot& snapshot : m_Snapshots) {
+            Entity entity = context.activeScene->FindEntityByUUID(snapshot.entityId);
+            if (!entity || !entity.HasComponent<TransformComponent>()) {
+                continue;
+            }
+
+            const TransformData& value = useAfter ? snapshot.after : snapshot.before;
+            auto& transform = entity.GetComponent<TransformComponent>();
+            transform.localPosition = value.position;
+            transform.localRotation = value.rotation;
+            transform.localScale = value.scale;
+            applied = true;
+        }
+
+        if (applied) {
+            context.MarkDirty();
+        }
+    }
+
+    std::vector<EntityTransformSnapshot> m_Snapshots;
+};
+
 class SetParentCommand : public EditorCommand {
 public:
     SetParentCommand(Scene& scene, UUID childId, UUID newParentId) : m_ChildId(childId), m_NewParentId(newParentId) {
@@ -1040,6 +1084,10 @@ std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newPar
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,
                                                const TransformData& newValue) {
     return std::make_unique<TransformEntityCommand>(entityId, oldValue, newValue);
+}
+
+std::unique_ptr<EditorCommand> TransformEntities(std::vector<EntityTransformSnapshot> snapshots) {
+    return std::make_unique<TransformEntitiesCommand>(std::move(snapshots));
 }
 
 std::unique_ptr<EditorCommand> AddComponent(UUID entityId, std::string componentName) {
