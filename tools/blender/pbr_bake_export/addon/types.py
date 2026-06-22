@@ -39,7 +39,7 @@ class MaterialSource(Enum):
 class AssetPaths:
     asset_name: str
     asset_dir: Path
-    glb_path: Path
     texture_dir: Path
-    textures: dict[str, Path]
+    glb_path: Path
     manifest_path: Path
+    textures: dict[str, Path]

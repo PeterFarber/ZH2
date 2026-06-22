@@ -1,6 +1,6 @@
 import unittest
 
-from tools.blender.pbr_bake_export.addon.types import AssetMode, MaterialSource, TextureResolution
+from tools.blender.pbr_bake_export.addon.types import AssetMode, AssetPaths, MaterialSource, TextureResolution
 
 
 class TypesTests(unittest.TestCase):
@@ -20,6 +20,12 @@ class TypesTests(unittest.TestCase):
 
     def test_material_source_values_match_ui_labels(self):
         self.assertEqual(MaterialSource.EXISTING.value, "Existing Material")
+
+    def test_asset_paths_field_order_matches_export_contract(self):
+        self.assertEqual(
+            list(AssetPaths.__dataclass_fields__),
+            ["asset_name", "asset_dir", "texture_dir", "glb_path", "manifest_path", "textures"],
+        )
 
 
 if __name__ == "__main__":
