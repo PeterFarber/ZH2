@@ -211,11 +211,14 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
     bool changed = false;
 
     if (ImGui::CollapsingHeader("Budgets", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Budgets");
         changed |= DrawUInt("Max rendered lights", settings.maxRenderedLights, 0, 16);
         changed |= DrawUInt("Max local shadow tiles", settings.maxLocalShadowTiles, 0, 16);
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Shadow Atlases", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Shadow Atlases");
         changed |= DrawEnumCombo("Shadow quality", settings.shadowQuality,
                                  std::array{ShadowQuality::Off, ShadowQuality::Low, ShadowQuality::Medium,
                                             ShadowQuality::High, ShadowQuality::Ultra});
@@ -223,9 +226,11 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
         changed |=
             DrawUIntPowerOfTwoOrZero("Directional atlas", settings.directionalShadowAtlasResolution, 256, 16384);
         changed |= DrawUIntPowerOfTwoOrZero("Local atlas", settings.localShadowAtlasResolution, 256, 16384);
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Directional Cascades", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Directional Cascades");
         changed |= DrawUInt("Cascade count", settings.shadowCascadeCount, 0, 4);
         changed |= DrawFloat("Split lambda", settings.shadowCascadeSplitLambda, 0.01f, 0.0f, 1.0f, "%.2f");
         changed |= DrawFloat("Overlap scale", settings.shadowCascadeOverlapScale, 0.01f, 0.0f, 1.0f, "%.2f");
@@ -234,9 +239,11 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
                              "%.2f");
         changed |= DrawFloat("Blend scale", settings.shadowCascadeBlendScale, 0.01f, 0.0f, 1.0f, "%.2f");
         changed |= DrawFloat("Minimum blend", settings.shadowCascadeMinBlend, 0.05f, 0.0f, 50.0f, "%.2f");
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Directional Filter & Bias", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Directional Filter & Bias");
         changed |= DrawUInt("PCF radius", settings.directionalShadowPcfRadius, 0, 3);
         changed |= DrawFloat("Normal offset scale", settings.directionalShadowNormalOffsetScale, 0.01f, 0.0f,
                              4.0f, "%.2f");
@@ -252,9 +259,11 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
                              8.0f, "%.2f");
         changed |= DrawFloat("Depth bias slope", settings.directionalShadowDepthBiasSlope, 0.05f, 0.0f, 8.0f,
                              "%.2f");
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Contact Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Contact Shadows");
         changed |= ImGui::Checkbox("Contact shadows", &settings.contactShadows);
         changed |= DrawFloat("Distance", settings.contactShadowDistance, 0.5f, 0.0f, 500.0f, "%.1f");
         changed |= DrawFloat("Strength", settings.contactShadowStrength, 0.01f, 0.0f, 1.0f, "%.2f");
@@ -266,16 +275,20 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
         changed |= DrawFloat("Bias slope", settings.contactShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f");
         changed |= DrawFloat("Bias min", settings.contactShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
         changed |= DrawFloat("Bias max", settings.contactShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Local Light Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Local Light Shadows");
         changed |= DrawUInt("PCF radius", settings.localShadowPcfRadius, 0, 3);
         changed |= DrawFloat("Bias scale", settings.localShadowBiasScale, 0.00005f, 0.0f, 0.05f, "%.5f");
         changed |= DrawFloat("Bias min", settings.localShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
         changed |= DrawFloat("Bias max", settings.localShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+        ImGui::PopID();
     }
 
     if (ImGui::CollapsingHeader("Ambient & Reflections", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID("Ambient & Reflections");
         changed |= DrawEnumCombo("Ambient occlusion", settings.aoQuality,
                                  std::array{AmbientOcclusionQuality::Off, AmbientOcclusionQuality::Low,
                                             AmbientOcclusionQuality::Medium, AmbientOcclusionQuality::High,
@@ -287,6 +300,7 @@ bool DrawLightingShadowSettings(RendererSettings& settings) {
         changed |= DrawEnumCombo("Global illumination", settings.globalIlluminationQuality,
                                  std::array{DetailQuality::Low, DetailQuality::Medium, DetailQuality::High,
                                             DetailQuality::Ultra});
+        ImGui::PopID();
     }
 
     if (changed) {

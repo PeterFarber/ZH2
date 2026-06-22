@@ -59,6 +59,7 @@ Source material:
 - [x] Project Settings panel exists.
 - [x] Project Settings exposes Editor/Client advanced lighting and shadow settings while keeping Server headless settings separate.
 - [x] Project Settings navigation scopes repeated page labels to avoid Dear ImGui ID conflicts.
+- [x] Project Settings lighting/shadow controls scope repeated tuning labels to avoid Dear ImGui ID conflicts.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 

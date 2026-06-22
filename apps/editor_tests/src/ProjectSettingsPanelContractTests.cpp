@@ -46,6 +46,12 @@ void RunProjectSettingsPanelContractTests() {
                  "client navigation labels are scoped to avoid ImGui ID conflicts");
     HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Server\")"),
                  "server navigation labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Directional Filter & Bias\")"),
+                 "directional shadow bias labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Contact Shadows\")"),
+                 "contact shadow bias labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Local Light Shadows\")"),
+                 "local shadow bias labels are scoped to avoid ImGui ID conflicts");
     HK_CHECK_MSG(Contains(source, "DrawLightingShadowSettings"), "advanced shadow controls are shared");
     HK_CHECK_MSG(Contains(source, "Max rendered lights"), "lighting budget control exists");
     HK_CHECK_MSG(Contains(source, "Max local shadow tiles"), "local shadow tile budget control exists");
