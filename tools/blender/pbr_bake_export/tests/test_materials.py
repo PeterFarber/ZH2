@@ -7,24 +7,29 @@ from tools.blender.pbr_bake_export.addon.types import MaterialSource
 
 class MaterialTests(unittest.TestCase):
     def test_build_polyhaven_material_plan_records_texture_paths_and_color_spaces(self):
+        texture_paths = {
+            "basecolor": Path("cache/wall_basecolor.png"),
+            "normal": Path("cache/wall_normal.png"),
+            "roughness": Path("cache/wall_roughness.png"),
+            "metallic": Path("cache/wall_metallic.png"),
+            "ao": Path("cache/wall_ao.png"),
+        }
+
         plan = build_material_plan(
             name="wall_panel_material",
             source=MaterialSource.POLY_HAVEN,
-            texture_paths={
-                "basecolor": Path("cache/wall_basecolor.png"),
-                "normal": Path("cache/wall_normal.png"),
-                "roughness": Path("cache/wall_roughness.png"),
-                "metallic": Path("cache/wall_metallic.png"),
-                "ao": Path("cache/wall_ao.png"),
-            },
+            texture_paths=texture_paths,
             polyhaven_asset_id="wall_plaster",
         )
         self.assertIsInstance(plan, MaterialPlan)
         self.assertEqual(plan.name, "wall_panel_material")
         self.assertEqual(plan.source, MaterialSource.POLY_HAVEN)
+        self.assertIsNot(plan.texture_paths, texture_paths)
         self.assertEqual(plan.texture_color_spaces["basecolor"], "sRGB")
         self.assertEqual(plan.texture_color_spaces["normal"], "Non-Color")
         self.assertEqual(plan.texture_color_spaces["roughness"], "Non-Color")
+        self.assertEqual(plan.texture_color_spaces["metallic"], "Non-Color")
+        self.assertEqual(plan.texture_color_spaces["ao"], "Non-Color")
         self.assertEqual(plan.polyhaven_asset_id, "wall_plaster")
 
     def test_build_existing_material_plan_allows_empty_texture_paths(self):
