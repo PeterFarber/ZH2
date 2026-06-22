@@ -352,9 +352,11 @@ def _raw_url_authority(url: str) -> str:
 
 def _validate_download_url(role: str, url: str) -> str:
     clean = url.strip()
-    raw_authority = _raw_url_authority(clean)
+    if url != clean:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: invalid URL")
+    raw_authority = _raw_url_authority(url)
     try:
-        parts = urlsplit(clean)
+        parts = urlsplit(url)
     except ValueError as exc:
         raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
     if parts.scheme not in _DOWNLOAD_URL_SCHEMES:
@@ -381,7 +383,9 @@ def _validate_download_url(role: str, url: str) -> str:
         or _contains_whitespace_or_control(raw_authority)
     ):
         raise PolyhavenError(f"invalid download URL for texture role {role}: invalid host")
-    return clean
+    if _contains_whitespace_or_control(url):
+        raise PolyhavenError(f"invalid download URL for texture role {role}: invalid URL")
+    return url
 
 
 class PolyhavenClient:

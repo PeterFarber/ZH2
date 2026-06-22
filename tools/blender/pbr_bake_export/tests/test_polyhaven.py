@@ -394,6 +394,51 @@ class PolyhavenTests(unittest.TestCase):
                         client.download_selection(selection, Path(temp), "brick")
                     self.assertEqual(calls, [])
 
+    def test_download_selection_rejects_raw_url_whitespace_before_fetching(self):
+        cases = (
+            " https://example.com/x.png ",
+            "https://example.com/\nHost:evil",
+            "https://example.com/path?x=1\ny=2",
+            "https://example.com/path#frag\tment",
+        )
+
+        class BinaryResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self):
+                return b"payload"
+
+        for url in cases:
+            with self.subTest(url=url):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    return BinaryResponse()
+
+                selection = TextureFileSelection(
+                    resolution=TextureResolution.FOUR_K,
+                    urls={"basecolor": url},
+                    warnings=[],
+                )
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                error = None
+                with tempfile.TemporaryDirectory() as temp:
+                    try:
+                        client.download_selection(selection, Path(temp), "brick")
+                    except PolyhavenError as exc:
+                        error = exc
+
+                self.assertEqual(calls, [])
+                self.assertIsNotNone(error)
+                if error is not None:
+                    self.assertRegex(str(error), r"invalid download URL.*basecolor")
+
     def test_download_selection_rejects_malformed_hosts_and_ports_before_fetching(self):
         cases = (
             ("https://@/x", "userinfo"),
