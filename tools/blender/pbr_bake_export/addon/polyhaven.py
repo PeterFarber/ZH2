@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -319,7 +320,7 @@ def _safe_download_path(cache_dir: Path, cache_root: Path, prefix: str, role: st
         resolved_path.relative_to(cache_root)
     except ValueError as exc:
         raise PolyhavenError("download path escaped the Poly Haven cache directory") from exc
-    return path
+    return resolved_path
 
 
 def _contains_whitespace_or_control(value: str) -> bool:
@@ -349,6 +350,8 @@ def _validate_download_url(role: str, url: str) -> str:
         raise PolyhavenError(f"invalid download URL for texture role {role}: {exc}") from exc
     if not hostname or hostname.strip() != hostname:
         raise PolyhavenError(f"invalid download URL for texture role {role}: missing or blank host")
+    if "%" in hostname:
+        raise PolyhavenError(f"invalid download URL for texture role {role}: invalid host")
     decoded_hostname = unquote(hostname)
     if (
         not decoded_hostname
@@ -370,7 +373,7 @@ class PolyhavenClient:
     ):
         if not user_agent.strip():
             raise PolyhavenError("Poly Haven requests require a unique User-Agent")
-        if timeout_seconds <= 0:
+        if not math.isfinite(timeout_seconds) or timeout_seconds <= 0:
             raise PolyhavenError("Poly Haven request timeout must be positive")
         self.user_agent = user_agent.strip()
         self.fetcher = fetcher or urlopen
@@ -411,9 +414,9 @@ class PolyhavenClient:
         return self._request_json(f"/files/{quote(asset_id, safe='')}")
 
     def download_selection(self, selection: TextureFileSelection, cache_dir: Path, prefix: str) -> dict[str, Path]:
-        cache_dir.mkdir(parents=True, exist_ok=True)
         cache_root = cache_dir.resolve()
-        paths = {role: _safe_download_path(cache_dir, cache_root, prefix, role) for role in selection.urls}
+        cache_root.mkdir(parents=True, exist_ok=True)
+        paths = {role: _safe_download_path(cache_root, cache_root, prefix, role) for role in selection.urls}
         urls = {role: _validate_download_url(role, url) for role, url in selection.urls.items()}
         written: dict[str, Path] = {}
         for role, url in urls.items():

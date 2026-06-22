@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -74,6 +75,12 @@ class PolyhavenTests(unittest.TestCase):
         client.search_textures("brick")
 
         self.assertEqual(fetcher.timeouts, [12.5])
+
+    def test_timeout_requires_finite_positive_value(self):
+        for timeout in (float("nan"), float("inf")):
+            with self.subTest(timeout=timeout):
+                with self.assertRaises(PolyhavenError):
+                    PolyhavenClient(user_agent="ZH2-Test/1.0", timeout_seconds=timeout)
 
     def test_empty_user_agent_is_rejected(self):
         with self.assertRaises(PolyhavenError):
@@ -213,7 +220,50 @@ class PolyhavenTests(unittest.TestCase):
             written = client.download_selection(selection, Path(temp), "brick")
 
             self.assertEqual((Path(temp) / "brick_basecolor.png").read_bytes(), b"base")
-            self.assertEqual(written["ao"], Path(temp) / "brick_ao.png")
+            self.assertEqual(written["ao"], (Path(temp) / "brick_ao.png").resolve())
+
+    def test_download_selection_uses_resolved_cache_paths_when_cwd_changes_during_fetch(self):
+        selection = TextureFileSelection(
+            resolution=TextureResolution.FOUR_K,
+            urls={"basecolor": "https://cdn/basecolor.png"},
+            warnings=[],
+        )
+
+        class BinaryResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self):
+                return b"base"
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            changed_cwd = root / "changed"
+            changed_cwd.mkdir()
+            (changed_cwd / "cache").mkdir()
+            original_cwd = Path.cwd()
+
+            def cwd_changing_fetcher(request, timeout=None):
+                os.chdir(changed_cwd)
+                return BinaryResponse()
+
+            try:
+                os.chdir(root)
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=cwd_changing_fetcher)
+
+                written = client.download_selection(selection, Path("cache"), "brick")
+            finally:
+                os.chdir(original_cwd)
+
+            expected_path = root / "cache" / "brick_basecolor.png"
+            wrong_path = changed_cwd / "cache" / "brick_basecolor.png"
+            self.assertEqual(written["basecolor"], expected_path)
+            self.assertTrue(written["basecolor"].is_absolute())
+            self.assertEqual(expected_path.read_bytes(), b"base")
+            self.assertFalse(wrong_path.exists())
 
     def test_download_selection_rejects_unsafe_prefixes_before_writing(self):
         selection = TextureFileSelection(
@@ -355,6 +405,32 @@ class PolyhavenTests(unittest.TestCase):
 
                 with tempfile.TemporaryDirectory() as temp:
                     with self.assertRaisesRegex(PolyhavenError, f"basecolor.*{expected_error}"):
+                        client.download_selection(selection, Path(temp), "brick")
+                    self.assertEqual(calls, [])
+
+    def test_download_selection_rejects_percent_encoded_hosts_before_fetching(self):
+        cases = (
+            "https://good.com%2fevil.com/x",
+            "https://good.com%5cevil.com/x",
+            "https://%65xample.com/x",
+        )
+        for url in cases:
+            with self.subTest(url=url):
+                calls = []
+
+                def fetcher(request, timeout=None):
+                    calls.append(request)
+                    raise AssertionError("download should not start for encoded hosts")
+
+                selection = TextureFileSelection(
+                    resolution=TextureResolution.FOUR_K,
+                    urls={"basecolor": url},
+                    warnings=[],
+                )
+                client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
+
+                with tempfile.TemporaryDirectory() as temp:
+                    with self.assertRaises(PolyhavenError):
                         client.download_selection(selection, Path(temp), "brick")
                     self.assertEqual(calls, [])
 
