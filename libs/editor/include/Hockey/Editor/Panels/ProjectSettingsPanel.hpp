@@ -20,17 +20,26 @@ public:
 
 private:
     enum class Section {
-        EditorGeneral,
+        EditorApplication,
+        EditorWindowInput,
         EditorGraphics,
-        EditorPhysics,
-        EditorGameplay,
-        ClientGeneral,
+        EditorLightingShadows,
+        EditorSceneAutosave,
+        EditorAssets,
+        EditorPhysicsPreview,
+        EditorGameplayPreview,
+        ClientApplication,
+        ClientWindowInput,
         ClientGraphics,
+        ClientLightingShadows,
         ClientPhysics,
         ClientGameplay,
-        ServerGeneral,
+        ClientStartupScene,
+        ServerApplication,
+        ServerSimulation,
         ServerPhysics,
         ServerGameplay,
+        ServerStartupScene,
         Preferences,
     };
 
@@ -39,17 +48,26 @@ private:
     void RefreshDerivedSettings();
 
     void DrawNavigation();
-    void DrawEditorGeneral(EditorContext& context);
+    void DrawEditorApplication(EditorContext& context);
+    void DrawEditorWindowInput(EditorContext& context);
     void DrawEditorGraphics(EditorContext& context);
-    void DrawEditorPhysics(EditorContext& context);
-    void DrawEditorGameplay(EditorContext& context);
-    void DrawClientGeneral();
+    void DrawEditorLightingShadows(EditorContext& context);
+    void DrawEditorSceneAutosave(EditorContext& context);
+    void DrawEditorAssets(EditorContext& context);
+    void DrawEditorPhysicsPreview(EditorContext& context);
+    void DrawEditorGameplayPreview(EditorContext& context);
+    void DrawClientApplication();
+    void DrawClientWindowInput();
     void DrawClientGraphics();
+    void DrawClientLightingShadows();
     void DrawClientPhysics();
     void DrawClientGameplay();
-    void DrawServerGeneral();
+    void DrawClientStartupScene();
+    void DrawServerApplication();
+    void DrawServerSimulation();
     void DrawServerPhysics();
     void DrawServerGameplay();
+    void DrawServerStartupScene();
     void DrawPreferences(EditorContext& context);
 
     void SaveEditorConfig(EditorContext& context);
@@ -76,7 +94,7 @@ private:
     std::filesystem::path m_UserPreferencesPath;
     std::string m_Status;
 
-    Section m_Section = Section::EditorGeneral;
+    Section m_Section = Section::EditorApplication;
     bool m_Loaded = false;
     bool m_EditorRestartRequired = false;
     bool m_ClientRestartRequired = false;

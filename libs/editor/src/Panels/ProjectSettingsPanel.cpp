@@ -49,6 +49,19 @@ bool DrawUInt(const char* label, std::uint32_t& value, int minValue, int maxValu
     return false;
 }
 
+bool DrawUIntPowerOfTwoOrZero(const char* label, std::uint32_t& value, int minValue, int maxValue) {
+    int temp = static_cast<int>(std::min<std::uint32_t>(value, static_cast<std::uint32_t>(maxValue)));
+    if (ImGui::DragInt(label, &temp, 64.0f, 0, maxValue)) {
+        if (temp <= 0) {
+            value = 0;
+        } else {
+            value = static_cast<std::uint32_t>(std::clamp(temp, minValue, maxValue));
+        }
+        return true;
+    }
+    return false;
+}
+
 bool DrawFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format) {
     return ImGui::DragFloat(label, &value, speed, minValue, maxValue, format);
 }
@@ -109,11 +122,6 @@ bool DrawRendererSettings(RendererSettings& settings) {
     constexpr std::array kUpscalers = {Upscaler::None, Upscaler::FSR, Upscaler::XeSS, Upscaler::DLSS};
     constexpr std::array kTextureQualities = {TextureQuality::Low, TextureQuality::Medium, TextureQuality::High,
                                               TextureQuality::Ultra};
-    constexpr std::array kShadowQualities = {ShadowQuality::Off, ShadowQuality::Low, ShadowQuality::Medium,
-                                             ShadowQuality::High, ShadowQuality::Ultra};
-    constexpr std::array kAOQualities = {AmbientOcclusionQuality::Off, AmbientOcclusionQuality::Low,
-                                         AmbientOcclusionQuality::Medium, AmbientOcclusionQuality::High,
-                                         AmbientOcclusionQuality::Ultra};
     constexpr std::array kReflectionQualities = {ReflectionQuality::Off, ReflectionQuality::Low,
                                                  ReflectionQuality::Medium, ReflectionQuality::High,
                                                  ReflectionQuality::Ultra};
@@ -155,12 +163,6 @@ bool DrawRendererSettings(RendererSettings& settings) {
         custom |= DrawUInt("Texture budget MB", settings.textureStreamingBudgetMB, 128, 32768);
         custom |= DrawUInt("Anisotropy", settings.anisotropy, 1, 16);
         custom |= DrawEnumCombo("Material quality", settings.materialQuality, kDetailQualities);
-        custom |= DrawEnumCombo("Shadow quality", settings.shadowQuality, kShadowQualities);
-        custom |= DrawFloat("Shadow distance", settings.shadowDistance, 1.0f, 0.0f, 2000.0f, "%.0f");
-        custom |= ImGui::Checkbox("Contact shadows", &settings.contactShadows);
-        custom |= DrawEnumCombo("Ambient occlusion", settings.aoQuality, kAOQualities);
-        custom |= DrawEnumCombo("Reflection quality", settings.reflectionQuality, kReflectionQualities);
-        custom |= DrawEnumCombo("Global illumination", settings.globalIlluminationQuality, kDetailQualities);
         custom |= DrawEnumCombo("Model quality", settings.modelQuality, kDetailQualities);
         custom |= DrawFloat("LOD distance multiplier", settings.lodDistanceMultiplier, 0.01f, 0.1f, 10.0f, "%.2f");
     }
@@ -203,6 +205,95 @@ bool DrawRendererSettings(RendererSettings& settings) {
         settings.preset = GraphicsPreset::Custom;
     }
     return changed || custom;
+}
+
+bool DrawLightingShadowSettings(RendererSettings& settings) {
+    bool changed = false;
+
+    if (ImGui::CollapsingHeader("Budgets", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawUInt("Max rendered lights", settings.maxRenderedLights, 0, 16);
+        changed |= DrawUInt("Max local shadow tiles", settings.maxLocalShadowTiles, 0, 16);
+    }
+
+    if (ImGui::CollapsingHeader("Shadow Atlases", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawEnumCombo("Shadow quality", settings.shadowQuality,
+                                 std::array{ShadowQuality::Off, ShadowQuality::Low, ShadowQuality::Medium,
+                                            ShadowQuality::High, ShadowQuality::Ultra});
+        changed |= DrawFloat("Shadow distance", settings.shadowDistance, 1.0f, 0.0f, 5000.0f, "%.0f");
+        changed |=
+            DrawUIntPowerOfTwoOrZero("Directional atlas", settings.directionalShadowAtlasResolution, 256, 16384);
+        changed |= DrawUIntPowerOfTwoOrZero("Local atlas", settings.localShadowAtlasResolution, 256, 16384);
+    }
+
+    if (ImGui::CollapsingHeader("Directional Cascades", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawUInt("Cascade count", settings.shadowCascadeCount, 0, 4);
+        changed |= DrawFloat("Split lambda", settings.shadowCascadeSplitLambda, 0.01f, 0.0f, 1.0f, "%.2f");
+        changed |= DrawFloat("Overlap scale", settings.shadowCascadeOverlapScale, 0.01f, 0.0f, 1.0f, "%.2f");
+        changed |= DrawFloat("Minimum overlap", settings.shadowCascadeMinOverlap, 0.25f, 0.0f, 100.0f, "%.2f");
+        changed |= DrawFloat("Max overlap scale", settings.shadowCascadeMaxOverlapScale, 0.01f, 0.0f, 1.0f,
+                             "%.2f");
+        changed |= DrawFloat("Blend scale", settings.shadowCascadeBlendScale, 0.01f, 0.0f, 1.0f, "%.2f");
+        changed |= DrawFloat("Minimum blend", settings.shadowCascadeMinBlend, 0.05f, 0.0f, 50.0f, "%.2f");
+    }
+
+    if (ImGui::CollapsingHeader("Directional Filter & Bias", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawUInt("PCF radius", settings.directionalShadowPcfRadius, 0, 3);
+        changed |= DrawFloat("Normal offset scale", settings.directionalShadowNormalOffsetScale, 0.01f, 0.0f,
+                             4.0f, "%.2f");
+        changed |= DrawFloat("Normal offset min", settings.directionalShadowNormalOffsetMin, 0.0005f, 0.0f,
+                             0.25f, "%.4f");
+        changed |= DrawFloat("Normal offset max", settings.directionalShadowNormalOffsetMax, 0.001f, 0.0f, 1.0f,
+                             "%.4f");
+        changed |= DrawFloat("Bias base", settings.directionalShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f");
+        changed |= DrawFloat("Bias slope", settings.directionalShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f");
+        changed |= DrawFloat("Bias min", settings.directionalShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
+        changed |= DrawFloat("Bias max", settings.directionalShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+        changed |= DrawFloat("Depth bias constant", settings.directionalShadowDepthBiasConstant, 0.05f, 0.0f,
+                             8.0f, "%.2f");
+        changed |= DrawFloat("Depth bias slope", settings.directionalShadowDepthBiasSlope, 0.05f, 0.0f, 8.0f,
+                             "%.2f");
+    }
+
+    if (ImGui::CollapsingHeader("Contact Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= ImGui::Checkbox("Contact shadows", &settings.contactShadows);
+        changed |= DrawFloat("Distance", settings.contactShadowDistance, 0.5f, 0.0f, 500.0f, "%.1f");
+        changed |= DrawFloat("Strength", settings.contactShadowStrength, 0.01f, 0.0f, 1.0f, "%.2f");
+        changed |= DrawFloat("Normal offset scale", settings.contactShadowNormalOffsetScale, 0.01f, 0.0f, 2.0f,
+                             "%.2f");
+        changed |= DrawFloat("Normal offset min", settings.contactShadowNormalOffsetMin, 0.0005f, 0.0f, 0.25f,
+                             "%.4f");
+        changed |= DrawFloat("Bias base", settings.contactShadowBiasBase, 0.00005f, 0.0f, 0.02f, "%.5f");
+        changed |= DrawFloat("Bias slope", settings.contactShadowBiasSlope, 0.00005f, 0.0f, 0.05f, "%.5f");
+        changed |= DrawFloat("Bias min", settings.contactShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
+        changed |= DrawFloat("Bias max", settings.contactShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+    }
+
+    if (ImGui::CollapsingHeader("Local Light Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawUInt("PCF radius", settings.localShadowPcfRadius, 0, 3);
+        changed |= DrawFloat("Bias scale", settings.localShadowBiasScale, 0.00005f, 0.0f, 0.05f, "%.5f");
+        changed |= DrawFloat("Bias min", settings.localShadowBiasMin, 0.00005f, 0.0f, 0.02f, "%.5f");
+        changed |= DrawFloat("Bias max", settings.localShadowBiasMax, 0.00005f, 0.0f, 0.05f, "%.5f");
+    }
+
+    if (ImGui::CollapsingHeader("Ambient & Reflections", ImGuiTreeNodeFlags_DefaultOpen)) {
+        changed |= DrawEnumCombo("Ambient occlusion", settings.aoQuality,
+                                 std::array{AmbientOcclusionQuality::Off, AmbientOcclusionQuality::Low,
+                                            AmbientOcclusionQuality::Medium, AmbientOcclusionQuality::High,
+                                            AmbientOcclusionQuality::Ultra});
+        changed |= DrawEnumCombo("Reflection quality", settings.reflectionQuality,
+                                 std::array{ReflectionQuality::Off, ReflectionQuality::Low,
+                                            ReflectionQuality::Medium, ReflectionQuality::High,
+                                            ReflectionQuality::Ultra});
+        changed |= DrawEnumCombo("Global illumination", settings.globalIlluminationQuality,
+                                 std::array{DetailQuality::Low, DetailQuality::Medium, DetailQuality::High,
+                                            DetailQuality::Ultra});
+    }
+
+    if (changed) {
+        settings = ClampRendererSettings(settings);
+        settings.preset = GraphicsPreset::Custom;
+    }
+    return changed;
 }
 
 bool DrawPhysicsSettings(PhysicsSettings& settings, bool serverMode) {
@@ -273,23 +364,41 @@ void ProjectSettingsPanel::OnImGui(EditorContext& context) {
     ImGui::BeginChild("##project_settings_content", ImVec2(0.0f, 0.0f), false);
 
     switch (m_Section) {
-    case Section::EditorGeneral:
-        DrawEditorGeneral(context);
+    case Section::EditorApplication:
+        DrawEditorApplication(context);
+        break;
+    case Section::EditorWindowInput:
+        DrawEditorWindowInput(context);
         break;
     case Section::EditorGraphics:
         DrawEditorGraphics(context);
         break;
-    case Section::EditorPhysics:
-        DrawEditorPhysics(context);
+    case Section::EditorLightingShadows:
+        DrawEditorLightingShadows(context);
         break;
-    case Section::EditorGameplay:
-        DrawEditorGameplay(context);
+    case Section::EditorSceneAutosave:
+        DrawEditorSceneAutosave(context);
         break;
-    case Section::ClientGeneral:
-        DrawClientGeneral();
+    case Section::EditorAssets:
+        DrawEditorAssets(context);
+        break;
+    case Section::EditorPhysicsPreview:
+        DrawEditorPhysicsPreview(context);
+        break;
+    case Section::EditorGameplayPreview:
+        DrawEditorGameplayPreview(context);
+        break;
+    case Section::ClientApplication:
+        DrawClientApplication();
+        break;
+    case Section::ClientWindowInput:
+        DrawClientWindowInput();
         break;
     case Section::ClientGraphics:
         DrawClientGraphics();
+        break;
+    case Section::ClientLightingShadows:
+        DrawClientLightingShadows();
         break;
     case Section::ClientPhysics:
         DrawClientPhysics();
@@ -297,14 +406,23 @@ void ProjectSettingsPanel::OnImGui(EditorContext& context) {
     case Section::ClientGameplay:
         DrawClientGameplay();
         break;
-    case Section::ServerGeneral:
-        DrawServerGeneral();
+    case Section::ClientStartupScene:
+        DrawClientStartupScene();
+        break;
+    case Section::ServerApplication:
+        DrawServerApplication();
+        break;
+    case Section::ServerSimulation:
+        DrawServerSimulation();
         break;
     case Section::ServerPhysics:
         DrawServerPhysics();
         break;
     case Section::ServerGameplay:
         DrawServerGameplay();
+        break;
+    case Section::ServerStartupScene:
+        DrawServerStartupScene();
         break;
     case Section::Preferences:
         DrawPreferences(context);
@@ -375,26 +493,35 @@ void ProjectSettingsPanel::DrawNavigation() {
     };
 
     ImGui::TextUnformatted("Editor");
-    item("Application", Section::EditorGeneral);
+    item("Application", Section::EditorApplication);
+    item("Window / Input", Section::EditorWindowInput);
     item("Graphics", Section::EditorGraphics);
-    item("Physics", Section::EditorPhysics);
-    item("Gameplay", Section::EditorGameplay);
+    item("Lighting & Shadows", Section::EditorLightingShadows);
+    item("Scene / Autosave", Section::EditorSceneAutosave);
+    item("Assets", Section::EditorAssets);
+    item("Physics Preview", Section::EditorPhysicsPreview);
+    item("Gameplay Preview", Section::EditorGameplayPreview);
     ImGui::Separator();
     ImGui::TextUnformatted("Client");
-    item("Client Application", Section::ClientGeneral);
-    item("Client Graphics", Section::ClientGraphics);
-    item("Client Physics", Section::ClientPhysics);
-    item("Client Gameplay", Section::ClientGameplay);
+    item("Application", Section::ClientApplication);
+    item("Window / Input", Section::ClientWindowInput);
+    item("Graphics", Section::ClientGraphics);
+    item("Lighting & Shadows", Section::ClientLightingShadows);
+    item("Physics", Section::ClientPhysics);
+    item("Gameplay", Section::ClientGameplay);
+    item("Startup Scene", Section::ClientStartupScene);
     ImGui::Separator();
     ImGui::TextUnformatted("Server");
-    item("Server General", Section::ServerGeneral);
-    item("Server Physics", Section::ServerPhysics);
-    item("Server Gameplay", Section::ServerGameplay);
+    item("Application", Section::ServerApplication);
+    item("Simulation", Section::ServerSimulation);
+    item("Physics", Section::ServerPhysics);
+    item("Gameplay", Section::ServerGameplay);
+    item("Startup Scene", Section::ServerStartupScene);
     ImGui::Separator();
     item("Preferences", Section::Preferences);
 }
 
-void ProjectSettingsPanel::DrawEditorGeneral(EditorContext& context) {
+void ProjectSettingsPanel::DrawEditorApplication(EditorContext& context) {
     ImGui::TextUnformatted("Editor Application");
     ImGui::Separator();
     bool restart = false;
@@ -405,7 +532,12 @@ void ProjectSettingsPanel::DrawEditorGeneral(EditorContext& context) {
         SaveEditorConfig(context);
     }
     DrawRestartBadge(m_EditorRestartRequired, "Restart required");
+}
 
+void ProjectSettingsPanel::DrawEditorWindowInput(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Window / Input");
+    DrawRestartBadge(m_EditorRestartRequired, "Restart required");
+    ImGui::Separator();
     if (ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool changed = false;
         changed |= DrawConfigString(m_EditorConfig, "window.title", "Title", "Hockey Map Editor");
@@ -432,7 +564,11 @@ void ProjectSettingsPanel::DrawEditorGeneral(EditorContext& context) {
             SaveEditorConfig(context);
         }
     }
+}
 
+void ProjectSettingsPanel::DrawEditorSceneAutosave(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Scene / Autosave");
+    ImGui::Separator();
     if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool changed = false;
         changed |= DrawConfigBool(m_EditorConfig, "scene.autosave_enabled", "Autosave enabled",
@@ -447,7 +583,12 @@ void ProjectSettingsPanel::DrawEditorGeneral(EditorContext& context) {
             SaveEditorConfig(context);
         }
     }
+}
 
+void ProjectSettingsPanel::DrawEditorAssets(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Assets");
+    DrawRestartBadge(m_EditorRestartRequired, "Restart required");
+    ImGui::Separator();
     if (ImGui::CollapsingHeader("Assets", ImGuiTreeNodeFlags_DefaultOpen)) {
         bool changed = false;
         changed |= DrawConfigBool(m_EditorConfig, "assets.auto_discover", "Auto discover", false);
@@ -492,8 +633,20 @@ void ProjectSettingsPanel::DrawEditorGraphics(EditorContext& context) {
     }
 }
 
-void ProjectSettingsPanel::DrawEditorPhysics(EditorContext& context) {
-    ImGui::TextUnformatted("Editor Physics");
+void ProjectSettingsPanel::DrawEditorLightingShadows(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Lighting & Shadows");
+    ImGui::Separator();
+    if (DrawLightingShadowSettings(m_EditorRenderer)) {
+        SaveRendererSettings(m_EditorConfig, m_EditorRenderer);
+        SaveEditorConfig(context);
+        if (context.renderer != nullptr && context.renderer->IsInitialized()) {
+            context.renderer->ApplySettings(m_EditorRenderer);
+        }
+    }
+}
+
+void ProjectSettingsPanel::DrawEditorPhysicsPreview(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Physics Preview");
     ImGui::Separator();
     bool changed = false;
     changed |= DrawConfigBool(m_EditorConfig, "physics.enabled", "Physics enabled", true);
@@ -507,8 +660,8 @@ void ProjectSettingsPanel::DrawEditorPhysics(EditorContext& context) {
     }
 }
 
-void ProjectSettingsPanel::DrawEditorGameplay(EditorContext& context) {
-    ImGui::TextUnformatted("Editor Gameplay");
+void ProjectSettingsPanel::DrawEditorGameplayPreview(EditorContext& context) {
+    ImGui::TextUnformatted("Editor Gameplay Preview");
     ImGui::Separator();
     bool changed = false;
     changed |= DrawConfigBool(m_EditorConfig, "gameplay.preview_enabled", "Preview enabled", false);
@@ -526,13 +679,24 @@ void ProjectSettingsPanel::DrawEditorGameplay(EditorContext& context) {
     }
 }
 
-void ProjectSettingsPanel::DrawClientGeneral() {
+void ProjectSettingsPanel::DrawClientApplication() {
     ImGui::TextUnformatted("Client Application");
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
     ImGui::Separator();
     bool changed = false;
     changed |= DrawConfigString(m_ClientConfig, "app.name", "Application name", "Hockey Game Client");
     changed |= DrawConfigInt(m_ClientConfig, "app.target_fps", "Target FPS", 0, 0, 1000);
+    if (changed) {
+        m_ClientRestartRequired = true;
+        SaveClientConfig();
+    }
+}
+
+void ProjectSettingsPanel::DrawClientWindowInput() {
+    ImGui::TextUnformatted("Client Window / Input");
+    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
+    ImGui::Separator();
+    bool changed = false;
     changed |= DrawConfigString(m_ClientConfig, "window.title", "Window title", "Hockey Game");
     changed |= DrawConfigInt(m_ClientConfig, "window.width", "Window width", 1920, 320, 7680);
     changed |= DrawConfigInt(m_ClientConfig, "window.height", "Window height", 1080, 240, 4320);
@@ -541,7 +705,6 @@ void ProjectSettingsPanel::DrawClientGeneral() {
     changed |= DrawConfigBool(m_ClientConfig, "window.start_centered", "Start centered", true);
     changed |= DrawConfigBool(m_ClientConfig, "input.gamepad_enabled", "Gamepad enabled", true);
     changed |= DrawConfigBool(m_ClientConfig, "input.mouse_capture", "Mouse capture", false);
-    changed |= DrawConfigString(m_ClientConfig, "scene.startup_scene", "Startup scene", "");
     if (changed) {
         m_ClientRestartRequired = true;
         SaveClientConfig();
@@ -553,6 +716,17 @@ void ProjectSettingsPanel::DrawClientGraphics() {
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
     ImGui::Separator();
     if (DrawRendererSettings(m_ClientRenderer)) {
+        SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
+        m_ClientRestartRequired = true;
+        SaveClientConfig();
+    }
+}
+
+void ProjectSettingsPanel::DrawClientLightingShadows() {
+    ImGui::TextUnformatted("Client Lighting & Shadows");
+    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
+    ImGui::Separator();
+    if (DrawLightingShadowSettings(m_ClientRenderer)) {
         SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
         m_ClientRestartRequired = true;
         SaveClientConfig();
@@ -573,6 +747,16 @@ void ProjectSettingsPanel::DrawClientPhysics() {
     }
 }
 
+void ProjectSettingsPanel::DrawClientStartupScene() {
+    ImGui::TextUnformatted("Client Startup Scene");
+    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
+    ImGui::Separator();
+    if (DrawConfigString(m_ClientConfig, "scene.startup_scene", "Startup scene", "")) {
+        m_ClientRestartRequired = true;
+        SaveClientConfig();
+    }
+}
+
 void ProjectSettingsPanel::DrawClientGameplay() {
     ImGui::TextUnformatted("Client Gameplay");
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
@@ -587,16 +771,38 @@ void ProjectSettingsPanel::DrawClientGameplay() {
     }
 }
 
-void ProjectSettingsPanel::DrawServerGeneral() {
-    ImGui::TextUnformatted("Server General");
+void ProjectSettingsPanel::DrawServerApplication() {
+    ImGui::TextUnformatted("Server Application");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
     bool changed = false;
     changed |= DrawConfigBool(m_ServerConfig, "app.sleep_when_idle", "Sleep when idle", true);
     changed |= DrawConfigString(m_ServerConfig, "server.name", "Server name", "Local Hockey Server");
-    changed |= DrawConfigFloat(m_ServerConfig, "server.tick_rate", "Tick rate", 60.0f, 1.0f, 240.0f);
     changed |= DrawConfigInt(m_ServerConfig, "server.max_players", "Max players", 8, 1, 128);
     changed |= DrawConfigInt(m_ServerConfig, "server.port", "Port", 27020, 1, 65535);
+    if (changed) {
+        m_ServerRestartRequired = true;
+        SaveServerConfig();
+    }
+}
+
+void ProjectSettingsPanel::DrawServerSimulation() {
+    ImGui::TextUnformatted("Server Simulation");
+    DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
+    ImGui::Separator();
+    bool changed = false;
+    changed |= DrawConfigFloat(m_ServerConfig, "server.tick_rate", "Tick rate", 60.0f, 1.0f, 240.0f);
+    if (changed) {
+        m_ServerRestartRequired = true;
+        SaveServerConfig();
+    }
+}
+
+void ProjectSettingsPanel::DrawServerStartupScene() {
+    ImGui::TextUnformatted("Server Startup Scene");
+    DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
+    ImGui::Separator();
+    bool changed = false;
     changed |= DrawConfigString(m_ServerConfig, "scene.startup_scene", "Startup scene", "");
     changed |= DrawConfigBool(m_ServerConfig, "scene.validate_on_load", "Validate on load", true);
     if (changed) {
