@@ -34,6 +34,11 @@ uint32_t MaxBloomMips(GraphicsPreset preset) {
     return 5;
 }
 
+uint32_t ClampAtlasToDeviceLimit(uint32_t desired, const RenderDevice& device) {
+    const uint32_t maxImageDim = std::max(1u, device.properties.limits.maxImageDimension2D);
+    return std::min(std::max(1u, desired), maxImageDim);
+}
+
 } // namespace
 
 uint32_t ShadowAtlasResolution(ShadowQuality quality) {
@@ -47,7 +52,7 @@ uint32_t ShadowAtlasResolution(ShadowQuality quality) {
     case ShadowQuality::High:
         return 4096;
     case ShadowQuality::Ultra:
-        return 4096;
+        return 8192;
     }
     return 2048;
 }
@@ -128,8 +133,8 @@ Status VulkanFrameTargets::Build(uint32_t width, uint32_t height, VkFormat /*swa
     }
     m_Extent = {width, height};
     m_ShadowCascades = ShadowCascadeCount(settings.shadowQuality);
-    m_ShadowResolution = ShadowAtlasResolution(settings.shadowQuality);
-    m_LocalShadowResolution = LocalShadowAtlasResolution(settings.shadowQuality);
+    m_ShadowResolution = ClampAtlasToDeviceLimit(ShadowAtlasResolution(settings.shadowQuality), *m_Device);
+    m_LocalShadowResolution = ClampAtlasToDeviceLimit(LocalShadowAtlasResolution(settings.shadowQuality), *m_Device);
 
     // Bloom chain: half-res then halving until small, capped by preset quality.
     const uint32_t maxMips = MaxBloomMips(settings.preset);

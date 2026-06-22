@@ -63,7 +63,10 @@ Source material:
 - [x] ECS camera, mesh renderer, light, and environment data are consumed at render time.
 - [x] Forward PBR scene rendering exists.
 - [x] Directional cascaded shadow rendering exists.
+- [x] Directional shadow receiver bias scales per cascade to reduce contact detachment and split artifacts.
 - [x] Spot/point local-light shadow atlas exists.
+- [x] `MeshRendererComponent::receivesShadows` is honored by runtime shadow sampling.
+- [x] `contactShadows` is wired into shadow sampling.
 - [x] Depth prepass exists.
 - [x] SSAO and blur exist.
 - [x] Bloom downsample/upsample/composite exists.
@@ -86,20 +89,20 @@ Source material:
 - [x] Client renderer integration exists.
 - [x] Editor offscreen renderer integration exists.
 - [x] Screenshot workflow exists through app flags.
+- [x] Directional, point, and spot shadow screenshots were captured on a real GPU/display.
+- [x] Sun-only and cascade-heavy directional shadow screenshots were recaptured after per-cascade bias tuning.
 
 ## Started / Partial
 
 - [ ] Production frame sequence is still hard-coded in `Renderer.cpp`; `RenderGraph` is not the production execution path.
 - [ ] TAA/MSAA settings exist, but only FXAA is implemented.
-- [ ] `MeshRendererComponent::receivesShadows` is not fully honored by runtime shadow sampling.
-- [ ] `contactShadows` is not fully wired as a renderer effect.
 - [ ] Reflection probe components serialize, but renderer probe capture/sampling is not implemented.
 - [ ] Decal components serialize, but decal projection rendering is not implemented.
 - [ ] Some renderer settings are persisted only and are not live-applied.
 - [ ] Hockey-specific polish visuals such as ice reflections, skate spray, and puck trails are material/settings names only.
 - [ ] `gpuFrameMs` is not populated.
 - [ ] Tracy or equivalent profiling integration is not implemented.
-- [ ] Pixel-correct rendering, minimize behavior, and shadow atlas correctness still need display/GPU verification.
+- [ ] Pixel-correct rendering and minimize behavior still need broader display/GPU verification.
 
 ## Left To Do
 

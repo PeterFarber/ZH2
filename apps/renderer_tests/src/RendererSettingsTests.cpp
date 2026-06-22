@@ -86,7 +86,8 @@ void RunShadowQualityTests() {
     HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Low), 1024u);
     HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Medium), 2048u);
     HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::High), 4096u);
-    HK_CHECK(ShadowAtlasResolution(ShadowQuality::Ultra) >= ShadowAtlasResolution(ShadowQuality::High));
+    HK_CHECK_EQ(ShadowAtlasResolution(ShadowQuality::Ultra), 8192u);
+    HK_CHECK(ShadowAtlasResolution(ShadowQuality::Ultra) > ShadowAtlasResolution(ShadowQuality::High));
 
     // Cascade count: Off disables shadows (0), increasing with quality.
     HK_CHECK_EQ(ShadowCascadeCount(ShadowQuality::Off), 0u);

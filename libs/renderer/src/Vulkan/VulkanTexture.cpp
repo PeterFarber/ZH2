@@ -88,6 +88,7 @@ void UploadTexture(const RenderDevice& device, const VulkanCommand& commands, Vu
     stagingDesc.debugName = "TextureStaging";
     VulkanBuffer staging = CreateBuffer(device, stagingDesc);
     std::memcpy(staging.mapped, pixels, size);
+    FlushBufferWrites(device, staging, 0, static_cast<VkDeviceSize>(size));
 
     VkCommandBuffer cmd = commands.BeginSingleTimeCommands();
 

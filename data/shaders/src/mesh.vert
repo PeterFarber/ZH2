@@ -10,6 +10,7 @@ layout(location = 3) in vec2 aUV;
 
 layout(push_constant) uniform PushConstants {
     mat4 model;
+    vec4 flags;
 } uPush;
 
 layout(location = 0) out vec3 vWorldPos;
@@ -19,7 +20,7 @@ layout(location = 3) out vec2 vUV;
 
 void main() {
     vec4 worldPos = uPush.model * vec4(aPos, 1.0);
-    mat3 normalMat = mat3(uPush.model);
+    mat3 normalMat = transpose(inverse(mat3(uPush.model)));
     vWorldPos = worldPos.xyz;
     vNormal = normalize(normalMat * aNormal);
     vTangent = vec4(normalize(normalMat * aTangent.xyz), aTangent.w);

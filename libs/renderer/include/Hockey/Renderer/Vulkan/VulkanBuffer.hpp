@@ -25,6 +25,8 @@ struct VulkanBuffer {
 // Creates a buffer sized to desc.size with the appropriate usage/memory flags.
 VulkanBuffer CreateBuffer(const RenderDevice& device, const BufferDesc& desc);
 void DestroyBuffer(const RenderDevice& device, VulkanBuffer& buffer);
+void FlushBufferWrites(const RenderDevice& device, const VulkanBuffer& buffer, VkDeviceSize offset = 0,
+                       VkDeviceSize size = VK_WHOLE_SIZE);
 
 // Uploads CPU data into the buffer. For CPU-visible buffers this is a memcpy;
 // for device-local buffers a staging buffer + transfer is used.

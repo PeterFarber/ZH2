@@ -10,6 +10,11 @@ layout(location = 3) in vec2 vUV;
 
 layout(location = 0) out vec4 outColor;
 
+layout(push_constant) uniform PushConstants {
+    mat4 model;
+    vec4 flags;
+} uPush;
+
 layout(set = 1, binding = 0) uniform MaterialUBO {
     vec4 baseColor;
     vec4 mrno;     // x metallic, y roughness, z normalStrength, w occlusionStrength
@@ -53,6 +58,8 @@ void main() {
     vec3 N = ComputeNormal(uv);
     vec3 V = normalize(uCamera.position.xyz - vWorldPos);
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    bool receivesShadows = uPush.flags.x > 0.5;
+    bool contactShadows = uPush.flags.y > 0.5;
 
     vec3 Lo = vec3(0.0);
     int count = int(uScene.params.x);
@@ -63,8 +70,8 @@ void main() {
         float shadow = 1.0;
         if (light.direction.w < 0.5) {
             L = normalize(-light.direction.xyz);
-            if (light.spot.z > -0.5) {
-                shadow = SampleSunShadow(vWorldPos, N, max(dot(N, L), 0.0));
+            if (receivesShadows && light.spot.z > -0.5) {
+                shadow = SampleSunShadow(vWorldPos, N, max(dot(N, L), 0.0), contactShadows);
             }
         } else {
             vec3 toLight = light.positionRange.xyz - vWorldPos;
@@ -83,7 +90,9 @@ void main() {
                 float cone = clamp((cosAngle - light.spot.y) / coneRange, 0.0, 1.0);
                 attenuation *= cone * cone;
             }
-            shadow = SampleLocalShadow(light, vWorldPos, max(dot(N, L), 0.0));
+            if (receivesShadows) {
+                shadow = SampleLocalShadow(light, vWorldPos, max(dot(N, L), 0.0), contactShadows);
+            }
         }
 
         vec3 H = normalize(V + L);

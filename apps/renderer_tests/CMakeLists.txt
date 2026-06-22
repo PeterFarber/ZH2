@@ -4,6 +4,7 @@ add_executable(HockeyRendererTests
     src/ResourceHandleTests.cpp
     src/ShaderCompileTests.cpp
     src/RenderGraphTests.cpp
+    src/RendererShadowContractTests.cpp
     src/RendererSmokeTests.cpp
     src/HeadlessServerLinkTests.cpp
 )

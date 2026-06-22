@@ -25,7 +25,9 @@ struct PostTargets {
     VulkanTexture localShadowAtlas;       // Depth32F grid atlas for spot/point lights
 };
 
-// Maps the shadow quality setting to an atlas resolution / cascade count.
+// Maps the shadow quality setting to the requested atlas resolution / cascade count.
+// VulkanFrameTargets clamps requested atlas sizes to the active GPU image limits
+// before allocating textures.
 uint32_t ShadowAtlasResolution(ShadowQuality quality);
 uint32_t ShadowCascadeCount(ShadowQuality quality);
 // Resolution of the shared spot/point-light shadow atlas (a grid of tiles).

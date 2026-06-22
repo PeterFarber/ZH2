@@ -34,6 +34,7 @@ layout(set = 0, binding = 1) uniform SceneUBO {
     vec4 ambient;        // rgb ambient color, a intensity
     vec4 params;         // x light count, y cascade count, z 1/atlasRes, w pcf radius
     vec4 cascadeSplits;  // view-space far distance of each cascade
+    vec4 cascadeTexelSizes; // world-space texel size for each directional cascade
     mat4 cascadeViewProj[HK_MAX_CASCADES];
     GpuLight lights[HK_MAX_LIGHTS];
     vec4 localShadowParams;                       // x 1/atlasRes, y pcf radius, z grid dim, w enabled
@@ -74,7 +75,8 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float SampleSunShadowCascade(int cascade, int cascadeCount, vec3 shadowPos, float bias) {
+float SampleSunShadowCascade(int cascade, int cascadeCount, vec3 shadowPos, float bias, out float valid) {
+    valid = 0.0;
     vec4 lightClip = uScene.cascadeViewProj[cascade] * vec4(shadowPos, 1.0);
     vec3 proj = lightClip.xyz / lightClip.w;
     if (proj.z > 1.0 || proj.z < 0.0) {
@@ -84,6 +86,7 @@ float SampleSunShadowCascade(int cascade, int cascadeCount, vec3 shadowPos, floa
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
         return 1.0;
     }
+    valid = 1.0;
     // Map cascade UV into the atlas. A single cascade owns the full atlas;
     // multiple cascades are packed into a 2x2 atlas.
     vec2 tile = vec2(float(cascade & 1), float(cascade >> 1));
@@ -110,7 +113,7 @@ float SampleSunShadowCascade(int cascade, int cascadeCount, vec3 shadowPos, floa
 
 // Returns lit visibility (1 = lit) from the cascaded directional shadow map.
 // Cascades are packed into a 2x2 atlas; the cascade is chosen by view depth.
-float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL) {
+float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL, bool contactShadows) {
     int cascadeCount = int(uScene.params.y + 0.5);
     if (cascadeCount <= 0) {
         return 1.0;
@@ -125,11 +128,29 @@ float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL) {
         }
     }
 
-    // Offset the receiver query a little along the surface normal. This keeps
-    // visible surfaces from comparing against their own nearly-identical depth.
-    vec3 shadowPos = worldPos + normalize(normal) * 0.035;
-    float bias = clamp(0.0009 + 0.0035 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.0009, 0.006);
-    float shadow = SampleSunShadowCascade(cascade, cascadeCount, shadowPos, bias);
+    // Offset the receiver query by a fraction of the cascade's world texel size.
+    // A fixed world-space offset makes near cascades visibly detach contact
+    // shadows, while far cascades need a little more room to avoid acne.
+    float texelWorld = max(uScene.cascadeTexelSizes[cascade], 0.001);
+    float normalOffset = clamp(texelWorld * 0.75, 0.003, 0.03);
+    vec3 unitNormal = normalize(normal);
+    vec3 shadowPos = worldPos + unitNormal * normalOffset;
+    float bias = clamp(0.00045 + 0.0018 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.00045, 0.003);
+    float currentValid = 0.0;
+    float shadow = SampleSunShadowCascade(cascade, cascadeCount, shadowPos, bias, currentValid);
+
+    // Optional contact shadowing re-samples close receivers with a smaller
+    // normal offset/bias. This keeps the broad stable cascade sample while
+    // tightening object-to-ground contact when the quality setting enables it.
+    if (contactShadows && viewDepth < 35.0) {
+        vec3 contactPos = worldPos + unitNormal * clamp(texelWorld * 0.20, 0.0015, normalOffset);
+        float contactBias = clamp(0.00012 + 0.0008 * (1.0 - clamp(NdotL, 0.0, 1.0)), 0.00012, 0.0012);
+        float contactValid = 0.0;
+        float contact = SampleSunShadowCascade(cascade, cascadeCount, contactPos, contactBias, contactValid);
+        if (contactValid > 0.5) {
+            shadow = min(shadow, mix(1.0, contact, 0.75));
+        }
+    }
 
     // Blend into the next cascade near a split. The renderer overlaps cascade
     // fit regions, so both maps should contain nearby casters and this removes
@@ -140,8 +161,11 @@ float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL) {
         float blendRange = max((split - prevSplit) * 0.12, 0.75);
         float blend = clamp((viewDepth - (split - blendRange)) / blendRange, 0.0, 1.0);
         if (blend > 0.0) {
-            float nextShadow = SampleSunShadowCascade(cascade + 1, cascadeCount, shadowPos, bias);
-            shadow = mix(shadow, nextShadow, blend);
+            float nextValid = 0.0;
+            float nextShadow = SampleSunShadowCascade(cascade + 1, cascadeCount, shadowPos, bias, nextValid);
+            if (nextValid > 0.5) {
+                shadow = mix(shadow, nextShadow, blend);
+            }
         }
     }
 
@@ -151,7 +175,7 @@ float SampleSunShadow(vec3 worldPos, vec3 normal, float NdotL) {
 // Returns lit visibility (1 = lit) for a spot/point light from the shared local
 // shadow atlas. Spot lights (type 2) read their single tile; point lights
 // (type 1) select one of six cube-face tiles by the light->fragment direction.
-float SampleLocalShadow(GpuLight light, vec3 worldPos, float NdotL) {
+float SampleLocalShadow(GpuLight light, vec3 worldPos, float NdotL, bool contactShadows) {
     if (uScene.localShadowParams.w < 0.5 || light.spot.z < -0.5) {
         return 1.0;
     }
@@ -189,7 +213,9 @@ float SampleLocalShadow(GpuLight light, vec3 worldPos, float NdotL) {
     vec2 tileMin = tileCoord * invGrid;
     vec2 atlasUV = tileMin + uv * invGrid;
 
-    float bias = clamp(0.0012 * tan(acos(clamp(NdotL, 0.0, 1.0))), 0.0002, 0.004);
+    float biasScale = contactShadows ? 0.00075 : 0.0012;
+    float biasMax = contactShadows ? 0.0025 : 0.004;
+    float bias = clamp(biasScale * tan(acos(clamp(NdotL, 0.0, 1.0))), 0.0002, biasMax);
     float texel = uScene.localShadowParams.x;
     int radius = int(uScene.localShadowParams.y + 0.5);
     // Keep PCF taps inside this tile so they cannot bleed into a neighbour.

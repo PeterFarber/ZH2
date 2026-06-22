@@ -77,6 +77,12 @@ void DestroyBuffer(const RenderDevice& device, VulkanBuffer& buffer) {
     }
 }
 
+void FlushBufferWrites(const RenderDevice& device, const VulkanBuffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
+    if (buffer.allocation != VK_NULL_HANDLE) {
+        vmaFlushAllocation(device.allocator, buffer.allocation, offset, size);
+    }
+}
+
 void UploadBuffer(const RenderDevice& device, const VulkanCommand& commands, VulkanBuffer& buffer, const void* data,
                   size_t size, size_t offset) {
     if (size == 0 || data == nullptr) {
@@ -84,6 +90,7 @@ void UploadBuffer(const RenderDevice& device, const VulkanCommand& commands, Vul
     }
     if (buffer.mapped != nullptr) {
         std::memcpy(static_cast<char*>(buffer.mapped) + offset, data, size);
+        FlushBufferWrites(device, buffer, static_cast<VkDeviceSize>(offset), static_cast<VkDeviceSize>(size));
         return;
     }
 
@@ -95,6 +102,7 @@ void UploadBuffer(const RenderDevice& device, const VulkanCommand& commands, Vul
     stagingDesc.debugName = "StagingUpload";
     VulkanBuffer staging = CreateBuffer(device, stagingDesc);
     std::memcpy(staging.mapped, data, size);
+    FlushBufferWrites(device, staging, 0, static_cast<VkDeviceSize>(size));
 
     VkCommandBuffer cmd = commands.BeginSingleTimeCommands();
     VkBufferCopy copy{};

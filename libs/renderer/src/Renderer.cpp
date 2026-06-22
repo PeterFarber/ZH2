@@ -166,8 +166,9 @@ constexpr uint32_t kMaxLocalShadowTiles = kLocalShadowGrid * kLocalShadowGrid;
 
 struct SceneGPU {
     glm::vec4 ambient{0.03f, 0.03f, 0.03f, 1.0f};
-    glm::vec4 params{0.0f};        // x light count, y cascade count, z 1/atlasRes, w pcf radius
-    glm::vec4 cascadeSplits{0.0f}; // view-space far distance of each cascade
+    glm::vec4 params{0.0f};             // x light count, y cascade count, z 1/atlasRes, w pcf radius
+    glm::vec4 cascadeSplits{0.0f};      // view-space far distance of each cascade
+    glm::vec4 cascadeTexelSizes{0.0f};  // world-space texel size for each cascade
     glm::mat4 cascadeViewProj[kMaxCascades];
     GpuLight lights[kMaxLights];
     glm::vec4 localShadowParams{0.0f}; // x 1/atlasRes, y pcf radius, z grid dim, w enabled
@@ -180,6 +181,11 @@ struct MaterialGPU {
     glm::vec4 emissive{0.0f};
     glm::vec4 alpha{0.0f, 0.5f, 0.0f, 0.0f};
     glm::vec4 uvXform{1.0f, 1.0f, 0.0f, 0.0f}; // xy tiling, zw offset
+};
+
+struct MeshPush {
+    glm::mat4 model{1.0f};
+    glm::vec4 flags{1.0f, 0.0f, 0.0f, 0.0f}; // x receives shadows, y contact shadows
 };
 
 GpuLight PackLight(const LightRenderData& light) {
@@ -269,6 +275,7 @@ void ForEachBoundsCorner(const glm::vec3& min, const glm::vec3& max, Fn&& fn) {
 struct CascadeResult {
     std::array<glm::mat4, kMaxCascades> viewProj{};
     std::array<float, kMaxCascades> splitFar{}; // view-space far distance
+    std::array<float, kMaxCascades> texelWorldSize{};
     uint32_t count = 0;
 };
 
@@ -291,7 +298,7 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
     const float tileResolution =
         result.count == 1 ? static_cast<float>(atlasResolution) : static_cast<float>(atlasResolution) * 0.5f;
 
-    constexpr float lambda = 0.85f; // blend uniform/log splits
+    constexpr float lambda = 0.95f; // favor log splits so long far clips keep dense near-cascade shadows
     float prevSplit = nearClip;
     for (uint32_t c = 0; c < result.count; ++c) {
         const float p = static_cast<float>(c + 1) / static_cast<float>(result.count);
@@ -382,6 +389,9 @@ CascadeResult ComputeCascades(const CameraRenderData& camera, const glm::vec3& l
         minLS.y = std::floor(minLS.y / unitsPerTexelY) * unitsPerTexelY;
         maxLS.x = minLS.x + std::ceil((maxLS.x - minLS.x) / unitsPerTexelX) * unitsPerTexelX;
         maxLS.y = minLS.y + std::ceil((maxLS.y - minLS.y) / unitsPerTexelY) * unitsPerTexelY;
+        result.texelWorldSize[c] =
+            std::max((maxLS.x - minLS.x) / std::max(tileResolution, 1.0f),
+                     (maxLS.y - minLS.y) / std::max(tileResolution, 1.0f));
 
         const float nearPlane = std::max(0.0f, -maxLS.z - depthPad);
         const float farPlane = std::max(nearPlane + 1.0f, -minLS.z + depthPad);
@@ -545,6 +555,7 @@ struct Renderer::Impl {
         glm::mat4 model{1.0f};
         float viewDepth = 0.0f;     // distance from camera, for transparent sort
         bool castsShadows = true;   // skipped by the shadow cascade pass when false
+        bool receivesShadows = true;
     };
 
     // Descriptor system (Step 7). Standard layouts + a growable allocator. A
@@ -778,9 +789,7 @@ uint32_t Renderer::Impl::CreateMaterialInternal(const MaterialDesc& desc) {
     const float mode = desc.alphaMode == AlphaMode::Opaque ? 0.0f : (desc.alphaMode == AlphaMode::Mask ? 1.0f : 2.0f);
     gpu.alpha = {mode, desc.alphaCutoff, 0.0f, 0.0f};
     gpu.uvXform = {desc.tiling.x, desc.tiling.y, desc.offset.x, desc.offset.y};
-    if (mat.ubo.mapped != nullptr) {
-        std::memcpy(mat.ubo.mapped, &gpu, sizeof(gpu));
-    }
+    UploadBuffer(device, command, mat.ubo, &gpu, sizeof(gpu));
 
     mat.set = descriptorAllocator.Allocate(descriptorLayouts.material);
     const VkSampler sampler = samplers.Linear();
@@ -853,9 +862,7 @@ void Renderer::Impl::PreviewMaterial(uint64_t materialAssetId, const MaterialPre
         mat.desc.alphaMode == AlphaMode::Opaque ? 0.0f : (mat.desc.alphaMode == AlphaMode::Mask ? 1.0f : 2.0f);
     gpu.alpha = {mode, mat.desc.alphaCutoff, 0.0f, 0.0f};
     gpu.uvXform = {mat.desc.tiling.x, mat.desc.tiling.y, mat.desc.offset.x, mat.desc.offset.y};
-    if (mat.ubo.mapped != nullptr) {
-        std::memcpy(mat.ubo.mapped, &gpu, sizeof(gpu));
-    }
+    UploadBuffer(device, command, mat.ubo, &gpu, sizeof(gpu));
 
     // Only rebind images when a texture slot actually changed. We allocate a
     // fresh descriptor set rather than rewriting the existing one (which a prior
@@ -1271,9 +1278,9 @@ Status Renderer::Impl::BuildMeshPipelines() {
     }
 
     VkPushConstantRange pushConstant{};
-    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstant.offset = 0;
-    pushConstant.size = sizeof(glm::mat4); // model matrix
+    pushConstant.size = sizeof(MeshPush); // model matrix + per-draw shading flags
     meshPipelineLayout =
         CreatePipelineLayout(device, {descriptorLayouts.global, descriptorLayouts.material}, {pushConstant});
     if (meshPipelineLayout == VK_NULL_HANDLE) {
@@ -1333,17 +1340,26 @@ Status Renderer::Impl::BuildMeshPipelines() {
     if (!shadowVs) {
         return Status::Fail(shadowVs.error);
     }
+    ShaderDesc shadowFsDesc;
+    shadowFsDesc.sourcePath = shaderSourceDir / "shadow.frag";
+    shadowFsDesc.stage = ShaderStage::Fragment;
+    Result<VulkanShaderModule> shadowFs = LoadShaderModule(device, shadowFsDesc, shaderBinaryDir);
+    if (!shadowFs) {
+        DestroyShaderModule(device, shadowVs.value.module);
+        return Status::Fail(shadowFs.error);
+    }
 
     VkPushConstantRange shadowPush{};
     shadowPush.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     shadowPush.offset = 0;
     shadowPush.size = sizeof(glm::mat4); // light view-proj * model
-    shadowPipelineLayout = CreatePipelineLayout(device, {}, {shadowPush});
+    shadowPipelineLayout = CreatePipelineLayout(device, {descriptorLayouts.material}, {shadowPush});
 
     GraphicsPipelineDesc shadow;
     shadow.vertexShader = shadowVs.value.module;
     shadow.layout = shadowPipelineLayout;
-    shadow.vertexInput = PositionOnlyVertexInput();
+    shadow.vertexInput = MeshVertexInput();
+    shadow.fragmentShader = shadowFs.value.module;
     shadow.colorFormats = {}; // depth-only
     shadow.depthFormat = depthFormat;
     shadow.topology = PrimitiveTopology::TriangleList;
@@ -1357,6 +1373,7 @@ Status Renderer::Impl::BuildMeshPipelines() {
     shadowPipeline = CreateGraphicsPipeline(device, shadow);
 
     DestroyShaderModule(device, shadowVs.value.module);
+    DestroyShaderModule(device, shadowFs.value.module);
 
     if (shadowPipelineLayout == VK_NULL_HANDLE || !shadowPipeline.IsValid()) {
         return Status::Fail("Failed to build shadow pipeline");
@@ -1628,8 +1645,8 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     cameraGpu.position = glm::vec4(camera.position, 1.0f);
     cameraGpu.clip =
         glm::vec4(camera.nearClip, camera.farClip, static_cast<float>(extent.width), static_cast<float>(extent.height));
-    if (curCameraUBOs != nullptr && (*curCameraUBOs)[frameIndex].mapped != nullptr) {
-        std::memcpy((*curCameraUBOs)[frameIndex].mapped, &cameraGpu, sizeof(cameraGpu));
+    if (curCameraUBOs != nullptr) {
+        UploadBuffer(device, command, (*curCameraUBOs)[frameIndex], &cameraGpu, sizeof(cameraGpu));
     }
 
     // --- Lights + environment -----------------------------------------------
@@ -1735,6 +1752,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         item.model = scene.GetWorldTransform(entity);
         item.viewDepth = glm::length(glm::vec3(item.model[3]) - camera.position);
         item.castsShadows = mr.castsShadows;
+        item.receivesShadows = mr.receivesShadows;
         if (!item.mesh->IsValid()) {
             continue;
         }
@@ -1762,6 +1780,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         for (uint32_t c = 0; c < cascades.count; ++c) {
             frameScene.cascadeViewProj[c] = cascades.viewProj[c];
             frameScene.cascadeSplits[c] = cascades.splitFar[c];
+            frameScene.cascadeTexelSizes[c] = cascades.texelWorldSize[c];
         }
         const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
         frameScene.params.y = static_cast<float>(cascades.count);
@@ -1815,7 +1834,12 @@ void Renderer::Impl::RecordSceneDrawsInPass(VkCommandBuffer cmd) {
         for (const DrawItem& item : items) {
             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 1, 1, &item.material->set,
                                     0, nullptr);
-            vkCmdPushConstants(cmd, meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &item.model);
+            MeshPush push;
+            push.model = item.model;
+            push.flags = glm::vec4(item.receivesShadows ? 1.0f : 0.0f, settings.contactShadows ? 1.0f : 0.0f, 0.0f,
+                                   0.0f);
+            vkCmdPushConstants(cmd, meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                               sizeof(MeshPush), &push);
 
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
@@ -1885,6 +1909,8 @@ void Renderer::Impl::RecordShadowPass(VkCommandBuffer cmd) {
                 continue; // MeshRendererComponent.castsShadows == false
             }
             const glm::mat4 mvp = frameScene.cascadeViewProj[c] * item.model;
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1,
+                                    &item.material->set, 0, nullptr);
             vkCmdPushConstants(cmd, shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
@@ -1956,6 +1982,8 @@ void Renderer::Impl::RecordLocalShadowPass(VkCommandBuffer cmd) {
                 continue;
             }
             const glm::mat4 mvp = tileViewProj * item.model;
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1,
+                                    &item.material->set, 0, nullptr);
             vkCmdPushConstants(cmd, shadowPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mvp);
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
@@ -2011,7 +2039,12 @@ void Renderer::Impl::RecordAmbientOcclusion(VkCommandBuffer cmd, VulkanTexture& 
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 0, 1,
                                 &(*curGlobalSets)[frameIndex], 0, nullptr);
         for (const DrawItem& item : frameOpaque) {
-            vkCmdPushConstants(cmd, meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &item.model);
+            MeshPush push;
+            push.model = item.model;
+            push.flags = glm::vec4(item.receivesShadows ? 1.0f : 0.0f, settings.contactShadows ? 1.0f : 0.0f, 0.0f,
+                                   0.0f);
+            vkCmdPushConstants(cmd, meshPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                               sizeof(MeshPush), &push);
             const VkDeviceSize offset = 0;
             vkCmdBindVertexBuffers(cmd, 0, 1, &item.mesh->vertexBuffer.buffer, &offset);
             vkCmdBindIndexBuffer(cmd, item.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -2163,9 +2196,7 @@ void Renderer::Impl::RecordDebugLines(VkCommandBuffer cmd, VkImageView color, Vk
             return;
         }
     }
-    if (vb.mapped != nullptr) {
-        std::memcpy(vb.mapped, verts.data(), static_cast<size_t>(bytes));
-    }
+    UploadBuffer(device, command, vb, verts.data(), static_cast<size_t>(bytes));
 
     BeginDebugLabel(cmd, "DebugLines");
     BeginRenderingScope(cmd, extent, color, VK_ATTACHMENT_LOAD_OP_LOAD, clearColor, VK_NULL_HANDLE, false);
@@ -2281,8 +2312,8 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
     // Gather camera/lights/cascades/renderables, then upload the scene UBO so
     // the cascade matrices are visible to both the shadow and main passes.
     GatherScene(scene, camera);
-    if (curSceneUBOs != nullptr && (*curSceneUBOs)[frameIndex].mapped != nullptr) {
-        std::memcpy((*curSceneUBOs)[frameIndex].mapped, &frameScene, sizeof(frameScene));
+    if (curSceneUBOs != nullptr) {
+        UploadBuffer(device, command, (*curSceneUBOs)[frameIndex], &frameScene, sizeof(frameScene));
     }
 
     // --- Shadow pass: render cascades into the depth atlas ------------------
