@@ -25,6 +25,7 @@ void RunRendererShadowContractTests() {
     HockeyTest::BeginSuite("RendererShadowContractTests");
 
     const std::string renderer = ReadProjectFile("libs/renderer/src/Renderer.cpp");
+    const std::string frameTargets = ReadProjectFile("libs/renderer/src/Vulkan/VulkanFrameTargets.cpp");
     const std::string vulkanBuffer = ReadProjectFile("libs/renderer/src/Vulkan/VulkanBuffer.cpp");
     const std::string commonGlsl = ReadProjectFile("data/shaders/src/common.glsl");
     const std::string meshVert = ReadProjectFile("data/shaders/src/mesh.vert");
@@ -52,6 +53,15 @@ void RunRendererShadowContractTests() {
     HK_CHECK_MSG(!Contains(commonGlsl, "normalize(normal) * 0.035"),
                  "directional shadow receiver offset is not a fixed world-space distance");
     HK_CHECK_MSG(Contains(commonGlsl, "nextValid"), "directional cascade blending ignores invalid neighboring cascades");
+    HK_CHECK_MSG(Contains(renderer, "ResolveShadowCascadeCount(settings)"),
+                 "renderer uses explicit cascade count with quality fallback");
+    HK_CHECK_MSG(Contains(renderer, "ResolveDirectionalShadowPcfRadius(settings)"),
+                 "renderer uses explicit directional PCF radius");
+    HK_CHECK_MSG(Contains(renderer, "ResolveLocalShadowPcfRadius(settings)"), "renderer uses explicit local PCF radius");
+    HK_CHECK_MSG(Contains(frameTargets, "ResolveDirectionalShadowAtlasResolution(settings)"),
+                 "frame targets use explicit directional shadow atlas resolution");
+    HK_CHECK_MSG(Contains(frameTargets, "ResolveLocalShadowAtlasResolution(settings)"),
+                 "frame targets use explicit local shadow atlas resolution");
     HK_CHECK_MSG(Contains(meshVert, "transpose(inverse(mat3(uPush.model)))"),
                  "mesh normals use inverse-transpose model transform for non-uniform scale");
     HK_CHECK_MSG(!Contains(meshVert, "normalMat = mat3(uPush.model)"),

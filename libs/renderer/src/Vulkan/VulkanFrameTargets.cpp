@@ -132,9 +132,9 @@ Status VulkanFrameTargets::Build(uint32_t width, uint32_t height, VkFormat /*swa
         return Status::Ok();
     }
     m_Extent = {width, height};
-    m_ShadowCascades = ShadowCascadeCount(settings.shadowQuality);
-    m_ShadowResolution = ClampAtlasToDeviceLimit(ShadowAtlasResolution(settings.shadowQuality), *m_Device);
-    m_LocalShadowResolution = ClampAtlasToDeviceLimit(LocalShadowAtlasResolution(settings.shadowQuality), *m_Device);
+    m_ShadowCascades = ResolveShadowCascadeCount(settings);
+    m_ShadowResolution = ClampAtlasToDeviceLimit(ResolveDirectionalShadowAtlasResolution(settings), *m_Device);
+    m_LocalShadowResolution = ClampAtlasToDeviceLimit(ResolveLocalShadowAtlasResolution(settings), *m_Device);
 
     // Bloom chain: half-res then halving until small, capped by preset quality.
     const uint32_t maxMips = MaxBloomMips(settings.preset);

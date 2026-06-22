@@ -1772,7 +1772,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
               [](const DrawItem& a, const DrawItem& b) { return a.viewDepth > b.viewDepth; });
 
     // --- Directional cascaded shadows ---------------------------------------
-    const uint32_t cascadeCount = ShadowCascadeCount(settings.shadowQuality);
+    const uint32_t cascadeCount = ResolveShadowCascadeCount(settings);
     if (settings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
         const uint32_t atlasRes = curTargets->ShadowResolution();
         const CascadeResult cascades =
@@ -1782,7 +1782,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
             frameScene.cascadeSplits[c] = cascades.splitFar[c];
             frameScene.cascadeTexelSizes[c] = cascades.texelWorldSize[c];
         }
-        const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
+        const float pcfRadius = static_cast<float>(ResolveDirectionalShadowPcfRadius(settings));
         frameScene.params.y = static_cast<float>(cascades.count);
         frameScene.params.z = 1.0f / static_cast<float>(std::max(atlasRes, 1u));
         frameScene.params.w = pcfRadius;
@@ -1816,7 +1816,7 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
         }
         frameLocalShadowTiles = tileCursor;
         if (tileCursor > 0) {
-            const float pcfRadius = settings.shadowQuality == ShadowQuality::Ultra ? 2.0f : 1.0f;
+            const float pcfRadius = static_cast<float>(ResolveLocalShadowPcfRadius(settings));
             frameScene.localShadowParams = glm::vec4(1.0f / static_cast<float>(localAtlasRes), pcfRadius,
                                                      static_cast<float>(kLocalShadowGrid), 1.0f);
         }
