@@ -40,6 +40,12 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "Window / Input"), "navigation exposes window/input pages");
     HK_CHECK_MSG(Contains(source, "Lighting & Shadows"), "navigation exposes lighting/shadows pages");
     HK_CHECK_MSG(Contains(source, "Startup Scene"), "navigation exposes startup scene pages");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Editor\")"),
+                 "editor navigation labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Client\")"),
+                 "client navigation labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Server\")"),
+                 "server navigation labels are scoped to avoid ImGui ID conflicts");
     HK_CHECK_MSG(Contains(source, "DrawLightingShadowSettings"), "advanced shadow controls are shared");
     HK_CHECK_MSG(Contains(source, "Max rendered lights"), "lighting budget control exists");
     HK_CHECK_MSG(Contains(source, "Max local shadow tiles"), "local shadow tile budget control exists");

@@ -493,6 +493,7 @@ void ProjectSettingsPanel::DrawNavigation() {
     };
 
     ImGui::TextUnformatted("Editor");
+    ImGui::PushID("Editor");
     item("Application", Section::EditorApplication);
     item("Window / Input", Section::EditorWindowInput);
     item("Graphics", Section::EditorGraphics);
@@ -501,8 +502,10 @@ void ProjectSettingsPanel::DrawNavigation() {
     item("Assets", Section::EditorAssets);
     item("Physics Preview", Section::EditorPhysicsPreview);
     item("Gameplay Preview", Section::EditorGameplayPreview);
+    ImGui::PopID();
     ImGui::Separator();
     ImGui::TextUnformatted("Client");
+    ImGui::PushID("Client");
     item("Application", Section::ClientApplication);
     item("Window / Input", Section::ClientWindowInput);
     item("Graphics", Section::ClientGraphics);
@@ -510,13 +513,16 @@ void ProjectSettingsPanel::DrawNavigation() {
     item("Physics", Section::ClientPhysics);
     item("Gameplay", Section::ClientGameplay);
     item("Startup Scene", Section::ClientStartupScene);
+    ImGui::PopID();
     ImGui::Separator();
     ImGui::TextUnformatted("Server");
+    ImGui::PushID("Server");
     item("Application", Section::ServerApplication);
     item("Simulation", Section::ServerSimulation);
     item("Physics", Section::ServerPhysics);
     item("Gameplay", Section::ServerGameplay);
     item("Startup Scene", Section::ServerStartupScene);
+    ImGui::PopID();
     ImGui::Separator();
     item("Preferences", Section::Preferences);
 }
