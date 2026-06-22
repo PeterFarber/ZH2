@@ -131,6 +131,9 @@ Left click while holding puck charges and releases a shot.
 - Release shoots in aim direction or facing direction if no aim exists.
 - Shot releases possession.
 - Shot sets puck state to `Shot`.
+- The shooter has a short tuned grace window after release where the puck cannot
+  be immediately re-controlled by that same player.
+- Charging exposes shot power so the local player can see a power bar.
 - Shot emits a `PuckShot` gameplay event.
 
 ### Boost
@@ -212,6 +215,9 @@ Shot rules:
 - Shot power is based on charge ratio.
 - Shot direction uses aim first, then facing direction.
 - Shot velocity clamps to puck tuning.
+- The puck stays on the ice/floor height during possession and free movement.
+- A freshly shot puck ignores the shooter for a short tuned grace window so it
+  does not immediately collide back into or reattach to that player.
 
 Pass rules:
 
@@ -296,9 +302,11 @@ Puck tuning:
 
 - possession offset
 - loose puck drag
+- floor height
 - max speed
 - shot min/max power
 - charge duration
+- shot self-collision grace seconds
 - pass power
 - out-of-play threshold
 
@@ -323,6 +331,9 @@ The new design requires these follow-up changes:
 - Add goalie two-charge boost with 4-second per-charge recovery.
 - Add goalie shield component/runtime state/system.
 - Add shield reflection for puck and bounce response for players.
+- Add a short post-shot self-collision grace window for the shooter.
+- Keep puck simulation clamped to the ice/floor height.
+- Add local shot power bar feedback while charging.
 - Add gameplay events for boost, shield, countdown, and steal where useful.
 - Add editor/tuning exposure for new gameplay values.
 - Add tests for every new rule before implementation.
@@ -336,6 +347,9 @@ Add or update gameplay tests for:
 - Countdown emits tick and beep events.
 - Left click without possession attempts steal.
 - Left click with possession charges/releases shot.
+- Shot release cannot immediately reattach to the shooter during the grace window.
+- Puck controller keeps puck height on the ice/floor.
+- Gameplay snapshots expose shot charge ratio for the local power bar.
 - Steal releases opponent possession when in range.
 - Skater boost applies impulse and respects cooldown.
 - S clears waypoint.

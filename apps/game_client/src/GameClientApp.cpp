@@ -13,6 +13,7 @@
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/Gameplay/Gameplay.hpp"
+#include "Hockey/Gameplay/Simulation/GameplaySnapshot.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsDebugDraw.hpp"
@@ -24,6 +25,7 @@
 #include "Hockey/Renderer/DebugDraw.hpp"
 #include "Hockey/Renderer/RendererInitInfo.hpp"
 #include "Hockey/Renderer/RendererSettings.hpp"
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <memory>
@@ -401,6 +403,51 @@ void GameClientApp::SubmitPhysicsDebugDraw() {
     }
 }
 
+void GameClientApp::SubmitGameplayDebugDraw() {
+    if (!m_LocalGameplayEnabled || !m_GameplayWorld.IsInitialized()) {
+        return;
+    }
+
+    const Hockey::GameplaySnapshot snapshot =
+        Hockey::BuildGameplaySnapshot(m_Scene, m_SimulationTimestep.GetTick(), m_GameplayWorld.GetTuning());
+
+    const Hockey::PlayerGameplaySnapshot* localPlayer = nullptr;
+    for (const Hockey::PlayerGameplaySnapshot& player : snapshot.players) {
+        if (player.playerIndex == 0) {
+            localPlayer = &player;
+            break;
+        }
+    }
+    if (localPlayer == nullptr || !localPlayer->shotCharging) {
+        return;
+    }
+
+    const float ratio = std::clamp(localPlayer->shotChargeRatio, 0.0f, 1.0f);
+    const glm::vec3 center = localPlayer->position + glm::vec3{0.0f, 2.2f, 0.0f};
+    constexpr float kWidth = 1.35f;
+    constexpr float kHeight = 0.16f;
+    const glm::vec3 left = center + glm::vec3{-kWidth * 0.5f, 0.0f, 0.0f};
+    const glm::vec3 right = center + glm::vec3{kWidth * 0.5f, 0.0f, 0.0f};
+    const glm::vec3 top{0.0f, kHeight * 0.5f, 0.0f};
+    const glm::vec3 bottom{0.0f, -kHeight * 0.5f, 0.0f};
+
+    Hockey::DebugDraw& debug = m_Renderer.Debug();
+    const glm::vec4 outline{0.02f, 0.02f, 0.025f, 1.0f};
+    const glm::vec4 track{0.18f, 0.20f, 0.23f, 1.0f};
+    const glm::vec4 fill = ratio >= 0.95f ? glm::vec4{1.0f, 0.82f, 0.18f, 1.0f}
+                                           : glm::vec4{0.30f, 0.72f, 1.0f, 1.0f};
+    debug.DrawLine(left + top, right + top, outline);
+    debug.DrawLine(left + bottom, right + bottom, outline);
+    debug.DrawLine(left + bottom, left + top, outline);
+    debug.DrawLine(right + bottom, right + top, outline);
+    debug.DrawLine(left, right, track);
+
+    const glm::vec3 fillRight = left + (right - left) * ratio;
+    debug.DrawLine(left + glm::vec3{0.0f, -0.035f, 0.0f}, fillRight + glm::vec3{0.0f, -0.035f, 0.0f}, fill);
+    debug.DrawLine(left, fillRight, fill);
+    debug.DrawLine(left + glm::vec3{0.0f, 0.035f, 0.0f}, fillRight + glm::vec3{0.0f, 0.035f, 0.0f}, fill);
+}
+
 void GameClientApp::OnUpdate(float deltaTime) {
     m_Scene.OnUpdate(deltaTime);
     StepSimulation(deltaTime);
@@ -437,6 +484,7 @@ void GameClientApp::OnUpdate(float deltaTime) {
     // Debug lines must be submitted BEFORE RenderScene: the scene pass records
     // the overlay from the accumulated line buffer, and EndFrame clears it.
     SubmitPhysicsDebugDraw();
+    SubmitGameplayDebugDraw();
     const float aspect = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
     Hockey::CameraRenderData camera;
     if (Hockey::FindActiveCamera(m_Scene, aspect, camera)) {

@@ -91,6 +91,16 @@ void PushShoot(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, bool h
     world.PushInput(input);
 }
 
+void GivePuckToShooter(Scene& scene, Entity skater, Entity puck) {
+    skater.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
+    skater.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+    puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(skater);
+
+    GameplayEventQueue events;
+    HK_CHECK(PuckPossession::TryAcquire(scene, skater, puck, events));
+    events.Clear();
+}
+
 } // namespace
 
 void RunShootingTests() {
@@ -111,13 +121,7 @@ void RunShootingTests() {
     HK_CHECK(skater.IsValid());
     HK_CHECK(puck.IsValid());
 
-    skater.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
-    skater.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
-    puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(skater);
-
-    GameplayEventQueue events;
-    HK_CHECK(PuckPossession::TryAcquire(scene, skater, puck, events));
-    events.Clear();
+    GivePuckToShooter(scene, skater, puck);
 
     const uint32_t playerIndex = skater.GetComponent<PlayerComponent>().playerIndex;
     PushShoot(world, playerIndex, 1, true, false);
@@ -145,4 +149,35 @@ void RunShootingTests() {
     HK_CHECK(!skater.GetComponent<ShotComponent>().charging);
     HK_CHECK_NEAR(skater.GetComponent<ShotComponent>().charge, 0.0f, 0.001);
     HK_CHECK(SawEvent(shotEvents, GameplayEventType::PuckShot));
+
+    {
+        Scene graceScene("ShotSelfCollisionGraceScene");
+        BuildValidGameplayScene(graceScene);
+
+        GameplayWorld graceWorld;
+        HK_CHECK_MSG(static_cast<bool>(graceWorld.Init(graceScene, nullptr, settings)), "gameplay world initializes");
+        graceWorld.DrainEvents();
+        FindMatch(graceScene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+
+        Entity shooter = FindPlayer(graceScene, PlayerSlot::HomeSkater0);
+        Entity gracePuck = FindPuck(graceScene);
+        GivePuckToShooter(graceScene, shooter, gracePuck);
+
+        const uint32_t shooterIndex = shooter.GetComponent<PlayerComponent>().playerIndex;
+        PushShoot(graceWorld, shooterIndex, 1, true, false);
+        graceWorld.FixedUpdate(graceScene, settings.fixedDeltaSeconds, 1);
+        PushShoot(graceWorld, shooterIndex, 2, false, true);
+        graceWorld.FixedUpdate(graceScene, settings.fixedDeltaSeconds, 2);
+
+        PuckRuntimeComponent& runtime = gracePuck.GetComponent<PuckRuntimeComponent>();
+        runtime.velocity = {0.0f, 0.0f, 0.0f};
+        gracePuck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(shooter);
+
+        graceWorld.FixedUpdate(graceScene, settings.fixedDeltaSeconds, 3);
+
+        const PuckGameplayComponent& gameplay = gracePuck.GetComponent<PuckGameplayComponent>();
+        HK_CHECK_EQ(gameplay.state, PuckState::Shot);
+        HK_CHECK(!gameplay.possessingPlayer.IsValid());
+        HK_CHECK(!shooter.GetComponent<SkaterComponent>().hasPuck);
+    }
 }

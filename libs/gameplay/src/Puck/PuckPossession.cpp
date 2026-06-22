@@ -32,6 +32,11 @@ bool CanAcquireState(PuckState state) {
     return state == PuckState::Loose || state == PuckState::Shot || state == PuckState::Passed;
 }
 
+bool IsTemporarilyIgnoredShooter(Entity player, const PuckGameplayComponent& gameplay) {
+    return gameplay.shotIgnoreTimer > 0.0f && gameplay.shotIgnorePlayer.IsValid() &&
+           gameplay.shotIgnorePlayer == player.GetUUID();
+}
+
 void FollowPossessingPlayer(Scene& scene, Entity puck, const PuckGameplayComponent& gameplay) {
     Entity player = FindEntity(scene, gameplay.possessingPlayer);
     if (!player.IsValid() || !player.HasComponent<TransformComponent>() || !puck.HasComponent<TransformComponent>()) {
@@ -58,6 +63,9 @@ bool PuckPossession::TryAcquire(Scene& scene, Entity player, Entity puck, Gamepl
     if (!CanAcquireState(gameplay.state) || gameplay.possessingPlayer.IsValid()) {
         return false;
     }
+    if (IsTemporarilyIgnoredShooter(player, gameplay)) {
+        return false;
+    }
 
     ClearSkaterPossession(scene);
     const PlayerComponent& playerComponent = player.GetComponent<PlayerComponent>();
@@ -66,6 +74,8 @@ bool PuckPossession::TryAcquire(Scene& scene, Entity player, Entity puck, Gamepl
     gameplay.lastTouchedPlayer = player.GetUUID();
     gameplay.lastTouchedTeam = playerComponent.team;
     gameplay.timeSinceLastTouch = 0.0f;
+    gameplay.shotIgnorePlayer = UUID(0);
+    gameplay.shotIgnoreTimer = 0.0f;
 
     if (player.HasComponent<SkaterComponent>()) {
         player.GetComponent<SkaterComponent>().hasPuck = true;

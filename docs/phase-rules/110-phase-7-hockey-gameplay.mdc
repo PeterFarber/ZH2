@@ -32,7 +32,7 @@ Implement `PlayerComponent`, `SkaterComponent`, `GoalieComponent`, `PuckGameplay
 
 ## Required systems
 
-Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, contextual steal/shoot input, charged shooting, passing, checking/contact, skater boost impulses, goalie two-charge boosts, goalie shield, goal detection, score, match clock, periods, pregame countdown, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
+Implement match setup, team/role assignment, skater movement, goalie movement, puck control, stick handling, contextual steal/shoot input, charged shooting, post-shot shooter self-collision grace, puck floor/ice-height clamping, passing, checking/contact, skater boost impulses, goalie two-charge boosts, goalie shield, goal detection, score, match clock, periods, pregame countdown, faceoffs, respawn/reset, out-of-play handling if used, and gameplay camera data if needed.
 
 ## Input model
 
@@ -48,7 +48,7 @@ Gameplay must use fixed timestep, have no renderer/editor dependency, no direct 
 
 ## Required tests
 
-Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, 180-second periods, pregame countdown events, skater/goalie movement, contextual steal/shoot paths, shooting/pass/check paths, skater boost impulses, goalie boost charges, goalie shield reflection/bounce, waypoint clearing, S double-tap stop, role-specific collider authoring, and server-mode fixed tick.
+Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/role assignment, puck reset, goal detection, score, faceoff, match timer, 180-second periods, pregame countdown events, skater/goalie movement, contextual steal/shoot paths, shooting/pass/check paths, post-shot shooter grace, puck floor clamping, shot charge snapshot data, skater boost impulses, goalie boost charges, goalie shield reflection/bounce, waypoint clearing, S double-tap stop, role-specific collider authoring, and server-mode fixed tick.
 
 ## Definition of done
 

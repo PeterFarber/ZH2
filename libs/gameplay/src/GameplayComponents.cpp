@@ -189,8 +189,10 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "State" << YAML::Value << PuckStateToString(c.state);
         EmitUUID(out, "PossessingPlayer", c.possessingPlayer);
         EmitUUID(out, "LastTouchedPlayer", c.lastTouchedPlayer);
+        EmitUUID(out, "ShotIgnorePlayer", c.shotIgnorePlayer);
         out << YAML::Key << "LastTouchedTeam" << YAML::Value << GameplayTeamToString(c.lastTouchedTeam);
         out << YAML::Key << "TimeSinceLastTouch" << YAML::Value << c.timeSinceLastTouch;
+        out << YAML::Key << "ShotIgnoreTimer" << YAML::Value << c.shotIgnoreTimer;
         out << YAML::Key << "InPlay" << YAML::Value << c.inPlay;
         out << YAML::EndMap;
     }
@@ -363,8 +365,10 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["State"]) PuckStateFromString(n["State"].as<std::string>().c_str(), c.state);
         c.possessingPlayer = ReadUUID(n, "PossessingPlayer");
         c.lastTouchedPlayer = ReadUUID(n, "LastTouchedPlayer");
+        c.shotIgnorePlayer = ReadUUID(n, "ShotIgnorePlayer");
         if (n["LastTouchedTeam"]) GameplayTeamFromString(n["LastTouchedTeam"].as<std::string>().c_str(), c.lastTouchedTeam);
         if (n["TimeSinceLastTouch"]) c.timeSinceLastTouch = n["TimeSinceLastTouch"].as<float>();
+        if (n["ShotIgnoreTimer"]) c.shotIgnoreTimer = n["ShotIgnoreTimer"].as<float>();
         if (n["InPlay"]) c.inPlay = n["InPlay"].as<bool>();
         entity.AddOrReplaceComponent<PuckGameplayComponent>(c);
     }
@@ -517,6 +521,7 @@ void RegisterMetadata() {
         md.fields.push_back(MakePuckStateField(offsetof(PuckGameplayComponent, state)));
         md.fields.push_back(MakeTeamField("LastTouchedTeam", offsetof(PuckGameplayComponent, lastTouchedTeam)));
         md.fields.push_back(MakeField("TimeSinceLastTouch", FieldType::Float, offsetof(PuckGameplayComponent, timeSinceLastTouch)));
+        md.fields.push_back(MakeField("ShotIgnoreTimer", FieldType::Float, offsetof(PuckGameplayComponent, shotIgnoreTimer)));
         md.fields.push_back(MakeField("InPlay", FieldType::Bool, offsetof(PuckGameplayComponent, inPlay)));
         registry.RegisterComponent<PuckGameplayComponent>(std::move(md));
     }

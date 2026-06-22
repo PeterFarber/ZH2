@@ -38,6 +38,7 @@ struct PuckTuning {
     float maxSpeed = 45.0f;
     glm::vec3 possessionOffset{0.0f, 0.0f, 1.1f};
     float loosePuckDrag = 0.15f;
+    float floorY = 0.05f;
     float outOfPlayY = -5.0f;
 };
 
@@ -51,6 +52,7 @@ struct ShotTuning {
     float minPower = 8.0f;
     float maxPower = 32.0f;
     float chargeSeconds = 1.0f;
+    float selfCollisionGraceSeconds = 0.20f;
     float accuracyDegrees = 4.0f;
 };
 

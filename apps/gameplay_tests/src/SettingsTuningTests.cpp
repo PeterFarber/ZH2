@@ -55,8 +55,10 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(tuning.value.goalie.shieldDurationSeconds, 1.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.goalie.shieldCooldownSeconds, 5.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.puck.floorY, 0.05f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.puck.possessionOffset.z, 1.1f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.shot.maxPower, 32.0f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
 
         const std::string text = TuningSerializer::Serialize(tuning.value);
         GameplayTuning roundTrip;
@@ -64,6 +66,8 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(roundTrip.skater.boostImpulse, 7.5f, 0.0001f);
         HK_CHECK_EQ(roundTrip.goalie.boostCharges, 2u);
         HK_CHECK_NEAR(roundTrip.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
+        HK_CHECK_NEAR(roundTrip.puck.floorY, 0.05f, 0.0001f);
+        HK_CHECK_NEAR(roundTrip.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.pass.maxAssistAngleDegrees, 25.0f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.check.radius, 1.25f, 0.0001f);
     }

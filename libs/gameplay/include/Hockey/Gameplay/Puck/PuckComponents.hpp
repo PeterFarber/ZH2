@@ -24,8 +24,10 @@ struct PuckGameplayComponent {
     PuckState state = PuckState::Loose;
     UUID possessingPlayer{0};
     UUID lastTouchedPlayer{0};
+    UUID shotIgnorePlayer{0};
     GameplayTeam lastTouchedTeam = GameplayTeam::None;
     float timeSinceLastTouch = 0.0f;
+    float shotIgnoreTimer = 0.0f;
     bool inPlay = true;
 };
 

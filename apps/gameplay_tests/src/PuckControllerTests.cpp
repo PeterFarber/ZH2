@@ -66,6 +66,20 @@ void RunPuckControllerTests() {
     }
 
     {
+        Scene scene("PuckControllerFloorClamp");
+        Entity puck = AddPuck(scene, PuckState::Shot, {0.0f, -3.0f, 0.0f});
+        puck.GetComponent<TransformComponent>().localPosition = {0.0f, -0.25f, 0.0f};
+        GameplayTuning tuning;
+        tuning.puck.floorY = 0.05f;
+
+        PuckController::FixedUpdate(scene, tuning, 0.25f);
+
+        HK_CHECK_NEAR(puck.GetComponent<TransformComponent>().localPosition.y, tuning.puck.floorY, 0.0001f);
+        HK_CHECK_NEAR(puck.GetComponent<PuckRuntimeComponent>().velocity.y, 0.0f, 0.0001f);
+        HK_CHECK_NEAR(puck.GetComponent<PuckRuntimeComponent>().targetPosition.y, tuning.puck.floorY, 0.0001f);
+    }
+
+    {
         Scene scene("MovingPuckPossession");
         Entity player = AddPlayer(scene);
         Entity puck = AddPuck(scene, PuckState::Shot, {1.0f, 0.0f, 0.0f});

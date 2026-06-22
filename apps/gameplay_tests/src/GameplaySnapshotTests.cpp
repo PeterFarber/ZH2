@@ -89,6 +89,8 @@ void RunGameplaySnapshotTests() {
     Entity player = FindPlayer(scene, PlayerSlot::HomeSkater0);
     player.GetComponent<PlayerRuntimeComponent>().velocity = {1.0f, 0.0f, 0.0f};
     player.GetComponent<SkaterComponent>().hasPuck = true;
+    player.GetComponent<ShotComponent>().charge = 0.5f;
+    player.GetComponent<ShotComponent>().charging = true;
 
     Entity puck = FindPuck(scene);
     puck.GetComponent<PuckGameplayComponent>().state = PuckState::Possessed;
@@ -103,6 +105,8 @@ void RunGameplaySnapshotTests() {
     HK_CHECK_EQ(snapshot.players.size(), static_cast<std::size_t>(8));
     HK_CHECK_EQ(snapshot.players.front().playerIndex, 0u);
     HK_CHECK(snapshot.players.front().hasPuck);
+    HK_CHECK(snapshot.players.front().shotCharging);
+    HK_CHECK_NEAR(snapshot.players.front().shotChargeRatio, 0.5f, 0.0001f);
     HK_CHECK_EQ(snapshot.puck.entity, puck.GetUUID());
     HK_CHECK_EQ(snapshot.puck.state, PuckState::Possessed);
     HK_CHECK_EQ(snapshot.puck.possessingPlayer, player.GetUUID());

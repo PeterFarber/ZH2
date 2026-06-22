@@ -78,6 +78,9 @@ void ShootingSystem::FixedUpdate(Scene& scene,
     puckGameplay.state = PuckState::Shot;
     puckGameplay.lastTouchedPlayer = player.GetUUID();
     puckGameplay.lastTouchedTeam = player.GetComponent<PlayerComponent>().team;
+    puckGameplay.timeSinceLastTouch = 0.0f;
+    puckGameplay.shotIgnorePlayer = player.GetUUID();
+    puckGameplay.shotIgnoreTimer = std::max(0.0f, tuning.shot.selfCollisionGraceSeconds);
     puck.GetComponent<PuckRuntimeComponent>().velocity = direction * power;
 
     shot.charge = 0.0f;

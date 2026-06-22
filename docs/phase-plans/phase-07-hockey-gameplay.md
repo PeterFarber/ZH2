@@ -621,6 +621,7 @@ Puck:
   MaxSpeed: 45.0
   PossessionOffset: [0.0, 0.0, 1.1]
   LoosePuckDrag: 0.15
+  FloorY: 0.05
   OutOfPlayY: -5.0
 
 Stick:
@@ -632,6 +633,7 @@ Shot:
   MinPower: 8.0
   MaxPower: 32.0
   ChargeSeconds: 1.0
+  SelfCollisionGraceSeconds: 0.20
   AccuracyDegrees: 4.0
 
 Pass:
@@ -1003,9 +1005,11 @@ struct PuckGameplayComponent {
     PuckState state = PuckState::Loose;
     UUID possessingPlayer;
     UUID lastTouchedPlayer;
+    UUID shotIgnorePlayer;
     GameplayTeam lastTouchedTeam = GameplayTeam::None;
 
     float timeSinceLastTouch = 0.0f;
+    float shotIgnoreTimer = 0.0f;
     bool inPlay = true;
 };
 
@@ -1701,6 +1705,7 @@ shot power depends on charge
 shot releases possession
 shot applies puck velocity/impulse
 shot updates last touched player/team
+shot temporarily ignores the shooter so it cannot immediately reattach
 emit PuckShot
 ```
 
@@ -1709,6 +1714,7 @@ Rules:
 ```text
 shot power clamped
 shot has deterministic/random-free default
+puck remains clamped to the tuned floor/ice height
 accuracy can be deterministic based on tuning or disabled
 ```
 
@@ -1941,7 +1947,9 @@ struct PlayerGameplaySnapshot {
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 facingDirection;
+    float shotChargeRatio = 0.0f;
     bool hasPuck = false;
+    bool shotCharging = false;
 };
 
 struct PuckGameplaySnapshot {

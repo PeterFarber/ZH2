@@ -40,6 +40,7 @@ Source material:
 - [x] Gameplay event queue exists.
 - [x] Gameplay event names exist.
 - [x] Countdown, steal, boost, and goalie shield gameplay event names exist.
+- [x] Shot grace, puck floor height, and shot charge tuning exists.
 - [x] Optional gameplay event logging exists.
 
 ## Finished - Components And Validation
@@ -88,6 +89,8 @@ Source material:
 - [x] Puck possession exists.
 - [x] Stick handling exists.
 - [x] Shooting exists.
+- [x] Shot release has a tuned shooter self-collision/reacquire grace window.
+- [x] Puck controller clamps puck height to the tuned ice/floor height.
 - [x] Passing exists.
 - [x] Checking/poke check hooks exist.
 - [x] Explicit steal action exists.
@@ -99,8 +102,10 @@ Source material:
 - [x] Gameplay system/world ticking exists.
 - [x] Match snapshots exist.
 - [x] Player snapshots exist.
+- [x] Player snapshots expose shot charge state/ratio.
 - [x] Puck snapshots exist.
 - [x] Client local gameplay integration exists.
+- [x] Client local play draws a lightweight shot power bar while charging.
 - [x] Editor gameplay validation integration exists.
 - [x] Editor gameplay preview integration exists.
 - [x] Dedicated server headless gameplay integration exists.
@@ -118,6 +123,9 @@ Source material:
 - [x] Player movement tests exist.
 - [x] Puck interaction/controller tests exist.
 - [x] Shooting tests exist.
+- [x] Shooting tests cover post-shot shooter grace.
+- [x] Puck controller tests cover floor-height clamping.
+- [x] Snapshot tests cover shot charge ratio.
 - [x] Passing tests exist.
 - [x] Checking tests exist.
 - [x] Goal tests exist.

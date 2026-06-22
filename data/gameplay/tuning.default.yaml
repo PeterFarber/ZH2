@@ -26,6 +26,7 @@ Puck:
   MaxSpeed: 45.0
   PossessionOffset: [0.0, 0.0, 1.1]
   LoosePuckDrag: 0.15
+  FloorY: 0.05
   OutOfPlayY: -5.0
 Stick:
   Reach: 1.5
@@ -35,6 +36,7 @@ Shot:
   MinPower: 8.0
   MaxPower: 32.0
   ChargeSeconds: 1.0
+  SelfCollisionGraceSeconds: 0.20
   AccuracyDegrees: 4.0
 Pass:
   Power: 18.0

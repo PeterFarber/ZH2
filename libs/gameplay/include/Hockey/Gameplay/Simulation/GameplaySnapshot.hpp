@@ -10,6 +10,7 @@
 #include "Hockey/Gameplay/Match/MatchState.hpp"
 #include "Hockey/Gameplay/Puck/PuckComponents.hpp"
 #include "Hockey/Gameplay/Teams/TeamTypes.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 
 namespace Hockey {
 
@@ -23,7 +24,9 @@ struct PlayerGameplaySnapshot {
     glm::vec3 position{0.0f};
     glm::vec3 velocity{0.0f};
     glm::vec3 facingDirection{0.0f, 0.0f, 1.0f};
+    float shotChargeRatio = 0.0f;
     bool hasPuck = false;
+    bool shotCharging = false;
 };
 
 struct PuckGameplaySnapshot {
@@ -50,5 +53,6 @@ struct GameplaySnapshot {
 };
 
 GameplaySnapshot BuildGameplaySnapshot(Scene& scene, uint64_t tick);
+GameplaySnapshot BuildGameplaySnapshot(Scene& scene, uint64_t tick, const GameplayTuning& tuning);
 
 }

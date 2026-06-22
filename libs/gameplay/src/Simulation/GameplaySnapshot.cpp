@@ -27,7 +27,7 @@ void FillMatch(Scene& scene, GameplaySnapshot& snapshot) {
     snapshot.match.awayScore = match.awayScore;
 }
 
-void FillPlayers(Scene& scene, GameplaySnapshot& snapshot) {
+void FillPlayers(Scene& scene, GameplaySnapshot& snapshot, const GameplayTuning& tuning) {
     auto view = scene.Registry().view<PlayerComponent, TransformComponent>();
     for (const entt::entity handle : view) {
         Entity entity(handle, &scene);
@@ -47,6 +47,13 @@ void FillPlayers(Scene& scene, GameplaySnapshot& snapshot) {
         }
         if (entity.HasComponent<SkaterComponent>()) {
             playerSnapshot.hasPuck = entity.GetComponent<SkaterComponent>().hasPuck;
+        }
+        if (entity.HasComponent<ShotComponent>()) {
+            const ShotComponent& shot = entity.GetComponent<ShotComponent>();
+            playerSnapshot.shotCharging = shot.charging;
+            playerSnapshot.shotChargeRatio = tuning.shot.chargeSeconds > 0.0f
+                                                 ? std::clamp(shot.charge / tuning.shot.chargeSeconds, 0.0f, 1.0f)
+                                                 : (shot.charging ? 1.0f : 0.0f);
         }
         snapshot.players.push_back(playerSnapshot);
     }
@@ -82,10 +89,14 @@ void FillPuck(Scene& scene, GameplaySnapshot& snapshot) {
 } // namespace
 
 GameplaySnapshot BuildGameplaySnapshot(Scene& scene, uint64_t tick) {
+    return BuildGameplaySnapshot(scene, tick, GameplayTuning{});
+}
+
+GameplaySnapshot BuildGameplaySnapshot(Scene& scene, uint64_t tick, const GameplayTuning& tuning) {
     GameplaySnapshot snapshot;
     snapshot.tick = tick;
     FillMatch(scene, snapshot);
-    FillPlayers(scene, snapshot);
+    FillPlayers(scene, snapshot, tuning);
     FillPuck(scene, snapshot);
     return snapshot;
 }

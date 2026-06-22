@@ -30,6 +30,7 @@ private:
     void StepSimulation(float deltaTime);
     Hockey::GameplayInputFrame BuildLocalInput(uint64_t simulationTick);
     void SubmitPhysicsDebugDraw();
+    void SubmitGameplayDebugDraw();
 
     Hockey::Config m_Config;
     Hockey::Scene m_Scene{"Game Scene"};

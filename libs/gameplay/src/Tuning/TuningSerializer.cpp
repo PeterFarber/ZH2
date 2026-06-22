@@ -70,6 +70,7 @@ std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
     out << YAML::Key << "MaxSpeed" << YAML::Value << tuning.puck.maxSpeed;
     EmitVec3(out, "PossessionOffset", tuning.puck.possessionOffset);
     out << YAML::Key << "LoosePuckDrag" << YAML::Value << tuning.puck.loosePuckDrag;
+    out << YAML::Key << "FloorY" << YAML::Value << tuning.puck.floorY;
     out << YAML::Key << "OutOfPlayY" << YAML::Value << tuning.puck.outOfPlayY;
     out << YAML::EndMap;
 
@@ -83,6 +84,7 @@ std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
     out << YAML::Key << "MinPower" << YAML::Value << tuning.shot.minPower;
     out << YAML::Key << "MaxPower" << YAML::Value << tuning.shot.maxPower;
     out << YAML::Key << "ChargeSeconds" << YAML::Value << tuning.shot.chargeSeconds;
+    out << YAML::Key << "SelfCollisionGraceSeconds" << YAML::Value << tuning.shot.selfCollisionGraceSeconds;
     out << YAML::Key << "AccuracyDegrees" << YAML::Value << tuning.shot.accuracyDegrees;
     out << YAML::EndMap;
 
@@ -146,6 +148,7 @@ bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outT
         outTuning.puck.maxSpeed = ReadFloat(puck, "MaxSpeed", outTuning.puck.maxSpeed);
         outTuning.puck.possessionOffset = ReadVec3(puck, "PossessionOffset", outTuning.puck.possessionOffset);
         outTuning.puck.loosePuckDrag = ReadFloat(puck, "LoosePuckDrag", outTuning.puck.loosePuckDrag);
+        outTuning.puck.floorY = ReadFloat(puck, "FloorY", outTuning.puck.floorY);
         outTuning.puck.outOfPlayY = ReadFloat(puck, "OutOfPlayY", outTuning.puck.outOfPlayY);
     }
     if (const YAML::Node stick = root["Stick"]) {
@@ -157,6 +160,8 @@ bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outT
         outTuning.shot.minPower = ReadFloat(shot, "MinPower", outTuning.shot.minPower);
         outTuning.shot.maxPower = ReadFloat(shot, "MaxPower", outTuning.shot.maxPower);
         outTuning.shot.chargeSeconds = ReadFloat(shot, "ChargeSeconds", outTuning.shot.chargeSeconds);
+        outTuning.shot.selfCollisionGraceSeconds =
+            ReadFloat(shot, "SelfCollisionGraceSeconds", outTuning.shot.selfCollisionGraceSeconds);
         outTuning.shot.accuracyDegrees = ReadFloat(shot, "AccuracyDegrees", outTuning.shot.accuracyDegrees);
     }
     if (const YAML::Node pass = root["Pass"]) {
