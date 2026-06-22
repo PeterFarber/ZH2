@@ -5,7 +5,7 @@ This add-on bakes selected Blender mesh objects into modular PBR asset folders.
 ## Install For Development
 
 1. Open Blender.
-2. Add `C:\Users\Peter Farber\Documents\ZH2` to `sys.path` in a Blender Python console or startup script.
+2. Add your ZH2 repo root (`<repo-root>`) to `sys.path` in a Blender Python console or startup script.
 3. Import and register `tools.blender.pbr_bake_export.addon`.
 
 ## Output
