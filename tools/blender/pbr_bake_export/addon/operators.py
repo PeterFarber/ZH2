@@ -17,9 +17,9 @@ from .export import (
 )
 from .manifest import ExportManifest, write_manifest
 from .materials import build_material_plan, create_blender_material
-from .paths import TEXTURE_ROLES, build_asset_paths
+from .paths import TEXTURE_ROLES, build_asset_paths, sanitize_asset_name
 from .polyhaven import PolyhavenClient, PolyhavenError, select_texture_files
-from .types import AssetMode, MaterialSource, TextureResolution
+from .types import AssetMode, AssetPaths, MaterialSource, TextureResolution
 
 
 class _ClassStore:
@@ -68,6 +68,50 @@ def _polyhaven_cache_texture_paths(cache_root: Path, asset_id: str) -> dict[str,
     return {role: cache_dir / f"{asset_id}_{role}.png" for role in TEXTURE_ROLES}
 
 
+def _deduplicate_reserved_asset_name(asset_name: str, reserved_names: set[str] | None) -> str:
+    occupied_names = {name.lower() for name in reserved_names or set()}
+    candidate = asset_name
+    suffix = 2
+    while candidate.lower() in occupied_names:
+        candidate = f"{asset_name}_{suffix}"
+        suffix += 1
+    return candidate
+
+
+def _asset_paths_from_name(output_root: Path, asset_name: str) -> AssetPaths:
+    asset_dir = Path(output_root) / asset_name
+    texture_dir = asset_dir / "textures"
+    textures = {
+        role: texture_dir / f"{asset_name}_{role}.png"
+        for role in TEXTURE_ROLES
+    }
+
+    return AssetPaths(
+        asset_name=asset_name,
+        asset_dir=asset_dir,
+        texture_dir=texture_dir,
+        glb_path=asset_dir / f"{asset_name}.glb",
+        manifest_path=asset_dir / "manifest.json",
+        textures=textures,
+    )
+
+
+def _build_operator_asset_paths(
+    output_root: Path,
+    object_name: str,
+    reserved_names: set[str] | None,
+    overwrite_existing: bool,
+) -> AssetPaths:
+    if not overwrite_existing:
+        return build_asset_paths(output_root, object_name, reserved_names)
+
+    asset_name = _deduplicate_reserved_asset_name(
+        sanitize_asset_name(object_name),
+        reserved_names,
+    )
+    return _asset_paths_from_name(output_root, asset_name)
+
+
 def _relative_texture_paths(texture_paths: dict[str, Path], asset_dir: Path) -> dict[str, Path]:
     return {
         role: texture_path.relative_to(asset_dir)
@@ -83,6 +127,28 @@ def _assign_material(obj, material) -> None:
 
     materials.clear()
     materials.append(material)
+
+
+def _apply_material_source(
+    export_obj,
+    material_source: MaterialSource,
+    material_name: str,
+    texture_paths: dict[str, Path],
+    polyhaven_asset_id: str,
+    material_factory=create_blender_material,
+    assign_material=_assign_material,
+) -> None:
+    if material_source is MaterialSource.EXISTING:
+        return
+
+    material_plan = build_material_plan(
+        name=material_name,
+        source=material_source,
+        texture_paths=texture_paths,
+        polyhaven_asset_id=polyhaven_asset_id,
+    )
+    material = material_factory(material_plan)
+    assign_material(export_obj, material)
 
 
 def register():
@@ -171,7 +237,12 @@ def register():
             for source_obj in selected_objects:
                 export_obj = None
                 try:
-                    asset_paths = build_asset_paths(output_root, source_obj.name, reserved_names)
+                    asset_paths = _build_operator_asset_paths(
+                        output_root,
+                        source_obj.name,
+                        reserved_names,
+                        settings.overwrite_existing,
+                    )
                     reserved_names.add(asset_paths.asset_name)
 
                     validate_output_folder(asset_paths.asset_dir, settings.overwrite_existing)
@@ -198,14 +269,13 @@ def register():
                             return {"CANCELLED"}
                         material_texture_paths = _polyhaven_cache_texture_paths(cache_root, polyhaven_asset_id)
 
-                    material_plan = build_material_plan(
-                        name=f"{asset_paths.asset_name}_material",
-                        source=material_source,
+                    _apply_material_source(
+                        export_obj,
+                        material_source,
+                        material_name=f"{asset_paths.asset_name}_material",
                         texture_paths=material_texture_paths,
                         polyhaven_asset_id=polyhaven_asset_id,
                     )
-                    material = create_blender_material(material_plan)
-                    _assign_material(export_obj, material)
 
                     warnings = bake_object_maps(export_obj, asset_paths.textures, resolution)
                     export_glb(export_obj, asset_paths.glb_path)
