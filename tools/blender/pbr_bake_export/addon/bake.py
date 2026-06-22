@@ -26,6 +26,60 @@ def bake_map_specs() -> list[BakeMapSpec]:
     ]
 
 
+def _object_materials(obj) -> list[object]:
+    material_slots = getattr(obj, "material_slots", None)
+    if material_slots is not None:
+        materials = [getattr(slot, "material", None) for slot in material_slots]
+        if materials:
+            return materials
+
+    return [getattr(obj, "active_material", None)]
+
+
+def _node_materials_for_bake(obj) -> tuple[list[object], bool]:
+    node_materials: list[object] = []
+    has_missing_node_material = False
+    seen_node_trees: set[int] = set()
+
+    for material in _object_materials(obj):
+        node_tree = getattr(material, "node_tree", None) if material is not None else None
+        if material is None or not getattr(material, "use_nodes", False) or node_tree is None:
+            has_missing_node_material = True
+            continue
+
+        node_tree_id = id(node_tree)
+        if node_tree_id in seen_node_trees:
+            continue
+
+        seen_node_trees.add(node_tree_id)
+        node_materials.append(material)
+
+    return node_materials, has_missing_node_material
+
+
+def _attach_bake_image_nodes(materials: list[object], image) -> list[tuple[object, object, object]]:
+    targets = []
+    try:
+        for material in materials:
+            nodes = material.node_tree.nodes
+            previous_active_node = nodes.active
+            texture_node = nodes.new("ShaderNodeTexImage")
+            texture_node.image = image
+            nodes.active = texture_node
+            targets.append((nodes, previous_active_node, texture_node))
+    except Exception:
+        _restore_bake_image_nodes(targets)
+        raise
+
+    return targets
+
+
+def _restore_bake_image_nodes(targets: list[tuple[object, object, object]]) -> None:
+    for nodes, previous_active_node, texture_node in reversed(targets):
+        nodes.active = previous_active_node
+        nodes.remove(texture_node)
+
+
 def bake_object_maps(
     obj,
     texture_paths: dict[str, Path],
@@ -43,6 +97,7 @@ def bake_object_maps(
     previous_use_pass_direct = scene.render.bake.use_pass_direct
     previous_use_pass_indirect = scene.render.bake.use_pass_indirect
     previous_use_pass_color = scene.render.bake.use_pass_color
+    node_materials, has_missing_node_material = _node_materials_for_bake(obj)
 
     try:
         scene.render.engine = "CYCLES"
@@ -51,6 +106,8 @@ def bake_object_maps(
         view_layer.objects.active = obj
 
         for spec in bake_map_specs():
+            image = None
+            targets = []
             image = bpy.data.images.new(
                 f"{obj.name}_{spec.role}",
                 width=resolution.pixel_size,
@@ -62,23 +119,27 @@ def bake_object_maps(
             texture_path = texture_paths[spec.role]
             texture_path.parent.mkdir(parents=True, exist_ok=True)
 
-            material = getattr(obj, "active_material", None)
-            if material is not None and material.use_nodes and material.node_tree is not None:
-                texture_node = material.node_tree.nodes.new("ShaderNodeTexImage")
-                texture_node.image = image
-                material.node_tree.nodes.active = texture_node
-            else:
+            if has_missing_node_material or not node_materials:
                 warnings.append(f"{spec.role} baked from object without node material")
 
-            if spec.blender_bake_type == "DIFFUSE":
-                scene.render.bake.use_pass_direct = False
-                scene.render.bake.use_pass_indirect = False
-                scene.render.bake.use_pass_color = True
+            try:
+                targets = _attach_bake_image_nodes(node_materials, image)
 
-            bpy.ops.object.bake(type=spec.blender_bake_type, margin=margin)
-            image.filepath_raw = str(texture_path)
-            image.file_format = "PNG"
-            image.save()
+                if spec.blender_bake_type == "DIFFUSE":
+                    scene.render.bake.use_pass_direct = False
+                    scene.render.bake.use_pass_indirect = False
+                    scene.render.bake.use_pass_color = True
+
+                bpy.ops.object.bake(type=spec.blender_bake_type, margin=margin)
+                image.filepath_raw = str(texture_path)
+                image.file_format = "PNG"
+                image.save()
+            finally:
+                try:
+                    _restore_bake_image_nodes(targets)
+                finally:
+                    if image is not None:
+                        bpy.data.images.remove(image)
     finally:
         scene.render.bake.use_pass_direct = previous_use_pass_direct
         scene.render.bake.use_pass_indirect = previous_use_pass_indirect
