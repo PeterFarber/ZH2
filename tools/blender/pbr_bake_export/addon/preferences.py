@@ -1,5 +1,12 @@
 """Blender preferences and scene settings for PBR bake/export tooling."""
 
+from pathlib import Path
+
+from .polyhaven import downloaded_polyhaven_material_enum_items, polyhaven_asset_enum_items
+
+
+DEFAULT_CACHE_ROOT = "//assets/_polyhaven_cache"
+
 
 def _resolution_items():
     return (
@@ -7,6 +14,35 @@ def _resolution_items():
         ("8192", "8K", "Bake 8192 x 8192 textures"),
         ("128", "Test 128", "Bake 128 x 128 textures for development verification"),
     )
+
+
+def _polyhaven_asset_items(settings, _context):
+    return polyhaven_asset_enum_items(getattr(settings, "polyhaven_search_results", ""))
+
+
+def _cache_root_from_context(context):
+    if context is None:
+        return None
+
+    cache_root = DEFAULT_CACHE_ROOT
+    try:
+        cache_root = context.preferences.addons[__package__].preferences.cache_root
+    except (AttributeError, KeyError, TypeError):
+        pass
+
+    try:
+        import bpy
+
+        return Path(bpy.path.abspath(cache_root))
+    except Exception:
+        return Path(cache_root)
+
+
+def _downloaded_polyhaven_material_items(_settings, context):
+    cache_root = _cache_root_from_context(context)
+    if cache_root is None:
+        cache_root = Path("__missing_polyhaven_cache__")
+    return downloaded_polyhaven_material_enum_items(cache_root)
 
 
 def register():
@@ -76,9 +112,18 @@ def register():
             name="Poly Haven Query",
             default="",
         )
-        selected_polyhaven_asset: bpy.props.StringProperty(
-            name="Selected Asset",
+        polyhaven_search_results: bpy.props.StringProperty(
+            name="Poly Haven Search Results",
             default="",
+            options={"HIDDEN"},
+        )
+        selected_polyhaven_asset: bpy.props.EnumProperty(
+            name="Poly Haven Material",
+            items=_polyhaven_asset_items,
+        )
+        selected_downloaded_polyhaven_material: bpy.props.EnumProperty(
+            name="Downloaded Material",
+            items=_downloaded_polyhaven_material_items,
         )
         allow_resolution_fallback: bpy.props.BoolProperty(
             name="Allow Resolution Fallback",

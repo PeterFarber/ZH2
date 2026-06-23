@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tools.blender.pbr_bake_export.addon import operators
 from tools.blender.pbr_bake_export.addon.export import ExportPreflightError
+from tools.blender.pbr_bake_export.addon.polyhaven import POLYHAVEN_NO_SELECTION, PolyhavenAsset, polyhaven_asset_enum_items
 from tools.blender.pbr_bake_export.addon.types import AssetMode, MaterialSource
 
 
@@ -49,6 +50,45 @@ class OperatorPathTests(unittest.TestCase):
             paths = self._build_paths(root, "Wall Panel", {"wall_panel"}, overwrite_existing=True)
 
             self.assertEqual(paths.asset_name, "wall_panel_2")
+
+
+class OperatorPolyhavenCacheTests(unittest.TestCase):
+    def test_polyhaven_cache_texture_paths_include_only_downloaded_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache_root = Path(temp)
+            cache_dir = cache_root / "dirt"
+            cache_dir.mkdir()
+            (cache_dir / "dirt_basecolor.png").write_bytes(b"base")
+            (cache_dir / "dirt_normal.png").write_bytes(b"normal")
+            (cache_dir / "dirt_roughness.png").write_bytes(b"rough")
+            (cache_dir / "dirt_ao.png").write_bytes(b"ao")
+
+            texture_paths = operators._polyhaven_cache_texture_paths(cache_root, "dirt")
+
+        self.assertEqual(set(texture_paths), {"basecolor", "normal", "roughness", "ao"})
+        self.assertNotIn("metallic", texture_paths)
+
+    def test_validate_polyhaven_cache_material_requires_downloaded_core_textures(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache_root = Path(temp)
+            cache_dir = cache_root / "dirt"
+            cache_dir.mkdir()
+            (cache_dir / "dirt_basecolor.png").write_bytes(b"base")
+
+            with self.assertRaisesRegex(ExportPreflightError, "Downloaded Poly Haven material is missing"):
+                operators._validated_polyhaven_cache_texture_paths(cache_root, "dirt")
+
+    def test_validate_polyhaven_cache_material_allows_missing_metallic(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache_root = Path(temp)
+            cache_dir = cache_root / "dirt"
+            cache_dir.mkdir()
+            for role in ("basecolor", "normal", "roughness", "ao"):
+                (cache_dir / f"dirt_{role}.png").write_bytes(role.encode("ascii"))
+
+            texture_paths = operators._validated_polyhaven_cache_texture_paths(cache_root, "dirt")
+
+        self.assertEqual(set(texture_paths), {"basecolor", "normal", "roughness", "ao"})
 
 
 class _FakeData:
@@ -122,6 +162,47 @@ class OperatorMaterialTests(unittest.TestCase):
         self.assertIs(calls["assigned_obj"], export_obj)
         self.assertIs(calls["assigned_material"], generated_material)
 
+    def test_downloaded_polyhaven_material_applies_one_generated_material_to_all_selected_meshes(self):
+        first = _FakeObject(["source_one"])
+        second = _FakeObject(["source_two"])
+        generated_material = object()
+        texture_paths = {"basecolor": Path("cache/ice_floor_basecolor.png")}
+        calls = {"assigned": []}
+
+        def material_factory(plan):
+            calls["plan"] = plan
+            return generated_material
+
+        def assign_material(obj, material):
+            calls["assigned"].append((obj, material))
+
+        assigned_count = operators._apply_downloaded_polyhaven_material(
+            [first, second],
+            material_name="ice_floor_material",
+            texture_paths=texture_paths,
+            polyhaven_asset_id="ice_floor",
+            material_factory=material_factory,
+            assign_material=assign_material,
+        )
+
+        self.assertEqual(assigned_count, 2)
+        self.assertEqual(calls["plan"].name, "ice_floor_material")
+        self.assertEqual(calls["plan"].source, MaterialSource.POLY_HAVEN)
+        self.assertEqual(calls["plan"].texture_paths, texture_paths)
+        self.assertEqual(calls["plan"].polyhaven_asset_id, "ice_floor")
+        self.assertEqual(calls["assigned"], [(first, generated_material), (second, generated_material)])
+
+    def test_downloaded_polyhaven_material_requires_selected_meshes(self):
+        with self.assertRaisesRegex(ExportPreflightError, "Select at least one mesh object"):
+            operators._apply_downloaded_polyhaven_material(
+                [],
+                material_name="ice_floor_material",
+                texture_paths={"basecolor": Path("cache/ice_floor_basecolor.png")},
+                polyhaven_asset_id="ice_floor",
+                material_factory=lambda _plan: object(),
+                assign_material=lambda _obj, _material: None,
+            )
+
 
 class OperatorPreferencesTests(unittest.TestCase):
     def test_addon_preferences_falls_back_for_direct_repo_registration(self):
@@ -133,6 +214,45 @@ class OperatorPreferencesTests(unittest.TestCase):
 
         self.assertEqual(prefs.user_agent, "ZH2-Blender-PBR-Bake-Export/0.1")
         self.assertEqual(prefs.cache_root, "//assets/_polyhaven_cache")
+
+
+class OperatorPolyhavenSearchStateTests(unittest.TestCase):
+    def _store_polyhaven_search_results(self, *args, **kwargs):
+        self.assertTrue(
+            hasattr(operators, "_store_polyhaven_search_results"),
+            "operators should expose Poly Haven search result state storage",
+        )
+        return operators._store_polyhaven_search_results(*args, **kwargs)
+
+    def test_store_polyhaven_search_results_populates_dropdown_and_selects_first_result(self):
+        settings = types.SimpleNamespace(
+            polyhaven_search_results="",
+            selected_polyhaven_asset=POLYHAVEN_NO_SELECTION,
+        )
+
+        self._store_polyhaven_search_results(
+            settings,
+            [
+                PolyhavenAsset(asset_id="red_brick_floor", name="Red Brick Floor"),
+                PolyhavenAsset(asset_id="ice_floor", name="Ice Floor"),
+            ],
+        )
+
+        self.assertEqual(settings.selected_polyhaven_asset, "red_brick_floor")
+        items = polyhaven_asset_enum_items(settings.polyhaven_search_results)
+        self.assertEqual(items[0][1], "Red Brick Floor (red_brick_floor)")
+        self.assertEqual(items[1][1], "Ice Floor (ice_floor)")
+
+    def test_store_polyhaven_search_results_clears_selection_when_results_are_empty(self):
+        settings = types.SimpleNamespace(
+            polyhaven_search_results="old",
+            selected_polyhaven_asset="old_asset",
+        )
+
+        self._store_polyhaven_search_results(settings, [])
+
+        self.assertEqual(settings.polyhaven_search_results, "")
+        self.assertEqual(settings.selected_polyhaven_asset, POLYHAVEN_NO_SELECTION)
 
 
 class OperatorPreflightTests(unittest.TestCase):
@@ -159,10 +279,23 @@ class OperatorPreflightTests(unittest.TestCase):
     def test_polyhaven_export_requires_selected_asset_before_output_side_effects(self):
         settings = types.SimpleNamespace(
             autogenerate_low_poly=True,
-            selected_polyhaven_asset=" ",
+            selected_downloaded_polyhaven_material=" ",
         )
 
-        with self.assertRaisesRegex(ExportPreflightError, "Select a Poly Haven material before exporting"):
+        with self.assertRaisesRegex(ExportPreflightError, "Select a downloaded Poly Haven material before exporting"):
+            self._validate_export_prerequisites(
+                settings,
+                mode=AssetMode.HIGH_POLY,
+                material_source=MaterialSource.POLY_HAVEN,
+            )
+
+    def test_polyhaven_export_treats_dropdown_placeholder_as_missing_selection(self):
+        settings = types.SimpleNamespace(
+            autogenerate_low_poly=True,
+            selected_downloaded_polyhaven_material=POLYHAVEN_NO_SELECTION,
+        )
+
+        with self.assertRaisesRegex(ExportPreflightError, "Select a downloaded Poly Haven material before exporting"):
             self._validate_export_prerequisites(
                 settings,
                 mode=AssetMode.HIGH_POLY,
@@ -172,7 +305,7 @@ class OperatorPreflightTests(unittest.TestCase):
     def test_valid_prerequisites_return_stripped_polyhaven_asset_id(self):
         settings = types.SimpleNamespace(
             autogenerate_low_poly=True,
-            selected_polyhaven_asset="  wall_plaster  ",
+            selected_downloaded_polyhaven_material="  wall_plaster  ",
         )
 
         asset_id = self._validate_export_prerequisites(

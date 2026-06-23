@@ -34,9 +34,13 @@ def register():
                 layout.prop(settings, "selected_polyhaven_asset")
                 layout.prop(settings, "allow_resolution_fallback")
                 layout.operator("zh2.polyhaven_download")
+                layout.prop(settings, "selected_downloaded_polyhaven_material")
+                layout.operator("zh2.polyhaven_apply_material")
 
             layout.prop(settings, "overwrite_existing")
-            layout.operator("zh2.bake_export_selected")
+            row = layout.row(align=True)
+            row.operator("zh2.bake_selected")
+            row.operator("zh2.export_selected")
 
     bpy.utils.register_class(ZH2_PT_PBRBakeExportPanel)
 

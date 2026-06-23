@@ -5,9 +5,15 @@ import unittest
 from pathlib import Path
 
 from tools.blender.pbr_bake_export.addon.polyhaven import (
+    POLYHAVEN_NO_SELECTION,
+    PolyhavenAsset,
     PolyhavenClient,
     PolyhavenError,
     TextureFileSelection,
+    downloaded_polyhaven_material_enum_items,
+    find_downloaded_polyhaven_materials,
+    polyhaven_asset_enum_items,
+    serialize_asset_choices,
     match_texture_role,
     select_texture_files,
 )
@@ -58,6 +64,63 @@ class FakeFetcher:
 
 
 class PolyhavenTests(unittest.TestCase):
+    def test_polyhaven_asset_enum_items_show_search_placeholder_without_results(self):
+        items = polyhaven_asset_enum_items("")
+
+        self.assertEqual(items[0][0], POLYHAVEN_NO_SELECTION)
+        self.assertIn("Search", items[0][1])
+
+    def test_polyhaven_asset_enum_items_use_search_result_names_and_ids(self):
+        payload = serialize_asset_choices(
+            [
+                PolyhavenAsset(asset_id="red_brick_floor", name="Red Brick Floor"),
+                PolyhavenAsset(asset_id="ice_floor", name="Ice Floor"),
+            ]
+        )
+
+        items = polyhaven_asset_enum_items(payload)
+
+        self.assertEqual(items[0][0], "red_brick_floor")
+        self.assertEqual(items[0][1], "Red Brick Floor (red_brick_floor)")
+        self.assertEqual(items[1][0], "ice_floor")
+        self.assertEqual(items[1][1], "Ice Floor (ice_floor)")
+
+    def test_find_downloaded_polyhaven_materials_lists_complete_cached_materials(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache_root = Path(temp)
+            brick = cache_root / "red_brick_floor"
+            brick.mkdir()
+            for role in ("basecolor", "normal", "roughness", "ao"):
+                (brick / f"red_brick_floor_{role}.png").write_bytes(role.encode("ascii"))
+            incomplete = cache_root / "unfinished"
+            incomplete.mkdir()
+            (incomplete / "unfinished_basecolor.png").write_bytes(b"base")
+
+            materials = find_downloaded_polyhaven_materials(cache_root)
+
+        self.assertEqual([material.asset_id for material in materials], ["red_brick_floor"])
+        self.assertEqual(materials[0].name, "Red Brick Floor")
+
+    def test_downloaded_polyhaven_material_enum_items_show_cache_placeholder_without_materials(self):
+        with tempfile.TemporaryDirectory() as temp:
+            items = downloaded_polyhaven_material_enum_items(Path(temp))
+
+        self.assertEqual(items[0][0], POLYHAVEN_NO_SELECTION)
+        self.assertIn("No downloaded", items[0][1])
+
+    def test_downloaded_polyhaven_material_enum_items_use_cached_materials(self):
+        with tempfile.TemporaryDirectory() as temp:
+            cache_root = Path(temp)
+            material_dir = cache_root / "ice_floor"
+            material_dir.mkdir()
+            for role in ("basecolor", "normal", "roughness", "ao"):
+                (material_dir / f"ice_floor_{role}.png").write_bytes(role.encode("ascii"))
+
+            items = downloaded_polyhaven_material_enum_items(cache_root)
+
+        self.assertEqual(items[0][0], "ice_floor")
+        self.assertEqual(items[0][1], "Ice Floor (ice_floor)")
+
     def test_search_textures_sends_configured_user_agent(self):
         fetcher = FakeFetcher()
         client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=fetcher)
@@ -102,7 +165,7 @@ class PolyhavenTests(unittest.TestCase):
         self.assertEqual(match_texture_role("rough_concrete_ao_4k.png"), "ao")
         self.assertEqual(match_texture_role("nordic_wall_rough_4k.png"), "roughness")
 
-    def test_select_texture_files_rejects_slug_only_role_tokens(self):
+    def test_select_texture_files_ignores_slug_only_role_tokens(self):
         file_tree = {
             "4k": {
                 "png": {
@@ -115,8 +178,10 @@ class PolyhavenTests(unittest.TestCase):
             }
         }
 
-        with self.assertRaisesRegex(PolyhavenError, "metallic"):
-            select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
+        selection = select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
+
+        self.assertNotIn("metallic", selection.urls)
+        self.assertIn("metallic missing; using material default 0.0", selection.warnings)
 
     def test_select_texture_files_requires_all_roles_at_requested_resolution(self):
         client = PolyhavenClient(user_agent="ZH2-Test/1.0", fetcher=FakeFetcher())
@@ -128,6 +193,20 @@ class PolyhavenTests(unittest.TestCase):
         self.assertEqual(selection.urls["basecolor"], "https://cdn/basecolor.png")
         self.assertEqual(selection.urls["normal"], "https://cdn/normal.png")
         self.assertEqual(selection.resolution, TextureResolution.FOUR_K)
+
+    def test_select_texture_files_allows_dielectric_material_without_metallic_texture(self):
+        file_tree = {
+            "Diffuse": {"4k": {"png": {"url": "https://cdn/diff.png"}}},
+            "nor_gl": {"4k": {"png": {"url": "https://cdn/nor_gl.png"}}},
+            "Rough": {"4k": {"png": {"url": "https://cdn/rough.png"}}},
+            "AO": {"4k": {"png": {"url": "https://cdn/ao.png"}}},
+        }
+
+        selection = select_texture_files(file_tree, TextureResolution.FOUR_K, allow_resolution_fallback=False)
+
+        self.assertEqual(selection.urls["basecolor"], "https://cdn/diff.png")
+        self.assertNotIn("metallic", selection.urls)
+        self.assertIn("metallic missing; using material default 0.0", selection.warnings)
 
     def test_select_texture_files_uses_deterministic_fallback_resolution(self):
         def tree_with_resolution_order(order):

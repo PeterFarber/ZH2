@@ -15,7 +15,10 @@ from .types import TextureResolution
 
 
 API_ROOT = "https://api.polyhaven.com"
-REQUIRED_ROLES = ("basecolor", "normal", "roughness", "metallic", "ao")
+POLYHAVEN_NO_SELECTION = "__NO_POLYHAVEN_ASSET__"
+TEXTURE_ROLE_ORDER = ("basecolor", "normal", "roughness", "metallic", "ao")
+REQUIRED_ROLES = ("basecolor", "normal", "roughness", "ao")
+OPTIONAL_ROLES = ("metallic",)
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _DOWNLOAD_URL_SCHEMES = {"http", "https"}
 _DOWNLOAD_FORMAT_TOKENS = {"png", "jpg", "jpeg"}
@@ -53,6 +56,121 @@ class PolyhavenError(RuntimeError):
 class PolyhavenAsset:
     asset_id: str
     name: str
+
+
+_ENUM_ITEM_CACHE: dict[str, tuple[tuple[str, str, str], ...]] = {}
+
+
+def serialize_asset_choices(assets: list[PolyhavenAsset]) -> str:
+    choices: list[dict[str, str]] = []
+    for asset in assets:
+        asset_id = asset.asset_id.strip()
+        if not asset_id or asset_id == POLYHAVEN_NO_SELECTION:
+            continue
+        name = asset.name.strip() or asset_id
+        choices.append({"asset_id": asset_id, "name": name})
+    if not choices:
+        return ""
+    return json.dumps(choices, separators=(",", ":"))
+
+
+def deserialize_asset_choices(payload: str) -> list[PolyhavenAsset]:
+    if not payload.strip():
+        return []
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(data, list):
+        return []
+
+    assets: list[PolyhavenAsset] = []
+    seen_asset_ids: set[str] = set()
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        asset_id = str(item.get("asset_id", "")).strip()
+        if not asset_id or asset_id == POLYHAVEN_NO_SELECTION or asset_id in seen_asset_ids:
+            continue
+        name = str(item.get("name", asset_id)).strip() or asset_id
+        assets.append(PolyhavenAsset(asset_id=asset_id, name=name))
+        seen_asset_ids.add(asset_id)
+    return assets
+
+
+def polyhaven_asset_enum_items(payload: str) -> tuple[tuple[str, str, str], ...]:
+    cached = _ENUM_ITEM_CACHE.get(payload)
+    if cached is not None:
+        return cached
+
+    assets = deserialize_asset_choices(payload)
+    if not assets:
+        items = (
+            (
+                POLYHAVEN_NO_SELECTION,
+                "Search Poly Haven first",
+                "Run Search Poly Haven to populate material choices",
+            ),
+        )
+    else:
+        items = tuple(
+            (
+                asset.asset_id,
+                f"{asset.name} ({asset.asset_id})",
+                asset.asset_id,
+            )
+            for asset in assets
+        )
+
+    _ENUM_ITEM_CACHE[payload] = items
+    return items
+
+
+def _polyhaven_asset_display_name(asset_id: str) -> str:
+    words = [word for word in re.split(r"[_-]+", asset_id.strip()) if word]
+    if not words:
+        return asset_id
+    return " ".join(word[:1].upper() + word[1:] for word in words)
+
+
+def find_downloaded_polyhaven_materials(cache_root: Path) -> list[PolyhavenAsset]:
+    try:
+        cache_dirs = sorted(
+            (path for path in cache_root.iterdir() if path.is_dir()),
+            key=lambda path: path.name.lower(),
+        )
+    except OSError:
+        return []
+
+    materials: list[PolyhavenAsset] = []
+    for cache_dir in cache_dirs:
+        asset_id = cache_dir.name.strip()
+        if not asset_id or asset_id == POLYHAVEN_NO_SELECTION:
+            continue
+        if all((cache_dir / f"{asset_id}_{role}.png").is_file() for role in REQUIRED_ROLES):
+            materials.append(PolyhavenAsset(asset_id=asset_id, name=_polyhaven_asset_display_name(asset_id)))
+    return materials
+
+
+def downloaded_polyhaven_material_enum_items(cache_root: Path) -> tuple[tuple[str, str, str], ...]:
+    materials = find_downloaded_polyhaven_materials(cache_root)
+    if not materials:
+        return (
+            (
+                POLYHAVEN_NO_SELECTION,
+                "No downloaded materials",
+                "Download a Poly Haven material before selecting one",
+            ),
+        )
+
+    return tuple(
+        (
+            material.asset_id,
+            f"{material.name} ({material.asset_id})",
+            f"Cached Poly Haven material {material.asset_id}",
+        )
+        for material in materials
+    )
 
 
 @dataclass(frozen=True)
@@ -293,14 +411,16 @@ def select_texture_files(
             requested_candidates.setdefault(role, []).append(candidate)
 
     selected: dict[str, _TextureCandidate] = {}
-    for role in REQUIRED_ROLES:
+    for role in TEXTURE_ROLE_ORDER:
         if role in requested_candidates:
             selected[role] = min(requested_candidates[role], key=_requested_candidate_key)
 
     missing = [role for role in REQUIRED_ROLES if role not in selected]
     warnings: list[str] = []
-    if missing and allow_resolution_fallback:
-        for role in missing:
+    if allow_resolution_fallback:
+        for role in TEXTURE_ROLE_ORDER:
+            if role in selected:
+                continue
             if role in fallback_candidates:
                 selected[role] = min(fallback_candidates[role], key=_fallback_candidate_key)
                 warnings.append(f"{role} used available fallback resolution")
@@ -310,9 +430,13 @@ def select_texture_files(
         joined_missing = ", ".join(missing)
         raise PolyhavenError(f"missing required texture roles: {joined_missing}")
 
+    for role in OPTIONAL_ROLES:
+        if role not in selected:
+            warnings.append(f"{role} missing; using material default 0.0")
+
     return TextureFileSelection(
         resolution=resolution,
-        urls={role: selected[role].url for role in REQUIRED_ROLES},
+        urls={role: selected[role].url for role in TEXTURE_ROLE_ORDER if role in selected},
         warnings=warnings,
     )
 
