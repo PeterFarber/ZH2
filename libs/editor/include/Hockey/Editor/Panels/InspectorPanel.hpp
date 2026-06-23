@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "Hockey/Editor/Inspector/AssetInspector.hpp"
 #include "Hockey/Editor/Inspector/ComponentAddMenu.hpp"
 #include "Hockey/Editor/Inspector/ComponentInspector.hpp"
 #include "Hockey/Editor/Panel.hpp"
@@ -22,6 +23,7 @@ public:
 private:
     void DrawHeader(EditorContext& context, Entity& entity);
 
+    AssetInspector m_AssetInspector;
     ComponentInspector m_Inspector;
     ComponentAddMenu m_AddMenu;
     char m_NameBuffer[256] = {};

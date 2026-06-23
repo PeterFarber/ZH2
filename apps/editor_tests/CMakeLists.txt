@@ -1,9 +1,11 @@
 add_executable(HockeyEditorTests
     src/EditorTestsMain.cpp
     src/EditorVersionTests.cpp
+    src/EditorContextAssetSelectionTests.cpp
     src/EditorSettingsTests.cpp
     src/SelectionTests.cpp
     src/InspectorFieldTests.cpp
+    src/InspectorAssetContractTests.cpp
     src/UndoRedoTests.cpp
     src/CameraLightGizmoTests.cpp
     src/SceneViewOverlayTests.cpp

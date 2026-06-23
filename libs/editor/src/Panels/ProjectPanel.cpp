@@ -1,6 +1,7 @@
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -14,6 +15,7 @@
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Assets/AssetPath.hpp"
 #include "Hockey/Assets/AssetType.hpp"
+#include "Hockey/Assets/Serialization/MaterialSerializer.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
@@ -22,9 +24,7 @@
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/FileDialog.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
-#include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
-#include "Hockey/Editor/Project/EditorAssetPreview.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 namespace Hockey {
@@ -33,6 +33,23 @@ namespace {
 
 constexpr int kMaxSearchResults = 400;
 constexpr float kListModeThreshold = 32.0f;
+
+struct SectionInfo {
+    ProjectSection section;
+    AssetType type;
+    const char* label;
+};
+
+constexpr SectionInfo kSections[] = {
+    {ProjectSection::All, AssetType::Unknown, "All"},
+    {ProjectSection::Models, AssetType::Model, "Models"},
+    {ProjectSection::Meshes, AssetType::Mesh, "Meshes"},
+    {ProjectSection::Materials, AssetType::Material, "Materials"},
+    {ProjectSection::Prefabs, AssetType::Prefab, "Prefabs"},
+    {ProjectSection::Scenes, AssetType::Scene, "Scenes"},
+    {ProjectSection::Textures, AssetType::Texture, "Textures"},
+    {ProjectSection::Shaders, AssetType::Shader, "Shaders"},
+};
 
 std::string ToLower(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
@@ -146,6 +163,53 @@ std::filesystem::path UniqueDestination(const std::filesystem::path& dir, const 
     return candidate;
 }
 
+ProjectSection SectionForAssetType(AssetType type) {
+    switch (type) {
+    case AssetType::Model:
+        return ProjectSection::Models;
+    case AssetType::Mesh:
+        return ProjectSection::Meshes;
+    case AssetType::Material:
+        return ProjectSection::Materials;
+    case AssetType::Prefab:
+        return ProjectSection::Prefabs;
+    case AssetType::Scene:
+        return ProjectSection::Scenes;
+    case AssetType::Texture:
+        return ProjectSection::Textures;
+    case AssetType::Shader:
+        return ProjectSection::Shaders;
+    default:
+        return ProjectSection::All;
+    }
+}
+
+const char* SectionLabel(ProjectSection section) {
+    for (const SectionInfo& info : kSections) {
+        if (info.section == section) {
+            return info.label;
+        }
+    }
+    return "All";
+}
+
+AssetType SectionType(ProjectSection section) {
+    for (const SectionInfo& info : kSections) {
+        if (info.section == section) {
+            return info.type;
+        }
+    }
+    return AssetType::Unknown;
+}
+
+std::string SectionDisplayLabel(const SectionInfo& info, const AssetDatabase* database, const ProjectBrowser& browser) {
+    std::string label = info.label;
+    if (database != nullptr) {
+        label += " (" + std::to_string(browser.SectionEntries(database, info.type).size()) + ")";
+    }
+    return label;
+}
+
 bool TypeMatches(EditorFileType filter, const CookedProjectEntry& entry) {
     if (filter == EditorFileType::Unknown) {
         return true;
@@ -224,28 +288,20 @@ void ProjectPanel::OnImGui(EditorContext& context) {
         const float bodyHeight = std::max(0.0f, avail.y - statusHeight);
 
         if (ImGui::BeginChild("##project-body", ImVec2(0.0f, bodyHeight), false)) {
-            const float treeWidth = std::max(180.0f, ImGui::GetContentRegionAvail().x * 0.32f);
-            if (ImGui::BeginChild("##project-folder-tree", ImVec2(treeWidth, 0.0f), true)) {
-                DrawFolderTree(context);
+            if (ImGui::BeginChild("##project-section-list", ImVec2(SectionListWidth(context), 0.0f), true)) {
+                DrawSectionList(context);
             }
             ImGui::EndChild();
 
             ImGui::SameLine();
 
             if (ImGui::BeginChild("##project-right", ImVec2(0.0f, 0.0f), false)) {
-                const float detailsHeight = 190.0f;
-                const float contentsHeight = std::max(120.0f, ImGui::GetContentRegionAvail().y - detailsHeight - 6.0f);
-                if (ImGui::BeginChild("##project-contents", ImVec2(0.0f, contentsHeight), true)) {
+                if (ImGui::BeginChild("##project-contents", ImVec2(0.0f, 0.0f), true)) {
                     if (m_Browser.SearchActive()) {
                         DrawSearchResults(context);
                     } else {
                         DrawFolderContents(context);
                     }
-                }
-                ImGui::EndChild();
-
-                if (ImGui::BeginChild("##project-details", ImVec2(0.0f, 0.0f), true)) {
-                    DrawDetails(context);
                 }
                 ImGui::EndChild();
             }
@@ -260,16 +316,18 @@ void ProjectPanel::OnImGui(EditorContext& context) {
 }
 
 void ProjectPanel::EnsureSelectionState(EditorContext& context) {
-    if (m_SelectedFolder.empty() || !m_Browser.IsWithinRoots(m_SelectedFolder)) {
-        if (!m_Browser.Roots().empty()) {
-            m_SelectedFolder = m_Browser.Roots().front().path;
-        }
+    context.SyncAssetSelectionWithEntitySelection();
+    if (context.SelectedAsset().IsValid()) {
+        m_SelectedAssetId = context.SelectedAsset();
     }
 
     if (const AssetMetadata* meta = SelectedMetadata(context)) {
+        m_SelectedSection = SectionForAssetType(meta->type);
+        m_SelectedFolder = ResolveProjectPath(meta->rawPath).parent_path();
         m_Browser.Select(ResolveProjectPath(meta->rawPath));
     } else {
         m_SelectedAssetId = {};
+        m_SelectedFolder = SelectedSectionRawFolder(context, AssetType::Unknown);
     }
 }
 
@@ -280,12 +338,12 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
     EditorTooltip::ForLastItem("Create source assets under the selected Project folder");
     if (ImGui::BeginPopup("##project-create")) {
         if (ImGui::MenuItem("New Folder...")) {
-            RequestModal(Modal::CreateFolder, m_SelectedFolder);
+            RequestModal(Modal::CreateFolder, SelectedSectionRawFolder(context, AssetType::Unknown));
         }
-        EditorTooltip::ForLastItem("Create a source folder in the selected virtual folder");
+        EditorTooltip::ForLastItem("Create a source folder under the selected Project section");
         ImGui::BeginDisabled(context.assetManager == nullptr);
         if (ImGui::MenuItem("New Material")) {
-            CreateMaterialAsset(context, m_SelectedFolder);
+            CreateMaterialAsset(context, SelectedSectionRawFolder(context, AssetType::Material));
         }
         EditorTooltip::ForLastItem("Create, import, and cook a new material source asset");
         ImGui::EndDisabled();
@@ -325,22 +383,12 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
     }
     EditorTooltip::ForLastItem("Clear the Project search filter");
 
-    static const char* const kScopes[] = {"All", "Selected Root", "Selected Folder"};
-    int scope = static_cast<int>(m_SearchScope);
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(130.0f);
-    if (ImGui::Combo("##project-search-scope", &scope, kScopes, 3)) {
-        m_SearchScope = static_cast<ProjectSearchScope>(scope);
-    }
-    EditorTooltip::ForLastItem("Choose whether search scans all cooked roots, the selected root, or this folder");
-
     struct TypeOption {
         EditorFileType type;
         const char* label;
     };
     static constexpr TypeOption kTypes[] = {
         {EditorFileType::Unknown, "All"},
-        {EditorFileType::Folder, "Folder"},
         {EditorFileType::Scene, "Scene"},
         {EditorFileType::Prefab, "Prefab"},
         {EditorFileType::Material, "Material"},
@@ -378,61 +426,32 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
     }
 }
 
-void ProjectPanel::DrawFolderTree(EditorContext& context) {
+float ProjectPanel::SectionListWidth(EditorContext& context) const {
     const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
-    for (const ProjectBrowser::Root& root : m_Browser.Roots()) {
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (SamePath(root.path, m_SelectedFolder)) {
-            flags |= ImGuiTreeNodeFlags_Selected;
-        }
-        if (&root == &m_Browser.Roots().front()) {
-            flags |= ImGuiTreeNodeFlags_DefaultOpen;
-        }
-        ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(EditorFileType::Folder, true));
-        const bool open = ImGui::TreeNodeEx(root.path.string().c_str(), flags, "%s", root.label.c_str());
-        ImGui::PopStyleColor();
-        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-            m_SelectedFolder = root.path;
-            m_SelectedAssetId = {};
-        }
-        if (open) {
-            if (database == nullptr) {
-                ImGui::TextDisabled("(no asset database)");
-            } else {
-                for (const CookedProjectEntry& entry : m_Browser.Entries(root.path, database)) {
-                    if (entry.isDirectory) {
-                        DrawFolderNode(context, entry);
-                    }
-                }
-            }
-            ImGui::TreePop();
-        }
+    float maxLabelWidth = 0.0f;
+    for (const SectionInfo& info : kSections) {
+        const std::string label = SectionDisplayLabel(info, database, m_Browser);
+        maxLabelWidth = std::max(maxLabelWidth, ImGui::CalcTextSize(label.c_str()).x);
     }
+
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return std::ceil(maxLabelWidth + (style.WindowPadding.x * 2.0f) + (style.FramePadding.x * 2.0f) +
+                     (style.ChildBorderSize * 2.0f));
 }
 
-void ProjectPanel::DrawFolderNode(EditorContext& context, const CookedProjectEntry& folder) {
+void ProjectPanel::DrawSectionList(EditorContext& context) {
     const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-    if (SamePath(folder.virtualFolderPath, m_SelectedFolder)) {
-        flags |= ImGuiTreeNodeFlags_Selected;
-    }
-    ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(EditorFileType::Folder, true));
-    const bool open = ImGui::TreeNodeEx(folder.virtualFolderPath.string().c_str(), flags, "%s", folder.displayName.c_str());
-    ImGui::PopStyleColor();
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        m_SelectedFolder = folder.virtualFolderPath;
-        m_SelectedAssetId = {};
-    }
-    DrawCookedContextMenu(context, folder);
-    if (open) {
-        if (database != nullptr) {
-            for (const CookedProjectEntry& child : m_Browser.Entries(folder.virtualFolderPath, database)) {
-                if (child.isDirectory) {
-                    DrawFolderNode(context, child);
-                }
-            }
+    for (const SectionInfo& info : kSections) {
+        const bool selected = m_SelectedSection == info.section;
+        const std::string label = SectionDisplayLabel(info, database, m_Browser);
+
+        if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns)) {
+            m_SelectedSection = info.section;
+            m_SelectedAssetId = {};
+            context.ClearAssetSelection();
+            m_SelectedFolder = SelectedSectionRawFolder(context, info.type);
         }
-        ImGui::TreePop();
+        EditorTooltip::ForLastItem("Show cooked assets in this Project section");
     }
 }
 
@@ -444,13 +463,13 @@ void ProjectPanel::DrawFolderContents(EditorContext& context) {
     }
 
     std::vector<CookedProjectEntry> entries;
-    for (const CookedProjectEntry& entry : m_Browser.Entries(m_SelectedFolder, database)) {
+    for (const CookedProjectEntry& entry : m_Browser.SectionEntries(database, SelectedSectionAssetType())) {
         if (MatchesSearchAndFilter(entry)) {
             entries.push_back(entry);
         }
     }
     if (entries.empty()) {
-        ImGui::TextDisabled("Empty cooked folder: no immediate cooked entries match the current filter.");
+        ImGui::TextDisabled("No cooked assets in %s match the current filter.", SectionLabel(m_SelectedSection));
         return;
     }
 
@@ -502,34 +521,42 @@ void ProjectPanel::DrawCookedEntry(EditorContext& context, const CookedProjectEn
             if (entry.isDirectory) {
                 m_SelectedFolder = entry.virtualFolderPath;
                 m_SelectedAssetId = {};
+                context.ClearAssetSelection();
             } else {
                 m_SelectedAssetId = entry.assetId;
                 m_Browser.Select(entry.rawPath);
+                context.SelectAsset(entry.assetId);
+                context.requestedPanelFocus = EditorPanelNames::kInspector;
             }
         }
+        BeginCookedDragSource(context, entry);
+        HandleCookedActivation(context, entry);
+        DrawCookedContextMenu(context, entry);
     } else {
         const ImVec2 size(m_IconSize, m_IconSize);
         if (ImGui::Button(TypeGlyph(entry.type.type), size)) {
             if (entry.isDirectory) {
                 m_SelectedFolder = entry.virtualFolderPath;
                 m_SelectedAssetId = {};
+                context.ClearAssetSelection();
             } else {
                 m_SelectedAssetId = entry.assetId;
                 m_Browser.Select(entry.rawPath);
+                context.SelectAsset(entry.assetId);
+                context.requestedPanelFocus = EditorPanelNames::kInspector;
             }
         }
         if (selected) {
             ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
                                                 ImGui::GetColorU32(ImGuiCol_Text));
         }
+        BeginCookedDragSource(context, entry);
+        HandleCookedActivation(context, entry);
+        DrawCookedContextMenu(context, entry);
         ImGui::TextWrapped("%s", entry.displayName.c_str());
     }
     ImGui::PopStyleColor();
     ImGui::EndGroup();
-
-    BeginCookedDragSource(context, entry);
-    HandleCookedActivation(context, entry);
-    DrawCookedContextMenu(context, entry);
     ImGui::PopID();
 }
 
@@ -562,6 +589,8 @@ void ProjectPanel::DrawCookedContextMenu(EditorContext& context, const CookedPro
     }
 
     m_SelectedAssetId = entry.assetId;
+    context.SelectAsset(entry.assetId);
+    context.requestedPanelFocus = EditorPanelNames::kInspector;
     if (entry.type.type == EditorFileType::Scene && ImGui::MenuItem("Open Scene")) {
         OpenSceneFile(context, entry.rawPath);
     }
@@ -608,43 +637,6 @@ void ProjectPanel::DrawCookedContextMenu(EditorContext& context, const CookedPro
     ImGui::EndPopup();
 }
 
-void ProjectPanel::DrawDetails(EditorContext& context) {
-    if (const AssetMetadata* meta = SelectedMetadata(context)) {
-        const std::filesystem::path raw = ResolveProjectPath(meta->rawPath);
-        const std::filesystem::path cooked = ResolveProjectPath(meta->cookedPath);
-        ImGui::TextUnformatted(meta->name.empty() ? raw.filename().string().c_str() : meta->name.c_str());
-        ImGui::TextDisabled("Type: %s", AssetTypeToString(meta->type).c_str());
-        ImGui::TextDisabled("ID: %s", meta->id.ToString().c_str());
-        ImGui::TextDisabled("Raw: %s", ProjectRelativePath(raw).generic_string().c_str());
-        ImGui::TextDisabled("Cooked: %s", ProjectRelativePath(cooked).generic_string().c_str());
-        ImGui::TextDisabled("Status: %s", AssetStatusLabel(*meta));
-        if (!meta->dependencies.empty()) {
-            ImGui::TextDisabled("Dependencies: %zu", meta->dependencies.size());
-        }
-        if (meta->type == AssetType::Material) {
-            DrawMaterialEditor(context, raw);
-        } else {
-            const EditorAssetPreview::Preview preview = EditorAssetPreview::Describe(raw);
-            if (preview.hasSnippet) {
-                ImGui::Separator();
-                ImGui::PushTextWrapPos(0.0f);
-                ImGui::TextDisabled("%s", preview.snippet.c_str());
-                ImGui::PopTextWrapPos();
-            }
-        }
-        return;
-    }
-
-    ImGui::TextUnformatted(m_SelectedFolder.filename().empty() ? m_SelectedFolder.string().c_str()
-                                                               : m_SelectedFolder.filename().string().c_str());
-    ImGui::TextDisabled("Folder");
-    ImGui::TextDisabled("%s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str());
-    if (ImGui::Button("New Folder...")) {
-        RequestModal(Modal::CreateFolder, m_SelectedFolder);
-    }
-    EditorTooltip::ForLastItem("Create a source folder under the selected virtual folder");
-}
-
 void ProjectPanel::DrawStatusStrip(EditorContext& context) {
     const AssetMetadata* meta = SelectedMetadata(context);
     if (meta != nullptr) {
@@ -653,10 +645,9 @@ void ProjectPanel::DrawStatusStrip(EditorContext& context) {
         ImGui::Text("Selected: %s | Raw: %s | Cooked: %s", raw.filename().string().c_str(),
                     ProjectRelativePath(raw).generic_string().c_str(), ProjectRelativePath(cooked).generic_string().c_str());
     } else if (m_Browser.SearchActive()) {
-        ImGui::Text("Search in %s: %s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str(),
-                    m_Browser.SearchBuffer());
+        ImGui::Text("Search in %s: %s", SectionLabel(m_SelectedSection), m_Browser.SearchBuffer());
     } else {
-        ImGui::Text("Folder: %s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str());
+        ImGui::Text("Section: %s", SectionLabel(m_SelectedSection));
     }
     ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 170.0f);
     DrawViewSizeSlider();
@@ -771,10 +762,7 @@ void ProjectPanel::ImportExternalAsset(EditorContext& context, const std::filesy
         return;
     }
 
-    std::filesystem::path targetDir = m_SelectedFolder;
-    if (!m_Browser.IsWithinRoots(targetDir) || !SamePath(m_Browser.RootForPath(targetDir), context.assetManager->Info().rawRoot)) {
-        targetDir = context.assetManager->Info().rawRoot / AssetPath::CookedSubdirectory(type);
-    }
+    std::filesystem::path targetDir = context.assetManager->Info().rawRoot / AssetPath::CookedSubdirectory(type);
     if (const Status status = FileSystem::CreateDirectories(targetDir); !status) {
         m_Status = status.error;
         return;
@@ -812,7 +800,10 @@ bool ProjectPanel::ImportAndCookRawAsset(EditorContext& context, const std::file
     if (const AssetMetadata* meta = FindAssetMeta(context, rawPath)) {
         if (IsVisibleCookedAsset(*meta)) {
             m_SelectedAssetId = meta->id;
+            context.SelectAsset(meta->id);
+            context.requestedPanelFocus = EditorPanelNames::kInspector;
             m_SelectedFolder = ResolveProjectPath(meta->rawPath).parent_path();
+            m_SelectedSection = SectionForAssetType(meta->type);
         }
     }
     return true;
@@ -870,43 +861,16 @@ std::vector<CookedProjectEntry> ProjectPanel::SearchEntries(EditorContext& conte
         return results;
     }
 
-    std::vector<std::filesystem::path> roots;
-    switch (m_SearchScope) {
-    case ProjectSearchScope::All:
-        for (const ProjectBrowser::Root& root : m_Browser.Roots()) {
-            roots.push_back(root.path);
-        }
-        break;
-    case ProjectSearchScope::SelectedRoot:
-        roots.push_back(m_Browser.RootForPath(m_SelectedFolder));
-        break;
-    case ProjectSearchScope::SelectedFolder:
-        roots.push_back(m_SelectedFolder);
-        break;
-    }
-
-    auto walk = [&](auto&& self, const std::filesystem::path& folder) -> void {
-        if (folder.empty() || (truncated != nullptr && *truncated)) {
-            return;
-        }
-        for (const CookedProjectEntry& entry : m_Browser.Entries(folder, database)) {
-            if (MatchesSearchAndFilter(entry)) {
-                if (results.size() >= static_cast<std::size_t>(kMaxSearchResults)) {
-                    if (truncated != nullptr) {
-                        *truncated = true;
-                    }
-                    return;
+    for (const CookedProjectEntry& entry : m_Browser.SectionEntries(database, SelectedSectionAssetType())) {
+        if (MatchesSearchAndFilter(entry)) {
+            if (results.size() >= static_cast<std::size_t>(kMaxSearchResults)) {
+                if (truncated != nullptr) {
+                    *truncated = true;
                 }
-                results.push_back(entry);
+                return results;
             }
-            if (entry.isDirectory) {
-                self(self, entry.virtualFolderPath);
-            }
+            results.push_back(entry);
         }
-    };
-
-    for (const std::filesystem::path& root : roots) {
-        walk(walk, root);
     }
     return results;
 }
@@ -931,208 +895,19 @@ const AssetMetadata* ProjectPanel::SelectedMetadata(EditorContext& context) cons
     return meta != nullptr && IsVisibleCookedAsset(*meta) ? meta : nullptr;
 }
 
-void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path) {
-    if (m_EditMaterialPath != path) {
-        if (m_MaterialPreviewActive && context.renderer != nullptr && m_EditMaterialId != 0) {
-            context.renderer->InvalidateAsset(m_EditMaterialId);
-        }
-        Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
-        m_EditMaterial = loaded ? loaded.value : MaterialSource{};
-        m_EditMaterialPath = path;
-        const AssetMetadata* meta = FindAssetMeta(context, path);
-        m_EditMaterialId = meta != nullptr ? meta->id.Value() : 0;
-        m_MaterialPreviewActive = false;
-    }
-
-    bool changed = false;
-
-    ImGui::SeparatorText("Material");
-    char nameBuf[256];
-    std::snprintf(nameBuf, sizeof(nameBuf), "%s", m_EditMaterial.name.c_str());
-    if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
-        m_EditMaterial.name = nameBuf;
-    }
-    EditorTooltip::ForLastItem("Material display name written to the source asset");
-
-    ImGui::SeparatorText("Surface");
-    changed |= ImGui::ColorEdit4("Albedo", &m_EditMaterial.baseColor.x);
-    EditorTooltip::ForLastItem("Base color and alpha");
-    changed |= ImGui::SliderFloat("Metallic", &m_EditMaterial.metallic, 0.0f, 1.0f);
-    EditorTooltip::ForLastItem("Metallic surface response");
-    changed |= ImGui::SliderFloat("Roughness", &m_EditMaterial.roughness, 0.0f, 1.0f);
-    EditorTooltip::ForLastItem("Surface microsurface roughness");
-    changed |= ImGui::SliderFloat("Normal Strength", &m_EditMaterial.normalStrength, 0.0f, 4.0f);
-    EditorTooltip::ForLastItem("Strength applied to the normal map");
-    changed |= ImGui::SliderFloat("Occlusion", &m_EditMaterial.occlusionStrength, 0.0f, 1.0f);
-    EditorTooltip::ForLastItem("Ambient occlusion texture strength");
-    changed |= ImGui::ColorEdit3("Emission", &m_EditMaterial.emissiveColor.x,
-                                 ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
-    EditorTooltip::ForLastItem("Emissive color contribution");
-    changed |= ImGui::SliderFloat("Emission Strength", &m_EditMaterial.emissiveStrength, 0.0f, 16.0f);
-    EditorTooltip::ForLastItem("Emissive intensity multiplier");
-
-    {
-        static const char* const kAlphaModes[] = {"Opaque", "Mask", "Blend"};
-        int alphaModeIndex = 0;
-        for (int i = 0; i < 3; ++i) {
-            if (m_EditMaterial.alphaMode == kAlphaModes[i]) {
-                alphaModeIndex = i;
-                break;
-            }
-        }
-        if (ImGui::Combo("Rendering Mode", &alphaModeIndex, kAlphaModes, 3)) {
-            m_EditMaterial.alphaMode = kAlphaModes[alphaModeIndex];
-            changed = true;
-        }
-        EditorTooltip::ForLastItem("Opaque ignores alpha, Mask clips by cutoff, Blend uses alpha blending");
-        ImGui::BeginDisabled(m_EditMaterial.alphaMode != "Mask");
-        changed |= ImGui::SliderFloat("Alpha Cutoff", &m_EditMaterial.alphaCutoff, 0.0f, 1.0f);
-        EditorTooltip::ForLastItem("Alpha threshold used by Mask rendering mode");
-        ImGui::EndDisabled();
-    }
-
-    ImGui::SeparatorText("Maps");
-    ImGui::TextDisabled("Drag a texture asset from the tree onto a slot.");
-
-    auto textureSlot = [&](const char* label, std::string& slot) -> bool {
-        bool slotChanged = false;
-        ImGui::PushID(label);
-
-        std::uint64_t thumbId = 0;
-        if (!slot.empty() && context.assetManager != nullptr && context.imguiBridge != nullptr) {
-            if (const AssetMetadata* meta = context.assetManager->Database().FindByRawPath(std::filesystem::path(slot))) {
-                thumbId = context.imguiBridge->TextureIdForAsset(meta->id.Value());
-            }
-        }
-
-        const ImVec2 thumbSize(48.0f, 48.0f);
-        if (thumbId != 0) {
-            ImGui::Image(static_cast<ImTextureID>(thumbId), thumbSize);
-        } else {
-            ImGui::Button("##empty", thumbSize);
-        }
-        EditorTooltip::ForLastItem("Drop a texture asset here to assign this map");
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType);
-                payload != nullptr && payload->DataSize == static_cast<int>(sizeof(AssetDragPayload))) {
-                const auto* drag = static_cast<const AssetDragPayload*>(payload->Data);
-                if (drag->type == static_cast<int>(AssetType::Texture) && context.assetManager != nullptr) {
-                    if (const AssetMetadata* meta = context.assetManager->Database().Find(AssetID{drag->id})) {
-                        slot = meta->rawPath.generic_string();
-                        slotChanged = true;
-                    }
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-        ImGui::TextUnformatted(label);
-        if (slot.empty()) {
-            ImGui::TextDisabled("(none)");
-        } else {
-            ImGui::TextDisabled("%s", std::filesystem::path(slot).filename().string().c_str());
-            EditorTooltip::ForLastItem(slot.c_str());
-            if (ImGui::SmallButton("Clear")) {
-                slot.clear();
-                slotChanged = true;
-            }
-            EditorTooltip::ForLastItem("Clear this texture slot");
-        }
-        ImGui::EndGroup();
-
-        ImGui::PopID();
-        return slotChanged;
-    };
-
-    changed |= textureSlot("Albedo", m_EditMaterial.baseColorTexture);
-    changed |= textureSlot("Normal", m_EditMaterial.normalTexture);
-    changed |= textureSlot("Metallic / Roughness", m_EditMaterial.metallicRoughnessTexture);
-    changed |= textureSlot("Occlusion", m_EditMaterial.occlusionTexture);
-    changed |= textureSlot("Emission", m_EditMaterial.emissiveTexture);
-
-    changed |= ImGui::DragFloat2("Tiling", &m_EditMaterial.tiling.x, 0.01f, 0.0f, 256.0f);
-    EditorTooltip::ForLastItem("UV tiling applied to every texture map");
-    changed |= ImGui::DragFloat2("Offset", &m_EditMaterial.offset.x, 0.005f, -256.0f, 256.0f);
-    EditorTooltip::ForLastItem("UV offset applied to every texture map");
-
-    if (changed) {
-        ApplyMaterialPreview(context);
-    }
-
-    ImGui::Separator();
-    if (ImGui::Button("Save")) {
-        if (const Status status = MaterialSerializer::SaveFile(path, m_EditMaterial); !status) {
-            m_Status = status.error;
-        } else if (context.assetManager != nullptr) {
-            context.assetManager->ImportAsset(path);
-            if (const AssetMetadata* meta = FindAssetMeta(context, path)) {
-                const AssetID id = meta->id;
-                context.assetManager->Database().MarkDirtyWithDependents(id);
-                context.assetManager->CookAllDirty();
-                context.assetManager->SaveDatabase();
-                if (context.renderer != nullptr) {
-                    context.renderer->InvalidateAsset(id.Value());
-                }
-                m_SelectedAssetId = id;
-            }
-            m_MaterialPreviewActive = false;
-            m_Status = "Saved material";
-        } else {
-            m_Status = "Saved material (no asset manager to cook)";
-        }
-    }
-    EditorTooltip::ForLastItem("Save material edits, reimport, and cook dependent assets");
-    ImGui::SameLine();
-    ImGui::BeginDisabled(!m_MaterialPreviewActive);
-    if (ImGui::Button("Revert")) {
-        Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
-        m_EditMaterial = loaded ? loaded.value : MaterialSource{};
-        if (context.renderer != nullptr && m_EditMaterialId != 0) {
-            context.renderer->InvalidateAsset(m_EditMaterialId);
-        }
-        m_MaterialPreviewActive = false;
-        m_Status = "Reverted";
-    }
-    EditorTooltip::ForLastItem("Discard unsaved live preview edits and reload from disk");
-    ImGui::EndDisabled();
+AssetType ProjectPanel::SelectedSectionAssetType() const {
+    return SectionType(m_SelectedSection);
 }
 
-void ProjectPanel::ApplyMaterialPreview(EditorContext& context) {
-    if (context.renderer == nullptr || context.assetManager == nullptr || m_EditMaterialId == 0) {
-        return;
+std::filesystem::path ProjectPanel::SelectedSectionRawFolder(EditorContext& context, AssetType fallbackType) const {
+    const AssetType sectionType = SelectedSectionAssetType();
+    const AssetType type = sectionType == AssetType::Unknown ? fallbackType : sectionType;
+    const std::filesystem::path rawRoot = context.assetManager != nullptr ? context.assetManager->Info().rawRoot
+                                                                          : Paths::Get().rawAssets;
+    if (type == AssetType::Unknown) {
+        return rawRoot;
     }
-    auto textureId = [&](const std::string& rawPath) -> std::uint64_t {
-        if (rawPath.empty()) {
-            return 0;
-        }
-        const AssetMetadata* meta = context.assetManager->Database().FindByRawPath(std::filesystem::path(rawPath));
-        return meta != nullptr ? meta->id.Value() : 0;
-    };
-
-    MaterialPreviewDesc desc;
-    desc.baseColor = m_EditMaterial.baseColor;
-    desc.metallic = m_EditMaterial.metallic;
-    desc.roughness = m_EditMaterial.roughness;
-    desc.normalStrength = m_EditMaterial.normalStrength;
-    desc.occlusionStrength = m_EditMaterial.occlusionStrength;
-    desc.emissiveColor = m_EditMaterial.emissiveColor;
-    desc.emissiveStrength = m_EditMaterial.emissiveStrength;
-    desc.alphaMode = m_EditMaterial.alphaMode == "Mask"    ? AlphaMode::Mask
-                     : m_EditMaterial.alphaMode == "Blend" ? AlphaMode::Blend
-                                                           : AlphaMode::Opaque;
-    desc.alphaCutoff = m_EditMaterial.alphaCutoff;
-    desc.tiling = m_EditMaterial.tiling;
-    desc.offset = m_EditMaterial.offset;
-    desc.baseColorTexture = textureId(m_EditMaterial.baseColorTexture);
-    desc.normalTexture = textureId(m_EditMaterial.normalTexture);
-    desc.metallicRoughnessTexture = textureId(m_EditMaterial.metallicRoughnessTexture);
-    desc.occlusionTexture = textureId(m_EditMaterial.occlusionTexture);
-    desc.emissiveTexture = textureId(m_EditMaterial.emissiveTexture);
-
-    context.renderer->PreviewMaterial(m_EditMaterialId, desc);
-    m_MaterialPreviewActive = true;
+    return rawRoot / AssetPath::CookedSubdirectory(type);
 }
 
 void ProjectPanel::CreateMaterialAsset(EditorContext& context, const std::filesystem::path& directory) {

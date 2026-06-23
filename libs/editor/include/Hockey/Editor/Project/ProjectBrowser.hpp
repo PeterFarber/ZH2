@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Hockey/Assets/AssetID.hpp"
+#include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Project/FileTypeRegistry.hpp"
 
@@ -56,6 +57,7 @@ public:
     // Immediate virtual children of 'folder' from cooked, non-missing metadata.
     std::vector<CookedProjectEntry> Entries(const std::filesystem::path& folder,
                                             const AssetDatabase* database) const;
+    std::vector<CookedProjectEntry> SectionEntries(const AssetDatabase* database, AssetType type) const;
 
     std::filesystem::path RootForPath(const std::filesystem::path& path) const;
     std::filesystem::path ParentFolderWithinRoots(const std::filesystem::path& path) const;

@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 
+#include "Hockey/Assets/AssetID.hpp"
 #include "Hockey/Editor/Clipboard.hpp"
 #include "Hockey/Editor/EditorCamera.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
@@ -142,6 +143,30 @@ public:
     // gizmo in a later step.
     TransformSpace transformSpace = TransformSpace::World;
 
+    // Cooked asset currently selected by Project-style panels. Entity selection
+    // remains the primary scene selection model; selecting an asset clears it so
+    // Inspector can switch cleanly between entity and asset editing.
+    void SelectAsset(AssetID id) {
+        m_SelectedAsset = id;
+        if (id.IsValid()) {
+            selection.Clear();
+        }
+    }
+
+    void ClearAssetSelection() {
+        m_SelectedAsset = {};
+    }
+
+    AssetID SelectedAsset() const {
+        return m_SelectedAsset;
+    }
+
+    void SyncAssetSelectionWithEntitySelection() {
+        if (m_SelectedAsset.IsValid() && selection.Primary().IsValid()) {
+            m_SelectedAsset = {};
+        }
+    }
+
     // Marks the active scene as modified (drives the save prompt / dirty
     // indicator). Calling with false clears the flag (e.g. after a save).
     void MarkDirty(bool dirty = true) {
@@ -154,6 +179,9 @@ public:
     bool HasActiveScenePath() const {
         return !activeScenePath.empty();
     }
+
+private:
+    AssetID m_SelectedAsset;
 };
 
 } // namespace Hockey

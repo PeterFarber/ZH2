@@ -184,6 +184,36 @@ std::vector<CookedProjectEntry> ProjectBrowser::Entries(const std::filesystem::p
     return entries;
 }
 
+std::vector<CookedProjectEntry> ProjectBrowser::SectionEntries(const AssetDatabase* database, AssetType type) const {
+    std::vector<CookedProjectEntry> entries;
+    if (database == nullptr) {
+        return entries;
+    }
+
+    for (const AssetMetadata* metadata : database->All()) {
+        if (metadata == nullptr || !IsVisibleCookedAsset(*metadata)) {
+            continue;
+        }
+        if (type != AssetType::Unknown && metadata->type != type) {
+            continue;
+        }
+
+        const std::filesystem::path rawPath = ResolveProjectPath(metadata->rawPath);
+        CookedProjectEntry entry;
+        entry.displayName = rawPath.filename().string();
+        entry.virtualFolderPath = rawPath.parent_path().lexically_normal();
+        entry.rawPath = rawPath;
+        entry.cookedPath = ResolveProjectPath(metadata->cookedPath);
+        entry.assetId = metadata->id;
+        entry.type = TypeInfoForAsset(*metadata);
+        entry.isDirectory = false;
+        entries.push_back(std::move(entry));
+    }
+
+    SortCookedEntries(entries);
+    return entries;
+}
+
 std::filesystem::path ProjectBrowser::RootForPath(const std::filesystem::path& path) const {
     const std::filesystem::path resolvedPath = ResolveProjectPath(path);
     for (const Root& root : m_Roots) {

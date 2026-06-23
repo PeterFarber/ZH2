@@ -7,9 +7,11 @@
 
 // Each suite is implemented in its own translation unit and registered here.
 void RunEditorVersionTests();
+void RunEditorContextAssetSelectionTests();
 void RunEditorSettingsTests();
 void RunSelectionTests();
 void RunInspectorFieldTests();
+void RunInspectorAssetContractTests();
 void RunUndoRedoTests();
 void RunCameraLightGizmoTests();
 void RunSceneViewOverlayTests();
@@ -29,9 +31,11 @@ int main(int argc, char** argv) {
     Hockey::Log::Init(Hockey::Paths::LogFile("editor_tests.log"));
 
     RunEditorVersionTests();
+    RunEditorContextAssetSelectionTests();
     RunEditorSettingsTests();
     RunSelectionTests();
     RunInspectorFieldTests();
+    RunInspectorAssetContractTests();
     RunUndoRedoTests();
     RunCameraLightGizmoTests();
     RunSceneViewOverlayTests();

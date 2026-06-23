@@ -116,6 +116,13 @@ void InspectorPanel::OnImGui(EditorContext& context) {
         return;
     }
 
+    context.SyncAssetSelectionWithEntitySelection();
+    if (context.SelectedAsset().IsValid()) {
+        m_AssetInspector.Draw(context, context.SelectedAsset());
+        EndWindow();
+        return;
+    }
+
     Scene* scene = context.activeScene;
     if (scene == nullptr) {
         ImGui::TextUnformatted("No active scene.");

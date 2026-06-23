@@ -1,5 +1,6 @@
 #include "Test.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -175,6 +176,35 @@ void RunProjectBrowserTests() {
         HK_CHECK_MSG(browser.ParentFolderWithinRoots(rawRoot) == rawRoot, "parent navigation clamps at root");
         HK_CHECK_MSG(browser.IsWithinRoots(rawRoot / "Models"), "raw child is within project roots");
         HK_CHECK_MSG(!browser.IsWithinRoots(paths.data / "outside"), "unrelated data path is outside project roots");
+    }
+
+    // --- Cooked sections expose assets only and filter by asset type ---------
+    {
+        AssetDatabase database;
+        database.AddOrUpdate(MakeAsset(10, AssetType::Model, "data/raw/models/player.glb",
+                                       "data/cooked/assets/models/10.model.bin", true));
+        database.AddOrUpdate(MakeAsset(11, AssetType::Material, "data/raw/materials/ice.material.yaml",
+                                       "data/cooked/assets/materials/11.material.yaml", true));
+        database.AddOrUpdate(MakeAsset(12, AssetType::Scene, "data/raw/scenes/main.scene.yaml",
+                                       "data/cooked/assets/scenes/12.scene.yaml", true));
+        database.AddOrUpdate(MakeAsset(13, AssetType::Texture, "data/raw/textures/ice.png",
+                                       "data/cooked/assets/textures/13.tex.bin", true));
+        database.AddOrUpdate(MakeAsset(14, AssetType::Prefab, "data/raw/prefabs/puck.prefab.yaml",
+                                       "data/cooked/assets/prefabs/14.prefab.yaml", false));
+
+        ProjectBrowser browser;
+        const std::vector<CookedProjectEntry> all = browser.SectionEntries(&database, AssetType::Unknown);
+        HK_CHECK_MSG(all.size() == 4, "all cooked section hides uncooked assets");
+        HK_CHECK_MSG(std::none_of(all.begin(), all.end(), [](const CookedProjectEntry& entry) {
+                         return entry.isDirectory;
+                     }),
+                     "cooked sections contain assets only");
+
+        const std::vector<CookedProjectEntry> materials = browser.SectionEntries(&database, AssetType::Material);
+        HK_CHECK_MSG(materials.size() == 1 && materials[0].assetId == AssetID{11}, "material section filters by type");
+
+        const std::vector<CookedProjectEntry> prefabs = browser.SectionEntries(&database, AssetType::Prefab);
+        HK_CHECK_MSG(prefabs.empty(), "prefab section hides uncooked prefabs");
     }
 
     // --- Selection clears when the selected path disappears ------------------

@@ -48,6 +48,7 @@ target_sources(hockey_editor
         src/Tools/HockeyTools.cpp
         src/Tools/EditorTools.cpp
         src/Inspector/FieldDrawers.cpp
+        src/Inspector/AssetInspector.cpp
         src/Inspector/ComponentInspector.cpp
         src/Inspector/ComponentAddMenu.cpp
         src/Inspector/MaterialPicker.cpp
