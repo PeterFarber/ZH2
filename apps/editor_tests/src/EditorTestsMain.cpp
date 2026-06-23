@@ -18,6 +18,7 @@ void RunHockeyPhysicsSetupTests();
 void RunEditorGameplayPreviewTests();
 void RunSceneWorkflowTests();
 void RunProjectBrowserTests();
+void RunProjectPanelContractTests();
 void RunProjectSettingsPanelContractTests();
 void RunEditorTooltipContractTests();
 void RunHierarchyPanelContractTests();
@@ -39,6 +40,7 @@ int main(int argc, char** argv) {
     RunEditorGameplayPreviewTests();
     RunSceneWorkflowTests();
     RunProjectBrowserTests();
+    RunProjectPanelContractTests();
     RunProjectSettingsPanelContractTests();
     RunEditorTooltipContractTests();
     RunHierarchyPanelContractTests();

@@ -5,6 +5,9 @@
 #include <string>
 #include <system_error>
 
+#include "Hockey/Assets/AssetDatabase.hpp"
+#include "Hockey/Assets/AssetMetadata.hpp"
+#include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 
@@ -16,6 +19,71 @@ std::string ToLower(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(),
                    [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
     return value;
+}
+
+std::filesystem::path ResolveProjectPath(const std::filesystem::path& path) {
+    if (path.empty()) {
+        return {};
+    }
+    if (path.is_absolute()) {
+        return path.lexically_normal();
+    }
+    return (Paths::Get().root / path).lexically_normal();
+}
+
+std::string ComparablePath(const std::filesystem::path& path) {
+    return ToLower(ResolveProjectPath(path).generic_string());
+}
+
+bool SamePath(const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
+    return ComparablePath(lhs) == ComparablePath(rhs);
+}
+
+bool PathIsWithin(const std::filesystem::path& path, const std::filesystem::path& root) {
+    const std::string value = ComparablePath(path);
+    std::string prefix = ComparablePath(root);
+    if (value == prefix) {
+        return true;
+    }
+    if (!prefix.empty() && prefix.back() != '/') {
+        prefix.push_back('/');
+    }
+    return !prefix.empty() && value.rfind(prefix, 0) == 0;
+}
+
+bool IsVisibleCookedAsset(const AssetMetadata& metadata) {
+    return metadata.id.IsValid() && metadata.cooked && !metadata.missing && !metadata.rawPath.empty() &&
+           !metadata.cookedPath.empty();
+}
+
+FileTypeInfo TypeInfoForAsset(const AssetMetadata& metadata) {
+    switch (metadata.type) {
+    case AssetType::Texture:
+        return {EditorFileType::Image, "Texture", true};
+    case AssetType::Material:
+        return {EditorFileType::Material, "Material", true};
+    case AssetType::Shader:
+        return {EditorFileType::ShaderSource, "Shader", true};
+    case AssetType::Scene:
+        return {EditorFileType::Scene, "Scene", true};
+    case AssetType::Prefab:
+        return {EditorFileType::Prefab, "Prefab", true};
+    case AssetType::Model:
+        return {EditorFileType::Model, "Model", true};
+    case AssetType::Mesh:
+        return {EditorFileType::Model, "Mesh", true};
+    default:
+        return FileTypeRegistry::Classify(metadata.rawPath);
+    }
+}
+
+void SortCookedEntries(std::vector<CookedProjectEntry>& entries) {
+    std::sort(entries.begin(), entries.end(), [](const CookedProjectEntry& lhs, const CookedProjectEntry& rhs) {
+        if (lhs.isDirectory != rhs.isDirectory) {
+            return lhs.isDirectory;
+        }
+        return ToLower(lhs.displayName) < ToLower(rhs.displayName);
+    });
 }
 
 } // namespace
@@ -51,6 +119,95 @@ std::vector<ProjectEntry> ProjectBrowser::Entries(const std::filesystem::path& d
         return ToLower(lhs.name) < ToLower(rhs.name);
     });
     return entries;
+}
+
+std::vector<CookedProjectEntry> ProjectBrowser::Entries(const std::filesystem::path& folder,
+                                                        const AssetDatabase* database) const {
+    std::vector<CookedProjectEntry> entries;
+    if (database == nullptr) {
+        return entries;
+    }
+
+    const std::filesystem::path resolvedFolder = ResolveProjectPath(folder);
+    if (!IsWithinRoots(resolvedFolder)) {
+        return entries;
+    }
+
+    auto addDirectory = [&](const std::filesystem::path& directory) {
+        const std::filesystem::path resolvedDirectory = ResolveProjectPath(directory);
+        const auto existing = std::find_if(entries.begin(), entries.end(), [&](const CookedProjectEntry& entry) {
+            return entry.isDirectory && SamePath(entry.virtualFolderPath, resolvedDirectory);
+        });
+        if (existing != entries.end()) {
+            return;
+        }
+
+        CookedProjectEntry entry;
+        entry.displayName = resolvedDirectory.filename().string();
+        entry.virtualFolderPath = resolvedDirectory;
+        entry.rawPath = resolvedDirectory;
+        entry.type = {EditorFileType::Folder, "Folder", true};
+        entry.isDirectory = true;
+        entries.push_back(std::move(entry));
+    };
+
+    for (const AssetMetadata* metadata : database->All()) {
+        if (metadata == nullptr || !IsVisibleCookedAsset(*metadata)) {
+            continue;
+        }
+
+        const std::filesystem::path rawPath = ResolveProjectPath(metadata->rawPath);
+        if (!PathIsWithin(rawPath, resolvedFolder)) {
+            continue;
+        }
+        const std::filesystem::path parent = rawPath.parent_path().lexically_normal();
+        if (SamePath(parent, resolvedFolder)) {
+            CookedProjectEntry entry;
+            entry.displayName = rawPath.filename().string();
+            entry.virtualFolderPath = resolvedFolder;
+            entry.rawPath = rawPath;
+            entry.cookedPath = ResolveProjectPath(metadata->cookedPath);
+            entry.assetId = metadata->id;
+            entry.type = TypeInfoForAsset(*metadata);
+            entry.isDirectory = false;
+            entries.push_back(std::move(entry));
+            continue;
+        }
+
+        std::filesystem::path relative = rawPath.lexically_relative(resolvedFolder);
+        if (!relative.empty()) {
+            addDirectory(resolvedFolder / *relative.begin());
+        }
+    }
+
+    SortCookedEntries(entries);
+    return entries;
+}
+
+std::filesystem::path ProjectBrowser::RootForPath(const std::filesystem::path& path) const {
+    const std::filesystem::path resolvedPath = ResolveProjectPath(path);
+    for (const Root& root : m_Roots) {
+        const std::filesystem::path resolvedRoot = ResolveProjectPath(root.path);
+        if (PathIsWithin(resolvedPath, resolvedRoot)) {
+            return resolvedRoot;
+        }
+    }
+    return {};
+}
+
+std::filesystem::path ProjectBrowser::ParentFolderWithinRoots(const std::filesystem::path& path) const {
+    const std::filesystem::path resolvedPath = ResolveProjectPath(path);
+    const std::filesystem::path root = RootForPath(resolvedPath);
+    if (root.empty() || SamePath(resolvedPath, root)) {
+        return root;
+    }
+
+    const std::filesystem::path parent = resolvedPath.parent_path().lexically_normal();
+    return PathIsWithin(parent, root) ? parent : root;
+}
+
+bool ProjectBrowser::IsWithinRoots(const std::filesystem::path& path) const {
+    return !RootForPath(path).empty();
 }
 
 void ProjectBrowser::ClearSelectionIfMissing() {

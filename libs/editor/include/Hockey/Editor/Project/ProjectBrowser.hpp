@@ -5,10 +5,13 @@
 #include <string>
 #include <vector>
 
+#include "Hockey/Assets/AssetID.hpp"
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Project/FileTypeRegistry.hpp"
 
 namespace Hockey {
+
+class AssetDatabase;
 
 // One file or directory entry under a browsed root.
 struct ProjectEntry {
@@ -16,6 +19,18 @@ struct ProjectEntry {
     std::string name;
     bool isDirectory = false;
     FileTypeInfo type;
+};
+
+// Virtual Project entry backed by cooked asset metadata. Directories are
+// synthetic folders derived from cooked assets' rawPath parents.
+struct CookedProjectEntry {
+    std::string displayName;
+    std::filesystem::path virtualFolderPath;
+    std::filesystem::path rawPath;
+    std::filesystem::path cookedPath;
+    AssetID assetId;
+    FileTypeInfo type;
+    bool isDirectory = false;
 };
 
 // Filesystem-backed model for the Project panel. Owns the browse roots, the
@@ -38,6 +53,13 @@ public:
 
     // Immediate children of 'dir', directories first then files, alphabetically.
     std::vector<ProjectEntry> Entries(const std::filesystem::path& dir) const;
+    // Immediate virtual children of 'folder' from cooked, non-missing metadata.
+    std::vector<CookedProjectEntry> Entries(const std::filesystem::path& folder,
+                                            const AssetDatabase* database) const;
+
+    std::filesystem::path RootForPath(const std::filesystem::path& path) const;
+    std::filesystem::path ParentFolderWithinRoots(const std::filesystem::path& path) const;
+    bool IsWithinRoots(const std::filesystem::path& path) const;
 
     void Select(const std::filesystem::path& path) {
         m_Selected = path;

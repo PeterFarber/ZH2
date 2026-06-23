@@ -1,8 +1,9 @@
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
-#include <functional>
+#include <filesystem>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -11,12 +12,15 @@
 
 #include "Hockey/Assets/AssetDatabase.hpp"
 #include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Assets/AssetPath.hpp"
 #include "Hockey/Assets/AssetType.hpp"
+#include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/FileDialog.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
@@ -28,19 +32,46 @@ namespace Hockey {
 namespace {
 
 constexpr int kMaxSearchResults = 400;
+constexpr float kListModeThreshold = 32.0f;
 
-// Looks up the asset-database record for an absolute project file, or nullptr if
-// no AssetManager is wired or the file is not a tracked asset.
+std::string ToLower(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return value;
+}
+
+bool SamePath(const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
+    return ToLower(lhs.lexically_normal().generic_string()) == ToLower(rhs.lexically_normal().generic_string());
+}
+
+std::filesystem::path ResolveProjectPath(const std::filesystem::path& path) {
+    if (path.empty()) {
+        return {};
+    }
+    if (path.is_absolute()) {
+        return path.lexically_normal();
+    }
+    return (Paths::Get().root / path).lexically_normal();
+}
+
+std::filesystem::path ProjectRelativePath(const std::filesystem::path& path) {
+    if (path.empty()) {
+        return {};
+    }
+    std::error_code ec;
+    const std::filesystem::path relative = std::filesystem::relative(ResolveProjectPath(path), Paths::Get().root, ec);
+    return ec ? path.lexically_normal() : relative.lexically_normal();
+}
+
+bool IsVisibleCookedAsset(const AssetMetadata& meta) {
+    return meta.id.IsValid() && meta.cooked && !meta.missing && !meta.rawPath.empty() && !meta.cookedPath.empty();
+}
+
 const AssetMetadata* FindAssetMeta(EditorContext& context, const std::filesystem::path& absolute) {
     if (context.assetManager == nullptr) {
         return nullptr;
     }
-    std::error_code ec;
-    const std::filesystem::path relative = std::filesystem::relative(absolute, Paths::Get().root, ec);
-    if (ec || relative.empty()) {
-        return nullptr;
-    }
-    return context.assetManager->Database().FindByRawPath(relative);
+    return context.assetManager->Database().FindByRawPath(ProjectRelativePath(absolute));
 }
 
 const char* AssetStatusLabel(const AssetMetadata& meta) {
@@ -56,8 +87,6 @@ const char* AssetStatusLabel(const AssetMetadata& meta) {
     return "imported";
 }
 
-// Folder icon glyphs are avoided (no icon font yet); we prefix with a small
-// bracketed tag so directories and typed files are distinguishable in text.
 ImVec4 ColorForType(EditorFileType type, bool supported) {
     switch (type) {
     case EditorFileType::Folder:
@@ -68,9 +97,69 @@ ImVec4 ColorForType(EditorFileType type, bool supported) {
         return ImVec4(0.70f, 0.85f, 0.55f, 1.0f);
     case EditorFileType::Material:
         return ImVec4(0.92f, 0.66f, 0.85f, 1.0f);
+    case EditorFileType::Image:
+        return ImVec4(0.66f, 0.78f, 0.96f, 1.0f);
+    case EditorFileType::Model:
+        return ImVec4(0.78f, 0.70f, 0.95f, 1.0f);
     default:
         return supported ? ImVec4(0.85f, 0.85f, 0.85f, 1.0f) : ImVec4(0.55f, 0.55f, 0.55f, 1.0f);
     }
+}
+
+const char* TypeGlyph(EditorFileType type) {
+    switch (type) {
+    case EditorFileType::Folder:
+        return "[Folder]";
+    case EditorFileType::Scene:
+        return "[Scene]";
+    case EditorFileType::Prefab:
+        return "[Prefab]";
+    case EditorFileType::Material:
+        return "[Material]";
+    case EditorFileType::Image:
+        return "[Image]";
+    case EditorFileType::Model:
+        return "[Model]";
+    case EditorFileType::ShaderSource:
+        return "[Shader]";
+    default:
+        return "[Asset]";
+    }
+}
+
+std::filesystem::path UniqueDestination(const std::filesystem::path& dir, const std::string& fileName) {
+    std::filesystem::path candidate = dir / fileName;
+    std::error_code ec;
+    if (!std::filesystem::exists(candidate, ec)) {
+        return candidate;
+    }
+
+    const std::size_t dot = fileName.find('.');
+    const std::string stem = dot == std::string::npos ? fileName : fileName.substr(0, dot);
+    const std::string exts = dot == std::string::npos ? std::string{} : fileName.substr(dot);
+    for (int n = 1; n < 10000; ++n) {
+        candidate = dir / (stem + "_" + std::to_string(n) + exts);
+        if (!std::filesystem::exists(candidate, ec)) {
+            return candidate;
+        }
+    }
+    return candidate;
+}
+
+bool TypeMatches(EditorFileType filter, const CookedProjectEntry& entry) {
+    if (filter == EditorFileType::Unknown) {
+        return true;
+    }
+    if (filter == EditorFileType::Folder) {
+        return entry.isDirectory;
+    }
+    if (entry.isDirectory) {
+        return false;
+    }
+    if (filter == EditorFileType::ShaderSource) {
+        return entry.type.type == EditorFileType::ShaderSource || entry.type.type == EditorFileType::ShaderBinary;
+    }
+    return entry.type.type == filter;
 }
 
 } // namespace
@@ -90,308 +179,759 @@ void ProjectPanel::RequestModal(Modal modal, const std::filesystem::path& target
 
 void ProjectPanel::OnImGui(EditorContext& context) {
     if (BeginWindow()) {
-        m_Browser.ClearSelectionIfMissing();
+        EnsureSelectionState(context);
+
+        const bool projectFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+        ImGuiIO& io = ImGui::GetIO();
+        const bool canShortcut = projectFocused && !io.WantTextInput && !ImGui::IsAnyItemActive();
+        if (canShortcut && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+            m_FocusSearchNextFrame = true;
+        }
+        if (canShortcut && ImGui::IsKeyPressed(ImGuiKey_Backspace, false)) {
+            m_SelectedFolder = m_Browser.ParentFolderWithinRoots(m_SelectedFolder);
+            m_SelectedAssetId = {};
+        }
+        if (canShortcut && ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+            if (const AssetMetadata* meta = SelectedMetadata(context)) {
+                RequestModal(Modal::Rename, ResolveProjectPath(meta->rawPath));
+            } else if (!m_SelectedFolder.empty()) {
+                RequestModal(Modal::Rename, m_SelectedFolder);
+            }
+        }
+        if (canShortcut && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            if (const AssetMetadata* meta = SelectedMetadata(context)) {
+                RequestModal(Modal::ConfirmDelete, ResolveProjectPath(meta->rawPath));
+            } else if (!m_SelectedFolder.empty()) {
+                RequestModal(Modal::ConfirmDelete, m_SelectedFolder);
+            }
+        }
+        if (canShortcut && ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
+            if (const AssetMetadata* meta = SelectedMetadata(context)) {
+                const std::filesystem::path raw = ResolveProjectPath(meta->rawPath);
+                if (meta->type == AssetType::Scene) {
+                    OpenSceneFile(context, raw);
+                } else if (meta->type == AssetType::Prefab) {
+                    InstantiatePrefabFile(context, raw);
+                }
+            }
+        }
+
         DrawToolbar(context);
         ImGui::Separator();
 
-        // Split the panel horizontally: file tree on the left, selected-asset
-        // details on the right. Both panes use the full panel height.
-        const float treeWidth = ImGui::GetContentRegionAvail().x * 0.4f;
-        if (ImGui::BeginChild("##project-tree", ImVec2(treeWidth > 0.0f ? treeWidth : 0.0f, 0.0f), true)) {
-            if (m_Browser.SearchActive()) {
-                DrawSearchResults(context);
-            } else {
-                DrawTree(context);
+        const float statusHeight = ImGui::GetFrameHeightWithSpacing() + 4.0f;
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        const float bodyHeight = std::max(0.0f, avail.y - statusHeight);
+
+        if (ImGui::BeginChild("##project-body", ImVec2(0.0f, bodyHeight), false)) {
+            const float treeWidth = std::max(180.0f, ImGui::GetContentRegionAvail().x * 0.32f);
+            if (ImGui::BeginChild("##project-folder-tree", ImVec2(treeWidth, 0.0f), true)) {
+                DrawFolderTree(context);
             }
+            ImGui::EndChild();
+
+            ImGui::SameLine();
+
+            if (ImGui::BeginChild("##project-right", ImVec2(0.0f, 0.0f), false)) {
+                const float detailsHeight = 190.0f;
+                const float contentsHeight = std::max(120.0f, ImGui::GetContentRegionAvail().y - detailsHeight - 6.0f);
+                if (ImGui::BeginChild("##project-contents", ImVec2(0.0f, contentsHeight), true)) {
+                    if (m_Browser.SearchActive()) {
+                        DrawSearchResults(context);
+                    } else {
+                        DrawFolderContents(context);
+                    }
+                }
+                ImGui::EndChild();
+
+                if (ImGui::BeginChild("##project-details", ImVec2(0.0f, 0.0f), true)) {
+                    DrawDetails(context);
+                }
+                ImGui::EndChild();
+            }
+            ImGui::EndChild();
         }
         ImGui::EndChild();
 
-        ImGui::SameLine();
-
-        DrawDetails(context);
+        DrawStatusStrip(context);
         DrawModals(context);
     }
     EndWindow();
 }
 
+void ProjectPanel::EnsureSelectionState(EditorContext& context) {
+    if (m_SelectedFolder.empty() || !m_Browser.IsWithinRoots(m_SelectedFolder)) {
+        if (!m_Browser.Roots().empty()) {
+            m_SelectedFolder = m_Browser.Roots().front().path;
+        }
+    }
+
+    if (const AssetMetadata* meta = SelectedMetadata(context)) {
+        m_Browser.Select(ResolveProjectPath(meta->rawPath));
+    } else {
+        m_SelectedAssetId = {};
+    }
+}
+
 void ProjectPanel::DrawToolbar(EditorContext& context) {
+    if (ImGui::Button("Create")) {
+        ImGui::OpenPopup("##project-create");
+    }
+    EditorTooltip::ForLastItem("Create source assets under the selected Project folder");
+    if (ImGui::BeginPopup("##project-create")) {
+        if (ImGui::MenuItem("New Folder...")) {
+            RequestModal(Modal::CreateFolder, m_SelectedFolder);
+        }
+        EditorTooltip::ForLastItem("Create a source folder in the selected virtual folder");
+        ImGui::BeginDisabled(context.assetManager == nullptr);
+        if (ImGui::MenuItem("New Material")) {
+            CreateMaterialAsset(context, m_SelectedFolder);
+        }
+        EditorTooltip::ForLastItem("Create, import, and cook a new material source asset");
+        ImGui::EndDisabled();
+        ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(context.assetManager == nullptr);
+    if (ImGui::Button("Import...")) {
+        ImportSelectedFile(context);
+    }
+    EditorTooltip::ForLastItem("Import a source file into the selected raw folder, then cook it");
+    ImGui::SameLine();
+    if (ImGui::Button("Import All & Cook")) {
+        ImportAllAndCook(context);
+    }
+    EditorTooltip::ForLastItem("Discover, import, cook dirty assets, and save the asset database");
+    ImGui::SameLine();
+    if (ImGui::Button("Recook Dirty")) {
+        RecookDirty(context);
+    }
+    EditorTooltip::ForLastItem("Maintenance action: cook assets already marked dirty");
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    if (m_FocusSearchNextFrame) {
+        ImGui::SetKeyboardFocusHere();
+        m_FocusSearchNextFrame = false;
+    }
     ImGui::SetNextItemWidth(220.0f);
-    ImGui::InputTextWithHint("##search", "Search...", m_Browser.SearchBuffer(), m_Browser.SearchBufferSize());
-    EditorTooltip::ForLastItem("Filter project files by name");
+    ImGui::InputTextWithHint("##project-search", "Search cooked assets...", m_Browser.SearchBuffer(),
+                             m_Browser.SearchBufferSize());
+    EditorTooltip::ForLastItem("Search cooked virtual folders and cooked assets by name or path");
     ImGui::SameLine();
     if (ImGui::Button("Clear")) {
         m_Browser.SearchBuffer()[0] = '\0';
     }
-    EditorTooltip::ForLastItem("Clear the project search filter");
+    EditorTooltip::ForLastItem("Clear the Project search filter");
+
+    static const char* const kScopes[] = {"All", "Selected Root", "Selected Folder"};
+    int scope = static_cast<int>(m_SearchScope);
     ImGui::SameLine();
-    if (ImGui::Button("Refresh")) {
-        m_Browser.ClearSelectionIfMissing();
-        m_Status.clear();
+    ImGui::SetNextItemWidth(130.0f);
+    if (ImGui::Combo("##project-search-scope", &scope, kScopes, 3)) {
+        m_SearchScope = static_cast<ProjectSearchScope>(scope);
     }
-    EditorTooltip::ForLastItem("Refresh the project browser selection state");
-    if (context.assetManager != nullptr) {
-        ImGui::SameLine();
-        if (ImGui::Button("Scan")) {
-            if (const Status status = context.assetManager->DiscoverRawAssets(); !status) {
-                m_Status = status.error;
-            } else {
-                m_Status = "Scanned raw assets";
-            }
+    EditorTooltip::ForLastItem("Choose whether search scans all cooked roots, the selected root, or this folder");
+
+    struct TypeOption {
+        EditorFileType type;
+        const char* label;
+    };
+    static constexpr TypeOption kTypes[] = {
+        {EditorFileType::Unknown, "All"},
+        {EditorFileType::Folder, "Folder"},
+        {EditorFileType::Scene, "Scene"},
+        {EditorFileType::Prefab, "Prefab"},
+        {EditorFileType::Material, "Material"},
+        {EditorFileType::Image, "Texture/Image"},
+        {EditorFileType::Model, "Model"},
+        {EditorFileType::Model, "Mesh"},
+        {EditorFileType::ShaderSource, "Shader"},
+    };
+    int currentType = 0;
+    for (int i = 0; i < static_cast<int>(std::size(kTypes)); ++i) {
+        if (kTypes[i].type == m_TypeFilter) {
+            currentType = i;
+            break;
         }
-        EditorTooltip::ForLastItem("Scan raw asset folders for new or changed files");
-        ImGui::SameLine();
-        if (ImGui::Button("Import All")) {
-            if (const Status status = context.assetManager->ImportAll(); !status) {
-                m_Status = status.error;
-            } else {
-                m_Status = "Imported assets";
-            }
-        }
-        EditorTooltip::ForLastItem("Import every discovered raw asset into the asset database");
-        ImGui::SameLine();
-        if (ImGui::Button("Cook Dirty")) {
-            if (const Status status = context.assetManager->CookAllDirty(); !status) {
-                m_Status = status.error;
-            } else {
-                m_Status = "Cooked dirty assets";
-            }
-        }
-        EditorTooltip::ForLastItem("Cook assets marked dirty by imports or edits");
     }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(130.0f);
+    if (ImGui::BeginCombo("##project-type-filter", kTypes[currentType].label)) {
+        for (int i = 0; i < static_cast<int>(std::size(kTypes)); ++i) {
+            const bool selected = i == currentType;
+            if (ImGui::Selectable(kTypes[i].label, selected)) {
+                m_TypeFilter = kTypes[i].type;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+    EditorTooltip::ForLastItem("Filter visible cooked entries by asset type");
+
     if (!m_Status.empty()) {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.45f, 1.0f), "%s", m_Status.c_str());
     }
 }
 
-void ProjectPanel::DrawTree(EditorContext& context) {
+void ProjectPanel::DrawFolderTree(EditorContext& context) {
+    const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
     for (const ProjectBrowser::Root& root : m_Browser.Roots()) {
-        std::error_code ec;
-        const bool exists = std::filesystem::is_directory(root.path, ec);
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (SamePath(root.path, m_SelectedFolder)) {
+            flags |= ImGuiTreeNodeFlags_Selected;
+        }
         if (&root == &m_Browser.Roots().front()) {
             flags |= ImGuiTreeNodeFlags_DefaultOpen;
         }
         ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(EditorFileType::Folder, true));
-        const bool open = ImGui::TreeNodeEx(root.label.c_str(), flags);
+        const bool open = ImGui::TreeNodeEx(root.path.string().c_str(), flags, "%s", root.label.c_str());
         ImGui::PopStyleColor();
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+            m_SelectedFolder = root.path;
+            m_SelectedAssetId = {};
+        }
         if (open) {
-            if (exists) {
-                DrawDirectoryChildren(context, root.path);
+            if (database == nullptr) {
+                ImGui::TextDisabled("(no asset database)");
             } else {
-                ImGui::TextDisabled("(missing)");
+                for (const CookedProjectEntry& entry : m_Browser.Entries(root.path, database)) {
+                    if (entry.isDirectory) {
+                        DrawFolderNode(context, entry);
+                    }
+                }
             }
             ImGui::TreePop();
         }
     }
 }
 
-void ProjectPanel::DrawDirectoryChildren(EditorContext& context, const std::filesystem::path& dir) {
-    for (const ProjectEntry& entry : m_Browser.Entries(dir)) {
-        if (entry.isDirectory) {
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-            if (m_Browser.Selected() == entry.path) {
-                flags |= ImGuiTreeNodeFlags_Selected;
+void ProjectPanel::DrawFolderNode(EditorContext& context, const CookedProjectEntry& folder) {
+    const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+    if (SamePath(folder.virtualFolderPath, m_SelectedFolder)) {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(EditorFileType::Folder, true));
+    const bool open = ImGui::TreeNodeEx(folder.virtualFolderPath.string().c_str(), flags, "%s", folder.displayName.c_str());
+    ImGui::PopStyleColor();
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+        m_SelectedFolder = folder.virtualFolderPath;
+        m_SelectedAssetId = {};
+    }
+    DrawCookedContextMenu(context, folder);
+    if (open) {
+        if (database != nullptr) {
+            for (const CookedProjectEntry& child : m_Browser.Entries(folder.virtualFolderPath, database)) {
+                if (child.isDirectory) {
+                    DrawFolderNode(context, child);
+                }
             }
-            ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(EditorFileType::Folder, true));
-            const bool open = ImGui::TreeNodeEx(entry.path.string().c_str(), flags, "%s", entry.name.c_str());
-            ImGui::PopStyleColor();
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                m_Browser.Select(entry.path);
-            }
-            DrawContextMenu(context, entry);
-            if (open) {
-                DrawDirectoryChildren(context, entry.path);
-                ImGui::TreePop();
-            }
-        } else {
-            DrawFileLeaf(context, entry);
         }
+        ImGui::TreePop();
     }
 }
 
-void ProjectPanel::DrawFileLeaf(EditorContext& context, const ProjectEntry& entry) {
-    const bool selected = m_Browser.Selected() == entry.path;
-    ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(entry.type.type, entry.type.supported));
-    if (ImGui::Selectable(entry.name.c_str(), selected,
-                          ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
-        m_Browser.Select(entry.path);
+void ProjectPanel::DrawFolderContents(EditorContext& context) {
+    const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
+    if (database == nullptr) {
+        ImGui::TextDisabled("No asset database is available.");
+        return;
     }
-    ImGui::PopStyleColor();
-    BeginFileDragSource(context, entry);
-    HandleFileActivation(context, entry);
-    if (!entry.type.supported) {
-        const std::string tooltip = std::string(entry.type.label) + " (preview only, not imported)";
-        EditorTooltip::ForLastItem(tooltip);
+
+    std::vector<CookedProjectEntry> entries;
+    for (const CookedProjectEntry& entry : m_Browser.Entries(m_SelectedFolder, database)) {
+        if (MatchesSearchAndFilter(entry)) {
+            entries.push_back(entry);
+        }
     }
-    DrawContextMenu(context, entry);
+    if (entries.empty()) {
+        ImGui::TextDisabled("Empty cooked folder: no immediate cooked entries match the current filter.");
+        return;
+    }
+
+    if (m_IconSize <= kListModeThreshold) {
+        for (const CookedProjectEntry& entry : entries) {
+            DrawCookedEntry(context, entry);
+        }
+        return;
+    }
+
+    const float cellWidth = std::max(96.0f, m_IconSize + 34.0f);
+    const int columns = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / cellWidth));
+    if (ImGui::BeginTable("##project-tile-grid", columns, ImGuiTableFlags_SizingFixedFit)) {
+        for (const CookedProjectEntry& entry : entries) {
+            ImGui::TableNextColumn();
+            DrawCookedEntry(context, entry);
+        }
+        ImGui::EndTable();
+    }
 }
 
 void ProjectPanel::DrawSearchResults(EditorContext& context) {
-    int shown = 0;
     bool truncated = false;
-    std::function<void(const std::filesystem::path&)> walk = [&](const std::filesystem::path& dir) {
-        if (truncated) {
-            return;
-        }
-        for (const ProjectEntry& entry : m_Browser.Entries(dir)) {
-            if (truncated) {
-                return;
-            }
-            if (entry.isDirectory) {
-                walk(entry.path);
-            } else if (m_Browser.MatchesSearch(entry.name)) {
-                if (shown >= kMaxSearchResults) {
-                    truncated = true;
-                    return;
-                }
-                ++shown;
-                const bool selected = m_Browser.Selected() == entry.path;
-                ImGui::PushStyleColor(ImGuiCol_Text, ColorForType(entry.type.type, entry.type.supported));
-                if (ImGui::Selectable(entry.path.string().c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
-                    m_Browser.Select(entry.path);
-                }
-                ImGui::PopStyleColor();
-                BeginFileDragSource(context, entry);
-                HandleFileActivation(context, entry);
-                DrawContextMenu(context, entry);
-            }
-        }
-    };
-    for (const ProjectBrowser::Root& root : m_Browser.Roots()) {
-        walk(root.path);
+    const std::vector<CookedProjectEntry> entries = SearchEntries(context, &truncated);
+    if (entries.empty()) {
+        ImGui::TextDisabled("No cooked search results.");
+        return;
     }
-    if (shown == 0) {
-        ImGui::TextDisabled("No matching files.");
-    } else if (truncated) {
+
+    for (const CookedProjectEntry& entry : entries) {
+        DrawCookedEntry(context, entry);
+    }
+    if (truncated) {
         ImGui::TextDisabled("(results truncated)");
     }
 }
 
-void ProjectPanel::DrawContextMenu(EditorContext& context, const ProjectEntry& entry) {
-    if (!ImGui::BeginPopupContextItem(entry.path.string().c_str())) {
-        return;
+void ProjectPanel::DrawCookedEntry(EditorContext& context, const CookedProjectEntry& entry) {
+    ImGui::PushID(entry.isDirectory ? entry.virtualFolderPath.string().c_str() : entry.rawPath.string().c_str());
+    const bool selected = entry.isDirectory ? SamePath(entry.virtualFolderPath, m_SelectedFolder)
+                                            : (entry.assetId == m_SelectedAssetId);
+    const ImVec4 color = ColorForType(entry.type.type, entry.type.supported);
+    ImGui::BeginGroup();
+    ImGui::PushStyleColor(ImGuiCol_Text, color);
+
+    if (m_IconSize <= kListModeThreshold) {
+        const std::string label = std::string(TypeGlyph(entry.type.type)) + " " + entry.displayName;
+        if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+            if (entry.isDirectory) {
+                m_SelectedFolder = entry.virtualFolderPath;
+                m_SelectedAssetId = {};
+            } else {
+                m_SelectedAssetId = entry.assetId;
+                m_Browser.Select(entry.rawPath);
+            }
+        }
+    } else {
+        const ImVec2 size(m_IconSize, m_IconSize);
+        if (ImGui::Button(TypeGlyph(entry.type.type), size)) {
+            if (entry.isDirectory) {
+                m_SelectedFolder = entry.virtualFolderPath;
+                m_SelectedAssetId = {};
+            } else {
+                m_SelectedAssetId = entry.assetId;
+                m_Browser.Select(entry.rawPath);
+            }
+        }
+        if (selected) {
+            ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+                                                ImGui::GetColorU32(ImGuiCol_Text));
+        }
+        ImGui::TextWrapped("%s", entry.displayName.c_str());
     }
-    m_Browser.Select(entry.path);
-    if (entry.type.type == EditorFileType::Scene && ImGui::MenuItem("Open Scene")) {
-        OpenSceneFile(context, entry.path);
-    }
-    if (entry.type.type == EditorFileType::Prefab && ImGui::MenuItem("Instantiate Prefab")) {
-        InstantiatePrefabFile(context, entry.path);
-    }
-    if ((entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab)) {
-        ImGui::Separator();
-    }
-    if (entry.isDirectory && ImGui::MenuItem("New Folder...")) {
-        RequestModal(Modal::CreateFolder, entry.path);
-    }
-    if (entry.isDirectory && context.assetManager != nullptr && ImGui::MenuItem("New Material")) {
-        CreateMaterialAsset(context, entry.path);
-    }
-    if (ImGui::MenuItem("Rename...")) {
-        RequestModal(Modal::Rename, entry.path);
-    }
-    if (ImGui::MenuItem("Delete...")) {
-        RequestModal(Modal::ConfirmDelete, entry.path);
-    }
-    if (!entry.isDirectory) {
-        DrawAssetActions(context, entry.path);
-    }
-    ImGui::Separator();
-    if (ImGui::MenuItem("Reveal in File Manager")) {
-        ProjectBrowser::Reveal(entry.path);
-    }
-    ImGui::EndPopup();
+    ImGui::PopStyleColor();
+    ImGui::EndGroup();
+
+    BeginCookedDragSource(context, entry);
+    HandleCookedActivation(context, entry);
+    DrawCookedContextMenu(context, entry);
+    ImGui::PopID();
 }
 
-void ProjectPanel::DrawAssetActions(EditorContext& context, const std::filesystem::path& path) {
-    AssetManager* assets = context.assetManager;
-    if (assets == nullptr) {
+void ProjectPanel::DrawCookedContextMenu(EditorContext& context, const CookedProjectEntry& entry) {
+    if (!ImGui::BeginPopupContextItem("##project-entry-context")) {
         return;
     }
-    const AssetType type = AssetManager::ClassifyExtension(path);
-    if (type == AssetType::Unknown) {
-        return; // unsupported file: no asset actions
+
+    if (entry.isDirectory) {
+        m_SelectedFolder = entry.virtualFolderPath;
+        m_SelectedAssetId = {};
+        if (ImGui::MenuItem("New Folder...")) {
+            RequestModal(Modal::CreateFolder, entry.virtualFolderPath);
+        }
+        if (context.assetManager != nullptr && ImGui::MenuItem("New Material")) {
+            CreateMaterialAsset(context, entry.virtualFolderPath);
+        }
+        if (ImGui::MenuItem("Rename...")) {
+            RequestModal(Modal::Rename, entry.virtualFolderPath);
+        }
+        if (ImGui::MenuItem("Delete...")) {
+            RequestModal(Modal::ConfirmDelete, entry.virtualFolderPath);
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Reveal Source")) {
+            ProjectBrowser::Reveal(entry.virtualFolderPath);
+        }
+        ImGui::EndPopup();
+        return;
     }
 
-    ImGui::Separator();
-    const AssetMetadata* meta = FindAssetMeta(context, path);
-    const bool imported = meta != nullptr;
-
-    if (ImGui::MenuItem(imported ? "Reimport" : "Import")) {
-        if (const Status status = assets->ImportAsset(path); !status) {
-            m_Status = status.error;
-        } else {
-            assets->SaveDatabase();
-            m_Status.clear();
-        }
+    m_SelectedAssetId = entry.assetId;
+    if (entry.type.type == EditorFileType::Scene && ImGui::MenuItem("Open Scene")) {
+        OpenSceneFile(context, entry.rawPath);
     }
-    EditorTooltip::ForLastItem(imported ? "Reimport this raw asset and update its metadata"
-                                        : "Import this raw asset into the asset database");
-    if (imported) {
-        if (ImGui::MenuItem("Cook")) {
-            if (const Status status = assets->CookAsset(meta->id); !status) {
-                m_Status = status.error;
-            } else {
-                m_Status.clear();
-            }
-        }
-        EditorTooltip::ForLastItem("Cook this asset using its current metadata");
+    if (entry.type.type == EditorFileType::Prefab && ImGui::MenuItem("Instantiate Prefab")) {
+        InstantiatePrefabFile(context, entry.rawPath);
     }
-    if (imported) {
-        if (ImGui::MenuItem("Recook")) {
-            assets->Database().MarkDirty(meta->id);
-            if (const Status status = assets->CookAsset(meta->id); !status) {
-                m_Status = status.error;
-            } else {
-                m_Status.clear();
-            }
-        }
-        EditorTooltip::ForLastItem("Mark this asset dirty and cook it immediately");
+    if (entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab) {
+        ImGui::Separator();
     }
-    if (ImGui::MenuItem("Recook All Dirty")) {
-        if (const Status status = assets->CookAllDirty(); !status) {
-            m_Status = status.error;
-        } else {
-            m_Status.clear();
-        }
-        assets->SaveDatabase();
+    if (context.assetManager != nullptr && ImGui::MenuItem("Reimport & Recook")) {
+        ReimportAndRecook(context, entry);
     }
-    EditorTooltip::ForLastItem("Cook every asset currently marked dirty");
-    if (imported) {
-        if (ImGui::MenuItem("Copy Asset ID")) {
-            ImGui::SetClipboardText(meta->id.ToString().c_str());
-        }
-        EditorTooltip::ForLastItem("Copy this asset's stable ID to the clipboard");
+    EditorTooltip::ForLastItem("Reimport the raw source asset, recook dirty dependents, and save the database");
+    if (context.assetManager != nullptr && ImGui::MenuItem("Recook")) {
+        Recook(context, entry);
     }
-    if (imported) {
-        if (ImGui::MenuItem("Delete Metadata")) {
-            const AssetID id = meta->id;
-            if (const Status status = assets->DeleteMetadata(id); !status) {
-                m_Status = status.error;
-            } else {
-                assets->SaveDatabase();
-                if (context.renderer != nullptr) {
-                    context.renderer->InvalidateAsset(id.Value());
-                }
-                m_Status = "Deleted metadata";
-            }
-        }
-        EditorTooltip::ForLastItem("Remove this asset's metadata record without deleting the raw file");
-    }
-    if (ImGui::MenuItem("Validate References")) {
+    EditorTooltip::ForLastItem("Mark this cooked asset dirty and cook it immediately");
+    if (context.assetManager != nullptr && ImGui::MenuItem("Validate References")) {
         std::vector<AssetValidationIssue> issues;
-        const Status status = assets->ValidateReferences(&issues);
+        const Status status = context.assetManager->ValidateReferences(&issues);
         m_Status = status ? "Validation passed (" + std::to_string(issues.size()) + " notes)"
                           : "Validation found issues: " + std::to_string(issues.size());
     }
     EditorTooltip::ForLastItem("Check asset database references for missing or stale IDs");
+    if (ImGui::MenuItem("Copy Asset ID")) {
+        ImGui::SetClipboardText(entry.assetId.ToString().c_str());
+    }
+    EditorTooltip::ForLastItem("Copy this cooked asset's stable ID to the clipboard");
+    if (ImGui::MenuItem("Reveal Source")) {
+        ProjectBrowser::Reveal(entry.rawPath);
+    }
+    EditorTooltip::ForLastItem("Reveal the raw source file in the system file manager");
+    if (ImGui::MenuItem("Reveal Cooked")) {
+        ProjectBrowser::Reveal(entry.cookedPath);
+    }
+    EditorTooltip::ForLastItem("Reveal the cooked output file in the system file manager");
+    ImGui::Separator();
+    if (ImGui::MenuItem("Rename...")) {
+        RequestModal(Modal::Rename, entry.rawPath);
+    }
+    if (ImGui::MenuItem("Delete...")) {
+        RequestModal(Modal::ConfirmDelete, entry.rawPath);
+    }
+    ImGui::EndPopup();
+}
+
+void ProjectPanel::DrawDetails(EditorContext& context) {
+    if (const AssetMetadata* meta = SelectedMetadata(context)) {
+        const std::filesystem::path raw = ResolveProjectPath(meta->rawPath);
+        const std::filesystem::path cooked = ResolveProjectPath(meta->cookedPath);
+        ImGui::TextUnformatted(meta->name.empty() ? raw.filename().string().c_str() : meta->name.c_str());
+        ImGui::TextDisabled("Type: %s", AssetTypeToString(meta->type).c_str());
+        ImGui::TextDisabled("ID: %s", meta->id.ToString().c_str());
+        ImGui::TextDisabled("Raw: %s", ProjectRelativePath(raw).generic_string().c_str());
+        ImGui::TextDisabled("Cooked: %s", ProjectRelativePath(cooked).generic_string().c_str());
+        ImGui::TextDisabled("Status: %s", AssetStatusLabel(*meta));
+        if (!meta->dependencies.empty()) {
+            ImGui::TextDisabled("Dependencies: %zu", meta->dependencies.size());
+        }
+        if (meta->type == AssetType::Material) {
+            DrawMaterialEditor(context, raw);
+        } else {
+            const EditorAssetPreview::Preview preview = EditorAssetPreview::Describe(raw);
+            if (preview.hasSnippet) {
+                ImGui::Separator();
+                ImGui::PushTextWrapPos(0.0f);
+                ImGui::TextDisabled("%s", preview.snippet.c_str());
+                ImGui::PopTextWrapPos();
+            }
+        }
+        return;
+    }
+
+    ImGui::TextUnformatted(m_SelectedFolder.filename().empty() ? m_SelectedFolder.string().c_str()
+                                                               : m_SelectedFolder.filename().string().c_str());
+    ImGui::TextDisabled("Folder");
+    ImGui::TextDisabled("%s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str());
+    if (ImGui::Button("New Folder...")) {
+        RequestModal(Modal::CreateFolder, m_SelectedFolder);
+    }
+    EditorTooltip::ForLastItem("Create a source folder under the selected virtual folder");
+}
+
+void ProjectPanel::DrawStatusStrip(EditorContext& context) {
+    const AssetMetadata* meta = SelectedMetadata(context);
+    if (meta != nullptr) {
+        const std::filesystem::path raw = ResolveProjectPath(meta->rawPath);
+        const std::filesystem::path cooked = ResolveProjectPath(meta->cookedPath);
+        ImGui::Text("Selected: %s | Raw: %s | Cooked: %s", raw.filename().string().c_str(),
+                    ProjectRelativePath(raw).generic_string().c_str(), ProjectRelativePath(cooked).generic_string().c_str());
+    } else if (m_Browser.SearchActive()) {
+        ImGui::Text("Search in %s: %s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str(),
+                    m_Browser.SearchBuffer());
+    } else {
+        ImGui::Text("Folder: %s", ProjectRelativePath(m_SelectedFolder).generic_string().c_str());
+    }
+    ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 170.0f);
+    DrawViewSizeSlider();
+}
+
+void ProjectPanel::DrawViewSizeSlider() {
+    ImGui::SetNextItemWidth(150.0f);
+    ImGui::SliderFloat("##ProjectViewSize", &m_IconSize, 24.0f, 112.0f, "");
+    EditorTooltip::ForLastItem("Project icon size; minimum switches to compact list mode");
+}
+
+void ProjectPanel::BeginCookedDragSource(EditorContext& context, const CookedProjectEntry& entry) {
+    if (entry.isDirectory) {
+        return;
+    }
+    if (entry.type.type == EditorFileType::Prefab) {
+        if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            return;
+        }
+        const std::string pathString = entry.rawPath.string();
+        ImGui::SetDragDropPayload(kPrefabDragDropType, pathString.c_str(), pathString.size() + 1);
+        ImGui::TextUnformatted(entry.displayName.c_str());
+        ImGui::EndDragDropSource();
+        return;
+    }
+
+    if (context.assetManager == nullptr || !entry.assetId.IsValid()) {
+        return;
+    }
+    if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+        return;
+    }
+    const AssetMetadata* meta = context.assetManager->Database().Find(entry.assetId);
+    const AssetType type = meta != nullptr ? meta->type : AssetType::Unknown;
+    const AssetDragPayload payload{entry.assetId.Value(), static_cast<int>(type)};
+    ImGui::SetDragDropPayload(kAssetDragDropType, &payload, sizeof(payload));
+    ImGui::Text("%s (%s)", entry.displayName.c_str(), AssetTypeToString(type).c_str());
+    ImGui::EndDragDropSource();
+}
+
+void ProjectPanel::HandleCookedActivation(EditorContext& context, const CookedProjectEntry& entry) {
+    if (!ImGui::IsItemHovered() || !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        return;
+    }
+    if (entry.isDirectory) {
+        m_SelectedFolder = entry.virtualFolderPath;
+        m_SelectedAssetId = {};
+    } else if (entry.type.type == EditorFileType::Scene) {
+        OpenSceneFile(context, entry.rawPath);
+    } else if (entry.type.type == EditorFileType::Prefab) {
+        InstantiatePrefabFile(context, entry.rawPath);
+    }
+}
+
+void ProjectPanel::ReimportAndRecook(EditorContext& context, const CookedProjectEntry& entry) {
+    if (context.assetManager == nullptr) {
+        return;
+    }
+    if (const Status status = context.assetManager->ImportAsset(entry.rawPath); !status) {
+        m_Status = status.error;
+        return;
+    }
+    context.assetManager->Database().MarkDirtyWithDependents(entry.assetId);
+    if (const Status status = context.assetManager->CookAllDirty(); !status) {
+        m_Status = status.error;
+    } else {
+        m_Status = "Reimported & recooked";
+    }
+    context.assetManager->SaveDatabase();
+    InvalidateAssetEvents(context);
+    if (context.assetManager->Database().Find(entry.assetId) != nullptr) {
+        m_SelectedAssetId = entry.assetId;
+    }
+}
+
+void ProjectPanel::Recook(EditorContext& context, const CookedProjectEntry& entry) {
+    if (context.assetManager == nullptr) {
+        return;
+    }
+    context.assetManager->Database().MarkDirty(entry.assetId);
+    if (const Status status = context.assetManager->CookAsset(entry.assetId); !status) {
+        m_Status = status.error;
+    } else {
+        m_Status = "Recooked " + entry.displayName;
+    }
+    context.assetManager->SaveDatabase();
+    InvalidateAssetEvents(context);
+}
+
+void ProjectPanel::ImportSelectedFile(EditorContext& context) {
+    const auto chosen = FileDialog::OpenFile(
+        {
+            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp"},
+            {"Models", "gltf,glb"},
+            {"Textures", "png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2"},
+            {"Materials / Scenes / Prefabs", "yaml"},
+            {"Shaders", "glsl,vert,frag,comp"},
+        },
+        m_SelectedFolder);
+    if (chosen) {
+        ImportExternalAsset(context, *chosen);
+    }
+}
+
+void ProjectPanel::ImportExternalAsset(EditorContext& context, const std::filesystem::path& source) {
+    if (context.assetManager == nullptr) {
+        return;
+    }
+    const AssetType type = AssetManager::ClassifyExtension(source);
+    if (type == AssetType::Unknown) {
+        m_Status = "Unsupported asset extension";
+        return;
+    }
+
+    std::filesystem::path targetDir = m_SelectedFolder;
+    if (!m_Browser.IsWithinRoots(targetDir) || !SamePath(m_Browser.RootForPath(targetDir), context.assetManager->Info().rawRoot)) {
+        targetDir = context.assetManager->Info().rawRoot / AssetPath::CookedSubdirectory(type);
+    }
+    if (const Status status = FileSystem::CreateDirectories(targetDir); !status) {
+        m_Status = status.error;
+        return;
+    }
+
+    const std::filesystem::path dest = UniqueDestination(targetDir, source.filename().string());
+    std::error_code ec;
+    std::filesystem::copy_file(source, dest, std::filesystem::copy_options::none, ec);
+    if (ec) {
+        m_Status = "Import copy failed: " + ec.message();
+        return;
+    }
+    ImportAndCookRawAsset(context, dest);
+}
+
+bool ProjectPanel::ImportAndCookRawAsset(EditorContext& context, const std::filesystem::path& rawPath) {
+    if (context.assetManager == nullptr) {
+        return false;
+    }
+    if (const Status status = context.assetManager->ImportAsset(rawPath); !status) {
+        m_Status = status.error;
+        return false;
+    }
+    const AssetMetadata* imported = FindAssetMeta(context, rawPath);
+    if (imported != nullptr) {
+        context.assetManager->Database().MarkDirtyWithDependents(imported->id);
+    }
+    if (const Status status = context.assetManager->CookAllDirty(); !status) {
+        m_Status = status.error;
+    } else {
+        m_Status = "Imported and cooked " + rawPath.filename().string();
+    }
+    context.assetManager->SaveDatabase();
+    InvalidateAssetEvents(context);
+    if (const AssetMetadata* meta = FindAssetMeta(context, rawPath)) {
+        if (IsVisibleCookedAsset(*meta)) {
+            m_SelectedAssetId = meta->id;
+            m_SelectedFolder = ResolveProjectPath(meta->rawPath).parent_path();
+        }
+    }
+    return true;
+}
+
+void ProjectPanel::ImportAllAndCook(EditorContext& context) {
+    if (context.assetManager == nullptr) {
+        return;
+    }
+    const Status importStatus = context.assetManager->ImportAll();
+    const std::size_t dirtyCount = context.assetManager->Database().DirtyAssets().size();
+    const Status cookStatus = context.assetManager->CookAllDirty();
+    context.assetManager->SaveDatabase();
+    InvalidateAssetEvents(context);
+    if (!importStatus) {
+        m_Status = importStatus.error;
+    } else if (!cookStatus) {
+        m_Status = "Cook failed after importing: " + cookStatus.error;
+    } else {
+        m_Status = "Imported all & cooked " + std::to_string(dirtyCount) + " dirty assets";
+    }
+}
+
+void ProjectPanel::RecookDirty(EditorContext& context) {
+    if (context.assetManager == nullptr) {
+        return;
+    }
+    const std::size_t dirtyCount = context.assetManager->Database().DirtyAssets().size();
+    if (const Status status = context.assetManager->CookAllDirty(); !status) {
+        m_Status = status.error;
+    } else {
+        m_Status = "Recooked " + std::to_string(dirtyCount) + " dirty assets";
+    }
+    context.assetManager->SaveDatabase();
+    InvalidateAssetEvents(context);
+}
+
+void ProjectPanel::InvalidateAssetEvents(EditorContext& context) {
+    if (context.assetManager == nullptr || context.renderer == nullptr) {
+        return;
+    }
+    const std::vector<AssetEvent>& events = context.assetManager->PollEvents();
+    for (const AssetEvent& event : events) {
+        context.renderer->InvalidateAsset(event.id.Value());
+    }
+}
+
+std::vector<CookedProjectEntry> ProjectPanel::SearchEntries(EditorContext& context, bool* truncated) const {
+    std::vector<CookedProjectEntry> results;
+    if (truncated != nullptr) {
+        *truncated = false;
+    }
+    const AssetDatabase* database = context.assetManager != nullptr ? &context.assetManager->Database() : nullptr;
+    if (database == nullptr) {
+        return results;
+    }
+
+    std::vector<std::filesystem::path> roots;
+    switch (m_SearchScope) {
+    case ProjectSearchScope::All:
+        for (const ProjectBrowser::Root& root : m_Browser.Roots()) {
+            roots.push_back(root.path);
+        }
+        break;
+    case ProjectSearchScope::SelectedRoot:
+        roots.push_back(m_Browser.RootForPath(m_SelectedFolder));
+        break;
+    case ProjectSearchScope::SelectedFolder:
+        roots.push_back(m_SelectedFolder);
+        break;
+    }
+
+    auto walk = [&](auto&& self, const std::filesystem::path& folder) -> void {
+        if (folder.empty() || (truncated != nullptr && *truncated)) {
+            return;
+        }
+        for (const CookedProjectEntry& entry : m_Browser.Entries(folder, database)) {
+            if (MatchesSearchAndFilter(entry)) {
+                if (results.size() >= static_cast<std::size_t>(kMaxSearchResults)) {
+                    if (truncated != nullptr) {
+                        *truncated = true;
+                    }
+                    return;
+                }
+                results.push_back(entry);
+            }
+            if (entry.isDirectory) {
+                self(self, entry.virtualFolderPath);
+            }
+        }
+    };
+
+    for (const std::filesystem::path& root : roots) {
+        walk(walk, root);
+    }
+    return results;
+}
+
+bool ProjectPanel::MatchesSearchAndFilter(const CookedProjectEntry& entry) const {
+    if (!TypeMatches(m_TypeFilter, entry)) {
+        return false;
+    }
+    if (!m_Browser.SearchActive()) {
+        return true;
+    }
+    return m_Browser.MatchesSearch(entry.displayName) ||
+           m_Browser.MatchesSearch(entry.rawPath.generic_string()) ||
+           m_Browser.MatchesSearch(entry.cookedPath.generic_string());
+}
+
+const AssetMetadata* ProjectPanel::SelectedMetadata(EditorContext& context) const {
+    if (context.assetManager == nullptr || !m_SelectedAssetId.IsValid()) {
+        return nullptr;
+    }
+    const AssetMetadata* meta = context.assetManager->Database().Find(m_SelectedAssetId);
+    return meta != nullptr && IsVisibleCookedAsset(*meta) ? meta : nullptr;
 }
 
 void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path) {
-    // Lazily (re)load the material whenever the selected file changes. Any unsaved
-    // live preview on the previously edited material is discarded so the viewport
-    // reflects what is actually on disk.
     if (m_EditMaterialPath != path) {
         if (m_MaterialPreviewActive && context.renderer != nullptr && m_EditMaterialId != 0) {
             context.renderer->InvalidateAsset(m_EditMaterialId);
@@ -431,8 +971,6 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
     changed |= ImGui::SliderFloat("Emission Strength", &m_EditMaterial.emissiveStrength, 0.0f, 16.0f);
     EditorTooltip::ForLastItem("Emissive intensity multiplier");
 
-    // Transparency: Opaque ignores alpha, Mask does a hard cutoff at AlphaCutoff,
-    // Blend does order-dependent alpha blending. AlphaCutoff only applies to Mask.
     {
         static const char* const kAlphaModes[] = {"Opaque", "Mask", "Blend"};
         int alphaModeIndex = 0;
@@ -456,10 +994,6 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
     ImGui::SeparatorText("Maps");
     ImGui::TextDisabled("Drag a texture asset from the tree onto a slot.");
 
-    // A texture slot: a thumbnail (drop target) + label + filename + clear. The
-    // slot stores a project-relative raw texture path; a texture dropped from the
-    // project tree (kAssetDragDropType) sets it, and save resolves it to an
-    // AssetID via the cooker. Returns true when the slot changed.
     auto textureSlot = [&](const char* label, std::string& slot) -> bool {
         bool slotChanged = false;
         ImGui::PushID(label);
@@ -475,7 +1009,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
         if (thumbId != 0) {
             ImGui::Image(static_cast<ImTextureID>(thumbId), thumbSize);
         } else {
-            ImGui::Button("##empty", thumbSize); // empty drop box when no texture / no preview
+            ImGui::Button("##empty", thumbSize);
         }
         EditorTooltip::ForLastItem("Drop a texture asset here to assign this map");
         if (ImGui::BeginDragDropTarget()) {
@@ -518,14 +1052,11 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
     changed |= textureSlot("Occlusion", m_EditMaterial.occlusionTexture);
     changed |= textureSlot("Emission", m_EditMaterial.emissiveTexture);
 
-    // UV transform shared by every map: tiling (scale) then offset.
     changed |= ImGui::DragFloat2("Tiling", &m_EditMaterial.tiling.x, 0.01f, 0.0f, 256.0f);
     EditorTooltip::ForLastItem("UV tiling applied to every texture map");
     changed |= ImGui::DragFloat2("Offset", &m_EditMaterial.offset.x, 0.005f, -256.0f, 256.0f);
     EditorTooltip::ForLastItem("UV offset applied to every texture map");
 
-    // Live preview: push edits straight to the renderer (no disk write) so the
-    // scene viewport updates as the user drags sliders / drops textures.
     if (changed) {
         ApplyMaterialPreview(context);
     }
@@ -535,7 +1066,6 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
         if (const Status status = MaterialSerializer::SaveFile(path, m_EditMaterial); !status) {
             m_Status = status.error;
         } else if (context.assetManager != nullptr) {
-            // Reimport + recook so the renderer picks up the edit on next resolve.
             context.assetManager->ImportAsset(path);
             if (const AssetMetadata* meta = FindAssetMeta(context, path)) {
                 const AssetID id = meta->id;
@@ -545,8 +1075,9 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
                 if (context.renderer != nullptr) {
                     context.renderer->InvalidateAsset(id.Value());
                 }
+                m_SelectedAssetId = id;
             }
-            m_MaterialPreviewActive = false; // saved state now matches disk
+            m_MaterialPreviewActive = false;
             m_Status = "Saved material";
         } else {
             m_Status = "Saved material (no asset manager to cook)";
@@ -559,7 +1090,7 @@ void ProjectPanel::DrawMaterialEditor(EditorContext& context, const std::filesys
         Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
         m_EditMaterial = loaded ? loaded.value : MaterialSource{};
         if (context.renderer != nullptr && m_EditMaterialId != 0) {
-            context.renderer->InvalidateAsset(m_EditMaterialId); // drop preview, reload from disk
+            context.renderer->InvalidateAsset(m_EditMaterialId);
         }
         m_MaterialPreviewActive = false;
         m_Status = "Reverted";
@@ -609,7 +1140,6 @@ void ProjectPanel::CreateMaterialAsset(EditorContext& context, const std::filesy
     const std::filesystem::path target =
         std::filesystem::is_directory(directory, ec) ? directory : directory.parent_path();
 
-    // Pick a non-clobbering file name (NewMaterial.material.yaml, _1, _2, ...).
     std::filesystem::path path = target / "NewMaterial.material.yaml";
     int suffix = 1;
     while (std::filesystem::exists(path, ec)) {
@@ -617,61 +1147,17 @@ void ProjectPanel::CreateMaterialAsset(EditorContext& context, const std::filesy
     }
 
     MaterialSource source;
-    source.name = path.stem().stem().string(); // strip .material.yaml
+    source.name = path.stem().stem().string();
     if (const Status status = MaterialSerializer::SaveFile(path, source); !status) {
         m_Status = status.error;
         return;
     }
-    if (context.assetManager != nullptr) {
-        context.assetManager->ImportAsset(path);
-        context.assetManager->CookAllDirty();
-        context.assetManager->SaveDatabase();
-    }
-    m_Browser.Select(path);
-    m_Status = "Created " + path.filename().string();
-}
-
-void ProjectPanel::BeginFileDragSource(EditorContext& context, const ProjectEntry& entry) {
-    // Prefabs drag as a path payload (the hierarchy/viewport instantiate them).
-    if (entry.type.type == EditorFileType::Prefab) {
-        if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            return;
-        }
-        const std::string pathString = entry.path.string();
-        // Include the trailing null so the target can read it as a C string.
-        ImGui::SetDragDropPayload(kPrefabDragDropType, pathString.c_str(), pathString.size() + 1);
-        ImGui::TextUnformatted(entry.name.c_str());
-        ImGui::EndDragDropSource();
-        return;
-    }
-
-    // Any other tracked asset drags as an asset-id payload (inspector fields).
-    const AssetMetadata* meta = FindAssetMeta(context, entry.path);
-    if (meta == nullptr) {
-        return;
-    }
-    if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-        return;
-    }
-    const AssetDragPayload payload{meta->id.Value(), static_cast<int>(meta->type)};
-    ImGui::SetDragDropPayload(kAssetDragDropType, &payload, sizeof(payload));
-    ImGui::Text("%s (%s)", entry.name.c_str(), AssetTypeToString(meta->type).c_str());
-    ImGui::EndDragDropSource();
-}
-
-void ProjectPanel::HandleFileActivation(EditorContext& context, const ProjectEntry& entry) {
-    if (!ImGui::IsItemHovered() || !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-        return;
-    }
-    if (entry.type.type == EditorFileType::Scene) {
-        OpenSceneFile(context, entry.path);
-    } else if (entry.type.type == EditorFileType::Prefab) {
-        InstantiatePrefabFile(context, entry.path);
+    if (ImportAndCookRawAsset(context, path)) {
+        m_Status = "Created " + path.filename().string();
     }
 }
 
 void ProjectPanel::OpenSceneFile(EditorContext& context, const std::filesystem::path& path) {
-    // Defer to the host so the unsaved-changes prompt runs before the swap.
     context.requestedOpenScene = path;
 }
 
@@ -682,55 +1168,7 @@ void ProjectPanel::InstantiatePrefabFile(EditorContext& context, const std::file
     context.undoRedo.Execute(EditorCommands::InstantiatePrefab(path), context);
 }
 
-void ProjectPanel::DrawDetails(EditorContext& context) {
-    if (ImGui::BeginChild("##project-details", ImVec2(0.0f, 0.0f), true)) {
-        if (!m_Browser.HasSelection()) {
-            ImGui::TextDisabled("Select a file to see details.");
-        } else {
-            const std::filesystem::path& path = m_Browser.Selected();
-            std::error_code ec;
-            const bool isDir = std::filesystem::is_directory(path, ec);
-            ImGui::TextUnformatted(path.filename().string().c_str());
-            if (isDir) {
-                ImGui::TextDisabled("Folder");
-                if (ImGui::Button("New Folder...")) {
-                    RequestModal(Modal::CreateFolder, path);
-                }
-            } else {
-                const EditorAssetPreview::Preview preview = EditorAssetPreview::Describe(path);
-                ImGui::TextDisabled("%s  -  %s", preview.typeLabel.c_str(), preview.sizeLabel.c_str());
-
-                // Asset database record (id, type, paths, cook status).
-                if (const AssetMetadata* meta = FindAssetMeta(context, path)) {
-                    ImGui::Separator();
-                    ImGui::Text("Asset: %s",
-                                meta->name.empty() ? path.filename().string().c_str() : meta->name.c_str());
-                    ImGui::TextDisabled("Type: %s", AssetTypeToString(meta->type).c_str());
-                    ImGui::TextDisabled("ID: %s", meta->id.ToString().c_str());
-                    ImGui::TextDisabled(
-                        "Cooked: %s", meta->cookedPath.empty() ? "(none)" : meta->cookedPath.generic_string().c_str());
-                    ImGui::TextDisabled("Status: %s", AssetStatusLabel(*meta));
-                    if (!meta->dependencies.empty()) {
-                        ImGui::TextDisabled("Dependencies: %zu", meta->dependencies.size());
-                    }
-                }
-
-                if (FileTypeRegistry::Classify(path).type == EditorFileType::Material) {
-                    DrawMaterialEditor(context, path);
-                } else if (preview.hasSnippet) {
-                    ImGui::Separator();
-                    ImGui::PushTextWrapPos(0.0f);
-                    ImGui::TextDisabled("%s", preview.snippet.c_str());
-                    ImGui::PopTextWrapPos();
-                }
-            }
-        }
-    }
-    ImGui::EndChild();
-}
-
 void ProjectPanel::DrawModals(EditorContext& context) {
-    (void)context;
     if (m_OpenModalRequested) {
         switch (m_Modal) {
         case Modal::CreateFolder:
@@ -760,6 +1198,7 @@ void ProjectPanel::DrawModals(EditorContext& context) {
             if (const Status status = m_Browser.CreateFolder(m_ModalTarget, m_NameBuffer); !status) {
                 m_Status = status.error;
             } else {
+                m_SelectedFolder = m_ModalTarget / m_NameBuffer;
                 m_Status.clear();
             }
             ImGui::CloseCurrentPopup();
@@ -777,9 +1216,19 @@ void ProjectPanel::DrawModals(EditorContext& context) {
         const bool submit = ImGui::InputText("##rename", m_NameBuffer, sizeof(m_NameBuffer),
                                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
         if (ImGui::Button("Rename") || submit) {
-            if (const Status status = m_Browser.RenameEntry(m_ModalTarget, m_NameBuffer); !status) {
+            const std::filesystem::path oldPath = m_ModalTarget;
+            const std::filesystem::path newPath = oldPath.parent_path() / m_NameBuffer;
+            if (const Status status = m_Browser.RenameEntry(oldPath, m_NameBuffer); !status) {
                 m_Status = status.error;
             } else {
+                if (SamePath(m_SelectedFolder, oldPath)) {
+                    m_SelectedFolder = newPath;
+                }
+                if (context.assetManager != nullptr) {
+                    context.assetManager->DiscoverRawAssets();
+                    context.assetManager->CookAllDirty();
+                    context.assetManager->SaveDatabase();
+                }
                 m_Status.clear();
             }
             ImGui::CloseCurrentPopup();
@@ -793,12 +1242,21 @@ void ProjectPanel::DrawModals(EditorContext& context) {
 
     if (ImGui::BeginPopupModal("Delete Item", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Delete \"%s\"?", m_ModalTarget.filename().string().c_str());
-        ImGui::TextDisabled("This permanently removes the file/folder from disk.");
+        ImGui::TextDisabled("This permanently removes the source file/folder from disk.");
         ImGui::Separator();
         if (ImGui::Button("Delete")) {
             if (const Status status = m_Browser.DeleteEntry(m_ModalTarget); !status) {
                 m_Status = status.error;
             } else {
+                if (context.assetManager != nullptr) {
+                    context.assetManager->DiscoverRawAssets();
+                    context.assetManager->CookAllDirty();
+                    context.assetManager->SaveDatabase();
+                }
+                if (SamePath(m_SelectedFolder, m_ModalTarget)) {
+                    m_SelectedFolder = m_Browser.ParentFolderWithinRoots(m_ModalTarget);
+                }
+                m_SelectedAssetId = {};
                 m_Status.clear();
             }
             ImGui::CloseCurrentPopup();
