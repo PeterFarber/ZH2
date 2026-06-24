@@ -4,6 +4,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include <cstdint>
 
 namespace Hockey {
@@ -24,6 +25,7 @@ private:
     Hockey::Scene m_Scene{"Server Scene"};
     Hockey::GameplayWorld m_GameplayWorld;
     Hockey::GameplaySettings m_GameplaySettings;
+    Hockey::GameplayTuning m_GameplayTuning;
     Hockey::PhysicsSystem* m_PhysicsSystem = nullptr; // owned by m_Scene
     bool m_GameplayEnabled = false;
     bool m_PhysicsDebug = false;

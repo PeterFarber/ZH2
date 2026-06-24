@@ -8,6 +8,7 @@
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/Gameplay.hpp"
+#include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
@@ -113,10 +114,17 @@ bool DedicatedServerApp::OnInit() {
     }
 
     m_GameplaySettings = Hockey::LoadGameplaySettings(m_Config);
+    if (const Hockey::Result<Hockey::GameplayTuning> loaded =
+            Hockey::TuningSerializer::Load(Hockey::Paths::DataFile("gameplay/tuning.default.yaml"))) {
+        m_GameplayTuning = loaded.value;
+    } else {
+        HK_SERVER_INFO("Gameplay tuning load failed: {}. Using built-in defaults.", loaded.error);
+    }
     m_GameplayEnabled = m_GameplaySettings.enabled && m_Config.GetBool("gameplay.authoritative", true);
     if (m_GameplayEnabled) {
         Hockey::PhysicsWorld* physicsWorld = m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr;
-        const Hockey::Status status = m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings);
+        const Hockey::Status status =
+            m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings, m_GameplayTuning);
         if (status) {
             HK_SERVER_INFO("Gameplay enabled for authoritative headless simulation");
         } else {

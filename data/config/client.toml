@@ -73,6 +73,9 @@ enable_sleeping = true
 [gameplay]
 enabled = true
 local_play = true
+faceoff_delay_seconds = 1.0
+goal_detection_radius = 1.0
+require_puck_for_goal = true
 debug_draw_gameplay = false
 log_gameplay_events = false
 

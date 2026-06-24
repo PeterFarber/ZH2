@@ -7,6 +7,7 @@
 #include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 #include <cstdint>
@@ -36,6 +37,7 @@ private:
     Hockey::Scene m_Scene{"Game Scene"};
     Hockey::GameplayWorld m_GameplayWorld;
     Hockey::GameplaySettings m_GameplaySettings;
+    Hockey::GameplayTuning m_GameplayTuning;
     Hockey::Renderer m_Renderer;
     Hockey::AssetManager m_AssetManager;
     bool m_RendererReady = false;

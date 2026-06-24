@@ -14,6 +14,7 @@
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/Gameplay/Gameplay.hpp"
 #include "Hockey/Gameplay/Simulation/GameplaySnapshot.hpp"
+#include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsDebugDraw.hpp"
@@ -200,6 +201,12 @@ bool GameClientApp::OnInit() {
     HK_CLIENT_INFO("Active scene '{}' with {} entities", m_Scene.GetName(), m_Scene.EntityCount());
 
     m_GameplaySettings = Hockey::LoadGameplaySettings(m_Config);
+    if (const Hockey::Result<Hockey::GameplayTuning> loaded =
+            Hockey::TuningSerializer::Load(Hockey::Paths::DataFile("gameplay/tuning.default.yaml"))) {
+        m_GameplayTuning = loaded.value;
+    } else {
+        HK_CLIENT_INFO("Gameplay tuning load failed: {}. Using built-in defaults.", loaded.error);
+    }
     m_LocalGameplayEnabled = m_GameplaySettings.enabled && m_Config.GetBool("gameplay.local_play", true);
     if (m_GameplaySettings.fixedDeltaSeconds > 0.0f) {
         m_SimulationTimestep.SetTickRate(1.0 / static_cast<double>(m_GameplaySettings.fixedDeltaSeconds));
@@ -232,7 +239,8 @@ bool GameClientApp::OnInit() {
 
     if (m_LocalGameplayEnabled) {
         Hockey::PhysicsWorld* physicsWorld = m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr;
-        const Hockey::Status status = m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings);
+        const Hockey::Status status =
+            m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings, m_GameplayTuning);
         if (status) {
             HK_CLIENT_INFO("Local gameplay enabled");
         } else {

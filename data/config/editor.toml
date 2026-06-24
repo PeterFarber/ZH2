@@ -9,13 +9,32 @@ auto_import = false
 hot_reload = false
 
 [gameplay]
+allow_body_checking = true
+allow_manual_goalie = true
+allow_out_of_play = true
+auto_faceoff_after_goal = true
+countdown_beep_start_seconds = 4.0
 debug_draw_gameplay = true
-preview_enabled = false
+enabled = true
+faceoff_delay_seconds = 1.0
+fixed_delta_seconds = 0.01666666753590107
+goal_detection_radius = 1.0
+goalies_per_team = 1
+log_gameplay_events = true
+period_count = 3
+period_length_seconds = 180.0
+post_goal_delay_seconds = 3.0
+pregame_countdown_seconds = 10.0
+preview_enabled = true
+require_puck_for_goal = true
+skaters_per_team = 3
+stop_clock_after_goal = true
+target_player_count = 8
 validate_on_load = true
 
 [input]
-gamepad_enabled = true
-mouse_capture = false
+gamepad_enabled = false
+mouse_capture = true
 
 [physics]
 enable_debug_draw = true
