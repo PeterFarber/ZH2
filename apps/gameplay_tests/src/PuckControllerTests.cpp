@@ -55,14 +55,14 @@ void RunPuckControllerTests() {
 
     {
         Scene scene("PuckControllerDrag");
-        Entity puck = AddPuck(scene, PuckState::Passed, {4.0f, 0.0f, 0.0f});
+        Entity puck = AddPuck(scene, PuckState::Loose, {4.0f, 0.0f, 0.0f});
         GameplayTuning tuning;
         tuning.puck.loosePuckDrag = 0.5f;
 
         PuckController::FixedUpdate(scene, tuning, 1.0f);
 
         HK_CHECK_NEAR(puck.GetComponent<PuckRuntimeComponent>().velocity.x, 2.0f, 0.0001f);
-        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Passed);
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
     }
 
     {

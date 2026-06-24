@@ -28,7 +28,6 @@ struct GameplaySettings {
     bool requirePuckForGoal = true;
     uint32_t spawnRandomSeed = 0x5A02024u;
 
-    bool allowBodyChecking = true;
     bool allowManualGoalie = true;
     bool allowOutOfPlay = true;
 

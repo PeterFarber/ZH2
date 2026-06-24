@@ -11,7 +11,7 @@ namespace Hockey {
 namespace {
 
 bool ShouldMove(PuckState state) {
-    return state == PuckState::Loose || state == PuckState::Shot || state == PuckState::Passed;
+    return state == PuckState::Loose || state == PuckState::Shot;
 }
 
 void KeepPuckOnFloor(TransformComponent& transform, PuckRuntimeComponent& runtime, const GameplayTuning& tuning) {
@@ -53,8 +53,7 @@ void PuckController::FixedUpdate(Scene& scene, const GameplayTuning& tuning, flo
 
         if (glm::dot(runtime.velocity, runtime.velocity) < 0.0001f) {
             runtime.velocity = glm::vec3{0.0f};
-            if ((gameplay.state == PuckState::Shot && gameplay.shotIgnoreTimer <= 0.0f) ||
-                gameplay.state == PuckState::Passed) {
+            if (gameplay.state == PuckState::Shot && gameplay.shotIgnoreTimer <= 0.0f) {
                 gameplay.state = PuckState::Loose;
             }
         }

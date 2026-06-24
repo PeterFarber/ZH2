@@ -77,7 +77,6 @@ std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
     out << YAML::Key << "Stick" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Reach" << YAML::Value << tuning.stick.reach;
     out << YAML::Key << "Width" << YAML::Value << tuning.stick.width;
-    out << YAML::Key << "PokeCheckCooldown" << YAML::Value << tuning.stick.pokeCheckCooldown;
     out << YAML::EndMap;
 
     out << YAML::Key << "Shot" << YAML::Value << YAML::BeginMap;
@@ -88,17 +87,6 @@ std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
     out << YAML::Key << "AccuracyDegrees" << YAML::Value << tuning.shot.accuracyDegrees;
     out << YAML::EndMap;
 
-    out << YAML::Key << "Pass" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "Power" << YAML::Value << tuning.pass.power;
-    out << YAML::Key << "AssistRadius" << YAML::Value << tuning.pass.assistRadius;
-    out << YAML::Key << "MaxAssistAngleDegrees" << YAML::Value << tuning.pass.maxAssistAngleDegrees;
-    out << YAML::EndMap;
-
-    out << YAML::Key << "Check" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "Cooldown" << YAML::Value << tuning.check.cooldown;
-    out << YAML::Key << "Impulse" << YAML::Value << tuning.check.impulse;
-    out << YAML::Key << "Radius" << YAML::Value << tuning.check.radius;
-    out << YAML::EndMap;
     out << YAML::EndMap;
     return out.c_str();
 }
@@ -154,7 +142,6 @@ bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outT
     if (const YAML::Node stick = root["Stick"]) {
         outTuning.stick.reach = ReadFloat(stick, "Reach", outTuning.stick.reach);
         outTuning.stick.width = ReadFloat(stick, "Width", outTuning.stick.width);
-        outTuning.stick.pokeCheckCooldown = ReadFloat(stick, "PokeCheckCooldown", outTuning.stick.pokeCheckCooldown);
     }
     if (const YAML::Node shot = root["Shot"]) {
         outTuning.shot.minPower = ReadFloat(shot, "MinPower", outTuning.shot.minPower);
@@ -163,16 +150,6 @@ bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outT
         outTuning.shot.selfCollisionGraceSeconds =
             ReadFloat(shot, "SelfCollisionGraceSeconds", outTuning.shot.selfCollisionGraceSeconds);
         outTuning.shot.accuracyDegrees = ReadFloat(shot, "AccuracyDegrees", outTuning.shot.accuracyDegrees);
-    }
-    if (const YAML::Node pass = root["Pass"]) {
-        outTuning.pass.power = ReadFloat(pass, "Power", outTuning.pass.power);
-        outTuning.pass.assistRadius = ReadFloat(pass, "AssistRadius", outTuning.pass.assistRadius);
-        outTuning.pass.maxAssistAngleDegrees = ReadFloat(pass, "MaxAssistAngleDegrees", outTuning.pass.maxAssistAngleDegrees);
-    }
-    if (const YAML::Node check = root["Check"]) {
-        outTuning.check.cooldown = ReadFloat(check, "Cooldown", outTuning.check.cooldown);
-        outTuning.check.impulse = ReadFloat(check, "Impulse", outTuning.check.impulse);
-        outTuning.check.radius = ReadFloat(check, "Radius", outTuning.check.radius);
     }
     return true;
 }

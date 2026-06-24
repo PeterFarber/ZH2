@@ -52,4 +52,4 @@ Create `HockeyGameplayTests` covering match setup, scene validation, spawn/team/
 
 ## Definition of done
 
-Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/stealing/shooting/faceoffs work, pass/body-check/poke-check actions are absent or explicitly tracked as removal follow-up, the `GAMEPLAY.md` action model is implemented or explicitly tracked as follow-up, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.
+Phase 7 is complete only when 4v4 match initializes, gameplay tests pass, puck/goals/score/timer/movement/stick interactions/stealing/shooting/faceoffs work, pass/body-check/poke-check actions are absent, the `GAMEPLAY.md` action model is implemented, server can run gameplay headlessly, client can run local gameplay, and gameplay does not depend on renderer.

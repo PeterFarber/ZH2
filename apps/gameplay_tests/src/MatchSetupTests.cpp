@@ -143,8 +143,6 @@ void RunMatchSetupTests() {
         HK_CHECK(player.HasComponent<PlayerRuntimeComponent>());
         HK_CHECK(player.HasComponent<StickComponent>());
         HK_CHECK(player.HasComponent<ShotComponent>());
-        HK_CHECK(player.HasComponent<PassComponent>());
-        HK_CHECK(player.HasComponent<CheckComponent>());
     }
     HK_CHECK_EQ(homeSkaters, 3);
     HK_CHECK_EQ(awaySkaters, 3);

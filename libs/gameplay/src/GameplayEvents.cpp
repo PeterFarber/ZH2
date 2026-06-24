@@ -22,8 +22,6 @@ const char* GameplayEventTypeToString(GameplayEventType type) {
     case GameplayEventType::GoalieShieldStarted: return "GoalieShieldStarted";
     case GameplayEventType::GoalieShieldEnded: return "GoalieShieldEnded";
     case GameplayEventType::PuckShot: return "PuckShot";
-    case GameplayEventType::PuckPassed: return "PuckPassed";
-    case GameplayEventType::PlayerChecked: return "PlayerChecked";
     case GameplayEventType::PuckOutOfPlay: return "PuckOutOfPlay";
     case GameplayEventType::ResetStarted: return "ResetStarted";
     case GameplayEventType::ResetCompleted: return "ResetCompleted";

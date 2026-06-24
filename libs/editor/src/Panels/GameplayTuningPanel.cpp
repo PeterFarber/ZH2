@@ -157,7 +157,6 @@ void GameplayTuningPanel::DrawTuning(EditorContext& context) {
         ImGui::PushID("Stick");
         changed |= DrawFloatValue("Reach", m_Tuning.stick.reach, 0.01f, 0.0f, 20.0f);
         changed |= DrawFloatValue("Width", m_Tuning.stick.width, 0.01f, 0.0f, 10.0f);
-        changed |= DrawFloatValue("Poke check cooldown", m_Tuning.stick.pokeCheckCooldown, 0.01f, 0.0f, 30.0f);
         ImGui::PopID();
     }
     if (ImGui::CollapsingHeader("Shot", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -167,20 +166,6 @@ void GameplayTuningPanel::DrawTuning(EditorContext& context) {
         changed |= DrawFloatValue("Charge seconds", m_Tuning.shot.chargeSeconds, 0.01f, 0.0f, 10.0f);
         changed |= DrawFloatValue("Self collision grace seconds", m_Tuning.shot.selfCollisionGraceSeconds, 0.01f, 0.0f, 5.0f);
         changed |= DrawFloatValue("Accuracy degrees", m_Tuning.shot.accuracyDegrees, 0.1f, 0.0f, 90.0f);
-        ImGui::PopID();
-    }
-    if (ImGui::CollapsingHeader("Pass", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::PushID("Pass");
-        changed |= DrawFloatValue("Power", m_Tuning.pass.power, 0.05f, 0.0f, 200.0f);
-        changed |= DrawFloatValue("Assist radius", m_Tuning.pass.assistRadius, 0.01f, 0.0f, 50.0f);
-        changed |= DrawFloatValue("Max assist angle degrees", m_Tuning.pass.maxAssistAngleDegrees, 0.1f, 0.0f, 180.0f);
-        ImGui::PopID();
-    }
-    if (ImGui::CollapsingHeader("Check", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::PushID("Check");
-        changed |= DrawFloatValue("Cooldown", m_Tuning.check.cooldown, 0.01f, 0.0f, 30.0f);
-        changed |= DrawFloatValue("Impulse", m_Tuning.check.impulse, 0.05f, 0.0f, 200.0f);
-        changed |= DrawFloatValue("Radius", m_Tuning.check.radius, 0.01f, 0.0f, 20.0f);
         ImGui::PopID();
     }
     if (changed) {
@@ -213,7 +198,6 @@ void GameplayTuningPanel::DrawSettings(EditorContext& context, GameplaySettings&
     changed |= DrawFloatValue("Faceoff delay seconds", settings.faceoffDelaySeconds, 0.1f, 0.0f, 60.0f);
     changed |= DrawFloatValue("Goal detection radius", settings.goalDetectionRadius, 0.01f, 0.0f, 20.0f);
     changed |= ImGui::Checkbox("Require puck for goal", &settings.requirePuckForGoal);
-    changed |= ImGui::Checkbox("Allow body checking", &settings.allowBodyChecking);
     changed |= ImGui::Checkbox("Allow manual goalie", &settings.allowManualGoalie);
     changed |= ImGui::Checkbox("Allow out of play", &settings.allowOutOfPlay);
     changed |= ImGui::Checkbox("Debug draw gameplay", &settings.debugDrawGameplay);

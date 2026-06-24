@@ -27,8 +27,6 @@ enum class GameplayEventType {
     GoalieShieldStarted,
     GoalieShieldEnded,
     PuckShot,
-    PuckPassed,
-    PlayerChecked,
     PuckOutOfPlay,
     ResetStarted,
     ResetCompleted,

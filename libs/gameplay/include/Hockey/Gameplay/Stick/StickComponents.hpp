@@ -14,8 +14,6 @@ struct StickComponent {
     glm::vec3 localOffset{0.0f, 0.0f, 1.0f};
     bool canControlPuck = true;
     bool canShoot = true;
-    bool canPass = true;
-    bool canCheck = true;
 };
 
 struct ShotComponent {
@@ -23,26 +21,11 @@ struct ShotComponent {
     bool charging = false;
 };
 
-struct PassComponent {
-    UUID targetPlayer{0};
-    float assistRadius = 2.0f;
-};
-
-struct CheckComponent {
-    float cooldown = 0.0f;
-};
-
 template <> struct ComponentTraits<StickComponent> {
     static constexpr const char* Name = "StickComponent";
 };
 template <> struct ComponentTraits<ShotComponent> {
     static constexpr const char* Name = "ShotComponent";
-};
-template <> struct ComponentTraits<PassComponent> {
-    static constexpr const char* Name = "PassComponent";
-};
-template <> struct ComponentTraits<CheckComponent> {
-    static constexpr const char* Name = "CheckComponent";
 };
 
 }

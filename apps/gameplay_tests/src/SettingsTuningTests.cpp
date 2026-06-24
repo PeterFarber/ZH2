@@ -1,6 +1,7 @@
 #include "Test.hpp"
 
 #include <string>
+#include <type_traits>
 
 #include <glm/glm.hpp>
 
@@ -18,6 +19,11 @@
 using namespace Hockey;
 
 namespace {
+
+template <typename T, typename = void>
+struct HasAllowBodyChecking : std::false_type {};
+template <typename T>
+struct HasAllowBodyChecking<T, std::void_t<decltype(&T::allowBodyChecking)>> : std::true_type {};
 
 Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& position) {
     Entity entity = scene.CreateEntity(name);
@@ -83,6 +89,8 @@ void RunSettingsTuningTests() {
     HK_CHECK_NEAR(loaded.countdownBeepStartSeconds, 3.0f, 0.0001f);
     HK_CHECK_EQ(loaded.spawnRandomSeed, 424242u);
     HK_CHECK(loaded.logGameplayEvents);
+    HK_CHECK(!HasAllowBodyChecking<GameplaySettings>::value);
+    HK_CHECK(!config.Has("gameplay.allow_body_checking"));
 
     GameplaySettings rulesSource;
     rulesSource.faceoffDelaySeconds = 2.25f;
@@ -95,14 +103,14 @@ void RunSettingsTuningTests() {
     HK_CHECK(!rulesLoaded.requirePuckForGoal);
 
     GameplayTuning suppliedTuning;
-    suppliedTuning.pass.power = 29.0f;
+    suppliedTuning.skater.stealCooldownSeconds = 0.45f;
     GameplayWorld world;
     Scene tuningScene("SuppliedTuningScene");
     BuildMinimalGameplayScene(tuningScene);
     GameplaySettings disabledSettings;
     disabledSettings.enabled = false;
     HK_CHECK(static_cast<bool>(world.Init(tuningScene, nullptr, disabledSettings, suppliedTuning)));
-    HK_CHECK_NEAR(world.GetTuning().pass.power, 29.0f, 0.0001f);
+    HK_CHECK_NEAR(world.GetTuning().skater.stealCooldownSeconds, 0.45f, 0.0001f);
     world.Shutdown();
 
     Scene faceoffScene("FaceoffTimingSettingsScene");
@@ -144,6 +152,12 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(tuning.value.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
 
         const std::string text = TuningSerializer::Serialize(tuning.value);
+        HK_CHECK(text.find("PokeCheckCooldown") == std::string::npos);
+        HK_CHECK(text.find("Pass:") == std::string::npos);
+        HK_CHECK(text.find("Check:") == std::string::npos);
+        HK_CHECK(text.find("StealRadius") != std::string::npos);
+        HK_CHECK(text.find("StealCooldownSeconds") != std::string::npos);
+        HK_CHECK(text.find("Shot:") != std::string::npos);
         GameplayTuning roundTrip;
         HK_CHECK(TuningSerializer::Deserialize(text, roundTrip));
         HK_CHECK_NEAR(roundTrip.skater.boostImpulse, 7.5f, 0.0001f);
@@ -151,7 +165,5 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(roundTrip.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.puck.floorY, 0.05f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
-        HK_CHECK_NEAR(roundTrip.pass.maxAssistAngleDegrees, 25.0f, 0.0001f);
-        HK_CHECK_NEAR(roundTrip.check.radius, 1.25f, 0.0001f);
     }
 }

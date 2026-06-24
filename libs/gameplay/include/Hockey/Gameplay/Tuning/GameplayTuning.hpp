@@ -45,7 +45,6 @@ struct PuckTuning {
 struct StickTuning {
     float reach = 1.5f;
     float width = 0.25f;
-    float pokeCheckCooldown = 0.35f;
 };
 
 struct ShotTuning {
@@ -56,26 +55,12 @@ struct ShotTuning {
     float accuracyDegrees = 4.0f;
 };
 
-struct PassTuning {
-    float power = 18.0f;
-    float assistRadius = 2.0f;
-    float maxAssistAngleDegrees = 25.0f;
-};
-
-struct CheckTuning {
-    float cooldown = 0.75f;
-    float impulse = 8.0f;
-    float radius = 1.25f;
-};
-
 struct GameplayTuning {
     SkaterTuning skater;
     GoalieTuning goalie;
     PuckTuning puck;
     StickTuning stick;
     ShotTuning shot;
-    PassTuning pass;
-    CheckTuning check;
 };
 
 }

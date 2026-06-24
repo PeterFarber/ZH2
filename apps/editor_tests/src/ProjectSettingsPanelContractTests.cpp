@@ -66,4 +66,5 @@ void RunProjectSettingsPanelContractTests() {
                  "Project Settings clamps advanced renderer edits before saving");
     HK_CHECK_MSG(Contains(source, "SaveClientConfig()"), "Project Settings still writes client config");
     HK_CHECK_MSG(Contains(source, "SaveServerConfig()"), "Project Settings still writes server config");
+    HK_CHECK_MSG(!Contains(source, "Allow body checking"), "Project Settings omits removed body-checking setting");
 }

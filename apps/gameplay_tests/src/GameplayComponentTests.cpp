@@ -25,8 +25,8 @@ void RunGameplayComponentTests() {
     HK_CHECK(ComponentRegistry::Get().FindByName("ScoreComponent") != nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("PossessionComponent") != nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("ShotComponent") != nullptr);
-    HK_CHECK(ComponentRegistry::Get().FindByName("PassComponent") != nullptr);
-    HK_CHECK(ComponentRegistry::Get().FindByName("CheckComponent") != nullptr);
+    HK_CHECK(ComponentRegistry::Get().FindByName("PassComponent") == nullptr);
+    HK_CHECK(ComponentRegistry::Get().FindByName("CheckComponent") == nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("FaceoffComponent") != nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("FaceoffGameplayComponent") == nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("RespawnComponent") != nullptr);
@@ -50,11 +50,11 @@ void RunGameplayComponentTests() {
     playerComponent.controlledByLocalInput = true;
     player.AddComponent<PlayerComponent>(playerComponent);
     player.AddComponent<SkaterComponent>().hasPuck = true;
-    player.AddComponent<PlayerRuntimeComponent>().velocity = {1.0f, 0.0f, 2.0f};
+    PlayerRuntimeComponent& playerRuntime = player.AddComponent<PlayerRuntimeComponent>();
+    playerRuntime.velocity = {1.0f, 0.0f, 2.0f};
+    playerRuntime.stealCooldown = 0.25f;
     player.AddComponent<StickComponent>().ownerPlayer = player.GetUUID();
     player.AddComponent<ShotComponent>().charge = 0.5f;
-    player.AddComponent<PassComponent>().targetPlayer = UUID(1234);
-    player.AddComponent<CheckComponent>().cooldown = 0.25f;
     player.AddComponent<RespawnComponent>().targetPosition = {3.0f, 0.0f, 4.0f};
 
     Entity puck = scene.CreateEntity("Puck");
@@ -105,6 +105,7 @@ void RunGameplayComponentTests() {
     HK_CHECK(loadedPlayer.GetComponent<PlayerComponent>().controlledByLocalInput);
     HK_CHECK(loadedPlayer.GetComponent<SkaterComponent>().hasPuck);
     HK_CHECK_NEAR(loadedPlayer.GetComponent<PlayerRuntimeComponent>().velocity.z, 2.0f, 0.0001f);
+    HK_CHECK_NEAR(loadedPlayer.GetComponent<PlayerRuntimeComponent>().stealCooldown, 0.25f, 0.0001f);
     HK_CHECK_EQ(loadedPlayer.GetComponent<StickComponent>().ownerPlayer, loadedPlayer.GetUUID());
     HK_CHECK_NEAR(loadedPlayer.GetComponent<ShotComponent>().charge, 0.5f, 0.0001f);
 

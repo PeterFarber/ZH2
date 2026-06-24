@@ -11,9 +11,8 @@
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Rink/GoalDetection.hpp"
 #include "Hockey/Gameplay/Rink/OutOfPlaySystem.hpp"
-#include "Hockey/Gameplay/Stick/CheckingSystem.hpp"
-#include "Hockey/Gameplay/Stick/PassingSystem.hpp"
 #include "Hockey/Gameplay/Stick/ShootingSystem.hpp"
+#include "Hockey/Gameplay/Stick/StealSystem.hpp"
 
 namespace Hockey {
 namespace {
@@ -84,8 +83,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     if (IsActiveGameplayPhase(scene)) {
         PuckPossession::FixedUpdate(scene, m_Events);
         ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
-        PassingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, m_Events);
-        CheckingSystem::FixedUpdate(scene, m_InputBuffer, m_Settings, m_Tuning, fixedDeltaSeconds, m_Events);
+        StealSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
         PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);
         GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
         OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);

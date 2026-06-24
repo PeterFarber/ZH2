@@ -541,8 +541,6 @@ bool DrawGameplaySettings(GameplaySettings& settings) {
                          "Distance from the goal marker where puck position scoring is accepted.");
     changed |= DrawCheckbox("Require puck for goal", settings.requirePuckForGoal,
                             "Requires goal trigger scoring to come from a puck entity rather than any object.");
-    changed |= DrawCheckbox("Allow body checking", settings.allowBodyChecking,
-                            "Allows skater body contact rules to affect player movement and collisions.");
     changed |= DrawCheckbox("Allow manual goalie", settings.allowManualGoalie,
                             "Allows a player-controlled goalie role when the scene has goalie spawns.");
     changed |= DrawCheckbox("Allow out of play", settings.allowOutOfPlay,

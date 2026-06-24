@@ -9,7 +9,6 @@ auto_import = false
 hot_reload = false
 
 [gameplay]
-allow_body_checking = true
 allow_manual_goalie = true
 allow_out_of_play = true
 auto_faceoff_after_goal = true

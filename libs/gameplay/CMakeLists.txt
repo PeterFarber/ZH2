@@ -22,9 +22,8 @@ target_sources(hockey_gameplay
         src/Match/ScoreSystem.cpp
         src/Simulation/GameplaySnapshot.cpp
         src/Simulation/GameplayWorld.cpp
-        src/Stick/CheckingSystem.cpp
-        src/Stick/PassingSystem.cpp
         src/Stick/ShootingSystem.cpp
+        src/Stick/StealSystem.cpp
         src/Stick/StickHandling.cpp
         src/Teams/TeamTypes.cpp
         src/Tuning/GameplayTuning.cpp

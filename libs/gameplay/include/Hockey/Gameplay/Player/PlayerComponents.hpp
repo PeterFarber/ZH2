@@ -44,8 +44,7 @@ struct PlayerRuntimeComponent {
     float shieldTimer = 0.0f;
     float shieldCooldown = 0.0f;
     float lastBrakePressedTime = -1000.0f;
-    float checkCooldown = 0.0f;
-    float pokeCheckCooldown = 0.0f;
+    float stealCooldown = 0.0f;
     bool hasMoveTarget = false;
     bool shieldActive = false;
     bool inputEnabled = true;

@@ -64,10 +64,10 @@ FieldMetadata MakePhaseField(std::size_t offset) {
 
 FieldMetadata MakePuckStateField(std::size_t offset) {
     FieldMetadata field = MakeField("State", FieldType::Enum, offset);
-    field.enumNames = {"Loose", "Possessed", "Shot", "Passed", "Frozen", "Resetting"};
+    field.enumNames = {"Loose", "Possessed", "Shot", "Frozen", "Resetting"};
     field.enumValues = {static_cast<int>(PuckState::Loose), static_cast<int>(PuckState::Possessed),
-                        static_cast<int>(PuckState::Shot),  static_cast<int>(PuckState::Passed),
-                        static_cast<int>(PuckState::Frozen), static_cast<int>(PuckState::Resetting)};
+                        static_cast<int>(PuckState::Shot),  static_cast<int>(PuckState::Frozen),
+                        static_cast<int>(PuckState::Resetting)};
     return field;
 }
 
@@ -175,8 +175,7 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "ShieldTimer" << YAML::Value << c.shieldTimer;
         out << YAML::Key << "ShieldCooldown" << YAML::Value << c.shieldCooldown;
         out << YAML::Key << "LastBrakePressedTime" << YAML::Value << c.lastBrakePressedTime;
-        out << YAML::Key << "CheckCooldown" << YAML::Value << c.checkCooldown;
-        out << YAML::Key << "PokeCheckCooldown" << YAML::Value << c.pokeCheckCooldown;
+        out << YAML::Key << "StealCooldown" << YAML::Value << c.stealCooldown;
         out << YAML::Key << "HasMoveTarget" << YAML::Value << c.hasMoveTarget;
         out << YAML::Key << "ShieldActive" << YAML::Value << c.shieldActive;
         out << YAML::Key << "InputEnabled" << YAML::Value << c.inputEnabled;
@@ -219,8 +218,6 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "LocalOffset" << YAML::Value << c.localOffset;
         out << YAML::Key << "CanControlPuck" << YAML::Value << c.canControlPuck;
         out << YAML::Key << "CanShoot" << YAML::Value << c.canShoot;
-        out << YAML::Key << "CanPass" << YAML::Value << c.canPass;
-        out << YAML::Key << "CanCheck" << YAML::Value << c.canCheck;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<ShotComponent>()) {
@@ -228,18 +225,6 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "ShotComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Charge" << YAML::Value << c.charge;
         out << YAML::Key << "Charging" << YAML::Value << c.charging;
-        out << YAML::EndMap;
-    }
-    if (entity.HasComponent<PassComponent>()) {
-        const auto& c = entity.GetComponent<PassComponent>();
-        out << YAML::Key << "PassComponent" << YAML::Value << YAML::BeginMap;
-        EmitUUID(out, "TargetPlayer", c.targetPlayer);
-        out << YAML::Key << "AssistRadius" << YAML::Value << c.assistRadius;
-        out << YAML::EndMap;
-    }
-    if (entity.HasComponent<CheckComponent>()) {
-        out << YAML::Key << "CheckComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Cooldown" << YAML::Value << entity.GetComponent<CheckComponent>().cooldown;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<GoalGameplayComponent>()) {
@@ -345,8 +330,7 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["ShieldTimer"]) c.shieldTimer = n["ShieldTimer"].as<float>();
         if (n["ShieldCooldown"]) c.shieldCooldown = n["ShieldCooldown"].as<float>();
         if (n["LastBrakePressedTime"]) c.lastBrakePressedTime = n["LastBrakePressedTime"].as<float>();
-        if (n["CheckCooldown"]) c.checkCooldown = n["CheckCooldown"].as<float>();
-        if (n["PokeCheckCooldown"]) c.pokeCheckCooldown = n["PokeCheckCooldown"].as<float>();
+        if (n["StealCooldown"]) c.stealCooldown = n["StealCooldown"].as<float>();
         if (n["HasMoveTarget"]) c.hasMoveTarget = n["HasMoveTarget"].as<bool>();
         if (n["ShieldActive"]) c.shieldActive = n["ShieldActive"].as<bool>();
         if (n["InputEnabled"]) c.inputEnabled = n["InputEnabled"].as<bool>();
@@ -385,8 +369,6 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         ReadVec3(n["LocalOffset"], c.localOffset);
         if (n["CanControlPuck"]) c.canControlPuck = n["CanControlPuck"].as<bool>();
         if (n["CanShoot"]) c.canShoot = n["CanShoot"].as<bool>();
-        if (n["CanPass"]) c.canPass = n["CanPass"].as<bool>();
-        if (n["CanCheck"]) c.canCheck = n["CanCheck"].as<bool>();
         entity.AddOrReplaceComponent<StickComponent>(c);
     }
     if (const auto n = node["ShotComponent"]) {
@@ -394,17 +376,6 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["Charge"]) c.charge = n["Charge"].as<float>();
         if (n["Charging"]) c.charging = n["Charging"].as<bool>();
         entity.AddOrReplaceComponent<ShotComponent>(c);
-    }
-    if (const auto n = node["PassComponent"]) {
-        PassComponent c;
-        c.targetPlayer = ReadUUID(n, "TargetPlayer");
-        if (n["AssistRadius"]) c.assistRadius = n["AssistRadius"].as<float>();
-        entity.AddOrReplaceComponent<PassComponent>(c);
-    }
-    if (const auto n = node["CheckComponent"]) {
-        CheckComponent c;
-        if (n["Cooldown"]) c.cooldown = n["Cooldown"].as<float>();
-        entity.AddOrReplaceComponent<CheckComponent>(c);
     }
     if (const auto n = node["GoalGameplayComponent"]) {
         GoalGameplayComponent c;
@@ -538,8 +509,6 @@ void RegisterMetadata() {
     registry.RegisterComponent<PuckRuntimeComponent>({"PuckRuntimeComponent", "Puck Runtime", "Gameplay"});
     registry.RegisterComponent<PossessionComponent>({"PossessionComponent", "Possession", "Gameplay"});
     registry.RegisterComponent<ShotComponent>({"ShotComponent", "Shot", "Gameplay"});
-    registry.RegisterComponent<PassComponent>({"PassComponent", "Pass", "Gameplay"});
-    registry.RegisterComponent<CheckComponent>({"CheckComponent", "Check", "Gameplay"});
     registry.RegisterComponent<ScoreComponent>({"ScoreComponent", "Score", "Gameplay"});
     registry.RegisterComponent<OutOfPlayComponent>({"OutOfPlayComponent", "Out Of Play", "Gameplay"});
     {
@@ -563,7 +532,6 @@ const char* PuckStateToString(PuckState state) {
     case PuckState::Loose: return "Loose";
     case PuckState::Possessed: return "Possessed";
     case PuckState::Shot: return "Shot";
-    case PuckState::Passed: return "Passed";
     case PuckState::Frozen: return "Frozen";
     case PuckState::Resetting: return "Resetting";
     }
@@ -572,7 +540,7 @@ const char* PuckStateToString(PuckState state) {
 
 bool PuckStateFromString(const char* text, PuckState& outState) {
     constexpr PuckState kStates[] = {PuckState::Loose, PuckState::Possessed, PuckState::Shot,
-                                     PuckState::Passed, PuckState::Frozen, PuckState::Resetting};
+                                     PuckState::Frozen, PuckState::Resetting};
     for (PuckState state : kStates) {
         if (std::string(text) == PuckStateToString(state)) {
             outState = state;

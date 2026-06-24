@@ -8,11 +8,12 @@ namespace Hockey {
 
 class Scene;
 
-class PassingSystem {
+class StealSystem {
 public:
     static void FixedUpdate(Scene& scene,
                             const GameplayInputBuffer& inputs,
                             const GameplayTuning& tuning,
+                            float fixedDeltaSeconds,
                             GameplayEventQueue& events);
 };
 

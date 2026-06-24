@@ -278,8 +278,6 @@ void HockeyPlayerTool::OnSelected(EditorContext& context) {
                     stick.ownerPlayer = player.GetUUID();
                     player.AddComponent<StickComponent>(stick);
                     player.AddComponent<ShotComponent>();
-                    player.AddComponent<PassComponent>();
-                    player.AddComponent<CheckComponent>();
                     // Visible placeholder body so authors can see the capsule.
                     AddMesh(player, "BuiltIn.Cube", "BuiltIn.Boards");
                     player.GetComponent<TransformComponent>().localScale = {0.8f, 1.8f, 0.8f};

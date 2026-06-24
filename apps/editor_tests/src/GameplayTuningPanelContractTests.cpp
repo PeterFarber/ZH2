@@ -47,15 +47,27 @@ void RunGameplayTuningPanelContractTests() {
         "Max speed", "Acceleration", "Deceleration", "Turn speed degrees", "Boost impulse",
         "Boost cooldown seconds", "Slide stop damping", "Double stop window seconds",
         "Puck control radius", "Steal radius", "Steal cooldown seconds", "Crease move multiplier",
-        "Save reach radius", "Boost charges", "Shield radius", "Shield reflect impulse",
+        "Save reach radius", "Boost charges", "Boost recharge seconds", "Shield radius",
+        "Shield duration seconds", "Shield cooldown seconds", "Shield reflect impulse",
         "Possession offset", "Loose puck drag", "Floor Y", "Out of play Y", "Reach", "Width",
-        "Poke check cooldown", "Min power", "Max power", "Charge seconds",
-        "Self collision grace seconds", "Accuracy degrees", "Assist radius",
-        "Max assist angle degrees", "Cooldown", "Impulse", "Radius", "Faceoff delay seconds",
-        "Goal detection radius", "Require puck for goal"
+        "Min power", "Max power", "Charge seconds", "Self collision grace seconds", "Accuracy degrees",
+        "Faceoff delay seconds", "Post goal delay seconds", "Goal detection radius", "Require puck for goal"
     };
 
     for (const char* field : requiredFields) {
         HK_CHECK_MSG(Contains(source, field), field);
+    }
+
+    const char* forbiddenFields[] = {
+        "Poke check cooldown",
+        "Assist radius",
+        "Max assist angle degrees",
+        "Allow body checking",
+        "CollapsingHeader(\"Pass\"",
+        "CollapsingHeader(\"Check\""
+    };
+
+    for (const char* field : forbiddenFields) {
+        HK_CHECK_MSG(!Contains(source, field), field);
     }
 }

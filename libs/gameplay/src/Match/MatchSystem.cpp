@@ -123,8 +123,6 @@ void ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const gl
     player.AddOrReplaceComponent<PlayerRuntimeComponent>();
     player.AddOrReplaceComponent<StickComponent>().ownerPlayer = player.GetUUID();
     player.AddOrReplaceComponent<ShotComponent>();
-    player.AddOrReplaceComponent<PassComponent>();
-    player.AddOrReplaceComponent<CheckComponent>();
 }
 
 Status AssignTeamPlayers(Scene& scene,

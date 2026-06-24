@@ -20,8 +20,6 @@ struct GameplayInputFrame {
     bool clearMoveTarget = false;
 
     bool stealPressed = false;
-    bool stealHeld = false;
-    bool stealReleased = false;
 
     bool boostPressed = false;
     bool brakePressed = false;
@@ -32,12 +30,6 @@ struct GameplayInputFrame {
     bool shootHeld = false;
     bool shootReleased = false;
 
-    bool passPressed = false;
-    bool passHeld = false;
-    bool passReleased = false;
-
-    bool checkPressed = false;
-    bool pokeCheckPressed = false;
     bool switchPlayerPressed = false;
 
     bool goalieShieldPressed = false;

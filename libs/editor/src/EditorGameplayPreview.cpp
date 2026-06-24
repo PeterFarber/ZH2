@@ -273,9 +273,6 @@ GameplayInputFrame EditorGameplayPreview::BuildLocalInput(Scene& scene, std::uin
         input.shootReleased = leftReleased;
     } else {
         input.stealPressed = leftPressed;
-        input.stealHeld = leftHeld;
-        input.stealReleased = leftReleased;
-        input.pokeCheckPressed = leftPressed;
     }
 
     return input;

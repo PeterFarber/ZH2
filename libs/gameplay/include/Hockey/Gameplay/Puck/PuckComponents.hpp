@@ -12,7 +12,6 @@ enum class PuckState {
     Loose,
     Possessed,
     Shot,
-    Passed,
     Frozen,
     Resetting
 };

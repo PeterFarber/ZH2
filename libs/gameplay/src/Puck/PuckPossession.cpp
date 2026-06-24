@@ -29,7 +29,7 @@ void ClearSkaterPossession(Scene& scene) {
 }
 
 bool CanAcquireState(PuckState state) {
-    return state == PuckState::Loose || state == PuckState::Shot || state == PuckState::Passed;
+    return state == PuckState::Loose || state == PuckState::Shot;
 }
 
 bool IsTemporarilyIgnoredShooter(Entity player, const PuckGameplayComponent& gameplay) {
