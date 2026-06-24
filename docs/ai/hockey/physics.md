@@ -50,7 +50,7 @@ When changing puck behavior, check:
 - ice friction
 - collision response
 - shot impulse
-- deflection behavior
+- puck contact response
 - goal detection
 - serialization and replay state
 

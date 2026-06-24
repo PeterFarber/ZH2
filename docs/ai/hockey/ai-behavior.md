@@ -1,6 +1,6 @@
 # Hockey AI Behavior
 
-Use this guide for CPU skaters, goalies, positioning, steering, passing,
+Use this guide for CPU skaters, goalies, positioning, steering, stealing,
 shooting decisions, team tactics, and difficulty tuning.
 
 ## Goals
@@ -15,7 +15,7 @@ AI work may include:
 - puck chasing
 - offensive positioning
 - defensive positioning
-- passing decisions
+- stealing decisions
 - shooting decisions
 - goalie positioning
 - steering and avoidance
@@ -39,7 +39,7 @@ Difficulty should come from tunable parameters where practical:
 
 - reaction delay
 - positioning accuracy
-- pass likelihood
+- steal pressure likelihood
 - shot selection
 - aggression
 - goalie reaction speed

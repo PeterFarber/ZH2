@@ -1,6 +1,6 @@
 # Hockey Gameplay
 
-Use this guide for scoring, possession, shooting, passing, periods, restarts,
+Use this guide for scoring, possession, stealing, shooting, periods, restarts,
 goalies, player actions, and hockey rule changes. `GAMEPLAY.md` is the
 player-facing action design source; keep this guide, Phase 7 plan/rules, and
 Phase 7 status synchronized when the gameplay design changes.
@@ -15,9 +15,9 @@ Preserve an arcade-friendly feel:
 
 - quick turns
 - clear shots
-- readable collisions
+- readable steals
 - fast feedback
-- tunable assists and timing
+- tunable timing
 
 ## Core Concepts
 
@@ -26,11 +26,10 @@ introduced:
 
 - teams and player ownership
 - puck possession or puck control state
-- passing and receiving
-- shooting, shot charging, slapshots, wrist shots, and deflections
+- stealing and puck pressure
+- one shot action with shot charging and release
 - goals, scoring, restarts, and periods
 - faceoffs or arcade-style restarts
-- player contact and checking if enabled
 - goalies and goalie behavior
 - pregame countdown
 - waypoint movement and waypoint clearing
@@ -50,8 +49,12 @@ Follow `GAMEPLAY.md` unless a task explicitly changes it:
   second and beep events for the final 4 seconds.
 - Input boundary: gameplay receives semantic input actions, not SDL, mouse, key,
   or gamepad state.
-- Left click is contextual: steal/poke check without puck, shot charge/release
+- Left click is contextual: a click-only steal without puck, shot charge/release
   with puck.
+- A successful steal directly transfers possession from the current possessor to
+  the stealing player; it does not release the puck first.
+- There is no pass action, body-check action, or poke-check action in the target
+  gameplay model.
 - Right click sets a waypoint on the ice plane.
 - S brakes, clears the waypoint, and double-tap fully stops.
 - Z is an impulse boost, not a held speed multiplier.
@@ -85,7 +88,6 @@ When changing gameplay code:
 Prefer tunable parameters over hardcoded realism:
 
 - shot speed
-- pass assist
 - puck friction
 - player acceleration
 - turn speed

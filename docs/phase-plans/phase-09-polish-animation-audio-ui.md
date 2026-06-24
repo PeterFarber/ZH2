@@ -763,8 +763,7 @@ struct AnimationParameterComponent {
     float speed = 0.0f;
     bool hasPuck = false;
     bool shooting = false;
-    bool passing = false;
-    bool checking = false;
+    bool stealing = false;
     bool goalieAction = false;
 };
 ```
@@ -801,9 +800,7 @@ SkateBackward
 Turn
 StickHandle
 Shoot
-Pass
-Check
-PokeCheck
+Steal
 GoalieIdle
 GoalieMove
 GoalieSave
@@ -824,8 +821,7 @@ Maps gameplay state to animation parameters:
 player speed -> locomotion blend
 has puck -> stick handling state
 shoot event -> shoot animation
-pass event -> pass animation
-check event -> check animation
+steal event -> steal animation
 goalie action -> goalie save animation
 goal scored -> celebration animation
 ```
@@ -1061,10 +1057,9 @@ Listen to gameplay/network events and trigger:
 puck hit boards
 puck hit stick
 puck shot
-puck pass
+puck stolen
 skate loop
 skate stop
-body check
 goal scored
 goal horn
 crowd cheer
@@ -1474,9 +1469,7 @@ enum class InputAction {
     Aim,
     Sprint,
     Shoot,
-    Pass,
-    Check,
-    PokeCheck,
+    Steal,
     GoalieAction,
     SwitchPlayer,
     Pause,
@@ -1736,8 +1729,7 @@ Animation system must observe gameplay state and set parameters:
 speed
 hasPuck
 shooting
-passing
-checking
+stealing
 goalieAction
 match phase
 celebration
@@ -1771,7 +1763,7 @@ Replicate/derive:
 movement speed
 facing direction
 has puck
-shot/pass/check events
+shot/steal events
 goalie action
 celebration state
 ```
@@ -1792,8 +1784,7 @@ skating loop
 puck hit boards
 puck hit stick
 puck shot
-puck pass
-body check
+puck stolen
 goal horn
 crowd cheer
 faceoff

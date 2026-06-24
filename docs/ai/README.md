@@ -56,7 +56,7 @@ docs/ai/
 
 Use the smallest relevant guide:
 
-- `docs/ai/hockey/gameplay.md` for scoring, possession, shooting, passing,
+- `docs/ai/hockey/gameplay.md` for scoring, possession, stealing, shooting,
   restarts, periods, and game rules.
 - `docs/ai/hockey/physics.md` for puck movement, skating, friction, shots,
   stick contact, collisions, and deterministic simulation.

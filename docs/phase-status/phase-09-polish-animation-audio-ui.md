@@ -55,7 +55,7 @@ Source material:
 - [ ] Add animation graph/state machine.
 - [ ] Add hockey locomotion states.
 - [ ] Add goalie animation states.
-- [ ] Add stick handling, shooting, passing, checking, and celebration states.
+- [ ] Add stick handling, stealing, shooting, and celebration states.
 - [ ] Add hockey animation controller that maps gameplay state to animation state.
 - [ ] Add renderer integration for animated/skinned meshes.
 - [ ] Add network animation state hints once Phase 8 exists.

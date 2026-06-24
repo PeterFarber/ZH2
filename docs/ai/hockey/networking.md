@@ -33,9 +33,13 @@ Input should be represented as explicit commands when possible:
 
 - move direction
 - aim direction
-- pass
-- shoot, charge, release
-- sprint, check, or action buttons
+- steal pressed/clicked
+- shoot press/hold/release
+- boost, brake, quick turn, goalie shield, switch player, or pause buttons
+
+The target gameplay model has no pass, body-check, or poke-check actions. Do not
+add those to network input unless `_save/docs/GAMEPLAY.md` is explicitly changed
+again.
 
 `libs/networking` does not exist yet. Add it only when Phase 8/networking work is
 explicitly requested.

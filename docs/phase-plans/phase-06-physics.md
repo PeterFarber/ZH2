@@ -72,7 +72,7 @@ lobbies
 replication
 hockey gameplay rules
 match scoring
-shooting/passing/checking gameplay logic
+stealing/shooting gameplay logic
 final animation
 audio
 final game UI

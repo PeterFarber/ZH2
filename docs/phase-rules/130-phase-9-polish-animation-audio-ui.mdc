@@ -12,7 +12,7 @@ This phase completes the shippable game experience.
 
 ## Required animation system
 
-Implement skeletal mesh support if not already complete, animation clips, graph/state machine, blending, hockey locomotion, goalie animations, stick handling, shooting, passing, checking, celebration, network animation state sync, and editor preview where needed.
+Implement skeletal mesh support if not already complete, animation clips, graph/state machine, blending, hockey locomotion, goalie animations, stick handling, stealing, shooting, celebration, network animation state sync, and editor preview where needed. Do not add pass, body-check, or poke-check presentation states unless `_save/docs/GAMEPLAY.md` explicitly changes again.
 
 ## Required audio system
 

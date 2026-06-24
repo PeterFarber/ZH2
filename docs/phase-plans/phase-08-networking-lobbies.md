@@ -1339,18 +1339,19 @@ button bitmask
 Button bitmask includes:
 
 ```text
-sprint
+boostPressed
+brakePressed
+quickTurnPressed
+stealPressed
 shootPressed
 shootHeld
 shootReleased
-passPressed
-passHeld
-passReleased
-checkPressed
-pokeCheckPressed
-goalieActionPressed
+goalieShieldPressed
 pausePressed
 ```
+
+Do not add pass, body-check, or poke-check input bits unless
+`_save/docs/GAMEPLAY.md` explicitly changes again.
 
 ## 13.2 Client Behavior
 
