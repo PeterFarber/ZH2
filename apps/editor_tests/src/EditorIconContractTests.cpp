@@ -85,6 +85,14 @@ void RunEditorIconContractTests() {
     HK_CHECK_MSG(Contains(imguiLayerSource, "Paths::DataFile(\"editor/fonts/fontawesome-free/fa-solid-900.ttf\")"),
                  "ImGuiLayer resolves Font Awesome through project data paths");
     HK_CHECK_MSG(Contains(imguiLayerSource, "MergeMode = true"), "ImGuiLayer merges the icon font into the UI font");
+    HK_CHECK_MSG(Contains(imguiLayerSource, "kEditorFontSizePixels"),
+                 "ImGuiLayer uses one editor font size constant for merged fonts");
+    HK_CHECK_MSG(Contains(imguiLayerSource, "defaultFontConfig.SizePixels = kEditorFontSizePixels"),
+                 "ImGuiLayer gives the base UI font an explicit reference size before icon merging");
+    HK_CHECK_MSG(Contains(imguiLayerSource, "io.Fonts->AddFontDefault(&defaultFontConfig)"),
+                 "ImGuiLayer avoids an implicit reference-size destination font");
+    HK_CHECK_MSG(Contains(imguiLayerSource, "AddFontFromFileTTF(fontPath.string().c_str(), kEditorFontSizePixels"),
+                 "ImGuiLayer merges Font Awesome with the same explicit reference size");
     HK_CHECK_MSG(Contains(imguiLayerSource, "GlyphMinAdvanceX"), "ImGuiLayer gives icons stable advance width");
     HK_CHECK_MSG(Contains(imguiLayerSource, "HK_EDITOR_WARN"), "ImGuiLayer warns when icon font loading falls back");
 

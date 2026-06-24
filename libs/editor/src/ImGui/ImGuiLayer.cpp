@@ -16,6 +16,11 @@
 #include "Hockey/Editor/ImGui/EditorTheme.hpp"
 
 namespace Hockey {
+namespace {
+
+constexpr float kEditorFontSizePixels = 13.0f;
+
+} // namespace
 
 ImGuiLayer::~ImGuiLayer() {
     Shutdown();
@@ -82,7 +87,10 @@ void ImGuiLayer::LoadEditorFonts() {
     m_IconFontLoaded = false;
 
     ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->AddFontDefault();
+    ImFontConfig defaultFontConfig{};
+    defaultFontConfig.SizePixels = kEditorFontSizePixels;
+    defaultFontConfig.PixelSnapH = true;
+    io.Fonts->AddFontDefault(&defaultFontConfig);
 
     const std::filesystem::path fontPath = Paths::DataFile("editor/fonts/fontawesome-free/fa-solid-900.ttf");
     if (!std::filesystem::exists(fontPath)) {
@@ -93,10 +101,11 @@ void ImGuiLayer::LoadEditorFonts() {
     ImFontConfig fontConfig{};
     fontConfig.MergeMode = true;
     fontConfig.PixelSnapH = true;
-    fontConfig.GlyphMinAdvanceX = 13.0f;
+    fontConfig.GlyphMinAdvanceX = kEditorFontSizePixels;
 
     static constexpr ImWchar iconRanges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-    ImFont* iconFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 13.0f, &fontConfig, iconRanges);
+    ImFont* iconFont =
+        io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), kEditorFontSizePixels, &fontConfig, iconRanges);
     if (iconFont == nullptr) {
         HK_EDITOR_WARN("Font Awesome editor icon font failed to load from {}; using text labels", fontPath.string());
         return;
