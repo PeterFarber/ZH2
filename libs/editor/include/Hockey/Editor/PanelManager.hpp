@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "Hockey/Editor/EditorSettings.hpp"
 #include "Hockey/Editor/Panel.hpp"
 
 namespace Hockey {
@@ -29,6 +30,9 @@ public:
 
     void SetPanelOpen(const std::string& name, bool open);
     void RequestPanelFocus(EditorContext& context, const std::string& name);
+    void ApplyPanelOpenStates(const EditorSettings& settings);
+    std::vector<EditorPanelOpenState> CapturePanelOpenStates() const;
+    void ResetPanelOpenStates();
 
     // Panels in registration order; used by the Window menu to list toggles.
     const std::vector<std::unique_ptr<Panel>>& Panels() const {

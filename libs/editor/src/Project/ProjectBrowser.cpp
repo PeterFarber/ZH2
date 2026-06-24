@@ -7,6 +7,7 @@
 
 #include "Hockey/Assets/AssetDatabase.hpp"
 #include "Hockey/Assets/AssetMetadata.hpp"
+#include "Hockey/Assets/AssetPath.hpp"
 #include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
@@ -103,10 +104,15 @@ std::vector<ProjectEntry> ProjectBrowser::Entries(const std::filesystem::path& d
     }
     for (const auto& dirEntry :
          std::filesystem::directory_iterator(dir, std::filesystem::directory_options::skip_permission_denied, ec)) {
+        const bool isDirectory = dirEntry.is_directory(ec);
+        if (!isDirectory && AssetPath::IsMetadataSidecar(dirEntry.path())) {
+            continue;
+        }
+
         ProjectEntry entry;
         entry.path = dirEntry.path();
         entry.name = dirEntry.path().filename().string();
-        entry.isDirectory = dirEntry.is_directory(ec);
+        entry.isDirectory = isDirectory;
         entry.type = entry.isDirectory ? FileTypeInfo{EditorFileType::Folder, "Folder", true}
                                        : FileTypeRegistry::Classify(entry.path);
         entries.push_back(std::move(entry));

@@ -10,6 +10,7 @@
 #include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 
 namespace Hockey {
 
@@ -22,6 +23,8 @@ class Scene;
 class EditorGameplayPreview {
 public:
     void Configure(const GameplaySettings& settings);
+    void Configure(const GameplaySettings& settings, const GameplayTuning& tuning);
+    void SetTuning(const GameplayTuning& tuning);
 
     bool IsActive() const {
         return m_Active;
@@ -59,6 +62,7 @@ private:
     void StepFixed(Scene& scene, EditorPhysicsPreview& physicsPreview, float fixedDeltaSeconds);
 
     GameplaySettings m_Settings{};
+    GameplayTuning m_Tuning{};
     GameplayWorld m_World;
     FixedTimestep m_Timestep{60.0};
     std::filesystem::path m_SnapshotPath;

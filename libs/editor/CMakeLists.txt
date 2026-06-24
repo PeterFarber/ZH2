@@ -41,6 +41,7 @@ target_sources(hockey_editor
         src/Project/FileTypeRegistry.cpp
         src/Project/ProjectBrowser.cpp
         src/Project/EditorAssetPreview.cpp
+        src/Project/EditorAssetPreviewRenderer.cpp
         src/Tools/EditorTool.cpp
         src/Tools/ToolManager.cpp
         src/Tools/TransformTools.cpp
@@ -56,6 +57,7 @@ target_sources(hockey_editor
         src/Panels/InspectorPanel.cpp
         src/Panels/SceneViewportPanel.cpp
         src/Panels/GameViewportPanel.cpp
+        src/Panels/GameplayTuningPanel.cpp
         src/Panels/ProjectPanel.cpp
         src/Panels/ConsolePanel.cpp
         src/Panels/PropertiesPanel.cpp

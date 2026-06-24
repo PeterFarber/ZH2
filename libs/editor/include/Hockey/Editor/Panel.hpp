@@ -21,7 +21,9 @@ public:
     const std::string& GetName() const;
 
     bool IsOpen() const;
+    bool IsOpenByDefault() const;
     void SetOpen(bool open);
+    void ResetOpenState();
 
     virtual void OnUpdate(EditorContext& context, float deltaTime);
     virtual void OnImGui(EditorContext& context) = 0;
@@ -37,6 +39,7 @@ protected:
 private:
     std::string m_Name;
     bool m_Open = true;
+    bool m_OpenByDefault = true;
 };
 
 } // namespace Hockey

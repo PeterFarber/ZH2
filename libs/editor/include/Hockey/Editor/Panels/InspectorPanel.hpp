@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "Hockey/Assets/AssetID.hpp"
+#include "Hockey/Core/UUID.hpp"
 #include "Hockey/Editor/Inspector/AssetInspector.hpp"
 #include "Hockey/Editor/Inspector/ComponentAddMenu.hpp"
 #include "Hockey/Editor/Inspector/ComponentInspector.hpp"
@@ -21,11 +23,15 @@ public:
     void OnImGui(EditorContext& context) override;
 
 private:
+    void DrawLockToggle(EditorContext& context);
     void DrawHeader(EditorContext& context, Entity& entity);
 
     AssetInspector m_AssetInspector;
     ComponentInspector m_Inspector;
     ComponentAddMenu m_AddMenu;
+    bool m_InspectorLocked = false;
+    AssetID m_LockedAssetId;
+    UUID m_LockedEntityId{0};
     char m_NameBuffer[256] = {};
     char m_TagBuffer[128] = {};
     char m_LayerBuffer[128] = {};

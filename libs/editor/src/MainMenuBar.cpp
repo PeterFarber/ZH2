@@ -285,6 +285,9 @@ void MainMenuBar::DrawToolsMenu(EditorContext& ctx, EditorApp& app) {
 }
 
 void MainMenuBar::DrawViewMenu(EditorContext& /*ctx*/, EditorApp& app) {
+    if (ImGui::MenuItem("Save Layout")) {
+        app.SaveLayout();
+    }
     if (ImGui::MenuItem("Reset Layout")) {
         app.ResetLayout();
     }

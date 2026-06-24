@@ -74,8 +74,11 @@ glm::vec2 ToGlm(ImVec2 v) {
     return {v.x, v.y};
 }
 
-bool IsCameraOrLight(Entity entity) {
-    return entity.HasComponent<CameraComponent>() || entity.HasComponent<LightComponent>();
+bool HasVisibleMesh(Entity entity) {
+    if (!entity.HasComponent<MeshRendererComponent>()) {
+        return false;
+    }
+    return entity.GetComponent<MeshRendererComponent>().visible;
 }
 
 const char* ToolNameForIndex(int index) {
@@ -353,6 +356,119 @@ void DrawDirectionalLightIcon(ImDrawList* draw, glm::vec2 center, ImU32 color) {
     draw->AddCircleFilled(ToImVec2(center + glm::vec2(10.0f, 0.0f)), 4.0f, color);
 }
 
+EditorIcon EditorIconForSceneKind(SceneViewIconKind kind) {
+    switch (kind) {
+    case SceneViewIconKind::Camera:
+        return EditorIcon::Camera;
+    case SceneViewIconKind::DirectionalLight:
+    case SceneViewIconKind::PointLight:
+    case SceneViewIconKind::SpotLight:
+        return EditorIcon::Light;
+    case SceneViewIconKind::Spawn:
+        return EditorIcon::Spawn;
+    case SceneViewIconKind::Faceoff:
+        return EditorIcon::Faceoff;
+    case SceneViewIconKind::Puck:
+        return EditorIcon::Puck;
+    case SceneViewIconKind::Goal:
+        return EditorIcon::Goal;
+    case SceneViewIconKind::Rink:
+        return EditorIcon::Rink;
+    case SceneViewIconKind::PlayArea:
+        return EditorIcon::PlayArea;
+    case SceneViewIconKind::CameraRig:
+        return EditorIcon::CameraRig;
+    case SceneViewIconKind::None:
+        break;
+    }
+    return EditorIcon::None;
+}
+
+ImU32 SceneIconColor(SceneViewIconKind kind, Entity entity) {
+    switch (kind) {
+    case SceneViewIconKind::Spawn: {
+        if (entity.HasComponent<SpawnPointComponent>()) {
+            switch (entity.GetComponent<SpawnPointComponent>().team) {
+            case Team::Home:
+                return ColorU32(0.2f, 0.56f, 1.0f);
+            case Team::Away:
+                return ColorU32(1.0f, 0.32f, 0.26f);
+            case Team::None:
+                return ColorU32(0.78f, 0.78f, 0.82f);
+            }
+        }
+        return ColorU32(0.78f, 0.78f, 0.82f);
+    }
+    case SceneViewIconKind::Faceoff:
+        return ColorU32(0.28f, 0.88f, 0.76f);
+    case SceneViewIconKind::Puck:
+        return ColorU32(0.08f, 0.08f, 0.09f);
+    case SceneViewIconKind::Goal:
+        return ColorU32(1.0f, 0.72f, 0.2f);
+    case SceneViewIconKind::Rink:
+    case SceneViewIconKind::PlayArea:
+        return ColorU32(0.55f, 0.85f, 1.0f);
+    case SceneViewIconKind::CameraRig:
+        return ColorU32(0.84f, 0.7f, 1.0f);
+    case SceneViewIconKind::DirectionalLight:
+    case SceneViewIconKind::PointLight:
+    case SceneViewIconKind::SpotLight:
+        if (entity.HasComponent<LightComponent>()) {
+            const LightComponent& light = entity.GetComponent<LightComponent>();
+            return ColorU32(std::clamp(light.color.r, 0.35f, 1.0f),
+                            std::clamp(light.color.g, 0.35f, 1.0f),
+                            std::clamp(light.color.b, 0.18f, 1.0f));
+        }
+        return ColorU32(1.0f, 0.86f, 0.28f);
+    case SceneViewIconKind::Camera:
+        return ColorU32(0.9f, 0.95f, 1.0f);
+    case SceneViewIconKind::None:
+        break;
+    }
+    return ColorU32(0.88f, 0.9f, 0.92f);
+}
+
+void DrawGlyphIcon(ImDrawList* draw, glm::vec2 center, SceneViewIconKind kind, Entity entity) {
+    const EditorIcon icon = EditorIconForSceneKind(kind);
+    const char* glyph = EditorIconGlyph(icon);
+    const ImU32 color = SceneIconColor(kind, entity);
+
+    if (glyph != nullptr && glyph[0] != '\0') {
+        const ImVec2 glyphSize = ImGui::CalcTextSize(glyph);
+        draw->AddText(ImVec2(center.x - glyphSize.x * 0.5f, center.y - glyphSize.y * 0.5f), color, glyph);
+        return;
+    }
+
+    const char* fallback = "?";
+    switch (kind) {
+    case SceneViewIconKind::Spawn:
+        fallback = "S";
+        break;
+    case SceneViewIconKind::Faceoff:
+        fallback = "F";
+        break;
+    case SceneViewIconKind::Puck:
+        fallback = "P";
+        break;
+    case SceneViewIconKind::Goal:
+        fallback = "G";
+        break;
+    case SceneViewIconKind::Rink:
+        fallback = "R";
+        break;
+    case SceneViewIconKind::PlayArea:
+        fallback = "A";
+        break;
+    case SceneViewIconKind::CameraRig:
+        fallback = "C";
+        break;
+    default:
+        break;
+    }
+    const ImVec2 size = ImGui::CalcTextSize(fallback);
+    draw->AddText(ImVec2(center.x - size.x * 0.5f, center.y - size.y * 0.5f), color, fallback);
+}
+
 void DrawSceneIcons(EditorContext& context, Scene& scene, const CameraRenderData& camera, glm::vec2 imagePos,
                     glm::vec2 imageSize, SceneViewOverlayResult& result) {
     ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -373,7 +489,8 @@ void DrawSceneIcons(EditorContext& context, Scene& scene, const CameraRenderData
     }
 
     for (Entity entity : scene.GetAllEntities()) {
-        if (!entity.HasComponent<TransformComponent>() || !IsCameraOrLight(entity)) {
+        const SceneViewIconKind kind = IconKindForEntity(entity);
+        if (kind == SceneViewIconKind::None) {
             continue;
         }
         if (context.IsSceneHidden(entity.GetUUID())) {
@@ -393,25 +510,26 @@ void DrawSceneIcons(EditorContext& context, Scene& scene, const CameraRenderData
         draw->AddCircleFilled(ToImVec2(center), kIconRadius, ColorU32(0.04f, 0.04f, 0.05f, 0.38f));
         draw->AddCircle(ToImVec2(center), kIconRadius, outline, 24, selected ? 2.2f : 1.2f);
 
-        if (entity.HasComponent<CameraComponent>()) {
-            DrawCameraIcon(draw, center, ColorU32(0.9f, 0.95f, 1.0f));
-        }
-        if (entity.HasComponent<LightComponent>()) {
-            const LightComponent& light = entity.GetComponent<LightComponent>();
-            const ImU32 lightColor = ColorU32(std::clamp(light.color.r, 0.35f, 1.0f),
-                                              std::clamp(light.color.g, 0.35f, 1.0f),
-                                              std::clamp(light.color.b, 0.18f, 1.0f));
-            switch (light.type) {
-            case LightComponent::Type::Directional:
+        if (kind == SceneViewIconKind::Camera) {
+            DrawCameraIcon(draw, center, SceneIconColor(kind, entity));
+        } else if (kind == SceneViewIconKind::DirectionalLight || kind == SceneViewIconKind::SpotLight ||
+                   kind == SceneViewIconKind::PointLight) {
+            const ImU32 lightColor = SceneIconColor(kind, entity);
+            switch (kind) {
+            case SceneViewIconKind::DirectionalLight:
                 DrawDirectionalLightIcon(draw, center, lightColor);
                 break;
-            case LightComponent::Type::Spot:
+            case SceneViewIconKind::SpotLight:
                 DrawSpotLightIcon(draw, center, lightColor);
                 break;
-            case LightComponent::Type::Point:
+            case SceneViewIconKind::PointLight:
                 DrawPointLightIcon(draw, center, lightColor);
                 break;
+            default:
+                break;
             }
+        } else {
+            DrawGlyphIcon(draw, center, kind, entity);
         }
     }
 
@@ -503,6 +621,55 @@ void DrawViewGizmo(EditorContext& context, const CameraRenderData& camera, glm::
 
 } // namespace
 
+SceneViewIconKind IconKindForEntity(Entity entity) {
+    if (!entity.IsValid() || !entity.HasComponent<TransformComponent>()) {
+        return SceneViewIconKind::None;
+    }
+
+    if (entity.HasComponent<CameraComponent>()) {
+        return SceneViewIconKind::Camera;
+    }
+
+    if (entity.HasComponent<LightComponent>()) {
+        const LightComponent& light = entity.GetComponent<LightComponent>();
+        switch (light.type) {
+        case LightComponent::Type::Directional:
+            return SceneViewIconKind::DirectionalLight;
+        case LightComponent::Type::Point:
+            return SceneViewIconKind::PointLight;
+        case LightComponent::Type::Spot:
+            return SceneViewIconKind::SpotLight;
+        }
+        return SceneViewIconKind::PointLight;
+    }
+
+    if (HasVisibleMesh(entity)) {
+        return SceneViewIconKind::None;
+    }
+
+    if (entity.HasComponent<SpawnPointComponent>()) {
+        return entity.GetComponent<SpawnPointComponent>().faceoffSpawn ? SceneViewIconKind::Faceoff
+                                                                       : SceneViewIconKind::Spawn;
+    }
+    if (entity.HasComponent<PuckComponent>()) {
+        return SceneViewIconKind::Puck;
+    }
+    if (entity.HasComponent<GoalComponent>()) {
+        return SceneViewIconKind::Goal;
+    }
+    if (entity.HasComponent<RinkComponent>()) {
+        return SceneViewIconKind::Rink;
+    }
+    if (entity.HasComponent<PlayAreaComponent>()) {
+        return SceneViewIconKind::PlayArea;
+    }
+    if (entity.HasComponent<CameraRigMarkerComponent>()) {
+        return SceneViewIconKind::CameraRig;
+    }
+
+    return SceneViewIconKind::None;
+}
+
 SceneViewProjection ProjectWorldToViewportPixels(const CameraRenderData& camera, glm::vec3 worldPosition,
                                                  glm::vec2 viewportPixels) {
     SceneViewProjection result;
@@ -555,7 +722,7 @@ UUID PickIcon(Scene& scene, const CameraRenderData& camera, glm::vec2 viewportPi
     float bestDistanceSq = radiusPixels * radiusPixels;
     float bestDepth = std::numeric_limits<float>::max();
     for (Entity entity : scene.GetAllEntities()) {
-        if (!entity.HasComponent<TransformComponent>() || !IsCameraOrLight(entity)) {
+        if (IconKindForEntity(entity) == SceneViewIconKind::None) {
             continue;
         }
         const SceneViewProjection projected =

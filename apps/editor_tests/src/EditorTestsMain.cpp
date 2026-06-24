@@ -9,6 +9,7 @@
 void RunEditorVersionTests();
 void RunEditorContextAssetSelectionTests();
 void RunEditorSettingsTests();
+void RunEditorLayoutPersistenceTests();
 void RunSelectionTests();
 void RunInspectorFieldTests();
 void RunInspectorAssetContractTests();
@@ -18,6 +19,7 @@ void RunSceneViewOverlayTests();
 void RunToolTests();
 void RunHockeyPhysicsSetupTests();
 void RunEditorGameplayPreviewTests();
+void RunGameplayTuningPanelContractTests();
 void RunSceneWorkflowTests();
 void RunProjectBrowserTests();
 void RunProjectPanelContractTests();
@@ -34,6 +36,7 @@ int main(int argc, char** argv) {
     RunEditorVersionTests();
     RunEditorContextAssetSelectionTests();
     RunEditorSettingsTests();
+    RunEditorLayoutPersistenceTests();
     RunSelectionTests();
     RunInspectorFieldTests();
     RunInspectorAssetContractTests();
@@ -43,6 +46,7 @@ int main(int argc, char** argv) {
     RunToolTests();
     RunHockeyPhysicsSetupTests();
     RunEditorGameplayPreviewTests();
+    RunGameplayTuningPanelContractTests();
     RunSceneWorkflowTests();
     RunProjectBrowserTests();
     RunProjectPanelContractTests();

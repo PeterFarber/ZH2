@@ -26,6 +26,7 @@
 #include "Hockey/Editor/Logging/EditorConsoleSink.hpp"
 #include "Hockey/Editor/Panels/ConsolePanel.hpp"
 #include "Hockey/Editor/Panels/GameViewportPanel.hpp"
+#include "Hockey/Editor/Panels/GameplayTuningPanel.hpp"
 #include "Hockey/Editor/Panels/HierarchyPanel.hpp"
 #include "Hockey/Editor/Panels/InspectorPanel.hpp"
 #include "Hockey/Editor/Panels/PrefabPanel.hpp"
@@ -39,6 +40,7 @@
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
+#include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 #include "Hockey/Physics/PhysicsMeshProvider.hpp"
@@ -161,10 +163,17 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     if (m_Context.config != nullptr) {
         gameplaySettings = LoadGameplaySettings(*m_Context.config);
     }
-    m_GameplayPreview.Configure(gameplaySettings);
+    GameplayTuning gameplayTuning;
+    if (const Result<GameplayTuning> loaded = TuningSerializer::Load(Paths::DataFile("gameplay/tuning.default.yaml"))) {
+        gameplayTuning = loaded.value;
+    } else {
+        HK_EDITOR_WARN("Gameplay tuning load failed: {}. Using built-in defaults.", loaded.error);
+    }
+    m_GameplayPreview.Configure(gameplaySettings, gameplayTuning);
     m_Context.gameplayPreview = &m_GameplayPreview;
 
     RegisterPanels();
+    m_Context.panelManager.ApplyPanelOpenStates(m_Context.settings);
     RegisterTools();
 
     m_LastWidth = info.window->Width();
@@ -180,6 +189,7 @@ void EditorApp::RegisterPanels() {
     panels.AddPanel<InspectorPanel>();
     panels.AddPanel<SceneViewportPanel>();
     panels.AddPanel<GameViewportPanel>();
+    panels.AddPanel<GameplayTuningPanel>();
     panels.AddPanel<ProjectPanel>();
     panels.AddPanel<ConsolePanel>();
     panels.AddPanel<PropertiesPanel>();
@@ -195,6 +205,32 @@ void EditorApp::RegisterTools() {
     m_Context.toolManager.Activate("Move", m_Context);
 }
 
+void EditorApp::CapturePanelLayoutState() {
+    m_Context.settings.SetPanelOpenStates(m_Context.panelManager.CapturePanelOpenStates());
+}
+
+void EditorApp::SaveLayout() {
+    if (!m_Initialized) {
+        return;
+    }
+    CapturePanelLayoutState();
+    if (const Status status = m_Context.settings.Save(EditorSettings::DefaultPath()); !status) {
+        HK_EDITOR_WARN("Saving editor settings failed: {}", status.error);
+    }
+    m_ImGuiLayer.SaveLayout();
+    HK_EDITOR_INFO("Saved editor layout ({})", m_ImGuiLayer.IniPath());
+}
+
+void EditorApp::ResetLayout() {
+    m_Context.panelManager.ResetPanelOpenStates();
+    CapturePanelLayoutState();
+    if (const Status status = m_Context.settings.Save(EditorSettings::DefaultPath()); !status) {
+        HK_EDITOR_WARN("Saving editor settings after layout reset failed: {}", status.error);
+    }
+    m_Dockspace.RequestReset();
+    HK_EDITOR_INFO("Reset editor layout to defaults");
+}
+
 void EditorApp::Shutdown() {
     if (!m_Initialized) {
         return;
@@ -208,7 +244,7 @@ void EditorApp::Shutdown() {
     m_Context.physicsPreview = nullptr;
     // Drop the mesh-collider provider so it can't outlive the AssetManager.
     PhysicsMeshRegistry::Get().Clear();
-    m_Context.settings.Save(EditorSettings::DefaultPath());
+    SaveLayout();
     m_ImGuiLayer.Shutdown();
     m_Initialized = false;
 }

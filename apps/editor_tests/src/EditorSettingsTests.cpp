@@ -91,4 +91,26 @@ void RunEditorSettingsTests() {
         }
         HK_CHECK_MSG(s.recentScenes.size() <= EditorSettings::kMaxRecentScenes, "recent scenes capped");
     }
+
+    // --- editor panel open state persists ----------------------------------
+    {
+        EditorSettings out;
+        out.SetPanelOpen("Hierarchy", true);
+        out.SetPanelOpen("Console", false);
+        out.SetPanelOpen("Project Settings", false);
+        out.SetPanelOpen("Console", true); // update existing record without duplicating it
+
+        const auto path = Paths::TempFile("editor_layout_state_test.toml");
+        HK_CHECK_MSG(static_cast<bool>(out.Save(path)), "saves panel layout state");
+
+        EditorSettings in;
+        HK_CHECK_MSG(static_cast<bool>(in.Load(path)), "loads panel layout state");
+
+        HK_CHECK_EQ(in.panelOpenStates.size(), static_cast<std::size_t>(3));
+        HK_CHECK_EQ(in.PanelOpenOrDefault("Hierarchy", false), true);
+        HK_CHECK_EQ(in.PanelOpenOrDefault("Console", false), true);
+        HK_CHECK_EQ(in.PanelOpenOrDefault("Project Settings", true), false);
+        HK_CHECK_EQ(in.PanelOpenOrDefault("Unknown Panel", true), true);
+        HK_CHECK_EQ(in.PanelOpenOrDefault("Unknown Panel", false), false);
+    }
 }

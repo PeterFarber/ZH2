@@ -59,4 +59,25 @@ void PanelManager::RequestPanelFocus(EditorContext& context, const std::string& 
     }
 }
 
+void PanelManager::ApplyPanelOpenStates(const EditorSettings& settings) {
+    for (const std::unique_ptr<Panel>& panel : m_Panels) {
+        panel->SetOpen(settings.PanelOpenOrDefault(panel->GetName(), panel->IsOpenByDefault()));
+    }
+}
+
+std::vector<EditorPanelOpenState> PanelManager::CapturePanelOpenStates() const {
+    std::vector<EditorPanelOpenState> states;
+    states.reserve(m_Panels.size());
+    for (const std::unique_ptr<Panel>& panel : m_Panels) {
+        states.push_back(EditorPanelOpenState{panel->GetName(), panel->IsOpen()});
+    }
+    return states;
+}
+
+void PanelManager::ResetPanelOpenStates() {
+    for (const std::unique_ptr<Panel>& panel : m_Panels) {
+        panel->ResetOpenState();
+    }
+}
+
 } // namespace Hockey

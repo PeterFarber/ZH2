@@ -1,7 +1,9 @@
 #include "Hockey/Editor/Inspector/AssetInspector.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -12,6 +14,7 @@
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Assets/AssetMetadata.hpp"
 #include "Hockey/Assets/AssetType.hpp"
+#include "Hockey/Assets/Assets/TextureAsset.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
@@ -45,8 +48,8 @@ std::filesystem::path ProjectRelativePath(const std::filesystem::path& path) {
     return ec ? path.lexically_normal() : relative.lexically_normal();
 }
 
-bool IsVisibleCookedAsset(const AssetMetadata& meta) {
-    return meta.id.IsValid() && meta.cooked && !meta.missing && !meta.rawPath.empty() && !meta.cookedPath.empty();
+bool IsInspectableAsset(const AssetMetadata& meta) {
+    return meta.id.IsValid() && !meta.missing && !meta.rawPath.empty();
 }
 
 const AssetMetadata* FindAssetMeta(EditorContext& context, const std::filesystem::path& absolute) {
@@ -78,7 +81,7 @@ void AssetInspector::Draw(EditorContext& context, AssetID assetId) {
     }
 
     const AssetMetadata* meta = context.assetManager->Database().Find(assetId);
-    if (meta == nullptr || !IsVisibleCookedAsset(*meta)) {
+    if (meta == nullptr || !IsInspectableAsset(*meta)) {
         ImGui::TextUnformatted("Selected asset is no longer available.");
         if (ImGui::Button("Clear Selection")) {
             context.ClearAssetSelection();
@@ -87,7 +90,10 @@ void AssetInspector::Draw(EditorContext& context, AssetID assetId) {
     }
 
     DrawMetadata(context, *meta);
-    if (meta->type == AssetType::Material) {
+    if (meta->type == AssetType::Texture) {
+        ImGui::Separator();
+        DrawTexturePreview(context, *meta);
+    } else if (meta->type == AssetType::Material) {
         ImGui::Separator();
         DrawMaterialEditor(context, ResolveProjectPath(meta->rawPath));
     } else {
@@ -158,6 +164,43 @@ void AssetInspector::DrawMetadata(EditorContext& context, const AssetMetadata& m
         ProjectBrowser::Reveal(cooked);
     }
     EditorTooltip::ForLastItem("Reveal the cooked output file in the system file manager.");
+}
+
+void AssetInspector::DrawTexturePreview(EditorContext& context, const AssetMetadata& meta) {
+    ImGui::SeparatorText("Preview");
+    if (context.imguiBridge == nullptr) {
+        ImGui::TextDisabled("Texture preview unavailable.");
+        return;
+    }
+
+    const std::uint64_t textureId = context.imguiBridge->TextureIdForAsset(meta.id.Value());
+    if (textureId == 0) {
+        ImGui::TextDisabled("Texture preview unavailable.");
+        return;
+    }
+
+    std::uint32_t width = 1;
+    std::uint32_t height = 1;
+    if (context.assetManager != nullptr && meta.cooked && !meta.dirty && !meta.cookedPath.empty()) {
+        Result<std::shared_ptr<TextureAsset>> texture = context.assetManager->Load<TextureAsset>(meta.id);
+        if (texture && texture.value != nullptr && texture.value->width > 0 && texture.value->height > 0) {
+            width = texture.value->width;
+            height = texture.value->height;
+        }
+    }
+
+    const float maxWidth = ImGui::GetContentRegionAvail().x;
+    const float maxEdge = std::max(64.0f, std::min(maxWidth, 256.0f));
+    const float aspect = static_cast<float>(width) / static_cast<float>(height);
+    ImVec2 size(maxEdge, maxEdge);
+    if (aspect > 1.0f) {
+        size.y = maxEdge / aspect;
+    } else {
+        size.x = maxEdge * aspect;
+    }
+
+    ImGui::Image(static_cast<ImTextureID>(textureId), size);
+    ImGui::TextDisabled("%u x %u", width, height);
 }
 
 void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path) {
@@ -289,6 +332,8 @@ void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::files
         ApplyMaterialPreview(context);
     }
 
+    DrawMaterialPreview(context);
+
     ImGui::Separator();
     const std::string saveLabel = EditorIconLabel(EditorIcon::Save, "Save");
     if (ImGui::Button(saveLabel.c_str())) {
@@ -327,6 +372,27 @@ void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::files
     }
     EditorTooltip::ForLastItem("Discard unsaved live preview edits and reload from disk.");
     ImGui::EndDisabled();
+}
+
+void AssetInspector::DrawMaterialPreview(EditorContext& context) {
+    ImGui::SeparatorText("Preview");
+    if (m_EditMaterialId == 0) {
+        ImGui::TextDisabled("Material preview unavailable.");
+        return;
+    }
+
+    constexpr float kInspectorMaterialPreviewSize = 192.0f;
+    const float previewEdge = std::max(64.0f, std::min(ImGui::GetContentRegionAvail().x, kInspectorMaterialPreviewSize));
+    const std::uint64_t previewId =
+        m_AssetPreviewRenderer.MaterialPreviewTextureId(context, m_EditMaterialId,
+                                                        static_cast<std::uint32_t>(previewEdge));
+    if (previewId == 0) {
+        ImGui::TextDisabled("Material preview unavailable.");
+        return;
+    }
+
+    const ImVec2 size(previewEdge, previewEdge);
+    ImGui::Image(static_cast<ImTextureID>(previewId), size);
 }
 
 void AssetInspector::ApplyMaterialPreview(EditorContext& context) {

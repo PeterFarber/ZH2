@@ -535,6 +535,12 @@ bool DrawGameplaySettings(GameplaySettings& settings) {
                             "Automatically returns players and puck to faceoff positions after a goal.");
     changed |= DrawFloat("Post-goal delay seconds", settings.postGoalDelaySeconds, 0.1f, 0.0f, 60.0f, "%.1f",
                          "Delay before the scene resets to faceoff after a goal.");
+    changed |= DrawFloat("Faceoff delay seconds", settings.faceoffDelaySeconds, 0.1f, 0.0f, 60.0f, "%.1f",
+                         "Delay between faceoff setup and live play, keeping players and puck staged before the drop.");
+    changed |= DrawFloat("Goal detection radius", settings.goalDetectionRadius, 0.01f, 0.0f, 20.0f, "%.2f",
+                         "Distance from the goal marker where puck position scoring is accepted.");
+    changed |= DrawCheckbox("Require puck for goal", settings.requirePuckForGoal,
+                            "Requires goal trigger scoring to come from a puck entity rather than any object.");
     changed |= DrawCheckbox("Allow body checking", settings.allowBodyChecking,
                             "Allows skater body contact rules to affect player movement and collisions.");
     changed |= DrawCheckbox("Allow manual goalie", settings.allowManualGoalie,

@@ -3,6 +3,7 @@ add_executable(HockeyEditorTests
     src/EditorVersionTests.cpp
     src/EditorContextAssetSelectionTests.cpp
     src/EditorSettingsTests.cpp
+    src/EditorLayoutPersistenceTests.cpp
     src/SelectionTests.cpp
     src/InspectorFieldTests.cpp
     src/InspectorAssetContractTests.cpp
@@ -12,6 +13,7 @@ add_executable(HockeyEditorTests
     src/ToolTests.cpp
     src/HockeyPhysicsSetupTests.cpp
     src/EditorGameplayPreviewTests.cpp
+    src/GameplayTuningPanelContractTests.cpp
     src/SceneWorkflowTests.cpp
     src/ProjectBrowserTests.cpp
     src/ProjectPanelContractTests.cpp

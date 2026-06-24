@@ -1,6 +1,8 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "Hockey/Core/Result.hpp"
@@ -8,6 +10,13 @@
 namespace Hockey {
 
 class Config;
+
+struct EditorPanelOpenState {
+    std::string name;
+    bool open = true;
+
+    friend bool operator==(const EditorPanelOpenState&, const EditorPanelOpenState&) = default;
+};
 
 // Persistent editor preferences. Stored as TOML under data/editor and loaded on
 // startup / saved on shutdown or whenever a value changes.
@@ -32,6 +41,7 @@ struct EditorSettings {
 
     bool restoreLastScene = true;
     std::vector<std::filesystem::path> recentScenes;
+    std::vector<EditorPanelOpenState> panelOpenStates;
 
     // Content pipeline behaviour (the [assets] section). Drives startup discovery
     // and the per-frame hot-reload poll in EditorApp.
@@ -60,6 +70,11 @@ struct EditorSettings {
     // Records a scene path as the most-recently-used, de-duplicating and
     // trimming to kMaxRecentScenes.
     void AddRecentScene(const std::filesystem::path& path);
+
+    bool PanelOpenOrDefault(std::string_view name, bool defaultOpen) const;
+    bool SetPanelOpen(std::string name, bool open);
+    bool SetPanelOpenStates(std::vector<EditorPanelOpenState> states);
+    void ClearPanelOpenStates();
 };
 
 } // namespace Hockey

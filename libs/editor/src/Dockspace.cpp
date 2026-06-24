@@ -68,6 +68,7 @@ void Dockspace::BuildDefaultLayout() {
     ImGui::DockBuilderDockWindow(kConsole, bottom);
     ImGui::DockBuilderDockWindow(kStats, bottom);
     ImGui::DockBuilderDockWindow(kSceneValidation, bottom);
+    ImGui::DockBuilderDockWindow(kGameplayTuning, bottom);
 
     ImGui::DockBuilderFinish(m_DockspaceId);
 }

@@ -124,7 +124,17 @@ void InspectorPanel::OnImGui(EditorContext& context) {
     }
 
     context.SyncAssetSelectionWithEntitySelection();
-    if (context.SelectedAsset().IsValid()) {
+
+    DrawLockToggle(context);
+    ImGui::Separator();
+
+    if (m_InspectorLocked && m_LockedAssetId.IsValid()) {
+        m_AssetInspector.Draw(context, m_LockedAssetId);
+        EndWindow();
+        return;
+    }
+
+    if (!m_InspectorLocked && context.SelectedAsset().IsValid()) {
         m_AssetInspector.Draw(context, context.SelectedAsset());
         EndWindow();
         return;
@@ -137,15 +147,24 @@ void InspectorPanel::OnImGui(EditorContext& context) {
         return;
     }
 
-    context.selection.Validate(*scene);
-    Entity entity = scene->FindEntityByUUID(context.selection.Primary());
+    if (!m_InspectorLocked) {
+        context.selection.Validate(*scene);
+    }
+
+    const UUID inspectedEntityId = m_InspectorLocked ? m_LockedEntityId : context.selection.Primary();
+    Entity entity = scene->FindEntityByUUID(inspectedEntityId);
     if (!entity) {
-        ImGui::TextUnformatted("No entity selected.");
+        ImGui::TextUnformatted(m_InspectorLocked ? "Locked entity is no longer available." : "No entity selected.");
+        if (m_InspectorLocked && ImGui::Button("Clear Lock")) {
+            m_InspectorLocked = false;
+            m_LockedAssetId = {};
+            m_LockedEntityId = UUID(0);
+        }
         EndWindow();
         return;
     }
 
-    if (context.selection.Count() > 1) {
+    if (!m_InspectorLocked && context.selection.Count() > 1) {
         ImGui::TextDisabled("%zu entities selected (editing primary)", context.selection.Count());
         ImGui::Separator();
     }
@@ -157,6 +176,31 @@ void InspectorPanel::OnImGui(EditorContext& context) {
     m_AddMenu.Draw(context, entity);
 
     EndWindow();
+}
+
+void InspectorPanel::DrawLockToggle(EditorContext& context) {
+    const bool hasSelection = context.SelectedAsset().IsValid() || context.selection.Primary().IsValid();
+    ImGui::BeginDisabled(!m_InspectorLocked && !hasSelection);
+    if (EditorIconToggleButton(EditorIcon::Locked, "InspectorLock", m_InspectorLocked,
+                               m_InspectorLocked ? "Unlock Inspector from the current item."
+                                                 : "Lock Inspector to the current item.")) {
+        if (m_InspectorLocked) {
+            m_InspectorLocked = false;
+            m_LockedAssetId = {};
+            m_LockedEntityId = UUID(0);
+        } else if (context.SelectedAsset().IsValid()) {
+            m_InspectorLocked = true;
+            m_LockedAssetId = context.SelectedAsset();
+            m_LockedEntityId = UUID(0);
+        } else if (context.selection.Primary().IsValid()) {
+            m_InspectorLocked = true;
+            m_LockedAssetId = {};
+            m_LockedEntityId = context.selection.Primary();
+        }
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    ImGui::TextDisabled(m_InspectorLocked ? "Locked" : "Follow Selection");
 }
 
 void InspectorPanel::DrawHeader(EditorContext& context, Entity& entity) {

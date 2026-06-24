@@ -13,13 +13,64 @@ mouse_sensitivity = 0.15000000596046448
 move_speed = 10.0
 
 [grid]
-show = true
+show = false
 spacing = 1.0
+
+[layout]
+panel_count = 12
+
+    [layout.panel_0]
+    name = 'Hierarchy'
+    open = true
+
+    [layout.panel_1]
+    name = 'Inspector'
+    open = true
+
+    [layout.panel_10]
+    name = 'Prefab'
+    open = false
+
+    [layout.panel_11]
+    name = 'Project Settings'
+    open = true
+
+    [layout.panel_2]
+    name = 'Scene'
+    open = true
+
+    [layout.panel_3]
+    name = 'Game'
+    open = true
+
+    [layout.panel_4]
+    name = 'Gameplay Tuning'
+    open = true
+
+    [layout.panel_5]
+    name = 'Project'
+    open = true
+
+    [layout.panel_6]
+    name = 'Console'
+    open = true
+
+    [layout.panel_7]
+    name = 'Properties'
+    open = true
+
+    [layout.panel_8]
+    name = 'Stats'
+    open = true
+
+    [layout.panel_9]
+    name = 'Scene Validation'
+    open = true
 
 [scene]
 recent_0 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/Main.scene.yaml'
-recent_1 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/render_shadows.scene.yaml'
-recent_2 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
+recent_1 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/main_rink.scene.yaml'
+recent_2 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/render_shadows.scene.yaml'
 recent_3 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/render_lights.scene.yaml'
 recent_4 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/render_materials.scene.yaml'
 recent_5 = 'C:/Users/Peter Farber/Documents/ZH2/data/raw/scenes/physics_smoke.scene.yaml'

@@ -54,9 +54,8 @@ public:
     // ----- Actions invoked by the menu bar / toolbar -----
     // Requests application exit. Prompts to save when the scene is dirty.
     void RequestQuit();
-    void ResetLayout() {
-        m_Dockspace.RequestReset();
-    }
+    void SaveLayout();
+    void ResetLayout();
 
     // ----- Scene lifecycle (menu bar / toolbar / shortcuts) -----
     // New/Open prompt to save when the scene is dirty before discarding it.
@@ -110,6 +109,7 @@ private:
     void RegisterTools();
     void BuildDockspaceUI();
     void ProcessShortcuts();
+    void CapturePanelLayoutState();
     // Polls the asset manager for changed raw files (when hot reload is enabled),
     // recooks dirty assets and invalidates the renderer's cached GPU resources.
     void PollAssetHotReload();

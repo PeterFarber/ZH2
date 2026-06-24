@@ -45,6 +45,79 @@ void RunSceneViewOverlayTests() {
         HK_CHECK_MSG(!outside.visible, "off-screen point is rejected");
     }
 
+    // --- marker icon classification covers meshless authored markers -----------
+    {
+        Scene scene{"MarkerIconClassification"};
+
+        Entity spawn = scene.CreateEntity("Spawn");
+        spawn.AddComponent<SpawnPointComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(spawn) == SceneViewIconKind::Spawn,
+                     "spawn point gets a scene icon");
+
+        Entity faceoff = scene.CreateEntity("Faceoff");
+        auto& faceoffSpawn = faceoff.AddComponent<SpawnPointComponent>();
+        faceoffSpawn.faceoffSpawn = true;
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(faceoff) == SceneViewIconKind::Faceoff,
+                     "faceoff spawn gets a scene icon");
+
+        Entity puck = scene.CreateEntity("Puck");
+        puck.AddComponent<PuckComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(puck) == SceneViewIconKind::Puck,
+                     "meshless puck marker gets a scene icon");
+
+        Entity goal = scene.CreateEntity("Goal");
+        goal.AddComponent<GoalComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(goal) == SceneViewIconKind::Goal,
+                     "meshless goal marker gets a scene icon");
+
+        Entity rink = scene.CreateEntity("Rink");
+        rink.AddComponent<RinkComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(rink) == SceneViewIconKind::Rink,
+                     "meshless rink marker gets a scene icon");
+
+        Entity playArea = scene.CreateEntity("Play Area");
+        playArea.AddComponent<PlayAreaComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(playArea) == SceneViewIconKind::PlayArea,
+                     "play area marker gets a scene icon");
+
+        Entity rig = scene.CreateEntity("Camera Rig");
+        rig.AddComponent<CameraRigMarkerComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(rig) == SceneViewIconKind::CameraRig,
+                     "camera rig marker gets a scene icon");
+    }
+
+    // --- non-spatial metadata and visible meshes do not get marker icons --------
+    {
+        Scene scene{"MarkerIconSuppression"};
+
+        Entity teamOnly = scene.CreateEntity("Team Only");
+        teamOnly.AddComponent<TeamComponent>();
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(teamOnly) == SceneViewIconKind::None,
+                     "team-only metadata does not draw a scene icon");
+
+        Entity spawnWithMesh = scene.CreateEntity("Spawn With Mesh");
+        spawnWithMesh.AddComponent<SpawnPointComponent>();
+        MeshRendererComponent mesh;
+        mesh.visible = true;
+        spawnWithMesh.AddComponent<MeshRendererComponent>(mesh);
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(spawnWithMesh) == SceneViewIconKind::None,
+                     "visible mesh suppresses marker icon");
+
+        Entity hiddenMeshMarker = scene.CreateEntity("Hidden Mesh Marker");
+        hiddenMeshMarker.AddComponent<SpawnPointComponent>();
+        MeshRendererComponent hiddenMesh;
+        hiddenMesh.visible = false;
+        hiddenMeshMarker.AddComponent<MeshRendererComponent>(hiddenMesh);
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(hiddenMeshMarker) == SceneViewIconKind::Spawn,
+                     "hidden mesh still allows marker icon");
+
+        Entity cameraWithMesh = scene.CreateEntity("Camera With Mesh");
+        cameraWithMesh.AddComponent<CameraComponent>();
+        cameraWithMesh.AddComponent<MeshRendererComponent>(mesh);
+        HK_CHECK_MSG(SceneViewOverlay::IconKindForEntity(cameraWithMesh) == SceneViewIconKind::Camera,
+                     "camera icon remains available even if a mesh exists");
+    }
+
     // --- billboard icon picking returns camera/light entities by screen pos -
     {
         Scene scene{"IconPicking"};
@@ -53,6 +126,9 @@ void RunSceneViewOverlayTests() {
         Entity lightEntity = scene.CreateEntity("Point Light");
         lightEntity.GetComponent<TransformComponent>().localPosition = {2.0f, 0.0f, 0.0f};
         lightEntity.AddComponent<LightComponent>().type = LightComponent::Type::Point;
+        Entity spawnEntity = scene.CreateEntity("Spawn");
+        spawnEntity.GetComponent<TransformComponent>().localPosition = {-2.0f, 0.0f, 0.0f};
+        spawnEntity.AddComponent<SpawnPointComponent>();
 
         const CameraRenderData camera = MakeOverlayCamera(800.0f / 600.0f);
         const UUID pickedCenter = SceneViewOverlay::PickIcon(scene, camera, {800.0f, 600.0f}, {400.0f, 300.0f});
@@ -63,6 +139,12 @@ void RunSceneViewOverlayTests() {
         HK_CHECK_MSG(lightProjection.visible, "light projects into viewport");
         const UUID pickedLight = SceneViewOverlay::PickIcon(scene, camera, {800.0f, 600.0f}, lightProjection.pixels);
         HK_CHECK_MSG(pickedLight == lightEntity.GetUUID(), "light icon pick selects light");
+
+        const SceneViewProjection spawnProjection = SceneViewOverlay::ProjectWorldToViewportPixels(
+            camera, {-2.0f, 0.0f, 0.0f}, {800.0f, 600.0f});
+        HK_CHECK_MSG(spawnProjection.visible, "spawn marker projects into viewport");
+        const UUID pickedSpawn = SceneViewOverlay::PickIcon(scene, camera, {800.0f, 600.0f}, spawnProjection.pixels);
+        HK_CHECK_MSG(pickedSpawn == spawnEntity.GetUUID(), "spawn icon pick selects spawn marker");
 
         const UUID missed = SceneViewOverlay::PickIcon(scene, camera, {800.0f, 600.0f}, {32.0f, 32.0f});
         HK_CHECK_MSG(!missed.IsValid(), "empty screen point misses icons");

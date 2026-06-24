@@ -21,6 +21,7 @@ inline constexpr const char* kStats = "Stats";
 inline constexpr const char* kSceneValidation = "Scene Validation";
 inline constexpr const char* kPrefab = "Prefab";
 inline constexpr const char* kProjectSettings = "Project Settings";
+inline constexpr const char* kGameplayTuning = "Gameplay Tuning";
 } // namespace EditorPanelNames
 
 // Owns the fullscreen host window and the central dock node that every panel

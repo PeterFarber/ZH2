@@ -123,6 +123,20 @@ const char* EditorIconGlyph(EditorIcon icon) {
         return ICON_FA_MAGNET;
     case EditorIcon::Physics:
         return ICON_FA_ATOM;
+    case EditorIcon::Spawn:
+        return ICON_FA_LOCATION_DOT;
+    case EditorIcon::Faceoff:
+        return ICON_FA_CIRCLE_DOT;
+    case EditorIcon::Puck:
+        return ICON_FA_HOCKEY_PUCK;
+    case EditorIcon::Goal:
+        return ICON_FA_FLAG_CHECKERED;
+    case EditorIcon::Rink:
+        return ICON_FA_BORDER_ALL;
+    case EditorIcon::PlayArea:
+        return ICON_FA_VECTOR_SQUARE;
+    case EditorIcon::CameraRig:
+        return ICON_FA_VIDEO;
     case EditorIcon::Warning:
         return ICON_FA_TRIANGLE_EXCLAMATION;
     case EditorIcon::Error:

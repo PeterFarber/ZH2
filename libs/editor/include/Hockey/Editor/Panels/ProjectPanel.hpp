@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -7,7 +8,10 @@
 
 #include "Hockey/Assets/AssetID.hpp"
 #include "Hockey/Editor/Panel.hpp"
+#include "Hockey/Editor/Project/EditorAssetPreviewRenderer.hpp"
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
+
+struct ImVec2;
 
 namespace Hockey {
 
@@ -24,8 +28,8 @@ enum class ProjectSection {
     Shaders,
 };
 
-// Project asset browser over cooked assets. The left side exposes fixed asset
-// sections, while selected asset details/editing live in the Inspector panel.
+// Project asset browser over raw source assets. The left side exposes fixed
+// asset sections, while imported/importable files can select into Inspector.
 class ProjectPanel : public Panel {
 public:
     ProjectPanel();
@@ -45,27 +49,34 @@ private:
     void DrawSectionList(EditorContext& context);
     void DrawFolderContents(EditorContext& context);
     void DrawSearchResults(EditorContext& context);
-    void DrawCookedEntry(EditorContext& context, const CookedProjectEntry& entry);
-    void DrawCookedContextMenu(EditorContext& context, const CookedProjectEntry& entry);
+    void DrawRawEntry(EditorContext& context, const ProjectEntry& entry);
+    bool DrawProjectTileButton(EditorContext& context,
+                               const ProjectEntry& entry,
+                               const AssetMetadata* meta,
+                               const ImVec2& size);
+    std::uint64_t ThumbnailTextureId(EditorContext& context, const ProjectEntry& entry, const AssetMetadata* meta);
+    void DrawRawContextMenu(EditorContext& context, const ProjectEntry& entry);
     void DrawStatusStrip(EditorContext& context);
     void DrawViewSizeSlider();
     void DrawModals(EditorContext& context);
 
     // Drag a prefab file (path payload) or an imported asset (asset-id payload)
     // out of the panel; double-click opens scenes / instances prefabs.
-    void BeginCookedDragSource(EditorContext& context, const CookedProjectEntry& entry);
-    void HandleCookedActivation(EditorContext& context, const CookedProjectEntry& entry);
-    void ReimportAndRecook(EditorContext& context, const CookedProjectEntry& entry);
-    void Recook(EditorContext& context, const CookedProjectEntry& entry);
+    void BeginRawDragSource(EditorContext& context, const ProjectEntry& entry);
+    void HandleRawActivation(EditorContext& context, const ProjectEntry& entry);
+    void SelectRawEntry(EditorContext& context, const ProjectEntry& entry);
+    void ReimportAndRecook(EditorContext& context, const AssetMetadata& meta);
+    void Recook(EditorContext& context, const AssetMetadata& meta);
     void ImportSelectedFile(EditorContext& context);
     void ImportExternalAsset(EditorContext& context, const std::filesystem::path& source);
     bool ImportAndCookRawAsset(EditorContext& context, const std::filesystem::path& rawPath);
     void ImportAllAndCook(EditorContext& context);
     void RecookDirty(EditorContext& context);
     void InvalidateAssetEvents(EditorContext& context);
-    std::vector<CookedProjectEntry> SearchEntries(EditorContext& context, bool* truncated) const;
-    bool MatchesSearchAndFilter(const CookedProjectEntry& entry) const;
+    std::vector<ProjectEntry> SearchEntries(EditorContext& context, bool* truncated) const;
+    bool MatchesSearchAndFilter(const ProjectEntry& entry, bool includeFolders) const;
     const AssetMetadata* SelectedMetadata(EditorContext& context) const;
+    const AssetMetadata* MetadataForRawEntry(EditorContext& context, const ProjectEntry& entry);
     // Creates a new default material asset under `directory` and imports it.
     void CreateMaterialAsset(EditorContext& context, const std::filesystem::path& directory);
     void OpenSceneFile(EditorContext& context, const std::filesystem::path& path);
@@ -82,6 +93,7 @@ private:
     AssetID m_SelectedAssetId;
     float m_IconSize = 72.0f;
     bool m_FocusSearchNextFrame = false;
+    EditorAssetPreviewRenderer m_AssetPreviewRenderer;
 
     Modal m_Modal = Modal::None;
     bool m_OpenModalRequested = false;

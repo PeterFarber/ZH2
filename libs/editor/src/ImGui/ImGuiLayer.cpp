@@ -67,6 +67,13 @@ Status ImGuiLayer::Init(Window& window, Renderer& renderer) {
     return Status::Ok();
 }
 
+void ImGuiLayer::SaveLayout() const {
+    if (ImGui::GetCurrentContext() == nullptr || m_IniPath.empty()) {
+        return;
+    }
+    ImGui::SaveIniSettingsToDisk(m_IniPath.c_str());
+}
+
 void ImGuiLayer::Shutdown() {
     if (!m_Initialized && !m_PlatformInitialized) {
         return;

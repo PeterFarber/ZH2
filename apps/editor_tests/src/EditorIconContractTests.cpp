@@ -109,6 +109,17 @@ void RunEditorIconContractTests() {
     HK_CHECK_MSG(Contains(iconsSource, "ICON_FA_FOLDER") && Contains(iconsSource, "ICON_FA_CUBE") &&
                      Contains(iconsSource, "ICON_FA_EYE") && Contains(iconsSource, "ICON_FA_LOCK"),
                  "asset, hierarchy, and state icons are mapped");
+    HK_CHECK_MSG(Contains(iconsHeader, "Spawn") && Contains(iconsHeader, "Faceoff") &&
+                     Contains(iconsHeader, "Puck") && Contains(iconsHeader, "Goal") &&
+                     Contains(iconsHeader, "Rink") && Contains(iconsHeader, "PlayArea") &&
+                     Contains(iconsHeader, "CameraRig"),
+                 "editor marker icons are declared");
+    HK_CHECK_MSG(Contains(iconsSource, "ICON_FA_LOCATION_DOT") && Contains(iconsSource, "ICON_FA_CIRCLE_DOT") &&
+                     Contains(iconsSource, "ICON_FA_HOCKEY_PUCK") &&
+                     Contains(iconsSource, "ICON_FA_FLAG_CHECKERED") &&
+                     Contains(iconsSource, "ICON_FA_BORDER_ALL") &&
+                     Contains(iconsSource, "ICON_FA_VECTOR_SQUARE") && Contains(iconsSource, "ICON_FA_VIDEO"),
+                 "marker icon glyphs are mapped");
 
     HK_CHECK_MSG(Contains(toolbar, "Hockey/Editor/ImGui/EditorIcons.hpp"),
                  "Toolbar includes editor icon helpers");
@@ -127,4 +138,8 @@ void RunEditorIconContractTests() {
     HK_CHECK_MSG(Contains(sceneOverlay, "EditorIcon::Select") && Contains(sceneOverlay, "EditorIcon::Move") &&
                      Contains(sceneOverlay, "EditorIcon::Rotate") && Contains(sceneOverlay, "EditorIcon::Scale"),
                  "Scene View overlay tool strip uses editor icons");
+    HK_CHECK_MSG(Contains(sceneOverlay, "context.IsSceneHidden") &&
+                     Contains(sceneOverlay, "context.CanSelectSceneEntity") &&
+                     Contains(sceneOverlay, "context.SelectSceneEntity"),
+                 "scene marker icons respect editor hidden/pickable selection rules");
 }

@@ -51,10 +51,19 @@ bool PlayerHasPuck(Scene& scene, Entity player) {
 } // namespace
 
 void EditorGameplayPreview::Configure(const GameplaySettings& settings) {
+    Configure(settings, m_Tuning);
+}
+
+void EditorGameplayPreview::Configure(const GameplaySettings& settings, const GameplayTuning& tuning) {
     m_Settings = settings;
+    m_Tuning = tuning;
     if (m_Settings.fixedDeltaSeconds > 0.0f) {
         m_Timestep.SetTickRate(1.0 / static_cast<double>(m_Settings.fixedDeltaSeconds));
     }
+}
+
+void EditorGameplayPreview::SetTuning(const GameplayTuning& tuning) {
+    m_Tuning = tuning;
 }
 
 Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsPreview) {
@@ -76,7 +85,7 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
         return Status::Fail("Gameplay preview requires an active physics preview");
     }
 
-    if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings); !initialized) {
+    if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings, m_Tuning); !initialized) {
         m_World.Shutdown();
         if (m_StartedPhysicsPreview) {
             physicsPreview.Stop(scene);
@@ -149,7 +158,7 @@ void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPre
     m_LocalInputSequence = 0;
     m_Tick = 0;
     m_HasMoveTarget = false;
-    if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings); !initialized) {
+    if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings, m_Tuning); !initialized) {
         m_Active = false;
         ClearSnapshot();
     }

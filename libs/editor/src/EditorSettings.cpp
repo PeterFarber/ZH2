@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/Paths.hpp"
@@ -65,6 +67,16 @@ Status EditorSettings::Load(const std::filesystem::path& path) {
         }
     }
 
+    panelOpenStates.clear();
+    const int panelCount = std::max(0, config.GetInt("layout.panel_count", 0));
+    for (int i = 0; i < panelCount; ++i) {
+        const std::string prefix = "layout.panel_" + std::to_string(i);
+        const std::string name = config.GetString(prefix + ".name", "");
+        if (!name.empty()) {
+            SetPanelOpen(name, config.GetBool(prefix + ".open", true));
+        }
+    }
+
     return Status::Ok();
 }
 
@@ -102,6 +114,15 @@ Status EditorSettings::Save(const std::filesystem::path& path) const {
         config.SetString(key, recentScenes[static_cast<std::size_t>(i)].generic_string());
     }
 
+    const int panelCount = static_cast<int>(panelOpenStates.size());
+    config.SetInt("layout.panel_count", panelCount);
+    for (int i = 0; i < panelCount; ++i) {
+        const EditorPanelOpenState& panel = panelOpenStates[static_cast<std::size_t>(i)];
+        const std::string prefix = "layout.panel_" + std::to_string(i);
+        config.SetString(prefix + ".name", panel.name);
+        config.SetBool(prefix + ".open", panel.open);
+    }
+
     return config.Save(path);
 }
 
@@ -119,6 +140,47 @@ void EditorSettings::AddRecentScene(const std::filesystem::path& path) {
     if (recentScenes.size() > kMaxRecentScenes) {
         recentScenes.resize(kMaxRecentScenes);
     }
+}
+
+bool EditorSettings::PanelOpenOrDefault(std::string_view name, bool defaultOpen) const {
+    for (const EditorPanelOpenState& panel : panelOpenStates) {
+        if (panel.name == name) {
+            return panel.open;
+        }
+    }
+    return defaultOpen;
+}
+
+bool EditorSettings::SetPanelOpen(std::string name, bool open) {
+    if (name.empty()) {
+        return false;
+    }
+    for (EditorPanelOpenState& panel : panelOpenStates) {
+        if (panel.name == name) {
+            if (panel.open == open) {
+                return false;
+            }
+            panel.open = open;
+            return true;
+        }
+    }
+    panelOpenStates.push_back(EditorPanelOpenState{std::move(name), open});
+    return true;
+}
+
+bool EditorSettings::SetPanelOpenStates(std::vector<EditorPanelOpenState> states) {
+    states.erase(std::remove_if(states.begin(), states.end(),
+                                [](const EditorPanelOpenState& panel) { return panel.name.empty(); }),
+                 states.end());
+    if (panelOpenStates == states) {
+        return false;
+    }
+    panelOpenStates = std::move(states);
+    return true;
+}
+
+void EditorSettings::ClearPanelOpenStates() {
+    panelOpenStates.clear();
 }
 
 } // namespace Hockey

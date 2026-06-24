@@ -24,6 +24,7 @@ public:
 
     Status Init(Window& window, Renderer& renderer);
     void Shutdown();
+    void SaveLayout() const;
 
     // Forwards a raw SDL_Event (passed as void* to keep SDL out of editor
     // headers) to the ImGui SDL3 backend. Returns true if ImGui consumed it.
@@ -51,6 +52,10 @@ public:
 
     bool IconFontLoaded() const {
         return m_IconFontLoaded;
+    }
+
+    const std::string& IniPath() const {
+        return m_IniPath;
     }
 
 private:

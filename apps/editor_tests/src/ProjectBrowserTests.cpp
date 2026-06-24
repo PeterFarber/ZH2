@@ -80,6 +80,7 @@ void RunProjectBrowserTests() {
         std::filesystem::create_directories(dir / "zsub", ec);
         WriteFile(dir / "afile.txt", "a");
         WriteFile(dir / "main.scene.yaml", "Scene: {}\nEntities: []");
+        WriteFile(dir / "main.scene.yaml.meta.yaml", "Asset: {}\n");
 
         ProjectBrowser browser;
         const std::vector<ProjectEntry> entries = browser.Entries(dir);
