@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <imgui.h>
@@ -15,10 +16,24 @@
 #include "Hockey/Editor/EditorApp.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/Panel.hpp"
 #include "Hockey/Editor/PanelManager.hpp"
 
 namespace Hockey {
+
+namespace {
+
+bool IconMenuItem(EditorIcon icon,
+                  std::string_view label,
+                  const char* shortcut = nullptr,
+                  bool selected = false,
+                  bool enabled = true) {
+    const std::string iconLabel = EditorIconLabel(icon, label);
+    return ImGui::MenuItem(iconLabel.c_str(), shortcut, selected, enabled);
+}
+
+} // namespace
 
 void MainMenuBar::Draw(EditorContext& ctx, EditorApp& app) {
     if (ImGui::BeginMenuBar()) {
@@ -61,10 +76,10 @@ void MainMenuBar::Draw(EditorContext& ctx, EditorApp& app) {
 }
 
 void MainMenuBar::DrawFileMenu(EditorContext& ctx, EditorApp& app) {
-    if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+    if (IconMenuItem(EditorIcon::Scene, "New Scene", "Ctrl+N")) {
         app.NewScene();
     }
-    if (ImGui::MenuItem("Open Scene...", "Ctrl+O")) {
+    if (IconMenuItem(EditorIcon::Folder, "Open Scene...", "Ctrl+O")) {
         app.OpenScene();
     }
     if (ImGui::BeginMenu("Open Recent", !ctx.settings.recentScenes.empty())) {
@@ -76,14 +91,14 @@ void MainMenuBar::DrawFileMenu(EditorContext& ctx, EditorApp& app) {
         ImGui::EndMenu();
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+    if (IconMenuItem(EditorIcon::Save, "Save Scene", "Ctrl+S")) {
         app.SaveScene();
     }
-    if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S")) {
+    if (IconMenuItem(EditorIcon::Save, "Save Scene As...", "Ctrl+Shift+S")) {
         app.SaveSceneAs();
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Import Asset...")) {
+    if (IconMenuItem(EditorIcon::Import, "Import Asset...")) {
         app.ImportAsset();
     }
     ImGui::Separator();
@@ -102,10 +117,12 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
     const std::string undoLabel = undoName.empty() ? "Undo" : ("Undo " + undoName);
     const std::string redoLabel = redoName.empty() ? "Redo" : ("Redo " + redoName);
 
-    if (ImGui::MenuItem(undoLabel.c_str(), "Ctrl+Z", false, ctx.undoRedo.CanUndo())) {
+    const std::string undoIconLabel = EditorIconLabel(EditorIcon::Undo, undoLabel);
+    const std::string redoIconLabel = EditorIconLabel(EditorIcon::Redo, redoLabel);
+    if (ImGui::MenuItem(undoIconLabel.c_str(), "Ctrl+Z", false, ctx.undoRedo.CanUndo())) {
         app.Undo();
     }
-    if (ImGui::MenuItem(redoLabel.c_str(), "Ctrl+Y", false, ctx.undoRedo.CanRedo())) {
+    if (ImGui::MenuItem(redoIconLabel.c_str(), "Ctrl+Y", false, ctx.undoRedo.CanRedo())) {
         app.Redo();
     }
     ImGui::Separator();
@@ -116,10 +133,10 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
     if (ImGui::MenuItem("Cut", "Ctrl+X", false, hasSelection)) {
         app.CutSelection();
     }
-    if (ImGui::MenuItem("Copy", "Ctrl+C", false, hasSelection)) {
+    if (IconMenuItem(EditorIcon::Copy, "Copy", "Ctrl+C", false, hasSelection)) {
         app.CopySelection();
     }
-    if (ImGui::MenuItem("Paste", "Ctrl+V", false, canPaste)) {
+    if (IconMenuItem(EditorIcon::Paste, "Paste", "Ctrl+V", false, canPaste)) {
         app.PasteFromClipboard(/*asChildOfSelection=*/false);
     }
     if (ImGui::MenuItem("Paste As Child", nullptr, false, canPaste && hasPrimary)) {
@@ -128,7 +145,7 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
     if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, hasSelection)) {
         app.DuplicateSelection();
     }
-    if (ImGui::MenuItem("Delete", "Del", false, hasSelection)) {
+    if (IconMenuItem(EditorIcon::Delete, "Delete", "Del", false, hasSelection)) {
         app.DeleteSelection();
     }
     ImGui::Separator();
@@ -147,13 +164,18 @@ void MainMenuBar::DrawEditMenu(EditorContext& ctx, EditorApp& app) {
 
 void MainMenuBar::DrawGameObjectMenu(EditorContext& ctx, EditorApp& /*app*/) {
     const bool hasScene = ctx.activeScene != nullptr;
-    if (ImGui::MenuItem("Create Empty", nullptr, false, hasScene)) {
-        ctx.undoRedo.Execute(EditorCommands::CreateEntity("GameObject"), ctx);
+    const bool canCreateEmptyParent =
+        hasScene && EditorCommands::CanCreateEmptyParent(*ctx.activeScene, ctx.selection.All());
+    if (ImGui::MenuItem("Create Empty", "Ctrl+Shift+N", false, hasScene)) {
+        ctx.undoRedo.Execute(EditorCommands::CreateEntity("GameObject", ctx.DefaultParentFor(*ctx.activeScene)), ctx);
+    }
+    if (ImGui::MenuItem("Create Empty Parent", "Ctrl+Shift+G", false, canCreateEmptyParent)) {
+        ctx.undoRedo.Execute(EditorCommands::CreateEmptyParent(*ctx.activeScene, ctx.selection.All()), ctx);
     }
     if (ImGui::MenuItem("Create Empty Child", nullptr, false, hasScene && ctx.selection.Primary().IsValid())) {
         ctx.undoRedo.Execute(EditorCommands::CreateEntity("GameObject", ctx.selection.Primary()), ctx);
     }
-    if (ImGui::MenuItem("Create Camera", nullptr, false, hasScene)) {
+    if (IconMenuItem(EditorIcon::Camera, "Create Camera", nullptr, false, hasScene)) {
         ctx.undoRedo.Execute(EditorCommands::SpawnEntities("Create Camera",
                                                            [](Scene& scene) {
                                                                Entity camera = scene.CreateEntity("Camera");
@@ -257,7 +279,7 @@ void MainMenuBar::DrawToolsMenu(EditorContext& ctx, EditorApp& app) {
     }
 
     ImGui::Separator();
-    if (ImGui::MenuItem("Validate Scene")) {
+    if (IconMenuItem(EditorIcon::Validate, "Validate Scene")) {
         app.ValidateActiveScene();
     }
 }

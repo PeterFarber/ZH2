@@ -738,7 +738,7 @@ struct Renderer::Impl {
     MaterialHandle ResolveAssetMaterial(uint64_t assetId);
     TextureHandle ResolveAssetTexture(uint64_t assetId);
     void PreviewMaterial(uint64_t materialAssetId, const MaterialPreviewDesc& preview);
-    void GatherScene(Scene& scene, const CameraRenderData& camera);
+    void GatherScene(Scene& scene, const CameraRenderData& camera, const SceneRenderFilter* filter);
     void RecordSceneDrawsInPass(VkCommandBuffer cmd);
     void RecordShadowPass(VkCommandBuffer cmd);
     void RecordLocalShadowPass(VkCommandBuffer cmd);
@@ -746,7 +746,7 @@ struct Renderer::Impl {
     void RecordBloom(VkCommandBuffer cmd, VulkanTexture& hdr);
     void RecordDebugLines(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent);
     void RenderSceneInternal(Scene& scene, const CameraRenderData& camera, VkImageView outputColor,
-                             VkExtent2D outputExtent);
+                             VkExtent2D outputExtent, const SceneRenderFilter* filter);
     std::optional<std::filesystem::path> TakeScreenshotRequest(ScreenshotSource source, TextureHandle target);
     void RecordScreenshotCopy(VkCommandBuffer cmd, VkImage image, VkExtent2D extent, VkFormat format,
                               VkImageLayout layout, const std::filesystem::path& path);
@@ -1647,7 +1647,15 @@ void Renderer::BeginFrame() {
     r.frameActive = true;
 }
 
-void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
+namespace {
+
+bool AllowsEntity(const SceneRenderFilter* filter, UUID entityId) {
+    return filter == nullptr || filter->Allows(entityId);
+}
+
+} // namespace
+
+void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera, const SceneRenderFilter* filter) {
     const VkExtent2D extent = curTargets->Extent();
     frameViewProj = camera.projection * camera.view;
     frameNear = camera.nearClip;
@@ -1727,6 +1735,9 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
                 break;
             }
             const Entity entity{handle, &scene};
+            if (!AllowsEntity(filter, entity.GetUUID())) {
+                continue;
+            }
             if (!entity.IsActiveInHierarchy()) {
                 continue;
             }
@@ -1756,6 +1767,9 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera) {
     const auto meshView = scene.Registry().view<TransformComponent, MeshRendererComponent>();
     for (const entt::entity handle : meshView) {
         const Entity entity{handle, &scene};
+        if (!AllowsEntity(filter, entity.GetUUID())) {
+            continue;
+        }
         if (!entity.IsActiveInHierarchy()) {
             continue;
         }
@@ -2339,7 +2353,7 @@ void Renderer::Impl::FlushAllScreenshots() {
 }
 
 void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& camera, VkImageView outputColor,
-                                         VkExtent2D outputExtent) {
+                                         VkExtent2D outputExtent, const SceneRenderFilter* filter) {
     FrameData& frame = frames.Frame(frameIndex);
     VkCommandBuffer cmd = frame.commandBuffer;
     PostTargets& t = curTargets->Frame(frameIndex);
@@ -2350,7 +2364,7 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
 
     // Gather camera/lights/cascades/renderables, then upload the scene UBO so
     // the cascade matrices are visible to both the shadow and main passes.
-    GatherScene(scene, camera);
+    GatherScene(scene, camera, filter);
     if (curSceneUBOs != nullptr) {
         UploadBuffer(device, command, (*curSceneUBOs)[frameIndex], &frameScene, sizeof(frameScene));
     }
@@ -2430,7 +2444,7 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
     RecordDebugLines(cmd, outputColor, outputExtent);
 }
 
-void Renderer::RenderScene(Scene& scene, const CameraRenderData& camera) {
+void Renderer::RenderScene(Scene& scene, const CameraRenderData& camera, const SceneRenderFilter* filter) {
     Impl& r = *m_Impl;
     if (!r.frameActive || !r.targets.IsValid()) {
         return;
@@ -2446,7 +2460,7 @@ void Renderer::RenderScene(Scene& scene, const CameraRenderData& camera) {
     TransitionImage(cmd, r.swapchain.Image(r.imageIndex), r.swapchainLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_ASPECT_COLOR_BIT);
     r.swapchainLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    r.RenderSceneInternal(scene, camera, r.swapchain.ImageView(r.imageIndex), r.swapchain.Extent());
+    r.RenderSceneInternal(scene, camera, r.swapchain.ImageView(r.imageIndex), r.swapchain.Extent(), filter);
     r.sceneRendered = true;
 }
 
@@ -2674,7 +2688,8 @@ void Renderer::ResizeRenderTarget(TextureHandle target, uint32_t width, uint32_t
     r.BuildOffscreenTarget(*t);
 }
 
-void Renderer::RenderSceneToTarget(Scene& scene, const CameraRenderData& camera, TextureHandle target) {
+void Renderer::RenderSceneToTarget(Scene& scene, const CameraRenderData& camera, TextureHandle target,
+                                   const SceneRenderFilter* filter) {
     Impl& r = *m_Impl;
     if (!r.frameActive) {
         return;
@@ -2697,7 +2712,7 @@ void Renderer::RenderSceneToTarget(Scene& scene, const CameraRenderData& camera,
     color.currentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     BeginDebugLabel(cmd, "RenderToTarget");
-    r.RenderSceneInternal(scene, camera, color.view, {t->width, t->height});
+    r.RenderSceneInternal(scene, camera, color.view, {t->width, t->height}, filter);
     EndDebugLabel(cmd);
 
     if (std::optional<std::filesystem::path> path =

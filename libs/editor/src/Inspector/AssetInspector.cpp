@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <string>
 #include <system_error>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/Project/EditorAssetPreview.hpp"
@@ -120,33 +122,39 @@ void AssetInspector::DrawMetadata(EditorContext& context, const AssetMetadata& m
 
     ImGui::Separator();
     if (meta.type == AssetType::Scene) {
-        if (ImGui::Button("Open Scene")) {
+        const std::string openSceneLabel = EditorIconLabel(EditorIcon::Scene, "Open Scene");
+        if (ImGui::Button(openSceneLabel.c_str())) {
             context.requestedOpenScene = raw;
         }
         EditorTooltip::ForLastItem("Open this scene asset in the editor.");
         ImGui::SameLine();
     }
-    if (ImGui::Button("Reimport & Recook")) {
+    const std::string reimportLabel = EditorIconLabel(EditorIcon::Refresh, "Reimport & Recook");
+    if (ImGui::Button(reimportLabel.c_str())) {
         ReimportAndRecook(context, meta);
     }
     EditorTooltip::ForLastItem("Reimport the raw source asset, recook dirty dependents, and save the database.");
     ImGui::SameLine();
-    if (ImGui::Button("Recook")) {
+    const std::string recookLabel = EditorIconLabel(EditorIcon::Cook, "Recook");
+    if (ImGui::Button(recookLabel.c_str())) {
         Recook(context, meta);
     }
     EditorTooltip::ForLastItem("Mark this cooked asset dirty and cook it immediately.");
 
-    if (ImGui::Button("Copy Asset ID")) {
+    const std::string copyLabel = EditorIconLabel(EditorIcon::Copy, "Copy Asset ID");
+    if (ImGui::Button(copyLabel.c_str())) {
         ImGui::SetClipboardText(meta.id.ToString().c_str());
     }
     EditorTooltip::ForLastItem("Copy this cooked asset's stable ID to the clipboard.");
     ImGui::SameLine();
-    if (ImGui::Button("Reveal Source")) {
+    const std::string revealSourceLabel = EditorIconLabel(EditorIcon::Folder, "Reveal Source");
+    if (ImGui::Button(revealSourceLabel.c_str())) {
         ProjectBrowser::Reveal(raw);
     }
     EditorTooltip::ForLastItem("Reveal the raw source file in the system file manager.");
     ImGui::SameLine();
-    if (ImGui::Button("Reveal Cooked")) {
+    const std::string revealCookedLabel = EditorIconLabel(EditorIcon::Folder, "Reveal Cooked");
+    if (ImGui::Button(revealCookedLabel.c_str())) {
         ProjectBrowser::Reveal(cooked);
     }
     EditorTooltip::ForLastItem("Reveal the cooked output file in the system file manager.");
@@ -253,7 +261,8 @@ void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::files
         } else {
             ImGui::TextDisabled("%s", std::filesystem::path(slot).filename().string().c_str());
             EditorTooltip::ForLastItem(slot.c_str());
-            if (ImGui::SmallButton("Clear")) {
+            const std::string clearLabel = EditorIconLabel(EditorIcon::Clear, "Clear");
+            if (ImGui::SmallButton(clearLabel.c_str())) {
                 slot.clear();
                 slotChanged = true;
             }
@@ -281,7 +290,8 @@ void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::files
     }
 
     ImGui::Separator();
-    if (ImGui::Button("Save")) {
+    const std::string saveLabel = EditorIconLabel(EditorIcon::Save, "Save");
+    if (ImGui::Button(saveLabel.c_str())) {
         if (const Status status = MaterialSerializer::SaveFile(path, m_EditMaterial); !status) {
             m_Status = status.error;
         } else if (context.assetManager != nullptr) {
@@ -305,7 +315,8 @@ void AssetInspector::DrawMaterialEditor(EditorContext& context, const std::files
     EditorTooltip::ForLastItem("Save material edits, reimport, and cook dependent assets.");
     ImGui::SameLine();
     ImGui::BeginDisabled(!m_MaterialPreviewActive);
-    if (ImGui::Button("Revert")) {
+    const std::string revertLabel = EditorIconLabel(EditorIcon::Undo, "Revert");
+    if (ImGui::Button(revertLabel.c_str())) {
         Result<MaterialSource> loaded = MaterialSerializer::LoadFile(path);
         m_EditMaterial = loaded ? loaded.value : MaterialSource{};
         if (context.renderer != nullptr && m_EditMaterialId != 0) {

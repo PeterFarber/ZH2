@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <string>
 
 #include <glm/gtc/constants.hpp>
 
@@ -16,6 +17,7 @@
 #include "Hockey/Editor/EditorCamera.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/Selection.hpp"
 #include "Hockey/Editor/Tools/ToolManager.hpp"
@@ -91,6 +93,21 @@ const char* ToolNameForIndex(int index) {
     }
 }
 
+EditorIcon ToolIconForIndex(int index) {
+    switch (index) {
+    case 0:
+        return EditorIcon::Select;
+    case 1:
+        return EditorIcon::Move;
+    case 2:
+        return EditorIcon::Rotate;
+    case 3:
+        return EditorIcon::Scale;
+    default:
+        return EditorIcon::None;
+    }
+}
+
 void Tooltip(const char* text) {
     EditorTooltip::ForLastItem(text);
 }
@@ -114,6 +131,13 @@ void DrawToolIcon(ImDrawList* draw, int index, glm::vec2 pos, glm::vec2 size) {
     const ImU32 c = ColorU32(0.88f, 0.9f, 0.92f);
     const glm::vec2 center = pos + size * 0.5f;
     const float r = size.x * 0.32f;
+    const char* glyph = EditorIconGlyph(ToolIconForIndex(index));
+
+    if (glyph != nullptr && glyph[0] != '\0') {
+        const ImVec2 glyphSize = ImGui::CalcTextSize(glyph);
+        draw->AddText(ImVec2(center.x - glyphSize.x * 0.5f, center.y - glyphSize.y * 0.5f), c, glyph);
+        return;
+    }
 
     switch (index) {
     case 0: {
@@ -225,7 +249,8 @@ void DrawControls(EditorContext& context, glm::vec2 imagePos, glm::vec2 imageSiz
     }
     ImGui::SameLine();
 
-    changed |= ToggleTextButton("Grid", context.settings.showGrid, "Show or hide the Scene View grid");
+    const std::string gridLabel = EditorIconLabel(EditorIcon::Grid, "Grid");
+    changed |= ToggleTextButton(gridLabel.c_str(), context.settings.showGrid, "Show or hide the Scene View grid");
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         context.settings.showGrid = !context.settings.showGrid;
     }
@@ -235,7 +260,8 @@ void DrawControls(EditorContext& context, glm::vec2 imagePos, glm::vec2 imageSiz
     Tooltip("Grid spacing");
     ImGui::SameLine();
 
-    changed |= ToggleTextButton("Snap", context.settings.snapEnabled, "Enable transform snapping");
+    const std::string snapLabel = EditorIconLabel(EditorIcon::Snap, "Snap");
+    changed |= ToggleTextButton(snapLabel.c_str(), context.settings.snapEnabled, "Enable transform snapping");
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         context.settings.snapEnabled = !context.settings.snapEnabled;
     }
@@ -247,7 +273,8 @@ void DrawControls(EditorContext& context, glm::vec2 imagePos, glm::vec2 imageSiz
     ImGui::SameLine();
 
     ImGui::BeginDisabled(!hasActiveGameCamera);
-    if (ImGui::Button("Align") && hasActiveGameCamera) {
+    const std::string alignLabel = EditorIconLabel(EditorIcon::Camera, "Align");
+    if (ImGui::Button(alignLabel.c_str()) && hasActiveGameCamera) {
         context.editorCamera.SetFromRenderData(gameCamera);
         followGameCamera = false;
     }
@@ -263,7 +290,8 @@ void DrawControls(EditorContext& context, glm::vec2 imagePos, glm::vec2 imageSiz
 
     const bool physicsActive = context.physicsView.showColliders || context.physicsView.showTriggers ||
                                context.physicsView.showBodyCenters || context.physicsView.showContacts;
-    if (ToggleTextButton("Physics", physicsActive, "Scene View physics visualization options")) {
+    const std::string physicsLabel = EditorIconLabel(EditorIcon::Physics, "Physics");
+    if (ToggleTextButton(physicsLabel.c_str(), physicsActive, "Scene View physics visualization options")) {
         ImGui::OpenPopup("##scene_physics_visualization");
     }
     if (ImGui::BeginPopup("##scene_physics_visualization")) {
@@ -331,19 +359,24 @@ void DrawSceneIcons(EditorContext& context, Scene& scene, const CameraRenderData
     const ImVec2 mouse = ImGui::GetIO().MousePos;
     const glm::vec2 mousePixels = ToGlm(mouse) - imagePos;
     const UUID picked = PickIcon(scene, camera, imageSize, mousePixels, kIconRadius);
-    const bool click = picked.IsValid() && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    const bool pickedSelectable =
+        picked.IsValid() && !context.IsSceneHidden(picked) && context.CanSelectSceneEntity(picked);
+    const bool click = pickedSelectable && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
 
     if (click) {
         if (ImGui::GetIO().KeyCtrl) {
-            context.selection.Toggle(picked);
+            context.ToggleSceneEntitySelection(picked);
         } else {
-            context.selection.Select(picked);
+            context.SelectSceneEntity(picked);
         }
         result.capturedMouse = true;
     }
 
     for (Entity entity : scene.GetAllEntities()) {
         if (!entity.HasComponent<TransformComponent>() || !IsCameraOrLight(entity)) {
+            continue;
+        }
+        if (context.IsSceneHidden(entity.GetUUID())) {
             continue;
         }
         const glm::vec3 position(scene.GetWorldTransform(entity)[3]);
@@ -353,7 +386,7 @@ void DrawSceneIcons(EditorContext& context, Scene& scene, const CameraRenderData
         }
 
         const glm::vec2 center = imagePos + projection.pixels;
-        const bool hovered = picked == entity.GetUUID();
+        const bool hovered = context.CanSelectSceneEntity(entity.GetUUID()) && picked == entity.GetUUID();
         const bool selected = context.selection.IsSelected(entity.GetUUID());
         const ImU32 outline = selected ? ColorU32(0.28f, 0.55f, 1.0f) : hovered ? ColorU32(1.0f, 1.0f, 1.0f)
                                                                               : ColorU32(0.0f, 0.0f, 0.0f, 0.55f);

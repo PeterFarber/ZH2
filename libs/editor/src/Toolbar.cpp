@@ -9,22 +9,12 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorApp.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
 
 namespace {
-
-bool ToggleButton(const char* label, bool active, const ImVec2& size = ImVec2(0.0f, 0.0f)) {
-    if (active) {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-    }
-    const bool clicked = ImGui::Button(label, size);
-    if (active) {
-        ImGui::PopStyleColor();
-    }
-    return clicked;
-}
 
 void VerticalSeparator() {
     ImGui::SameLine();
@@ -46,22 +36,20 @@ void Toolbar::Draw(EditorContext& ctx, EditorApp& app) {
 
     // Playtest controls. Scene/game view state remains live-editable while the
     // gameplay preview runs.
-    if (ToggleButton("Play", ctx.playMode)) {
+    if (EditorIconToggleButton(EditorIcon::Play, "Play", ctx.playMode,
+                               ctx.playMode ? "Stop the live gameplay preview" : "Start a live gameplay preview")) {
         app.TogglePlaytestMode();
     }
-    EditorTooltip::ForLastItem(ctx.playMode ? "Stop the live gameplay preview" : "Start a live gameplay preview");
 
     VerticalSeparator();
 
-    if (ImGui::Button("Save")) {
+    if (EditorIconButton(EditorIcon::Save, "Save", "Save the active scene")) {
         app.SaveScene();
     }
-    EditorTooltip::ForLastItem("Save the active scene");
     ImGui::SameLine();
-    if (ImGui::Button("Validate")) {
+    if (EditorIconButton(EditorIcon::Validate, "Validate", "Run scene validation checks")) {
         app.ValidateActiveScene();
     }
-    EditorTooltip::ForLastItem("Run scene validation checks");
 
     // Right-aligned active scene name + dirty indicator.
     const char* sceneName = ctx.activeScene != nullptr ? ctx.activeScene->GetName().c_str() : "<no scene>";

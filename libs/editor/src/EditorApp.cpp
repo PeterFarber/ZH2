@@ -496,7 +496,7 @@ void EditorApp::SelectAllEntities() {
     if (m_Context.activeScene == nullptr) {
         return;
     }
-    m_Context.selection.SelectAll(*m_Context.activeScene);
+    m_Context.SelectAllSceneEntities(*m_Context.activeScene);
 }
 
 void EditorApp::DeselectAll() {
@@ -764,8 +764,21 @@ void EditorApp::ProcessShortcuts() {
     const bool ctrl = io.KeyCtrl;
     const bool shift = io.KeyShift;
 
-    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_N, false)) {
+    if (ctrl && shift && ImGui::IsKeyPressed(ImGuiKey_N, false)) {
+        if (m_Context.activeScene != nullptr) {
+            m_Context.undoRedo.Execute(
+                EditorCommands::CreateEntity("GameObject", m_Context.DefaultParentFor(*m_Context.activeScene)),
+                m_Context);
+        }
+    } else if (ctrl && ImGui::IsKeyPressed(ImGuiKey_N, false)) {
         NewScene();
+    }
+    if (ctrl && shift && ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+        if (m_Context.activeScene != nullptr &&
+            EditorCommands::CanCreateEmptyParent(*m_Context.activeScene, m_Context.selection.All())) {
+            m_Context.undoRedo.Execute(
+                EditorCommands::CreateEmptyParent(*m_Context.activeScene, m_Context.selection.All()), m_Context);
+        }
     }
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
         OpenScene();

@@ -5,6 +5,7 @@
 
 #include <imgui.h>
 
+#include <IconsFontAwesome.h>
 #include <imgui_impl_sdl3.h>
 
 #include <ImGuizmo.h>
@@ -32,6 +33,7 @@ Status ImGuiLayer::Init(Window& window, Renderer& renderer) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
+    LoadEditorFonts();
 
     // Persist the docking layout alongside the editor settings (data/editor).
     const std::filesystem::path layoutPath = Paths::DataFile("editor/layout.ini");
@@ -73,6 +75,34 @@ void ImGuiLayer::Shutdown() {
         ImGui::DestroyContext();
     }
     m_Initialized = false;
+    m_IconFontLoaded = false;
+}
+
+void ImGuiLayer::LoadEditorFonts() {
+    m_IconFontLoaded = false;
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+
+    const std::filesystem::path fontPath = Paths::DataFile("editor/fonts/fontawesome-free/fa-solid-900.ttf");
+    if (!std::filesystem::exists(fontPath)) {
+        HK_EDITOR_WARN("Font Awesome editor icon font was not found at {}; using text labels", fontPath.string());
+        return;
+    }
+
+    ImFontConfig fontConfig{};
+    fontConfig.MergeMode = true;
+    fontConfig.PixelSnapH = true;
+    fontConfig.GlyphMinAdvanceX = 13.0f;
+
+    static constexpr ImWchar iconRanges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+    ImFont* iconFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 13.0f, &fontConfig, iconRanges);
+    if (iconFont == nullptr) {
+        HK_EDITOR_WARN("Font Awesome editor icon font failed to load from {}; using text labels", fontPath.string());
+        return;
+    }
+
+    m_IconFontLoaded = true;
 }
 
 bool ImGuiLayer::ProcessEvent(const void* sdlEvent) {

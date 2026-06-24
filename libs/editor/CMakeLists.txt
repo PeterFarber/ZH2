@@ -65,6 +65,7 @@ target_sources(hockey_editor
         src/Panels/ProjectSettingsPanel.cpp
         src/ImGui/EditorTooltip.cpp
         src/ImGui/EditorTheme.cpp
+        src/ImGui/EditorIcons.cpp
         src/ImGui/ImGuiRendererBridge.cpp
         src/ImGui/ImGuiLayer.cpp
         # Dear ImGui's Vulkan backend, vendored so we can build it against volk
@@ -76,7 +77,9 @@ target_include_directories(hockey_editor
     PUBLIC include
     # The vendored Vulkan backend header must shadow any vcpkg-provided copy, so
     # keep it on the (higher priority) -I path rather than the -isystem path.
-    PRIVATE vendor/imgui_backend
+    PRIVATE
+        vendor/imgui_backend
+        vendor/icon_font_cpp_headers
 )
 
 # Route Dear ImGui's Vulkan backend through volk: VK_NO_PROTOTYPES makes the

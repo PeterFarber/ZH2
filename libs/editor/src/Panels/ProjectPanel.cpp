@@ -23,6 +23,7 @@
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/FileDialog.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
@@ -120,27 +121,6 @@ ImVec4 ColorForType(EditorFileType type, bool supported) {
         return ImVec4(0.78f, 0.70f, 0.95f, 1.0f);
     default:
         return supported ? ImVec4(0.85f, 0.85f, 0.85f, 1.0f) : ImVec4(0.55f, 0.55f, 0.55f, 1.0f);
-    }
-}
-
-const char* TypeGlyph(EditorFileType type) {
-    switch (type) {
-    case EditorFileType::Folder:
-        return "[Folder]";
-    case EditorFileType::Scene:
-        return "[Scene]";
-    case EditorFileType::Prefab:
-        return "[Prefab]";
-    case EditorFileType::Material:
-        return "[Material]";
-    case EditorFileType::Image:
-        return "[Image]";
-    case EditorFileType::Model:
-        return "[Model]";
-    case EditorFileType::ShaderSource:
-        return "[Shader]";
-    default:
-        return "[Asset]";
     }
 }
 
@@ -516,7 +496,7 @@ void ProjectPanel::DrawCookedEntry(EditorContext& context, const CookedProjectEn
     ImGui::PushStyleColor(ImGuiCol_Text, color);
 
     if (m_IconSize <= kListModeThreshold) {
-        const std::string label = std::string(TypeGlyph(entry.type.type)) + " " + entry.displayName;
+        const std::string label = EditorIconLabel(EditorIconForAssetType(entry.type.type), entry.displayName);
         if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
             if (entry.isDirectory) {
                 m_SelectedFolder = entry.virtualFolderPath;
@@ -534,7 +514,10 @@ void ProjectPanel::DrawCookedEntry(EditorContext& context, const CookedProjectEn
         DrawCookedContextMenu(context, entry);
     } else {
         const ImVec2 size(m_IconSize, m_IconSize);
-        if (ImGui::Button(TypeGlyph(entry.type.type), size)) {
+        const EditorIcon icon = EditorIconForAssetType(entry.type.type);
+        const char* glyph = EditorIconGlyph(icon);
+        const char* tileLabel = (glyph != nullptr && glyph[0] != '\0') ? glyph : "Asset";
+        if (ImGui::Button(tileLabel, size)) {
             if (entry.isDirectory) {
                 m_SelectedFolder = entry.virtualFolderPath;
                 m_SelectedAssetId = {};

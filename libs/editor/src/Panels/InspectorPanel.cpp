@@ -14,6 +14,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 
 namespace Hockey {
@@ -34,20 +35,26 @@ void DrawObjectIcon(const UUID uuid, float size) {
     const ImVec2 end(pos.x + size, pos.y + size);
     draw->AddRectFilled(pos, end, fill, 3.0f);
     draw->AddRect(pos, end, border, 3.0f);
-    draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.38f),
-                  ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f),
-                  ImVec2(pos.x + size * 0.72f, pos.y + size * 0.38f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.38f),
-                  ImVec2(pos.x + size * 0.28f, pos.y + size * 0.65f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.72f, pos.y + size * 0.38f),
-                  ImVec2(pos.x + size * 0.72f, pos.y + size * 0.65f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.65f),
-                  ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.72f, pos.y + size * 0.65f),
-                  ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.5f);
-    draw->AddLine(ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f),
-                  ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.0f);
+    const char* glyph = EditorIconGlyph(EditorIcon::Prefab);
+    if (glyph != nullptr && glyph[0] != '\0') {
+        const ImVec2 glyphSize = ImGui::CalcTextSize(glyph);
+        draw->AddText(ImVec2(pos.x + (size - glyphSize.x) * 0.5f, pos.y + (size - glyphSize.y) * 0.5f), line, glyph);
+    } else {
+        draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.38f),
+                      ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f),
+                      ImVec2(pos.x + size * 0.72f, pos.y + size * 0.38f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.38f),
+                      ImVec2(pos.x + size * 0.28f, pos.y + size * 0.65f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.72f, pos.y + size * 0.38f),
+                      ImVec2(pos.x + size * 0.72f, pos.y + size * 0.65f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.28f, pos.y + size * 0.65f),
+                      ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.72f, pos.y + size * 0.65f),
+                      ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.5f);
+        draw->AddLine(ImVec2(pos.x + size * 0.5f, pos.y + size * 0.25f),
+                      ImVec2(pos.x + size * 0.5f, pos.y + size * 0.78f), line, 1.0f);
+    }
 
     const std::string tooltip = "Entity UUID: " + uuid.ToString();
     EditorTooltip::ForLastItem(std::string_view{tooltip});

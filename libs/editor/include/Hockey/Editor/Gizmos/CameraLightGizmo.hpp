@@ -7,6 +7,7 @@
 namespace Hockey {
 
 class DebugDraw;
+class EditorContext;
 struct CameraRenderData;
 class Scene;
 class Selection;
@@ -17,6 +18,7 @@ class Selection;
 namespace CameraLightGizmo {
 
 void Submit(DebugDraw& debug, Scene& scene, const Selection& selection, float viewportAspect);
+void Submit(DebugDraw& debug, EditorContext& context, float viewportAspect);
 
 // Returns the camera/light entity whose origin is within the screen-space pick
 // radius. This is used before normal scene picking so entities without visible

@@ -3,11 +3,15 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <glm/glm.hpp>
 
 #include "Hockey/Assets/AssetID.hpp"
+#include "Hockey/Core/UUID.hpp"
+#include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/Clipboard.hpp"
 #include "Hockey/Editor/EditorCamera.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
@@ -143,6 +147,181 @@ public:
     // gizmo in a later step.
     TransformSpace transformSpace = TransformSpace::World;
 
+    void SetHierarchyDefaultParent(UUID id) {
+        m_HierarchyDefaultParentId = id;
+    }
+
+    void ClearHierarchyDefaultParent() {
+        m_HierarchyDefaultParentId = UUID(0);
+    }
+
+    UUID HierarchyDefaultParent() const {
+        return m_HierarchyDefaultParentId;
+    }
+
+    UUID DefaultParentFor(const Scene& scene) const {
+        if (m_HierarchyDefaultParentId.IsValid() && scene.ContainsUUID(m_HierarchyDefaultParentId)) {
+            return m_HierarchyDefaultParentId;
+        }
+        return UUID(0);
+    }
+
+    bool IsSceneHidden(UUID id) const {
+        return id.IsValid() && m_SceneHiddenIds.contains(id.Value());
+    }
+
+    bool IsScenePickable(UUID id) const {
+        return !id.IsValid() || !m_SceneUnpickableIds.contains(id.Value());
+    }
+
+    bool CanSelectSceneEntity(UUID id) const {
+        if (!id.IsValid() || !IsScenePickable(id)) {
+            return false;
+        }
+        return activeScene == nullptr || activeScene->ContainsUUID(id);
+    }
+
+    bool SelectSceneEntity(UUID id) {
+        if (!id.IsValid()) {
+            selection.Clear();
+            return true;
+        }
+        if (!CanSelectSceneEntity(id)) {
+            return false;
+        }
+        selection.Select(id);
+        SyncAssetSelectionWithEntitySelection();
+        return true;
+    }
+
+    bool ToggleSceneEntitySelection(UUID id) {
+        if (!id.IsValid()) {
+            return false;
+        }
+        if (selection.IsSelected(id)) {
+            selection.Remove(id);
+            return true;
+        }
+        if (!CanSelectSceneEntity(id)) {
+            return false;
+        }
+        selection.Add(id);
+        SyncAssetSelectionWithEntitySelection();
+        return true;
+    }
+
+    bool SelectSceneRange(const std::vector<UUID>& orderedVisibleIds, UUID targetId, bool additive) {
+        if (!CanSelectSceneEntity(targetId)) {
+            return false;
+        }
+
+        std::vector<UUID> pickableRows;
+        pickableRows.reserve(orderedVisibleIds.size());
+        for (const UUID id : orderedVisibleIds) {
+            if (CanSelectSceneEntity(id)) {
+                pickableRows.push_back(id);
+            }
+        }
+
+        selection.SelectRange(pickableRows, targetId, additive);
+        SyncAssetSelectionWithEntitySelection();
+        return true;
+    }
+
+    void SelectAllSceneEntities(Scene& scene) {
+        selection.Clear();
+        for (Entity entity : scene.GetAllEntities()) {
+            const UUID id = entity.GetUUID();
+            if (id.IsValid() && IsScenePickable(id)) {
+                selection.Add(id);
+            }
+        }
+        SyncAssetSelectionWithEntitySelection();
+    }
+
+    void SetSceneHidden(Scene& scene, UUID id, bool hidden, bool includeDescendants = true) {
+        if (!id.IsValid() || !scene.ContainsUUID(id)) {
+            return;
+        }
+        if (hidden) {
+            m_SceneHiddenIds.insert(id.Value());
+        } else {
+            m_SceneHiddenIds.erase(id.Value());
+        }
+        if (!includeDescendants) {
+            return;
+        }
+        if (Entity entity = scene.FindEntityByUUID(id)) {
+            for (const Entity& child : scene.GetChildren(entity)) {
+                SetSceneHidden(scene, child.GetUUID(), hidden, true);
+            }
+        }
+    }
+
+    void SetSceneUnpickable(Scene& scene, UUID id, bool unpickable, bool includeDescendants = true) {
+        if (!id.IsValid() || !scene.ContainsUUID(id)) {
+            return;
+        }
+        if (unpickable) {
+            m_SceneUnpickableIds.insert(id.Value());
+            selection.Remove(id);
+        } else {
+            m_SceneUnpickableIds.erase(id.Value());
+        }
+        if (!includeDescendants) {
+            return;
+        }
+        if (Entity entity = scene.FindEntityByUUID(id)) {
+            for (const Entity& child : scene.GetChildren(entity)) {
+                SetSceneUnpickable(scene, child.GetUUID(), unpickable, true);
+            }
+        }
+    }
+
+    void ToggleSelectedVisibility(Scene& scene) {
+        bool hide = false;
+        for (const UUID id : selection.All()) {
+            if (scene.ContainsUUID(id) && !IsSceneHidden(id)) {
+                hide = true;
+                break;
+            }
+        }
+        for (const UUID id : selection.All()) {
+            SetSceneHidden(scene, id, hide, true);
+        }
+    }
+
+    void ToggleSelectedPickability(Scene& scene) {
+        bool lock = false;
+        const std::vector<UUID> selectedIds = selection.All();
+        for (const UUID id : selectedIds) {
+            if (scene.ContainsUUID(id) && IsScenePickable(id)) {
+                lock = true;
+                break;
+            }
+        }
+        for (const UUID id : selectedIds) {
+            SetSceneUnpickable(scene, id, lock, true);
+        }
+    }
+
+    void PruneHierarchyEditorState(const Scene& scene) {
+        for (auto it = m_SceneHiddenIds.begin(); it != m_SceneHiddenIds.end();) {
+            if (scene.ContainsUUID(UUID(*it))) {
+                ++it;
+            } else {
+                it = m_SceneHiddenIds.erase(it);
+            }
+        }
+        for (auto it = m_SceneUnpickableIds.begin(); it != m_SceneUnpickableIds.end();) {
+            if (scene.ContainsUUID(UUID(*it))) {
+                ++it;
+            } else {
+                it = m_SceneUnpickableIds.erase(it);
+            }
+        }
+    }
+
     // Cooked asset currently selected by Project-style panels. Entity selection
     // remains the primary scene selection model; selecting an asset clears it so
     // Inspector can switch cleanly between entity and asset editing.
@@ -182,6 +361,9 @@ public:
 
 private:
     AssetID m_SelectedAsset;
+    UUID m_HierarchyDefaultParentId{0};
+    std::unordered_set<std::uint64_t> m_SceneHiddenIds;
+    std::unordered_set<std::uint64_t> m_SceneUnpickableIds;
 };
 
 } // namespace Hockey

@@ -13,6 +13,8 @@ void RunSelectionTests() {
     const UUID a(1001);
     const UUID b(2002);
     const UUID c(3003);
+    const UUID d(4004);
+    const UUID e(5005);
 
     // --- select entity ------------------------------------------------------
     {
@@ -129,5 +131,52 @@ void RunSelectionTests() {
         selection.SelectAll(scene);
         HK_CHECK_MSG(selection.Empty(), "select all on empty scene clears selection");
         HK_CHECK_MSG(!selection.Primary().IsValid(), "empty select all has no primary");
+    }
+
+    // --- range selection uses the current hierarchy row order ---------------
+    {
+        Selection selection;
+        const std::vector<UUID> visibleRows{a, b, c, d, e};
+
+        selection.Select(b);
+        selection.SelectRange(visibleRows, d, false);
+
+        HK_CHECK_EQ(selection.Count(), static_cast<std::size_t>(3));
+        HK_CHECK_MSG(selection.IsSelected(b) && selection.IsSelected(c) && selection.IsSelected(d),
+                     "range selection includes every visible row between anchor and target");
+        HK_CHECK_MSG(selection.Primary() == d, "range selection makes the clicked target primary");
+        HK_CHECK_MSG(selection.RangeAnchor() == b, "range selection keeps the original anchor");
+
+        selection.SelectRange(visibleRows, a, false);
+        HK_CHECK_EQ(selection.Count(), static_cast<std::size_t>(2));
+        HK_CHECK_MSG(selection.IsSelected(a) && selection.IsSelected(b), "range selection supports reverse ranges");
+        HK_CHECK_MSG(!selection.IsSelected(c), "non-additive range replaces the previous range");
+    }
+
+    // --- additive range selection preserves existing selected rows ----------
+    {
+        Selection selection;
+        const std::vector<UUID> visibleRows{a, b, c, d, e};
+
+        selection.Select(c);
+        selection.Add(e);
+        selection.SelectRange(visibleRows, a, true);
+
+        HK_CHECK_MSG(selection.IsSelected(a) && selection.IsSelected(b) && selection.IsSelected(c),
+                     "additive range adds the rows between anchor and target");
+        HK_CHECK_MSG(selection.IsSelected(e), "additive range keeps an existing out-of-range selection");
+        HK_CHECK_MSG(selection.Primary() == a, "additive range still updates primary to the target");
+    }
+
+    // --- range selection without a valid anchor falls back to target ---------
+    {
+        Selection selection;
+        const std::vector<UUID> visibleRows{a, b, c};
+
+        selection.SelectRange(visibleRows, c, false);
+
+        HK_CHECK_EQ(selection.Count(), static_cast<std::size_t>(1));
+        HK_CHECK_MSG(selection.IsSelected(c), "range selection without an anchor selects the target row");
+        HK_CHECK_MSG(selection.RangeAnchor() == c, "target becomes anchor when no valid anchor exists");
     }
 }

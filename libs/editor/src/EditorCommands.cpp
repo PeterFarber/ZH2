@@ -1,11 +1,13 @@
 #include "Hockey/Editor/EditorCommands.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -49,6 +51,154 @@ void LinkChildToParent(Scene& scene, UUID parentId, UUID childId) {
     if (child) {
         scene.Registry().emplace_or_replace<ParentComponent>(child.Handle(), ParentComponent{parentId});
     }
+}
+
+UUID ParentIdOf(Scene& scene, const Entity& entity) {
+    if (Entity parent = scene.GetParent(entity)) {
+        return parent.GetUUID();
+    }
+    return UUID(0);
+}
+
+bool ContainsId(const std::vector<UUID>& ids, UUID id) {
+    return std::find(ids.begin(), ids.end(), id) != ids.end();
+}
+
+bool HasSelectedAncestor(Scene& scene, const Entity& entity, const std::vector<UUID>& ids) {
+    for (Entity parent = scene.GetParent(entity); parent; parent = scene.GetParent(parent)) {
+        if (ContainsId(ids, parent.GetUUID())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CollectTopLevelIdsInHierarchyOrder(Scene& scene, const Entity& entity,
+                                        const std::unordered_set<std::uint64_t>& selectedIds,
+                                        bool ancestorSelected, std::vector<UUID>& out) {
+    if (!entity) {
+        return;
+    }
+
+    const UUID id = entity.GetUUID();
+    const bool selected = selectedIds.contains(id.Value());
+    if (selected && !ancestorSelected) {
+        out.push_back(id);
+    }
+
+    const bool blockDescendants = ancestorSelected || selected;
+    for (const Entity& child : scene.GetChildren(entity)) {
+        CollectTopLevelIdsInHierarchyOrder(scene, child, selectedIds, blockDescendants, out);
+    }
+}
+
+std::vector<UUID> NormalizeTopLevelEntityIds(Scene& scene, const std::vector<UUID>& entityIds) {
+    std::unordered_set<std::uint64_t> selectedIds;
+    selectedIds.reserve(entityIds.size());
+    for (const UUID id : entityIds) {
+        if (id.IsValid() && scene.ContainsUUID(id)) {
+            selectedIds.insert(id.Value());
+        }
+    }
+
+    std::vector<UUID> ordered;
+    ordered.reserve(selectedIds.size());
+    for (const Entity& root : scene.GetRootEntities()) {
+        CollectTopLevelIdsInHierarchyOrder(scene, root, selectedIds, /*ancestorSelected=*/false, ordered);
+    }
+    return ordered;
+}
+
+std::vector<UUID> SiblingIdsForParent(Scene& scene, UUID parentId) {
+    std::vector<UUID> ids;
+    if (parentId.IsValid()) {
+        Entity parent = scene.FindEntityByUUID(parentId);
+        if (!parent) {
+            return ids;
+        }
+        for (const Entity& child : scene.GetChildren(parent)) {
+            ids.push_back(child.GetUUID());
+        }
+        return ids;
+    }
+
+    for (const Entity& root : scene.GetRootEntities()) {
+        ids.push_back(root.GetUUID());
+    }
+    return ids;
+}
+
+std::size_t AdjustSiblingIndexForMovingIds(Scene& scene, const std::vector<UUID>& entityIds, UUID newParentId,
+                                           std::size_t siblingIndex) {
+    std::size_t adjusted = siblingIndex;
+    for (const UUID id : entityIds) {
+        Entity entity = scene.FindEntityByUUID(id);
+        if (!entity || ParentIdOf(scene, entity) != newParentId) {
+            continue;
+        }
+        const std::size_t oldIndex = scene.GetSiblingIndex(entity);
+        if (oldIndex < adjusted) {
+            --adjusted;
+        }
+    }
+    return adjusted;
+}
+
+std::vector<UUID> BuildTargetSiblingOrder(Scene& scene, const std::vector<UUID>& entityIds, UUID newParentId,
+                                          std::size_t siblingIndex) {
+    std::vector<UUID> order = SiblingIdsForParent(scene, newParentId);
+    order.erase(std::remove_if(order.begin(), order.end(),
+                               [&entityIds](UUID id) { return ContainsId(entityIds, id); }),
+                order.end());
+
+    const std::size_t insertIndex = std::min(siblingIndex, order.size());
+    order.insert(order.begin() + static_cast<std::ptrdiff_t>(insertIndex), entityIds.begin(), entityIds.end());
+    return order;
+}
+
+std::vector<UUID> NormalizeCreateEmptyParentIds(Scene& scene, const std::vector<UUID>& entityIds, UUID* parentId,
+                                                std::size_t* insertIndex) {
+    std::vector<UUID> uniqueIds;
+    uniqueIds.reserve(entityIds.size());
+    for (const UUID id : entityIds) {
+        if (!id.IsValid() || ContainsId(uniqueIds, id)) {
+            continue;
+        }
+        if (!scene.ContainsUUID(id)) {
+            return {};
+        }
+        uniqueIds.push_back(id);
+    }
+    if (uniqueIds.empty()) {
+        return {};
+    }
+
+    Entity first = scene.FindEntityByUUID(uniqueIds.front());
+    if (!first) {
+        return {};
+    }
+    const UUID sharedParent = ParentIdOf(scene, first);
+    std::size_t minIndex = scene.GetSiblingIndex(first);
+
+    for (const UUID id : uniqueIds) {
+        Entity entity = scene.FindEntityByUUID(id);
+        if (!entity || ParentIdOf(scene, entity) != sharedParent || HasSelectedAncestor(scene, entity, uniqueIds)) {
+            return {};
+        }
+        minIndex = std::min(minIndex, scene.GetSiblingIndex(entity));
+    }
+
+    std::sort(uniqueIds.begin(), uniqueIds.end(), [&](UUID lhs, UUID rhs) {
+        return scene.GetSiblingIndex(scene.FindEntityByUUID(lhs)) < scene.GetSiblingIndex(scene.FindEntityByUUID(rhs));
+    });
+
+    if (parentId != nullptr) {
+        *parentId = sharedParent;
+    }
+    if (insertIndex != nullptr) {
+        *insertIndex = minIndex;
+    }
+    return uniqueIds;
 }
 
 } // namespace
@@ -364,6 +514,106 @@ private:
     UUID m_ParentId{0};
     std::string m_Snapshot;
     bool m_Captured = false;
+};
+
+class CreateEmptyParentCommand : public EditorCommand {
+public:
+    CreateEmptyParentCommand(Scene& scene, std::vector<UUID> entityIds) {
+        m_ChildIds = NormalizeCreateEmptyParentIds(scene, entityIds, &m_ParentId, &m_InsertIndex);
+        m_ChildStates.reserve(m_ChildIds.size());
+        for (const UUID id : m_ChildIds) {
+            Entity entity = scene.FindEntityByUUID(id);
+            if (!entity) {
+                continue;
+            }
+            const auto& transform = entity.GetComponent<TransformComponent>();
+            m_ChildStates.push_back({id,
+                                     scene.GetSiblingIndex(entity),
+                                     {transform.localPosition, transform.localRotation, transform.localScale}});
+        }
+    }
+
+    void Execute(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr || m_ChildStates.empty()) {
+            return;
+        }
+        if (!m_WrapperId.IsValid()) {
+            m_WrapperId = MakeUniqueId(*scene);
+        }
+
+        Entity wrapper = scene->FindEntityByUUID(m_WrapperId);
+        if (!wrapper) {
+            wrapper = scene->CreateEntityWithUUID(m_WrapperId, "GameObject");
+        }
+        Entity parent;
+        if (m_ParentId.IsValid()) {
+            parent = scene->FindEntityByUUID(m_ParentId);
+            if (!parent) {
+                return;
+            }
+        }
+        scene->MoveEntity(wrapper, parent, m_InsertIndex, /*keepWorldTransform=*/false);
+
+        for (std::size_t i = 0; i < m_ChildStates.size(); ++i) {
+            Entity child = scene->FindEntityByUUID(m_ChildStates[i].id);
+            if (child && child != wrapper && !scene->IsDescendantOf(wrapper, child)) {
+                scene->MoveEntity(child, wrapper, i, /*keepWorldTransform=*/true);
+            }
+        }
+
+        context.selection.Select(m_WrapperId);
+        context.MarkDirty();
+    }
+
+    void Undo(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr || !m_WrapperId.IsValid()) {
+            return;
+        }
+
+        Entity parent;
+        if (m_ParentId.IsValid()) {
+            parent = scene->FindEntityByUUID(m_ParentId);
+        }
+        for (const WrappedChildState& state : m_ChildStates) {
+            Entity child = scene->FindEntityByUUID(state.id);
+            if (!child) {
+                continue;
+            }
+            scene->MoveEntity(child, parent, state.siblingIndex, /*keepWorldTransform=*/false);
+            if (child.HasComponent<TransformComponent>()) {
+                auto& transform = child.GetComponent<TransformComponent>();
+                transform.localPosition = state.local.position;
+                transform.localRotation = state.local.rotation;
+                transform.localScale = state.local.scale;
+                scene->RecalculateActiveInHierarchy(child);
+            }
+        }
+
+        if (Entity wrapper = scene->FindEntityByUUID(m_WrapperId)) {
+            scene->DestroyEntityRecursive(wrapper);
+        }
+        context.selection.Clear();
+        context.MarkDirty();
+    }
+
+    std::string Name() const override {
+        return "Create Empty Parent";
+    }
+
+private:
+    struct WrappedChildState {
+        UUID id;
+        std::size_t siblingIndex = 0;
+        TransformData local;
+    };
+
+    std::vector<UUID> m_ChildIds;
+    std::vector<WrappedChildState> m_ChildStates;
+    UUID m_ParentId{0};
+    std::size_t m_InsertIndex = 0;
+    UUID m_WrapperId{0};
 };
 
 // Generic "spawn" command: a builder creates one or more root entities on first
@@ -710,6 +960,140 @@ private:
     UUID m_OldParentId{0};
     std::size_t m_OldIndex = 0;
     TransformData m_OldLocal;
+};
+
+class MoveEntitiesCommand : public EditorCommand {
+public:
+    MoveEntitiesCommand(Scene& scene, std::vector<UUID> entityIds, UUID newParentId, std::size_t siblingIndex)
+        : m_EntityIds(NormalizeTopLevelEntityIds(scene, entityIds)), m_NewParentId(newParentId) {
+        m_NewIndex = AdjustSiblingIndexForMovingIds(scene, m_EntityIds, newParentId, siblingIndex);
+        m_TargetOrder = BuildTargetSiblingOrder(scene, m_EntityIds, newParentId, m_NewIndex);
+
+        m_OldStates.reserve(m_EntityIds.size());
+        for (const UUID id : m_EntityIds) {
+            Entity entity = scene.FindEntityByUUID(id);
+            if (!entity) {
+                continue;
+            }
+            EntityMoveState state;
+            state.id = id;
+            state.parentId = ParentIdOf(scene, entity);
+            state.siblingIndex = scene.GetSiblingIndex(entity);
+            if (entity.HasComponent<TransformComponent>()) {
+                const auto& transform = entity.GetComponent<TransformComponent>();
+                state.local = {transform.localPosition, transform.localRotation, transform.localScale};
+            }
+            m_OldStates.push_back(state);
+        }
+    }
+
+    void Execute(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr || m_EntityIds.empty() || m_TargetOrder.empty()) {
+            return;
+        }
+
+        Entity parent;
+        if (m_NewParentId.IsValid()) {
+            parent = scene->FindEntityByUUID(m_NewParentId);
+            if (!parent) {
+                return;
+            }
+        }
+
+        for (const UUID id : m_EntityIds) {
+            Entity child = scene->FindEntityByUUID(id);
+            if (!child) {
+                continue;
+            }
+            if (parent && (child == parent || scene->IsDescendantOf(parent, child))) {
+                return;
+            }
+        }
+
+        bool movedAny = false;
+        for (std::size_t index = 0; index < m_TargetOrder.size(); ++index) {
+            Entity entity = scene->FindEntityByUUID(m_TargetOrder[index]);
+            if (!entity) {
+                continue;
+            }
+            scene->MoveEntity(entity, parent, index, /*keepWorldTransform=*/true);
+            movedAny = true;
+        }
+
+        if (movedAny) {
+            SelectMovedEntities(context);
+            context.MarkDirty();
+        }
+    }
+
+    void Undo(EditorContext& context) override {
+        Scene* scene = context.activeScene;
+        if (scene == nullptr || m_OldStates.empty()) {
+            return;
+        }
+
+        bool restoredAny = false;
+        for (const EntityMoveState& state : m_OldStates) {
+            Entity entity = scene->FindEntityByUUID(state.id);
+            if (!entity) {
+                continue;
+            }
+
+            Entity parent;
+            if (state.parentId.IsValid()) {
+                parent = scene->FindEntityByUUID(state.parentId);
+                if (!parent) {
+                    continue;
+                }
+            }
+
+            scene->MoveEntity(entity, parent, state.siblingIndex, /*keepWorldTransform=*/false);
+            if (entity.HasComponent<TransformComponent>()) {
+                auto& transform = entity.GetComponent<TransformComponent>();
+                transform.localPosition = state.local.position;
+                transform.localRotation = state.local.rotation;
+                transform.localScale = state.local.scale;
+                scene->RecalculateActiveInHierarchy(entity);
+            }
+            restoredAny = true;
+        }
+
+        if (restoredAny) {
+            SelectMovedEntities(context);
+            context.MarkDirty();
+        }
+    }
+
+    std::string Name() const override {
+        return m_EntityIds.size() > 1 ? "Move Entities" : "Move Entity";
+    }
+
+private:
+    struct EntityMoveState {
+        UUID id{0};
+        UUID parentId{0};
+        std::size_t siblingIndex = 0;
+        TransformData local;
+    };
+
+    void SelectMovedEntities(EditorContext& context) {
+        if (context.activeScene == nullptr) {
+            return;
+        }
+        context.selection.Clear();
+        for (const UUID id : m_EntityIds) {
+            if (context.activeScene->ContainsUUID(id)) {
+                context.selection.Add(id);
+            }
+        }
+    }
+
+    std::vector<UUID> m_EntityIds;
+    UUID m_NewParentId{0};
+    std::size_t m_NewIndex = 0;
+    std::vector<UUID> m_TargetOrder;
+    std::vector<EntityMoveState> m_OldStates;
 };
 
 class AddComponentCommand : public EditorCommand {
@@ -1084,6 +1468,14 @@ std::unique_ptr<EditorCommand> DuplicateEntity(UUID sourceId) {
     return std::make_unique<DuplicateEntityCommand>(sourceId);
 }
 
+bool CanCreateEmptyParent(Scene& scene, const std::vector<UUID>& entityIds) {
+    return !NormalizeCreateEmptyParentIds(scene, entityIds, nullptr, nullptr).empty();
+}
+
+std::unique_ptr<EditorCommand> CreateEmptyParent(Scene& scene, std::vector<UUID> entityIds) {
+    return std::make_unique<CreateEmptyParentCommand>(scene, std::move(entityIds));
+}
+
 std::unique_ptr<EditorCommand> SpawnEntities(std::string actionName, SpawnBuilder builder) {
     return std::make_unique<SpawnEntitiesCommand>(std::move(actionName), std::move(builder));
 }
@@ -1152,6 +1544,11 @@ std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newPar
 
 std::unique_ptr<EditorCommand> MoveEntity(Scene& scene, UUID entityId, UUID newParentId, std::size_t siblingIndex) {
     return std::make_unique<MoveEntityCommand>(scene, entityId, newParentId, siblingIndex);
+}
+
+std::unique_ptr<EditorCommand> MoveEntities(Scene& scene, std::vector<UUID> entityIds, UUID newParentId,
+                                            std::size_t siblingIndex) {
+    return std::make_unique<MoveEntitiesCommand>(scene, std::move(entityIds), newParentId, siblingIndex);
 }
 
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,

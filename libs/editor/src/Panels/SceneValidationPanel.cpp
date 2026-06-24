@@ -86,7 +86,7 @@ void SceneValidationPanel::OnImGui(EditorContext& context) {
                     EditorTooltip::ForLastItem("Selects the related entity when this validation issue has one.");
                     ImGui::PopStyleColor();
                     if (clicked && issue.entityId.IsValid()) {
-                        context.selection.Select(issue.entityId);
+                        context.SelectSceneEntity(issue.entityId);
                     }
                 }
             }

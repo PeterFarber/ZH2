@@ -67,6 +67,8 @@ namespace EditorCommands {
 std::unique_ptr<EditorCommand> CreateEntity(std::string name, UUID parentId = UUID(0));
 std::unique_ptr<EditorCommand> DeleteEntity(Scene& scene, UUID entityId);
 std::unique_ptr<EditorCommand> DuplicateEntity(UUID sourceId);
+bool CanCreateEmptyParent(Scene& scene, const std::vector<UUID>& entityIds);
+std::unique_ptr<EditorCommand> CreateEmptyParent(Scene& scene, std::vector<UUID> entityIds);
 
 // Builds entities in the scene and returns the root UUIDs it created (one or
 // more). Runs once on first execution; the spawned subtrees are then snapshotted
@@ -102,6 +104,8 @@ std::unique_ptr<EditorCommand> RenameEntity(UUID entityId, std::string oldName, 
 std::unique_ptr<EditorCommand> SetActive(UUID entityId, bool oldValue, bool newValue);
 std::unique_ptr<EditorCommand> SetParent(Scene& scene, UUID childId, UUID newParentId);
 std::unique_ptr<EditorCommand> MoveEntity(Scene& scene, UUID entityId, UUID newParentId, std::size_t siblingIndex);
+std::unique_ptr<EditorCommand> MoveEntities(Scene& scene, std::vector<UUID> entityIds, UUID newParentId,
+                                            std::size_t siblingIndex);
 std::unique_ptr<EditorCommand> TransformEntity(UUID entityId, const TransformData& oldValue,
                                                const TransformData& newValue);
 std::unique_ptr<EditorCommand> TransformEntities(std::vector<EntityTransformSnapshot> snapshots);

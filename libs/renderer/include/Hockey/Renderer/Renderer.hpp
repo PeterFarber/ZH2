@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "Hockey/Core/UUID.hpp"
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Renderer/Camera.hpp"
 #include "Hockey/Renderer/Material.hpp"
@@ -19,6 +20,17 @@ namespace Hockey {
 class Scene;
 class DebugDraw;
 class AssetManager;
+
+using SceneRenderFilterFn = bool (*)(UUID entityId, void* userData);
+
+struct SceneRenderFilter {
+    SceneRenderFilterFn allowsEntity = nullptr;
+    void* userData = nullptr;
+
+    bool Allows(UUID entityId) const {
+        return allowsEntity == nullptr || allowsEntity(entityId, userData);
+    }
+};
 
 // Parameters for a live material preview (see Renderer::PreviewMaterial). Mirrors
 // MaterialDesc but references textures by AssetID (0 == none) instead of GPU
@@ -59,7 +71,7 @@ public:
 
     // ----- Frame lifecycle (swapchain present path) -----
     void BeginFrame();
-    void RenderScene(Scene& scene, const CameraRenderData& camera);
+    void RenderScene(Scene& scene, const CameraRenderData& camera, const SceneRenderFilter* filter = nullptr);
     void EndFrame();
 
     void Resize(uint32_t width, uint32_t height);
@@ -72,7 +84,8 @@ public:
     // ----- Offscreen render targets (editor viewport) -----
     TextureHandle CreateRenderTarget(const RenderTargetDesc& desc);
     void ResizeRenderTarget(TextureHandle target, uint32_t width, uint32_t height);
-    void RenderSceneToTarget(Scene& scene, const CameraRenderData& camera, TextureHandle target);
+    void RenderSceneToTarget(Scene& scene, const CameraRenderData& camera, TextureHandle target,
+                             const SceneRenderFilter* filter = nullptr);
     // Copies an offscreen color target into the current swapchain image. Used
     // by the editor until an ImGui-based viewport exists.
     void BlitTargetToSwapchain(TextureHandle target);

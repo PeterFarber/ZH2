@@ -76,7 +76,10 @@ void RunEditorTooltipContractTests() {
                  "helper applies the shared hover flags");
 
     HK_CHECK_MSG(Contains(toolbar, "Hockey/Editor/ImGui/EditorTooltip.hpp"), "Toolbar includes tooltip helper");
-    HK_CHECK_MSG(CountOccurrences(toolbar, "EditorTooltip::ForLastItem") >= 3,
+    const std::size_t toolbarTooltipAffordances = CountOccurrences(toolbar, "EditorTooltip::ForLastItem") +
+                                                  CountOccurrences(toolbar, "EditorIconButton(") +
+                                                  CountOccurrences(toolbar, "EditorIconToggleButton(");
+    HK_CHECK_MSG(toolbarTooltipAffordances >= 4,
                  "Toolbar controls expose useful hover text");
     HK_CHECK_MSG(Contains(projectSettings, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
                  "Project Settings includes tooltip helper");

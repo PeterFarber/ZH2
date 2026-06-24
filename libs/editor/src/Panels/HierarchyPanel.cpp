@@ -1,9 +1,14 @@
 #include "Hockey/Editor/Panels/HierarchyPanel.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cfloat>
 #include <cstdint>
 #include <cstdio>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <imgui.h>
@@ -22,6 +27,7 @@
 #include "Hockey/Editor/Dockspace.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 
@@ -66,6 +72,200 @@ UUID ParentIdOf(Scene& scene, const Entity& entity) {
     return UUID(0);
 }
 
+bool ContainsId(const std::vector<UUID>& ids, UUID id) {
+    return std::find(ids.begin(), ids.end(), id) != ids.end();
+}
+
+void CollectTopLevelSelectedInHierarchyOrder(Scene& scene, const Entity& entity,
+                                             const std::unordered_set<std::uint64_t>& selectedIds,
+                                             bool ancestorSelected, std::vector<UUID>& out) {
+    if (!entity) {
+        return;
+    }
+
+    const UUID id = entity.GetUUID();
+    const bool selected = selectedIds.contains(id.Value());
+    if (selected && !ancestorSelected) {
+        out.push_back(id);
+    }
+
+    const bool blockDescendants = ancestorSelected || selected;
+    for (const Entity& child : scene.GetChildren(entity)) {
+        CollectTopLevelSelectedInHierarchyOrder(scene, child, selectedIds, blockDescendants, out);
+    }
+}
+
+std::vector<UUID> ResolveDragMoveTargets(Scene& scene, const Selection& selection, UUID draggedId) {
+    if (!draggedId.IsValid() || !scene.ContainsUUID(draggedId)) {
+        return {};
+    }
+    if (!selection.IsSelected(draggedId)) {
+        return {draggedId};
+    }
+
+    std::unordered_set<std::uint64_t> selectedIds;
+    selectedIds.reserve(selection.All().size());
+    for (const UUID id : selection.All()) {
+        if (id.IsValid() && scene.ContainsUUID(id)) {
+            selectedIds.insert(id.Value());
+        }
+    }
+
+    std::vector<UUID> targets;
+    targets.reserve(selectedIds.size());
+    for (const Entity& root : scene.GetRootEntities()) {
+        CollectTopLevelSelectedInHierarchyOrder(scene, root, selectedIds, /*ancestorSelected=*/false, targets);
+    }
+
+    return targets.empty() ? std::vector<UUID>{draggedId} : targets;
+}
+
+std::string ToLower(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (const unsigned char c : text) {
+        out.push_back(static_cast<char>(std::tolower(c)));
+    }
+    return out;
+}
+
+std::string TrimmedSearchText(const char* text) {
+    if (text == nullptr) {
+        return {};
+    }
+    std::string value(text);
+    const auto first = std::find_if_not(value.begin(), value.end(), [](unsigned char c) {
+        return std::isspace(c) != 0;
+    });
+    const auto last = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char c) {
+        return std::isspace(c) != 0;
+    }).base();
+    if (first >= last) {
+        return {};
+    }
+    return std::string(first, last);
+}
+
+bool HierarchyNameMatchesSearch(const Entity& entity, std::string_view lowerNeedle) {
+    if (lowerNeedle.empty()) {
+        return true;
+    }
+    return ToLower(entity.GetName()).find(lowerNeedle) != std::string::npos;
+}
+
+bool BuildHierarchyFilterRecursive(Scene& scene, const Entity& entity, std::string_view lowerNeedle,
+                                   std::unordered_set<std::uint64_t>& visibleIds) {
+    bool visible = HierarchyNameMatchesSearch(entity, lowerNeedle);
+    for (const Entity& child : scene.GetChildren(entity)) {
+        visible = BuildHierarchyFilterRecursive(scene, child, lowerNeedle, visibleIds) || visible;
+    }
+    if (visible) {
+        visibleIds.insert(entity.GetUUID().Value());
+    }
+    return visible;
+}
+
+bool BuildHierarchyFilter(Scene& scene, const char* searchText, std::unordered_set<std::uint64_t>& visibleIds) {
+    visibleIds.clear();
+    const std::string trimmed = TrimmedSearchText(searchText);
+    if (trimmed.empty()) {
+        return false;
+    }
+
+    const std::string lowerNeedle = ToLower(trimmed);
+    for (const Entity& root : scene.GetRootEntities()) {
+        BuildHierarchyFilterRecursive(scene, root, lowerNeedle, visibleIds);
+    }
+    return true;
+}
+
+void CollectVisibleHierarchyRows(Scene& scene, const Entity& entity,
+                                 const std::unordered_set<std::uint64_t>* visibleFilter, bool searchActive,
+                                 const std::unordered_set<std::uint64_t>& expandedIds, std::vector<UUID>& out) {
+    const UUID id = entity.GetUUID();
+    out.push_back(id);
+
+    const bool open = searchActive || expandedIds.contains(id.Value());
+    if (!open) {
+        return;
+    }
+
+    for (const Entity& child : scene.GetChildren(entity)) {
+        if (visibleFilter == nullptr || visibleFilter->contains(child.GetUUID().Value())) {
+            CollectVisibleHierarchyRows(scene, child, visibleFilter, searchActive, expandedIds, out);
+        }
+    }
+}
+
+struct BranchSceneState {
+    bool anySet = false;
+    bool anyUnset = false;
+};
+
+BranchSceneState VisibilityState(EditorContext& context, Scene& scene, const Entity& entity) {
+    BranchSceneState state;
+    const bool hidden = context.IsSceneHidden(entity.GetUUID());
+    state.anySet = hidden;
+    state.anyUnset = !hidden;
+    for (const Entity& child : scene.GetChildren(entity)) {
+        const BranchSceneState childState = VisibilityState(context, scene, child);
+        state.anySet = state.anySet || childState.anySet;
+        state.anyUnset = state.anyUnset || childState.anyUnset;
+    }
+    return state;
+}
+
+BranchSceneState PickabilityState(EditorContext& context, Scene& scene, const Entity& entity) {
+    BranchSceneState state;
+    const bool unpickable = !context.IsScenePickable(entity.GetUUID());
+    state.anySet = unpickable;
+    state.anyUnset = !unpickable;
+    for (const Entity& child : scene.GetChildren(entity)) {
+        const BranchSceneState childState = PickabilityState(context, scene, child);
+        state.anySet = state.anySet || childState.anySet;
+        state.anyUnset = state.anyUnset || childState.anyUnset;
+    }
+    return state;
+}
+
+bool VisibilityMixed(EditorContext& context, Scene& scene, const Entity& entity) {
+    const BranchSceneState state = VisibilityState(context, scene, entity);
+    return state.anySet && state.anyUnset;
+}
+
+bool PickabilityMixed(EditorContext& context, Scene& scene, const Entity& entity) {
+    const BranchSceneState state = PickabilityState(context, scene, entity);
+    return state.anySet && state.anyUnset;
+}
+
+void DrawSceneVisibilityControl(EditorContext& context, Scene& scene, const Entity& entity) {
+    const UUID id = entity.GetUUID();
+    const bool hidden = context.IsSceneHidden(id);
+    const bool mixed = VisibilityMixed(context, scene, entity);
+    const EditorIcon icon = mixed ? EditorIcon::Warning : (hidden ? EditorIcon::Hidden : EditorIcon::Visible);
+    const char* label = mixed ? "Mixed Visibility##visibility" : (hidden ? "Hidden##visibility" : "Visible##visibility");
+    if (EditorIconButton(icon, label,
+                         "Scene visibility: visible, hidden, or mixed. Alt-click affects only this entity.",
+                         ImVec2(ImGui::GetFrameHeight(), 0.0f))) {
+        const bool includeDescendants = !ImGui::GetIO().KeyAlt;
+        context.SetSceneHidden(scene, id, !hidden, includeDescendants);
+    }
+}
+
+void DrawScenePickabilityControl(EditorContext& context, Scene& scene, const Entity& entity) {
+    const UUID id = entity.GetUUID();
+    const bool pickable = context.IsScenePickable(id);
+    const bool mixed = PickabilityMixed(context, scene, entity);
+    const EditorIcon icon = mixed ? EditorIcon::Warning : (pickable ? EditorIcon::Pickable : EditorIcon::Locked);
+    const char* label = mixed ? "Mixed Pickability##pickability" : (pickable ? "Pickable##pickability" : "Locked##pickability");
+    if (EditorIconButton(icon, label,
+                         "Scene pickability: selectable, locked, or mixed. Alt-click affects only this entity.",
+                         ImVec2(ImGui::GetFrameHeight(), 0.0f))) {
+        const bool includeDescendants = !ImGui::GetIO().KeyAlt;
+        context.SetSceneUnpickable(scene, id, pickable, includeDescendants);
+    }
+}
+
 std::size_t AdjustSiblingIndexForRemoval(Scene& scene, UUID movedId, UUID newParentId, std::size_t siblingIndex) {
     Entity moved = scene.FindEntityByUUID(movedId);
     if (!moved) {
@@ -83,9 +283,9 @@ std::size_t AdjustSiblingIndexForRemoval(Scene& scene, UUID movedId, UUID newPar
     return siblingIndex;
 }
 
-bool IsEntityDropValid(Scene& scene, UUID movedId, const Entity& target, EntityDropPlacement placement) {
-    Entity moved = scene.FindEntityByUUID(movedId);
-    if (!moved || !target || moved == target) {
+bool IsEntityDropValid(Scene& scene, const std::vector<UUID>& movedIds, const Entity& target,
+                       EntityDropPlacement placement) {
+    if (movedIds.empty() || !target || ContainsId(movedIds, target.GetUUID())) {
         return false;
     }
 
@@ -96,7 +296,16 @@ bool IsEntityDropValid(Scene& scene, UUID movedId, const Entity& target, EntityD
         newParent = scene.GetParent(target);
     }
 
-    return !newParent || (moved != newParent && !scene.IsDescendantOf(newParent, moved));
+    for (const UUID movedId : movedIds) {
+        Entity moved = scene.FindEntityByUUID(movedId);
+        if (!moved) {
+            return false;
+        }
+        if (newParent && (moved == newParent || scene.IsDescendantOf(newParent, moved))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void DrawHierarchyDropPreview(const ImRect& rowRect, EntityDropPlacement placement) {
@@ -149,13 +358,42 @@ void HierarchyPanel::OnImGui(EditorContext& context) {
 
     // Drop stale ids (e.g. entities deleted elsewhere) before drawing.
     context.selection.Validate(*scene);
+    context.PruneHierarchyEditorState(*scene);
+    DropStaleExpandedIds(*scene);
+
+    const ImGuiIO& io = ImGui::GetIO();
+    const bool hierarchyFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    if (hierarchyFocused && io.KeyCtrl && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F, false)) {
+        m_FocusSearchNextFrame = true;
+    }
+    if (hierarchyFocused && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_H, false)) {
+        context.ToggleSelectedVisibility(*scene);
+    }
+    if (hierarchyFocused && !io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_L, false)) {
+        context.ToggleSelectedPickability(*scene);
+    }
+
+    DrawSearchToolbar();
 
     // Window-wide drop target for moving entities to scene root or instantiating
     // prefabs at scene root. Entity rows use smaller targets, so hovered rows win.
-    DrawRootDropTarget(*scene);
+    DrawRootDropTarget(context, *scene);
+
+    std::unordered_set<std::uint64_t> visibleFilter;
+    const bool searchActive = BuildHierarchyFilter(*scene, m_SearchBuffer.data(), visibleFilter);
+    const auto* filter = searchActive ? &visibleFilter : nullptr;
+
+    m_VisibleEntityRows.clear();
+    for (const Entity& root : scene->GetRootEntities()) {
+        if (filter == nullptr || filter->contains(root.GetUUID().Value())) {
+            CollectVisibleHierarchyRows(*scene, root, filter, searchActive, m_ExpandedEntityIds, m_VisibleEntityRows);
+        }
+    }
 
     for (const Entity& root : scene->GetRootEntities()) {
-        DrawEntityNode(context, *scene, root);
+        if (filter == nullptr || filter->contains(root.GetUUID().Value())) {
+            DrawEntityNode(context, *scene, root, filter, searchActive);
+        }
     }
 
     // Click on empty space clears the selection.
@@ -169,7 +407,11 @@ void HierarchyPanel::OnImGui(EditorContext& context) {
         if (ImGui::MenuItem("Create Empty")) {
             m_PendingKind = PendingKind::CreateEmpty;
         }
-        EditorTooltip::ForLastItem("Creates a new root entity in the active scene.");
+        EditorTooltip::ForLastItem("Creates a new entity under the default parent when one is set.");
+        if (ImGui::MenuItem("Clear Default Parent", nullptr, false, context.HierarchyDefaultParent().IsValid())) {
+            context.ClearHierarchyDefaultParent();
+        }
+        EditorTooltip::ForLastItem("Clears the hierarchy default parent.");
         ImGui::EndPopup();
     }
 
@@ -178,7 +420,33 @@ void HierarchyPanel::OnImGui(EditorContext& context) {
     EndWindow();
 }
 
-void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const Entity& entity) {
+void HierarchyPanel::DrawSearchToolbar() {
+    if (m_FocusSearchNextFrame) {
+        ImGui::SetKeyboardFocusHere();
+        m_FocusSearchNextFrame = false;
+    }
+
+    const float clearWidth = ImGui::CalcTextSize("Clear Search").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+    ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - clearWidth - ImGui::GetStyle().ItemSpacing.x));
+    ImGui::InputTextWithHint("##hierarchy-search", "Search GameObjects", m_SearchBuffer.data(), m_SearchBuffer.size());
+    EditorTooltip::ForLastItem("Filters hierarchy rows by entity name while keeping matching ancestors visible.");
+    ImGui::SameLine();
+    const bool hasSearch = TrimmedSearchText(m_SearchBuffer.data()).empty() == false;
+    if (!hasSearch) {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button("Clear Search", ImVec2(clearWidth, 0.0f))) {
+        m_SearchBuffer[0] = '\0';
+    }
+    if (!hasSearch) {
+        ImGui::EndDisabled();
+    }
+    EditorTooltip::ForLastItem("Clear Search");
+    ImGui::Separator();
+}
+
+void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const Entity& entity,
+                                    const std::unordered_set<std::uint64_t>* visibleFilter, bool searchActive) {
     Selection& selection = context.selection;
     const UUID id = entity.GetUUID();
     const std::vector<Entity> children = scene.GetChildren(entity);
@@ -194,8 +462,29 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
     const bool renaming = m_RenamingId == id;
     bool open = false;
 
+    const bool defaultParent = context.HierarchyDefaultParent() == id && context.DefaultParentFor(scene) == id;
+    if (defaultParent) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.86f, 0.32f, 1.0f));
+    }
+
     if (renaming) {
+        ImGui::PushID(NodeId(id));
+        DrawSceneVisibilityControl(context, scene, entity);
+        ImGui::SameLine();
+        DrawScenePickabilityControl(context, scene, entity);
+        ImGui::PopID();
+        ImGui::SameLine();
+        if (!children.empty()) {
+            ImGui::SetNextItemOpen(searchActive || IsEntityExpanded(id), ImGuiCond_Always);
+        }
         open = ImGui::TreeNodeEx(NodeId(id), flags, "%s", "");
+        if (!searchActive && ImGui::IsItemToggledOpen()) {
+            if (ImGui::GetIO().KeyAlt) {
+                SetEntityExpandedRecursive(scene, entity, open);
+            } else {
+                SetEntityExpanded(id, open);
+            }
+        }
         ImGui::SameLine();
         if (!m_RenameFocus) {
             ImGui::SetKeyboardFocusHere();
@@ -214,15 +503,34 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
             m_RenameFocus = false;
         }
     } else {
+        ImGui::PushID(NodeId(id));
+        DrawSceneVisibilityControl(context, scene, entity);
+        ImGui::SameLine();
+        DrawScenePickabilityControl(context, scene, entity);
+        ImGui::PopID();
+        ImGui::SameLine();
+        if (!children.empty()) {
+            ImGui::SetNextItemOpen(searchActive || IsEntityExpanded(id), ImGuiCond_Always);
+        }
         open = ImGui::TreeNodeEx(NodeId(id), flags, "%s", entity.GetName().c_str());
+        if (!searchActive && ImGui::IsItemToggledOpen()) {
+            if (ImGui::GetIO().KeyAlt) {
+                SetEntityExpandedRecursive(scene, entity, open);
+            } else {
+                SetEntityExpanded(id, open);
+            }
+        }
         const ImRect rowRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
         EditorTooltip::ForLastItem("Drag to reorder or parent this entity. Double-click to rename.");
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-            if (ImGui::GetIO().KeyCtrl) {
-                selection.Toggle(id);
+            const ImGuiIO& clickIo = ImGui::GetIO();
+            if (clickIo.KeyShift) {
+                context.SelectSceneRange(m_VisibleEntityRows, id, /*additive=*/clickIo.KeyCtrl);
+            } else if (clickIo.KeyCtrl) {
+                context.ToggleSceneEntitySelection(id);
             } else {
-                selection.Select(id);
+                context.SelectSceneEntity(id);
             }
         }
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -232,7 +540,12 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             const std::uint64_t value = id.Value();
             ImGui::SetDragDropPayload(kEntityDragType, &value, sizeof(value));
-            ImGui::TextUnformatted(entity.GetName().c_str());
+            const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, selection, id);
+            if (moveTargets.size() > 1) {
+                ImGui::Text("%zu GameObjects", moveTargets.size());
+            } else {
+                ImGui::TextUnformatted(entity.GetName().c_str());
+            }
             ImGui::EndDragDropSource();
         }
         if (ImGui::BeginDragDropTarget()) {
@@ -240,16 +553,17 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                     ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
                 const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
                 const UUID movedId(value);
+                const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, selection, movedId);
                 const EntityDropPlacement placement = DropPlacementForCurrentItem();
-                if (IsEntityDropValid(scene, movedId, entity, placement)) {
+                if (IsEntityDropValid(scene, moveTargets, entity, placement)) {
                     DrawHierarchyDropPreview(rowRect, placement);
                     if (payload->IsDelivery()) {
                         m_PendingKind = PendingKind::MoveEntity;
                         m_PendingTarget = movedId;
+                        m_PendingMoveTargets = moveTargets;
                         if (placement == EntityDropPlacement::Inside) {
                             m_PendingParent = id;
-                            m_PendingSiblingIndex =
-                                AdjustSiblingIndexForRemoval(scene, movedId, id, scene.GetChildren(entity).size());
+                            m_PendingSiblingIndex = scene.GetChildren(entity).size();
                         } else {
                             const UUID parentId = ParentIdOf(scene, entity);
                             std::size_t siblingIndex = scene.GetSiblingIndex(entity);
@@ -257,8 +571,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                                 ++siblingIndex;
                             }
                             m_PendingParent = parentId;
-                            m_PendingSiblingIndex =
-                                AdjustSiblingIndexForRemoval(scene, movedId, parentId, siblingIndex);
+                            m_PendingSiblingIndex = siblingIndex;
                         }
                     }
                 }
@@ -291,7 +604,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
 
         if (ImGui::BeginPopupContextItem()) {
             if (!selection.IsSelected(id)) {
-                selection.Select(id);
+                context.SelectSceneEntity(id);
             }
             if (ImGui::MenuItem("Create Empty")) {
                 m_PendingKind = PendingKind::CreateEmpty;
@@ -302,6 +615,19 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                 m_PendingTarget = id;
             }
             EditorTooltip::ForLastItem("Creates a child under the selected entity.");
+            const bool canCreateEmptyParent = EditorCommands::CanCreateEmptyParent(scene, selection.All());
+            if (ImGui::MenuItem("Create Empty Parent", nullptr, false, canCreateEmptyParent)) {
+                m_PendingKind = PendingKind::CreateEmptyParent;
+            }
+            EditorTooltip::ForLastItem("Wraps the selected same-level entities in a new parent.");
+            if (ImGui::MenuItem("Set as Default Parent")) {
+                context.SetHierarchyDefaultParent(id);
+            }
+            EditorTooltip::ForLastItem("Makes future Create Empty actions parent under this entity.");
+            if (ImGui::MenuItem("Clear Default Parent", nullptr, false, context.HierarchyDefaultParent().IsValid())) {
+                context.ClearHierarchyDefaultParent();
+            }
+            EditorTooltip::ForLastItem("Clears the hierarchy default parent.");
             if (ImGui::MenuItem("Duplicate")) {
                 m_PendingKind = PendingKind::Duplicate;
                 m_PendingTarget = id;
@@ -353,15 +679,56 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
         }
     }
 
+    if (defaultParent) {
+        ImGui::PopStyleColor();
+    }
+
     if (open) {
         for (const Entity& child : children) {
-            DrawEntityNode(context, scene, child);
+            if (visibleFilter == nullptr || visibleFilter->contains(child.GetUUID().Value())) {
+                DrawEntityNode(context, scene, child, visibleFilter, searchActive);
+            }
         }
         ImGui::TreePop();
     }
 }
 
-void HierarchyPanel::DrawRootDropTarget(Scene& scene) {
+void HierarchyPanel::DropStaleExpandedIds(const Scene& scene) {
+    for (auto it = m_ExpandedEntityIds.begin(); it != m_ExpandedEntityIds.end();) {
+        if (scene.ContainsUUID(UUID(*it))) {
+            ++it;
+        } else {
+            it = m_ExpandedEntityIds.erase(it);
+        }
+    }
+}
+
+bool HierarchyPanel::IsEntityExpanded(UUID id) const {
+    return id.IsValid() && m_ExpandedEntityIds.contains(id.Value());
+}
+
+void HierarchyPanel::SetEntityExpanded(UUID id, bool expanded) {
+    if (!id.IsValid()) {
+        return;
+    }
+    if (expanded) {
+        m_ExpandedEntityIds.insert(id.Value());
+    } else {
+        m_ExpandedEntityIds.erase(id.Value());
+    }
+}
+
+void HierarchyPanel::SetEntityExpandedRecursive(Scene& scene, const Entity& entity, bool expanded) {
+    if (!entity) {
+        return;
+    }
+    SetEntityExpanded(entity.GetUUID(), expanded);
+    for (const Entity& child : scene.GetChildren(entity)) {
+        SetEntityExpandedRecursive(scene, child, expanded);
+    }
+}
+
+void HierarchyPanel::DrawRootDropTarget(EditorContext& context, Scene& scene) {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window == nullptr) {
         return;
@@ -371,16 +738,17 @@ void HierarchyPanel::DrawRootDropTarget(Scene& scene) {
                 ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
             const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
             const UUID movedId(value);
-            if (scene.FindEntityByUUID(movedId)) {
+            const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, context.selection, movedId);
+            if (!moveTargets.empty()) {
                 ImRect rootPreview = window->InnerRect;
                 rootPreview.Min.y = std::max(rootPreview.Min.y, rootPreview.Max.y - ImGui::GetFrameHeight());
                 DrawHierarchyDropPreview(rootPreview, EntityDropPlacement::After);
                 if (payload->IsDelivery()) {
                     m_PendingKind = PendingKind::MoveEntity;
                     m_PendingTarget = movedId;
+                    m_PendingMoveTargets = moveTargets;
                     m_PendingParent = UUID(0);
-                    m_PendingSiblingIndex =
-                        AdjustSiblingIndexForRemoval(scene, movedId, UUID(0), scene.GetRootEntities().size());
+                    m_PendingSiblingIndex = scene.GetRootEntities().size();
                 }
             }
         }
@@ -399,17 +767,24 @@ void HierarchyPanel::ApplyPending(EditorContext& context, Scene& scene) {
     const UUID parent = m_PendingParent;
     const std::size_t siblingIndex = m_PendingSiblingIndex;
     const std::filesystem::path prefabPath = m_PendingPrefabPath;
+    std::vector<UUID> moveTargets = m_PendingMoveTargets;
     m_PendingKind = PendingKind::None;
     m_PendingTarget = UUID(0);
     m_PendingParent = UUID(0);
     m_PendingSiblingIndex = 0;
     m_PendingPrefabPath.clear();
+    m_PendingMoveTargets.clear();
 
     switch (kind) {
     case PendingKind::None:
         return;
     case PendingKind::CreateEmpty:
-        context.undoRedo.Execute(EditorCommands::CreateEntity("GameObject"), context);
+        context.undoRedo.Execute(EditorCommands::CreateEntity("GameObject", context.DefaultParentFor(scene)), context);
+        break;
+    case PendingKind::CreateEmptyParent:
+        if (EditorCommands::CanCreateEmptyParent(scene, context.selection.All())) {
+            context.undoRedo.Execute(EditorCommands::CreateEmptyParent(scene, context.selection.All()), context);
+        }
         break;
     case PendingKind::CreateChild:
         context.undoRedo.Execute(EditorCommands::CreateEntity("GameObject", target), context);
@@ -430,15 +805,33 @@ void HierarchyPanel::ApplyPending(EditorContext& context, Scene& scene) {
         }
         break;
     case PendingKind::MoveEntity: {
-        Entity child = scene.FindEntityByUUID(target);
+        if (moveTargets.empty() && target.IsValid()) {
+            moveTargets.push_back(target);
+        }
         Entity newParent;
         if (parent.IsValid()) {
             newParent = scene.FindEntityByUUID(parent);
         }
         // Cannot parent an entity to itself or to one of its own descendants. Invalid
         // parent id means scene root.
-        if (child && (!parent.IsValid() || (newParent && child != newParent && !scene.IsDescendantOf(newParent, child)))) {
-            context.undoRedo.Execute(EditorCommands::MoveEntity(scene, target, parent, siblingIndex), context);
+        bool validMove = !moveTargets.empty() && (!parent.IsValid() || static_cast<bool>(newParent));
+        for (const UUID moveTarget : moveTargets) {
+            Entity child = scene.FindEntityByUUID(moveTarget);
+            if (!child || (newParent && (child == newParent || scene.IsDescendantOf(newParent, child)))) {
+                validMove = false;
+                break;
+            }
+        }
+        if (validMove) {
+            if (moveTargets.size() == 1) {
+                const std::size_t adjustedIndex =
+                    AdjustSiblingIndexForRemoval(scene, moveTargets.front(), parent, siblingIndex);
+                context.undoRedo.Execute(EditorCommands::MoveEntity(scene, moveTargets.front(), parent, adjustedIndex),
+                                         context);
+            } else {
+                context.undoRedo.Execute(EditorCommands::MoveEntities(scene, std::move(moveTargets), parent, siblingIndex),
+                                         context);
+            }
         }
         break;
     }

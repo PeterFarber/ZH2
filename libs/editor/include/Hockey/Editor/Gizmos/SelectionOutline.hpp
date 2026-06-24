@@ -3,6 +3,7 @@
 namespace Hockey {
 
 class DebugDraw;
+class EditorContext;
 class Scene;
 class Selection;
 
@@ -13,6 +14,7 @@ class Selection;
 namespace SelectionOutline {
 
 void Submit(DebugDraw& debug, Scene& scene, const Selection& selection);
+void Submit(DebugDraw& debug, EditorContext& context);
 
 } // namespace SelectionOutline
 

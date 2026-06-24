@@ -49,7 +49,7 @@ void FlushTo(DebugDraw& debug, const PhysicsDebugDrawList& list) {
 
 } // namespace
 
-SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
+SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view, const EditorContext* context) {
     SubmitStats stats;
     if (!view.showColliders && !view.showTriggers && !view.showBodyCenters && !view.showContacts) {
         return stats;
@@ -58,6 +58,9 @@ SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view)
     PhysicsDebugDrawList list;
 
     for (Entity entity : scene.GetAllEntities()) {
+        if (context != nullptr && context->IsSceneHidden(entity.GetUUID())) {
+            continue;
+        }
         if (!entity.HasComponent<TransformComponent>()) {
             continue;
         }
@@ -133,6 +136,17 @@ SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view)
     stats.lines = static_cast<std::uint32_t>(list.lines.size());
     FlushTo(debug, list);
     return stats;
+}
+
+SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view) {
+    return Submit(debug, scene, view, nullptr);
+}
+
+SubmitStats Submit(DebugDraw& debug, EditorContext& context) {
+    if (context.activeScene == nullptr) {
+        return {};
+    }
+    return Submit(debug, *context.activeScene, context.physicsView, &context);
 }
 
 } // namespace Hockey::PhysicsGizmo

@@ -94,14 +94,38 @@ void RayFromRenderCamera(const CameraRenderData& camera, const glm::vec2& viewpo
     outDirection = glm::normalize(glm::vec3(farPoint) - glm::vec3(nearPoint));
 }
 
+bool SceneRenderFilterAllows(UUID entityId, void* userData) {
+    auto* context = static_cast<EditorContext*>(userData);
+    return context == nullptr || !context->IsSceneHidden(entityId);
+}
+
+SceneRenderFilter MakeSceneRenderFilter(EditorContext& context) {
+    SceneRenderFilter filter;
+    filter.allowsEntity = &SceneRenderFilterAllows;
+    filter.userData = &context;
+    return filter;
+}
+
+bool CanManipulateSelection(EditorContext& context) {
+    if (context.activeScene == nullptr || context.selection.Empty()) {
+        return false;
+    }
+    for (const UUID id : context.selection.All()) {
+        if (!context.activeScene->ContainsUUID(id) || context.IsSceneHidden(id) || !context.IsScenePickable(id)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 PhysicsGizmo::SubmitStats SubmitSceneDebugOverlay(Renderer& renderer, EditorContext& context, float viewportAspect) {
     DebugDraw& debug = renderer.Debug();
     if (context.settings.showGrid) {
         GridGizmo::Submit(debug, context.settings.gridSpacing);
     }
-    CameraLightGizmo::Submit(debug, *context.activeScene, context.selection, viewportAspect);
-    SelectionOutline::Submit(debug, *context.activeScene, context.selection);
-    return PhysicsGizmo::Submit(debug, *context.activeScene, context.physicsView);
+    CameraLightGizmo::Submit(debug, context, viewportAspect);
+    SelectionOutline::Submit(debug, context);
+    return PhysicsGizmo::Submit(debug, context);
 }
 
 bool PhysicsVisualizationRequested(const PhysicsViewState& view) {
@@ -244,11 +268,11 @@ void SceneViewportPanel::Pick(EditorContext& context, const CameraRenderData& ca
                               const glm::vec2& viewportPixels, bool additive) {
     Scene& scene = *context.activeScene;
     const UUID handlePick = CameraLightGizmo::PickOrigin(scene, camera, viewportUV, viewportPixels);
-    if (handlePick.IsValid()) {
+    if (handlePick.IsValid() && !context.IsSceneHidden(handlePick) && context.IsScenePickable(handlePick)) {
         if (additive) {
-            context.selection.Toggle(handlePick);
+            context.ToggleSceneEntitySelection(handlePick);
         } else {
-            context.selection.Select(handlePick);
+            context.SelectSceneEntity(handlePick);
         }
         return;
     }
@@ -261,6 +285,9 @@ void SceneViewportPanel::Pick(EditorContext& context, const CameraRenderData& ca
     float bestDistance = std::numeric_limits<float>::max();
     for (Entity entity : scene.GetAllEntities()) {
         if (!entity.HasComponent<TransformComponent>()) {
+            continue;
+        }
+        if (context.IsSceneHidden(entity.GetUUID()) || !context.IsScenePickable(entity.GetUUID())) {
             continue;
         }
         const glm::mat4 world = scene.GetWorldTransform(entity);
@@ -276,9 +303,9 @@ void SceneViewportPanel::Pick(EditorContext& context, const CameraRenderData& ca
 
     if (best.IsValid()) {
         if (additive) {
-            context.selection.Toggle(best);
+            context.ToggleSceneEntitySelection(best);
         } else {
-            context.selection.Select(best);
+            context.SelectSceneEntity(best);
         }
     } else if (!additive) {
         context.selection.Clear();
@@ -337,6 +364,7 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
     if (context.captureSceneViewport) {
         EnsureCaptureTarget(context, context.captureViewportWidth, context.captureViewportHeight);
         if (m_CaptureTarget.IsValid()) {
+            SceneRenderFilter renderFilter = MakeSceneRenderFilter(context);
             const float captureAspect =
                 static_cast<float>(context.captureViewportWidth) / static_cast<float>(context.captureViewportHeight);
             CameraRenderData captureCamera;
@@ -346,16 +374,17 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
             renderer->Debug().Clear();
             SubmitSceneDebugOverlay(*renderer, context, captureAspect);
             QueueViewportScreenshot(*renderer, m_CaptureTarget, (context.captureViewportPrefix + "_scene").c_str());
-            renderer->RenderSceneToTarget(*context.activeScene, captureCamera, m_CaptureTarget);
+            renderer->RenderSceneToTarget(*context.activeScene, captureCamera, m_CaptureTarget, &renderFilter);
         }
         context.captureSceneViewport = false;
     }
 
     // Submit overlay geometry before rendering so it is drawn into the target.
+    SceneRenderFilter renderFilter = MakeSceneRenderFilter(context);
     renderer->Debug().Clear();
     const PhysicsGizmo::SubmitStats physicsStats = SubmitSceneDebugOverlay(*renderer, context, aspect);
 
-    renderer->RenderSceneToTarget(*context.activeScene, sceneCamera, m_Target);
+    renderer->RenderSceneToTarget(*context.activeScene, sceneCamera, m_Target, &renderFilter);
 
     const ImVec2 imagePos = frame.imagePos;
     const ImVec2 imageSize = frame.imageSize;
@@ -403,7 +432,8 @@ void SceneViewportPanel::DrawViewport(EditorContext& context) {
 
     const glm::mat4 view = sceneCamera.view;
     const glm::mat4 gizmoProj = GizmoProjectionFromRenderCamera(sceneCamera);
-    const bool gizmoActive = m_Gizmo.Manipulate(context, context.gizmoOperation, view, gizmoProj, imagePos.x,
+    const bool gizmoActive = CanManipulateSelection(context) &&
+                             m_Gizmo.Manipulate(context, context.gizmoOperation, view, gizmoProj, imagePos.x,
                                                 imagePos.y, imageSize.x, imageSize.y);
     SceneViewOverlayResult overlay =
         SceneViewOverlay::Draw(context, *context.activeScene, sceneCamera, imagePosGlm, imageSizeGlm, hasActiveCamera,

@@ -49,11 +49,18 @@ public:
         return m_Initialized;
     }
 
+    bool IconFontLoaded() const {
+        return m_IconFontLoaded;
+    }
+
 private:
+    void LoadEditorFonts();
+
     ImGuiRendererBridge m_Bridge;
     std::string m_IniPath; // backing storage for ImGuiIO::IniFilename
     bool m_Initialized = false;
     bool m_PlatformInitialized = false;
+    bool m_IconFontLoaded = false;
 };
 
 } // namespace Hockey

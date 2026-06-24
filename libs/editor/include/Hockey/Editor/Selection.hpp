@@ -23,11 +23,16 @@ public:
     void Remove(UUID entityId);
     // Adds the entity if absent, otherwise removes it.
     void Toggle(UUID entityId);
+    // Selects the inclusive range between the current range anchor and target
+    // in the caller-provided visible row order. Additive mode preserves the
+    // existing selection outside the range.
+    void SelectRange(const std::vector<UUID>& orderedVisibleIds, UUID targetId, bool additive);
     void Clear();
 
     bool IsSelected(UUID entityId) const;
     // Primary selection, or an invalid UUID when nothing is selected.
     UUID Primary() const;
+    UUID RangeAnchor() const;
     const std::vector<UUID>& All() const;
 
     std::size_t Count() const;
@@ -40,6 +45,7 @@ public:
 private:
     std::vector<UUID> m_Selected;
     UUID m_Primary{0};
+    UUID m_RangeAnchor{0};
 };
 
 } // namespace Hockey

@@ -10,6 +10,7 @@
 #include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Editor/EditorApp.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorTransformOperations.hpp"
@@ -442,6 +443,257 @@ void RunUndoRedoTests() {
             HK_CHECK(roots[1] == aId);
             HK_CHECK(roots[2] == bId);
         }
+    }
+
+    // --- move entities is one undoable group operation ----------------------
+    {
+        CommandFixture fix;
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        Entity c = fix.scene.CreateEntity("C");
+        Entity d = fix.scene.CreateEntity("D");
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+        const UUID cId = c.GetUUID();
+        const UUID dId = d.GetUUID();
+
+        fix.context.undoRedo.Execute(EditorCommands::MoveEntities(fix.scene, {aId, bId}, UUID(0), 4), fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == cId);
+            HK_CHECK(roots[1] == dId);
+            HK_CHECK(roots[2] == aId);
+            HK_CHECK(roots[3] == bId);
+        }
+
+        fix.context.undoRedo.Undo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == aId);
+            HK_CHECK(roots[1] == bId);
+            HK_CHECK(roots[2] == cId);
+            HK_CHECK(roots[3] == dId);
+        }
+
+        fix.context.undoRedo.Redo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == cId);
+            HK_CHECK(roots[1] == dId);
+            HK_CHECK(roots[2] == aId);
+            HK_CHECK(roots[3] == bId);
+        }
+    }
+
+    // --- move entities filters selected descendants from the move set -------
+    {
+        CommandFixture fix;
+        Entity parent = fix.scene.CreateEntity("Parent");
+        Entity child = fix.scene.CreateEntity("Child");
+        Entity target = fix.scene.CreateEntity("Target");
+        fix.scene.SetParent(child, parent, false);
+
+        const UUID parentId = parent.GetUUID();
+        const UUID childId = child.GetUUID();
+        const UUID targetId = target.GetUUID();
+
+        fix.context.undoRedo.Execute(EditorCommands::MoveEntities(fix.scene, {parentId, childId}, UUID(0), 2),
+                                     fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == targetId);
+            HK_CHECK(roots[1] == parentId);
+        }
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(childId)).GetUUID() == parentId,
+                     "selected child remains under its selected top-level parent");
+
+        fix.context.undoRedo.Undo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == parentId);
+            HK_CHECK(roots[1] == targetId);
+        }
+    }
+
+    // --- move entity undo restores parent, sibling order and local transform -
+    {
+        CommandFixture fix;
+        Entity oldParent = fix.scene.CreateEntity("Old Parent");
+        Entity newParent = fix.scene.CreateEntity("New Parent");
+        Entity before = fix.scene.CreateEntity("Before");
+        Entity child = fix.scene.CreateEntity("Child");
+        Entity after = fix.scene.CreateEntity("After");
+
+        oldParent.GetComponent<TransformComponent>().localPosition = glm::vec3(10.0f, 0.0f, 0.0f);
+        newParent.GetComponent<TransformComponent>().localPosition = glm::vec3(-5.0f, 0.0f, 0.0f);
+        child.GetComponent<TransformComponent>().localPosition = glm::vec3(3.0f, 0.0f, 0.0f);
+
+        fix.scene.SetParent(before, oldParent, false);
+        fix.scene.SetParent(child, oldParent, false);
+        fix.scene.SetParent(after, oldParent, false);
+
+        const UUID oldParentId = oldParent.GetUUID();
+        const UUID newParentId = newParent.GetUUID();
+        const UUID beforeId = before.GetUUID();
+        const UUID childId = child.GetUUID();
+        const UUID afterId = after.GetUUID();
+
+        fix.context.undoRedo.Execute(EditorCommands::MoveEntity(fix.scene, childId, newParentId, 0), fix.context);
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(childId)).GetUUID() == newParentId,
+                     "move reparents the child");
+        HK_CHECK_NEAR(WorldPosition(fix.scene, childId).x, 13.0f, 1e-5);
+
+        fix.context.undoRedo.Undo(fix.context);
+        Entity restored = fix.scene.FindEntityByUUID(childId);
+        HK_CHECK_MSG(fix.scene.GetParent(restored).GetUUID() == oldParentId,
+                     "undo restores the original parent");
+        HK_CHECK_NEAR(restored.GetComponent<TransformComponent>().localPosition.x, 3.0f, 1e-5);
+        {
+            const std::vector<UUID> children = EntityIds(fix.scene.GetChildren(oldParent));
+            HK_CHECK(children[0] == beforeId);
+            HK_CHECK(children[1] == childId);
+            HK_CHECK(children[2] == afterId);
+        }
+
+        fix.context.undoRedo.Redo(fix.context);
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(childId)).GetUUID() == newParentId,
+                     "redo reapplies the new parent");
+    }
+
+    // --- duplicate selection only processes top-level selected subtrees ------
+    {
+        Scene scene("DuplicateSelection");
+        EditorApp app;
+        app.Context().activeScene = &scene;
+
+        Entity parent = scene.CreateEntity("Parent");
+        Entity child = scene.CreateEntity("Child");
+        scene.SetParent(child, parent, false);
+        const UUID parentId = parent.GetUUID();
+        const UUID childId = child.GetUUID();
+
+        app.Context().selection.Select(parentId);
+        app.Context().selection.Add(childId);
+        app.DuplicateSelection();
+
+        HK_CHECK_EQ(scene.EntityCount(), static_cast<std::size_t>(4));
+        const UUID duplicateRootId = app.Context().selection.Primary();
+        HK_CHECK_MSG(duplicateRootId.IsValid() && duplicateRootId != parentId && duplicateRootId != childId,
+                     "duplicate selects the copied root");
+        Entity duplicateRoot = scene.FindEntityByUUID(duplicateRootId);
+        HK_CHECK_EQ(scene.GetChildren(duplicateRoot).size(), static_cast<std::size_t>(1));
+    }
+
+    // --- delete selection only records one top-level subtree operation -------
+    {
+        Scene scene("DeleteSelection");
+        EditorApp app;
+        app.Context().activeScene = &scene;
+
+        Entity parent = scene.CreateEntity("Parent");
+        Entity child = scene.CreateEntity("Child");
+        scene.SetParent(child, parent, false);
+        const UUID parentId = parent.GetUUID();
+        const UUID childId = child.GetUUID();
+
+        app.Context().selection.Select(parentId);
+        app.Context().selection.Add(childId);
+        app.DeleteSelection();
+
+        HK_CHECK_EQ(scene.EntityCount(), static_cast<std::size_t>(0));
+        app.Context().undoRedo.Undo(app.Context());
+        HK_CHECK_MSG(scene.ContainsUUID(parentId) && scene.ContainsUUID(childId),
+                     "one undo restores the deleted selected subtree");
+        HK_CHECK_MSG(scene.GetParent(scene.FindEntityByUUID(childId)).GetUUID() == parentId,
+                     "undo restores parent-child relation");
+    }
+
+    // --- create empty parent wraps same-level selections in one command ------
+    {
+        CommandFixture fix;
+        Entity a = fix.scene.CreateEntity("A");
+        Entity b = fix.scene.CreateEntity("B");
+        Entity c = fix.scene.CreateEntity("C");
+        a.GetComponent<TransformComponent>().localPosition = glm::vec3(1.0f, 0.0f, 0.0f);
+        b.GetComponent<TransformComponent>().localPosition = glm::vec3(2.0f, 0.0f, 0.0f);
+
+        const UUID aId = a.GetUUID();
+        const UUID bId = b.GetUUID();
+        const UUID cId = c.GetUUID();
+        HK_CHECK_MSG(EditorCommands::CanCreateEmptyParent(fix.scene, {aId, bId}), "siblings can be wrapped");
+
+        fix.context.undoRedo.Execute(EditorCommands::CreateEmptyParent(fix.scene, {aId, bId}), fix.context);
+        const UUID wrapperId = fix.context.selection.Primary();
+        Entity wrapper = fix.scene.FindEntityByUUID(wrapperId);
+        HK_CHECK_MSG(wrapper && wrapper.GetName() == "GameObject", "create empty parent selects the wrapper");
+        HK_CHECK_MSG(!fix.scene.GetParent(wrapper), "root siblings produce a root wrapper");
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == wrapperId);
+            HK_CHECK(roots[1] == cId);
+            const std::vector<UUID> children = EntityIds(fix.scene.GetChildren(wrapper));
+            HK_CHECK(children[0] == aId);
+            HK_CHECK(children[1] == bId);
+        }
+        HK_CHECK_NEAR(WorldPosition(fix.scene, aId).x, 1.0f, 1e-5);
+        HK_CHECK_NEAR(WorldPosition(fix.scene, bId).x, 2.0f, 1e-5);
+
+        fix.context.undoRedo.Undo(fix.context);
+        {
+            const std::vector<UUID> roots = EntityIds(fix.scene.GetRootEntities());
+            HK_CHECK(roots[0] == aId);
+            HK_CHECK(roots[1] == bId);
+            HK_CHECK(roots[2] == cId);
+        }
+        HK_CHECK_MSG(!fix.scene.ContainsUUID(wrapperId), "undo removes the wrapper");
+        HK_CHECK_NEAR(fix.scene.FindEntityByUUID(aId).GetComponent<TransformComponent>().localPosition.x, 1.0f,
+                      1e-5);
+        HK_CHECK_NEAR(fix.scene.FindEntityByUUID(bId).GetComponent<TransformComponent>().localPosition.x, 2.0f,
+                      1e-5);
+
+        fix.context.undoRedo.Redo(fix.context);
+        HK_CHECK_MSG(fix.scene.ContainsUUID(wrapperId), "redo restores the same wrapper UUID");
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(aId)).GetUUID() == wrapperId,
+                     "redo reparents first child");
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(bId)).GetUUID() == wrapperId,
+                     "redo reparents second child");
+    }
+
+    // --- create empty parent requires one same-level top-level selection -----
+    {
+        CommandFixture fix;
+        Entity parent = fix.scene.CreateEntity("Parent");
+        Entity child = fix.scene.CreateEntity("Child");
+        Entity sibling = fix.scene.CreateEntity("Sibling");
+        fix.scene.SetParent(child, parent, false);
+
+        HK_CHECK_MSG(EditorCommands::CanCreateEmptyParent(fix.scene, {parent.GetUUID()}),
+                     "single selection can be wrapped");
+        HK_CHECK_MSG(!EditorCommands::CanCreateEmptyParent(fix.scene, {parent.GetUUID(), child.GetUUID()}),
+                     "parent and child selection is not same-level");
+        HK_CHECK_MSG(!EditorCommands::CanCreateEmptyParent(fix.scene, {child.GetUUID(), sibling.GetUUID()}),
+                     "different parent levels are not eligible");
+    }
+
+    // --- default parent resolution drives create-empty parent placement ------
+    {
+        CommandFixture fix;
+        Entity defaultParent = fix.scene.CreateEntity("Default Parent");
+        const UUID defaultParentId = defaultParent.GetUUID();
+        fix.context.SetHierarchyDefaultParent(defaultParentId);
+
+        fix.context.undoRedo.Execute(
+            EditorCommands::CreateEntity("GameObject", fix.context.DefaultParentFor(fix.scene)), fix.context);
+        const UUID childId = fix.context.selection.Primary();
+        HK_CHECK_MSG(fix.scene.GetParent(fix.scene.FindEntityByUUID(childId)).GetUUID() == defaultParentId,
+                     "create empty uses a valid default parent");
+
+        fix.scene.DestroyEntityRecursive(defaultParent);
+        fix.context.undoRedo.Execute(
+            EditorCommands::CreateEntity("GameObject", fix.context.DefaultParentFor(fix.scene)), fix.context);
+        const UUID rootId = fix.context.selection.Primary();
+        HK_CHECK_MSG(!fix.scene.GetParent(fix.scene.FindEntityByUUID(rootId)),
+                     "invalid default parent falls back to root");
     }
 
     // --- clipboard copy + paste creates a fresh-UUID copy -------------------

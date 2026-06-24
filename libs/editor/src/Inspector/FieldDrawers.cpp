@@ -16,6 +16,7 @@
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/ComponentMetadata.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
+#include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 
 namespace Hockey::FieldDrawers {
@@ -84,7 +85,8 @@ WidgetEdit DrawColorControl(const char* label, float* value, int componentCount)
     edit.committed = ImGui::IsItemDeactivatedAfterEdit();
 
     ImGui::SameLine();
-    if (ImGui::SmallButton("Palette")) {
+    if (EditorIconButton(EditorIcon::Settings, "Palette", "Open color palette",
+                         ImVec2(ImGui::GetFrameHeight(), 0.0f))) {
         ImGui::OpenPopup("##palette");
     }
     if (ImGui::IsItemActivated()) {
@@ -138,6 +140,7 @@ WidgetEdit DrawColorControl(const char* label, float* value, int componentCount)
 // asset payload, and a clear button. Returns true when the id changed.
 bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* assetManager) {
     bool changed = false;
+    ImGui::PushID(field.name.c_str());
 
     const AssetType expected =
         field.assetTypeName.empty() ? AssetType::Unknown : AssetTypeFromString(field.assetTypeName);
@@ -181,7 +184,7 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
     // be assigned without dragging from the project tree.
     if (canPick) {
         ImGui::SameLine(0.0f, spacing);
-        if (ImGui::Button("v", ImVec2(clearWidth, 0.0f))) {
+        if (EditorIconButton(EditorIcon::Settings, "Asset Picker", "Open asset picker", ImVec2(clearWidth, 0.0f))) {
             ImGui::OpenPopup("##assetpick");
         }
         if (ImGui::BeginPopup("##assetpick")) {
@@ -206,7 +209,7 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
     }
 
     ImGui::SameLine(0.0f, spacing);
-    if (ImGui::Button("x", ImVec2(clearWidth, 0.0f))) {
+    if (EditorIconButton(EditorIcon::Clear, "Clear Asset", "Clear asset reference", ImVec2(clearWidth, 0.0f))) {
         if (*id != 0) {
             *id = 0;
             changed = true;
@@ -215,6 +218,7 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
     ImGui::SameLine(0.0f, spacing);
     ImGui::TextUnformatted(field.displayName.c_str());
 
+    ImGui::PopID();
     return changed;
 }
 

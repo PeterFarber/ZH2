@@ -16,6 +16,7 @@ add_executable(HockeyEditorTests
     src/ProjectBrowserTests.cpp
     src/ProjectPanelContractTests.cpp
     src/ProjectSettingsPanelContractTests.cpp
+    src/EditorIconContractTests.cpp
     src/EditorTooltipContractTests.cpp
     src/HierarchyPanelContractTests.cpp
 )

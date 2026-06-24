@@ -10,6 +10,7 @@
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/Selection.hpp"
 #include "Hockey/Renderer/Camera.hpp"
 #include "Hockey/Renderer/DebugDraw.hpp"
@@ -168,6 +169,42 @@ void Submit(DebugDraw& debug, Scene& scene, const Selection& selection, float vi
 
         const Basis basis = BasisFromWorld(scene.GetWorldTransform(entity));
         const bool selected = selection.IsSelected(entity.GetUUID());
+
+        if (entity.HasComponent<CameraComponent>() && selected) {
+            DrawCameraFrustum(debug, basis, entity.GetComponent<CameraComponent>(), viewportAspect);
+        }
+
+        if (entity.HasComponent<LightComponent>() && selected) {
+            const LightComponent& light = entity.GetComponent<LightComponent>();
+            switch (light.type) {
+            case LightComponent::Type::Point:
+                debug.DrawSphere(basis.position, std::max(light.range, 0.0f), kDetailColor);
+                break;
+            case LightComponent::Type::Spot:
+                DrawSpotLight(debug, basis, light);
+                break;
+            case LightComponent::Type::Directional:
+                DrawDirectionalLight(debug, basis);
+                break;
+            }
+        }
+    }
+}
+
+void Submit(DebugDraw& debug, EditorContext& context, float viewportAspect) {
+    if (context.activeScene == nullptr) {
+        return;
+    }
+
+    Scene& scene = *context.activeScene;
+    for (Entity entity : scene.GetAllEntities()) {
+        const UUID id = entity.GetUUID();
+        if (context.IsSceneHidden(id) || !entity.HasComponent<TransformComponent>() || !IsCameraOrLight(entity)) {
+            continue;
+        }
+
+        const Basis basis = BasisFromWorld(scene.GetWorldTransform(entity));
+        const bool selected = context.selection.IsSelected(id);
 
         if (entity.HasComponent<CameraComponent>() && selected) {
             DrawCameraFrustum(debug, basis, entity.GetComponent<CameraComponent>(), viewportAspect);

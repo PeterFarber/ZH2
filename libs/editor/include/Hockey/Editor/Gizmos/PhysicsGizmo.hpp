@@ -5,6 +5,7 @@
 namespace Hockey {
 
 class DebugDraw;
+class EditorContext;
 class Scene;
 struct PhysicsViewState;
 
@@ -27,6 +28,7 @@ struct SubmitStats {
 };
 
 SubmitStats Submit(DebugDraw& debug, Scene& scene, const PhysicsViewState& view);
+SubmitStats Submit(DebugDraw& debug, EditorContext& context);
 
 } // namespace PhysicsGizmo
 
