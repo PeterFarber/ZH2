@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 2175547380742926098
+  Name: Ice_GameExport_Baked_PBR
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 0.709
+  Roughness: 1
+  NormalStrength: 0.08
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 11.443
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 1956483358797437224
+    Normal: 3430640482485695819
+    MetallicRoughness: 5265000974720859190
+    Occlusion: 0
+    Emissive: 0

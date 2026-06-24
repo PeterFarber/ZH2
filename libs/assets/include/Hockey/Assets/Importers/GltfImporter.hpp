@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "Hockey/Assets/AssetID.hpp"
 #include "Hockey/Assets/Importer.hpp"
@@ -9,10 +10,10 @@ namespace Hockey {
 
 class AssetDatabase;
 
-// Imports .gltf/.glb models. The model file is the primary asset (AssetType::Model);
-// each glTF mesh and material is registered as a generated sub-asset with a
-// synthetic raw path of the form "<model>#mesh<i>" / "<model>#material<i>" so the
-// mesh/material cookers can re-derive them from the source glTF.
+// Imports .gltf/.glb models. The model file is the primary asset
+// (AssetType::Model); each glTF mesh and material is externalized as a raw
+// asset under data/raw/meshes and data/raw/materials, and glTF textures are
+// copied/externalized under data/raw/textures.
 class GltfImporter : public Importer {
 public:
     bool SupportsExtension(const std::string& extension) const override;
@@ -24,10 +25,17 @@ public:
     }
     ImportResult Import(const ImportContext& context) override;
 
-    // Synthetic raw paths for generated sub-assets. `modelRawPath` is the
-    // project-relative path to the .gltf/.glb file.
+    // Legacy synthetic raw paths for previously generated sub-assets.
+    // `modelRawPath` is the project-relative path to the .gltf/.glb file.
     static std::string MeshSubAssetPath(const std::filesystem::path& modelRawPath, size_t meshIndex);
     static std::string MaterialSubAssetPath(const std::filesystem::path& modelRawPath, size_t materialIndex);
+
+    // Canonical raw paths for newly imported glTF-derived assets. Names are
+    // sanitized and made unique within the model group.
+    static std::vector<std::filesystem::path> MeshAssetPaths(const std::filesystem::path& modelRawPath,
+                                                             const std::vector<std::string>& meshNames);
+    static std::vector<std::filesystem::path> MaterialAssetPaths(const std::filesystem::path& modelRawPath,
+                                                                 const std::vector<std::string>& materialNames);
 
     // True when a raw path refers to a glTF-generated sub-asset.
     static bool IsSubAsset(const std::filesystem::path& rawPath);

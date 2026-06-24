@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/ice.glb
+  MeshIndex: 0
+  Name: Ice_Mesh
+  Materials:
+    - data/raw/materials/ice/Ice_GameExport_Baked_PBR.material.yaml

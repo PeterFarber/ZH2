@@ -128,6 +128,24 @@ void RunMaterialTests() {
         HK_CHECK_MSG(!loaded.value->metallicRoughnessTexture.IsValid(), "unreferenced slot is invalid id");
     }
 
+    if (matMeta != nullptr) {
+        MaterialSource edited = parsed.value;
+        edited.name = "Saved Ice";
+        edited.roughness = 0.42f;
+        HK_CHECK_MSG(static_cast<bool>(MaterialSerializer::SaveFile(workspace / matMeta->rawPath, edited)),
+                     "edited material source saves");
+        HK_CHECK_MSG(static_cast<bool>(manager.ImportAsset(workspace / matMeta->rawPath)), "edited material imports");
+        manager.Database().MarkDirtyWithDependents(matId);
+        HK_CHECK_MSG(static_cast<bool>(manager.CookAllDirty()), "edited material recooks");
+
+        Result<std::shared_ptr<MaterialAsset>> reloaded = manager.Load<MaterialAsset>(matId);
+        HK_CHECK_MSG(static_cast<bool>(reloaded), "reload recooked material");
+        HK_CHECK_MSG(reloaded && reloaded.value->name == "Saved Ice", "recooked material reloads edited name");
+        if (reloaded) {
+            HK_CHECK_NEAR(reloaded.value->roughness, 0.42f, 0.0001f);
+        }
+    }
+
     // Validation passes when every dependency exists.
     HK_CHECK_MSG(static_cast<bool>(manager.ValidateReferences()), "validation passes");
 

@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/wall.glb
+  MeshIndex: 0
+  Name: Wall_Mesh
+  Materials:
+    - data/raw/materials/wall/Wall_GameExport_Baked_PBR.material.yaml

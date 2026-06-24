@@ -1,242 +1,140 @@
 AssetDatabase:
   Version: 1
-  Count: 35
+  Count: 14
 Assets:
   - Asset:
-      ID: 80141887699915581
-      Type: Prefab
-      Name: Home Skater 0.prefab
+      ID: 212105626793489814
+      Type: Model
+      Name: wall
       ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
-      RawPath: data/raw/prefabs/Home Skater 0.prefab.yaml
-      CookedPath: data/cooked/assets/prefabs/80141887699915581.prefab.yaml
-      RawFileTimestamp: 134267039299539062
-      RawFileHash: 2562112295497380682
-      ImportedTimestamp: 1782243571
-      CookedTimestamp: 1782243577
-      Dependencies: []
+      RawPath: data/raw/models/wall.glb
+      CookedPath: data/cooked/assets/models/212105626793489814.model.bin
+      RawFileTimestamp: 134262093458671043
+      RawFileHash: 5404369872927073403
+      ImportedTimestamp: 1782330354
+      CookedTimestamp: 1782330411
+      Dependencies: [2462135637550940025, 616265134277951580]
       Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
   - Asset:
-      ID: 145724039660431269
-      Type: Texture
-      Name: img2_metallicroughness
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/wall.textures/img2_metallicroughness.png
-      CookedPath: data/cooked/assets/textures/145724039660431269.tex.bin
-      RawFileTimestamp: 134263657795669931
-      RawFileHash: 14019008880954760387
-      ImportedTimestamp: 1782243573
-      CookedTimestamp: 1782243582
-      Dependencies: []
-      Dependents: [8730987331800323447]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 521465787391186286
-      Type: Prefab
-      Name: Home Goalie.prefab
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/prefabs/Home Goalie.prefab.yaml
-      CookedPath: data/cooked/assets/prefabs/521465787391186286.prefab.yaml
-      RawFileTimestamp: 134267039299539062
-      RawFileHash: 439225580448040448
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 697963150251689373
-      Type: Texture
-      Name: img0_normal
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/wall.textures/img0_normal.png
-      CookedPath: data/cooked/assets/textures/697963150251689373.tex.bin
-      RawFileTimestamp: 134263657793745710
-      RawFileHash: 5417714054491958733
-      ImportedTimestamp: 1782243572
-      CookedTimestamp: 1782243580
-      Dependencies: []
-      Dependents: [8730987331800323447]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 965257253925100656
-      Type: Texture
-      Name: img0_normal
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/futuristic+robot+3d+model.textures/img0_normal.jpg
-      CookedPath: data/cooked/assets/textures/965257253925100656.tex.bin
-      RawFileTimestamp: 134263657783664190
-      RawFileHash: 17777746548838158823
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: [17547610319020794610]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 2873880758748832952
-      Type: Prefab
-      Name: Away Goalie.prefab
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/prefabs/Away Goalie.prefab.yaml
-      CookedPath: data/cooked/assets/prefabs/2873880758748832952.prefab.yaml
-      RawFileTimestamp: 134267039299539062
-      RawFileHash: 7583551938639373769
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 3154851991967851972
-      Type: Texture
-      Name: img1_basecolor
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/futuristic+robot+3d+model.textures/img1_basecolor.jpg
-      CookedPath: data/cooked/assets/textures/3154851991967851972.tex.bin
-      RawFileTimestamp: 134263657783734174
-      RawFileHash: 16365877728057950863
-      ImportedTimestamp: 1782243571
-      CookedTimestamp: 1782243578
-      Dependencies: []
-      Dependents: [17547610319020794610]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 3343353425502375093
-      Type: Material
-      Name: NewMaterial
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/NewMaterial.material.yaml
-      CookedPath: data/cooked/assets/materials/3343353425502375093.material.yaml
-      RawFileTimestamp: 134267211026593079
-      RawFileHash: 1630173040157842958
-      ImportedTimestamp: 1782247502
-      CookedTimestamp: 1782247502
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 4632069077375506637
-      Type: Scene
-      Name: render_stress.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_stress.scene.yaml
-      CookedPath: data/cooked/assets/scenes/4632069077375506637.scene.yaml
-      RawFileTimestamp: 134267039427459296
-      RawFileHash: 13500328847336146359
-      ImportedTimestamp: 1782243571
-      CookedTimestamp: 1782243577
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 4783489174757999427
-      Type: Scene
-      Name: render_shadows.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_shadows.scene.yaml
-      CookedPath: data/cooked/assets/scenes/4783489174757999427.scene.yaml
-      RawFileTimestamp: 134267039427456041
-      RawFileHash: 5888414859536998384
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 6475334648018065687
-      Type: Scene
-      Name: point_shadow_test.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/point_shadow_test.scene.yaml
-      CookedPath: data/cooked/assets/scenes/6475334648018065687.scene.yaml
-      RawFileTimestamp: 134267039427431405
-      RawFileHash: 15862096751524683058
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 8403497455647703792
-      Type: Scene
-      Name: spot_shadow_test.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/spot_shadow_test.scene.yaml
-      CookedPath: data/cooked/assets/scenes/8403497455647703792.scene.yaml
-      RawFileTimestamp: 134267039427473535
-      RawFileHash: 9268338326066826517
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 8730987331800323447
+      ID: 616265134277951580
       Type: Material
       Name: Wall_GameExport_Baked_PBR
       ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
-      RawPath: data/raw/models/wall.glb#material0
-      CookedPath: data/cooked/assets/materials/8730987331800323447.material.yaml
-      RawFileTimestamp: 0
-      RawFileHash: 0
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243592
-      Dependencies: [9127496354705682751, 697963150251689373, 145724039660431269]
-      Dependents: [14519070248207543035, 11175760132597001527, 12715888057807001399]
+      RawPath: data/raw/materials/wall/Wall_GameExport_Baked_PBR.material.yaml
+      CookedPath: data/cooked/assets/materials/616265134277951580.material.yaml
+      RawFileTimestamp: 134268040106891836
+      RawFileHash: 13695248154056346288
+      ImportedTimestamp: 1782330410
+      CookedTimestamp: 1782330410
+      Dependencies: [11605109223550927380, 15702033425252339247, 18380893089174589515]
+      Dependents: [212105626793489814, 2462135637550940025]
       Dirty: false
       Missing: false
       Cooked: true
   - Asset:
-      ID: 8928267586923371396
-      Type: Prefab
-      Name: Away Skater 0.prefab
+      ID: 1956483358797437224
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/ice/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/1956483358797437224.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782329410
+      Dependencies: []
+      Dependents: [2175547380742926098]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2175547380742926098
+      Type: Material
+      Name: Ice_GameExport_Baked_PBR
       ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
-      RawPath: data/raw/prefabs/Away Skater 0.prefab.yaml
-      CookedPath: data/cooked/assets/prefabs/8928267586923371396.prefab.yaml
-      RawFileTimestamp: 134267039299539062
-      RawFileHash: 6378177688675834300
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
+      RawPath: data/raw/materials/ice/Ice_GameExport_Baked_PBR.material.yaml
+      CookedPath: data/cooked/assets/materials/2175547380742926098.material.yaml
+      RawFileTimestamp: 134268036893885401
+      RawFileHash: 2548985516529074327
+      ImportedTimestamp: 1782330089
+      CookedTimestamp: 1782330089
+      Dependencies: [1956483358797437224, 3430640482485695819, 5265000974720859190]
+      Dependents: [9446198346239280572, 13159441835091159249]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2462135637550940025
+      Type: Mesh
+      Name: Wall_Mesh
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/wall/Wall_Mesh.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/2462135637550940025.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782330354
+      CookedTimestamp: 1782330410
+      Dependencies: [616265134277951580]
+      Dependents: [212105626793489814]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3430640482485695819
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/ice/img0_normal.png
+      CookedPath: data/cooked/assets/textures/3430640482485695819.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782329412
+      Dependencies: []
+      Dependents: [2175547380742926098]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3465686706665373809
+      Type: Scene
+      Name: Main.scene
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/scenes/Main.scene.yaml
+      CookedPath: data/cooked/assets/scenes/3465686706665373809.scene.yaml
+      RawFileTimestamp: 134268019037366553
+      RawFileHash: 12695617322579790416
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782329412
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5265000974720859190
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/ice/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/5265000974720859190.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782329411
+      Dependencies: []
+      Dependents: [2175547380742926098]
       Dirty: false
       Missing: false
       Cooked: true
@@ -250,350 +148,95 @@ Assets:
       CookedPath: data/cooked/assets/scenes/9039238736338702129.scene.yaml
       RawFileTimestamp: 134267031045484262
       RawFileHash: 17188919957134402321
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782329413
       Dependencies: []
       Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
   - Asset:
-      ID: 9127496354705682751
-      Type: Texture
-      Name: img1_basecolor
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/wall.textures/img1_basecolor.png
-      CookedPath: data/cooked/assets/textures/9127496354705682751.tex.bin
-      RawFileTimestamp: 134263657794481315
-      RawFileHash: 6792881179827685327
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243587
-      Dependencies: []
-      Dependents: [8730987331800323447]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 9175991790460576983
-      Type: Scene
-      Name: render_lights.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_lights.scene.yaml
-      CookedPath: data/cooked/assets/scenes/9175991790460576983.scene.yaml
-      RawFileTimestamp: 134267039427441477
-      RawFileHash: 2380283849054575103
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243587
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 9314026843142607525
-      Type: Mesh
-      Name: tripo_mesh_f15f2ae5-71f9-425e-a05b-56ca284fae4e
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/futuristic+robot+3d+model.glb#mesh0
-      CookedPath: data/cooked/assets/meshes/9314026843142607525.mesh.bin
-      RawFileTimestamp: 0
-      RawFileHash: 0
-      ImportedTimestamp: 1782243577
-      CookedTimestamp: 1782243593
-      Dependencies: [17547610319020794610]
-      Dependents: [15016660897869443009]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 9657952321958232363
-      Type: Scene
-      Name: render_test_noshadow.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_test_noshadow.scene.yaml
-      CookedPath: data/cooked/assets/scenes/9657952321958232363.scene.yaml
-      RawFileTimestamp: 134267039427473535
-      RawFileHash: 17149242841577892400
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243587
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 10776435130295672754
-      Type: Scene
-      Name: physics_smoke.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/physics_smoke.scene.yaml
-      CookedPath: data/cooked/assets/scenes/10776435130295672754.scene.yaml
-      RawFileTimestamp: 134267039427419180
-      RawFileHash: 15053702380463724126
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243587
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11150675467615392357
-      Type: Texture
-      Name: img0_normal
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/ice.textures/img0_normal.png
-      CookedPath: data/cooked/assets/textures/11150675467615392357.tex.bin
-      RawFileTimestamp: 134263657787679856
-      RawFileHash: 9959076869665934206
-      ImportedTimestamp: 1782243576
-      CookedTimestamp: 1782243589
-      Dependencies: []
-      Dependents: [11304597749339719697]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11175760132597001527
-      Type: Scene
-      Name: Main.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/Main.scene.yaml
-      CookedPath: data/cooked/assets/scenes/11175760132597001527.scene.yaml
-      RawFileTimestamp: 134267131296822512
-      RawFileHash: 14948453712922860584
-      ImportedTimestamp: 1782243576
-      CookedTimestamp: 1782243595
-      Dependencies: [15640204396032829137, 11304597749339719697, 12715888057807001399, 8730987331800323447]
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11284226548572360889
-      Type: Scene
-      Name: model_showcase.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/model_showcase.scene.yaml
-      CookedPath: data/cooked/assets/scenes/11284226548572360889.scene.yaml
-      RawFileTimestamp: 134267039427403329
-      RawFileHash: 244343152009320363
-      ImportedTimestamp: 1782243576
-      CookedTimestamp: 1782243589
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11304597749339719697
-      Type: Material
-      Name: Ice_GameExport_Baked_PBR
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/ice.glb#material0
-      CookedPath: data/cooked/assets/materials/11304597749339719697.material.yaml
-      RawFileTimestamp: 0
-      RawFileHash: 0
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243593
-      Dependencies: [14631077356004213828, 11150675467615392357, 16402577814615231868]
-      Dependents: [17028253443224574589, 11175760132597001527, 15640204396032829137]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11378009481156763344
-      Type: Scene
-      Name: render_materials.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_materials.scene.yaml
-      CookedPath: data/cooked/assets/scenes/11378009481156763344.scene.yaml
-      RawFileTimestamp: 134267039427441477
-      RawFileHash: 7837328002971075267
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243587
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 11710188927899844599
-      Type: Scene
-      Name: render_test.scene
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/scenes/render_test.scene.yaml
-      CookedPath: data/cooked/assets/scenes/11710188927899844599.scene.yaml
-      RawFileTimestamp: 134267039427465922
-      RawFileHash: 9536562691084171862
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 12715888057807001399
-      Type: Mesh
-      Name: Wall_Mesh
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/wall.glb#mesh0
-      CookedPath: data/cooked/assets/meshes/12715888057807001399.mesh.bin
-      RawFileTimestamp: 0
-      RawFileHash: 0
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243593
-      Dependencies: [8730987331800323447]
-      Dependents: [14519070248207543035, 11175760132597001527]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 14519070248207543035
-      Type: Model
-      Name: wall
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/wall.glb
-      CookedPath: data/cooked/assets/models/14519070248207543035.model.bin
-      RawFileTimestamp: 134263657792854988
-      RawFileHash: 5404369872927073403
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243594
-      Dependencies: [12715888057807001399, 8730987331800323447]
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 14631077356004213828
-      Type: Texture
-      Name: img1_basecolor
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/ice.textures/img1_basecolor.png
-      CookedPath: data/cooked/assets/textures/14631077356004213828.tex.bin
-      RawFileTimestamp: 134263657789310171
-      RawFileHash: 1978525040696978274
-      ImportedTimestamp: 1782243574
-      CookedTimestamp: 1782243585
-      Dependencies: []
-      Dependents: [11304597749339719697]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 15016660897869443009
-      Type: Model
-      Name: futuristic+robot+3d+model
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/futuristic+robot+3d+model.glb
-      CookedPath: data/cooked/assets/models/15016660897869443009.model.bin
-      RawFileTimestamp: 134263657783584963
-      RawFileHash: 12850083541555453715
-      ImportedTimestamp: 1782243577
-      CookedTimestamp: 1782243594
-      Dependencies: [9314026843142607525, 17547610319020794610]
-      Dependents: []
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 15640204396032829137
-      Type: Mesh
-      Name: Ice_Mesh
-      ImporterVersion: 1.0.0
-      CookerVersion: 1.0.0
-      RawPath: data/raw/models/ice.glb#mesh0
-      CookedPath: data/cooked/assets/meshes/15640204396032829137.mesh.bin
-      RawFileTimestamp: 0
-      RawFileHash: 0
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243594
-      Dependencies: [11304597749339719697]
-      Dependents: [17028253443224574589, 11175760132597001527]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 16402577814615231868
-      Type: Texture
-      Name: img2_metallicroughness
-      ImporterVersion: TextureImporter_v1
-      CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/ice.textures/img2_metallicroughness.png
-      CookedPath: data/cooked/assets/textures/16402577814615231868.tex.bin
-      RawFileTimestamp: 134263657790019348
-      RawFileHash: 5227478089830320428
-      ImportedTimestamp: 1782243577
-      CookedTimestamp: 1782243591
-      Dependencies: []
-      Dependents: [11304597749339719697]
-      Dirty: false
-      Missing: false
-      Cooked: true
-  - Asset:
-      ID: 17028253443224574589
+      ID: 9446198346239280572
       Type: Model
       Name: ice
       ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
       RawPath: data/raw/models/ice.glb
-      CookedPath: data/cooked/assets/models/17028253443224574589.model.bin
-      RawFileTimestamp: 134263657786780020
+      CookedPath: data/cooked/assets/models/9446198346239280572.model.bin
+      RawFileTimestamp: 134262086103986481
       RawFileHash: 18013400771115629165
-      ImportedTimestamp: 1782243575
-      CookedTimestamp: 1782243595
-      Dependencies: [15640204396032829137, 11304597749339719697]
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782330089
+      Dependencies: [13159441835091159249, 2175547380742926098]
       Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
   - Asset:
-      ID: 17182408914438858622
+      ID: 11605109223550927380
       Type: Texture
-      Name: img2_metallicroughness
-      ImporterVersion: TextureImporter_v1
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
       CookerVersion: TextureCooker_v1
-      RawPath: data/raw/models/futuristic+robot+3d+model.textures/img2_metallicroughness.jpg
-      CookedPath: data/cooked/assets/textures/17182408914438858622.tex.bin
-      RawFileTimestamp: 134263657783774187
-      RawFileHash: 11750273199480341269
-      ImportedTimestamp: 1782243577
-      CookedTimestamp: 1782243591
+      RawPath: data/raw/textures/wall/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/11605109223550927380.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782330354
+      CookedTimestamp: 1782330356
       Dependencies: []
-      Dependents: [17547610319020794610]
+      Dependents: [616265134277951580]
       Dirty: false
       Missing: false
       Cooked: true
   - Asset:
-      ID: 17547610319020794610
-      Type: Material
-      Name: tripo_mat_f15f2ae5-71f9-425e-a05b-56ca284fae4e
+      ID: 13159441835091159249
+      Type: Mesh
+      Name: Ice_Mesh
       ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
-      RawPath: data/raw/models/futuristic+robot+3d+model.glb#material0
-      CookedPath: data/cooked/assets/materials/17547610319020794610.material.yaml
+      RawPath: data/raw/meshes/ice/Ice_Mesh.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/13159441835091159249.mesh.bin
       RawFileTimestamp: 0
       RawFileHash: 0
-      ImportedTimestamp: 1782243577
-      CookedTimestamp: 1782243592
-      Dependencies: [3154851991967851972, 965257253925100656, 17182408914438858622]
-      Dependents: [9314026843142607525, 15016660897869443009]
+      ImportedTimestamp: 1782329407
+      CookedTimestamp: 1782330089
+      Dependencies: [2175547380742926098]
+      Dependents: [9446198346239280572]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 15702033425252339247
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/wall/img0_normal.png
+      CookedPath: data/cooked/assets/textures/15702033425252339247.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782330354
+      CookedTimestamp: 1782330358
+      Dependencies: []
+      Dependents: [616265134277951580]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 18380893089174589515
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/wall/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/18380893089174589515.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782330354
+      CookedTimestamp: 1782330361
+      Dependencies: []
+      Dependents: [616265134277951580]
       Dirty: false
       Missing: false
       Cooked: true

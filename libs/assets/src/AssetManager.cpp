@@ -91,6 +91,8 @@ AssetType AssetManager::ClassifyExtension(const fs::path& rawPath) {
 
     if (HasSuffix(name, ".material.yaml"))
         return AssetType::Material;
+    if (HasSuffix(name, ".mesh.yaml"))
+        return AssetType::Mesh;
     if (HasSuffix(name, ".scene.yaml"))
         return AssetType::Scene;
     if (HasSuffix(name, ".prefab.yaml"))
@@ -307,6 +309,9 @@ Status AssetManager::ImportMetadata(AssetMetadata& metadata) {
         generated.dirty = true;
         generated.importedTimestamp = metadata.importedTimestamp;
         m_Database.AddOrUpdate(generated);
+        if (!generated.metadataPath.empty() && !IsGeneratedRawPath(generated.rawPath)) {
+            AssetMetadataSerializer::SaveSidecar(AbsoluteRaw(generated.metadataPath), generated);
+        }
     }
 
     m_Database.AddOrUpdate(metadata);
@@ -399,6 +404,7 @@ Status AssetManager::CookMetadata(AssetMetadata& metadata) {
     if (!result.dependencies.empty()) {
         metadata.dependencies = result.dependencies;
     }
+    m_Registry.Unload(metadata.id);
     m_Database.AddOrUpdate(metadata);
     PushEvent({AssetEventType::Cooked, metadata.id, metadata.cookedPath, {}});
     return Status::Ok();
@@ -681,15 +687,20 @@ int AssetManager::PollHotReload(bool autoImport, bool autoCookDirty) {
         }
     }
     if (autoCookDirty) {
+        std::vector<std::pair<AssetID, fs::path>> liveReloadCandidates;
+        for (const auto& [id, projectRel] : reloadCandidates) {
+            if (m_Registry.IsLoaded(id)) {
+                liveReloadCandidates.emplace_back(id, projectRel);
+            }
+        }
+
         CookAllDirty();
         // After recooking, drop any stale runtime instance from the registry so
         // the next Load() picks up the freshly cooked bytes, and surface a
         // Reloaded event for each asset that was actually live.
-        for (const auto& [id, projectRel] : reloadCandidates) {
-            if (m_Registry.IsLoaded(id)) {
-                m_Registry.Unload(id);
-                PushEvent({AssetEventType::Reloaded, id, projectRel, {}});
-            }
+        for (const auto& [id, projectRel] : liveReloadCandidates) {
+            m_Registry.Unload(id);
+            PushEvent({AssetEventType::Reloaded, id, projectRel, {}});
         }
     }
     return static_cast<int>(changed.size());

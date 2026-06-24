@@ -10,6 +10,7 @@
 #include "Hockey/Core/FileSystem.hpp"
 
 #include <fstream>
+#include <vector>
 
 namespace Hockey {
 namespace fs = std::filesystem;
@@ -31,16 +32,39 @@ CookResult ModelCooker::Cook(const CookContext& context) {
     asset.name = metadata.name;
 
     if (context.database != nullptr) {
+        std::vector<std::string> meshNames;
+        meshNames.reserve(scene.value.meshes.size());
+        for (const GltfMeshData& mesh : scene.value.meshes) {
+            meshNames.push_back(mesh.name);
+        }
+        const std::vector<fs::path> meshPaths = GltfImporter::MeshAssetPaths(metadata.rawPath, meshNames);
+
         for (size_t i = 0; i < scene.value.meshes.size(); ++i) {
-            const std::string path = GltfImporter::MeshSubAssetPath(metadata.rawPath, i);
-            if (const AssetMetadata* sub = context.database->FindByRawPath(path)) {
+            const fs::path legacyPath = GltfImporter::MeshSubAssetPath(metadata.rawPath, i);
+            const AssetMetadata* sub = context.database->FindByRawPath(meshPaths[i]);
+            if (sub == nullptr) {
+                sub = context.database->FindByRawPath(legacyPath);
+            }
+            if (sub != nullptr) {
                 asset.meshes.push_back(sub->id);
                 result.dependencies.push_back(sub->id);
             }
         }
+
+        std::vector<std::string> materialNames;
+        materialNames.reserve(scene.value.materials.size());
+        for (const GltfMaterialData& material : scene.value.materials) {
+            materialNames.push_back(material.name);
+        }
+        const std::vector<fs::path> materialPaths = GltfImporter::MaterialAssetPaths(metadata.rawPath, materialNames);
+
         for (size_t i = 0; i < scene.value.materials.size(); ++i) {
-            const std::string path = GltfImporter::MaterialSubAssetPath(metadata.rawPath, i);
-            if (const AssetMetadata* sub = context.database->FindByRawPath(path)) {
+            const fs::path legacyPath = GltfImporter::MaterialSubAssetPath(metadata.rawPath, i);
+            const AssetMetadata* sub = context.database->FindByRawPath(materialPaths[i]);
+            if (sub == nullptr) {
+                sub = context.database->FindByRawPath(legacyPath);
+            }
+            if (sub != nullptr) {
                 asset.materials.push_back(sub->id);
                 result.dependencies.push_back(sub->id);
             }

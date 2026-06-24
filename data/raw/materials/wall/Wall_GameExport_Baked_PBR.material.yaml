@@ -1,0 +1,18 @@
+Material:
+  Name: Wall_GameExport_Baked_PBR
+  Type: PBR
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 0.785
+  Roughness: 0.503
+  NormalStrength: 1.025
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: data/raw/textures/wall/img1_basecolor.png
+    Normal: data/raw/textures/wall/img0_normal.png
+    MetallicRoughness: data/raw/textures/wall/img2_metallicroughness.png

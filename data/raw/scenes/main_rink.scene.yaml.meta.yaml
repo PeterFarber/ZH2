@@ -6,9 +6,9 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/scenes/main_rink.scene.yaml
   CookedPath: data/cooked/assets/scenes/9039238736338702129.scene.yaml
-  RawFileTimestamp: 134262897277650099
-  RawFileHash: 17065664685162641735
-  ImportedTimestamp: 1781818159
+  RawFileTimestamp: 134267031045484262
+  RawFileHash: 17188919957134402321
+  ImportedTimestamp: 1782329407
   CookedTimestamp: 1781816472
   Dependencies: []
   Dependents: []

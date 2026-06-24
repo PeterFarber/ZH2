@@ -13,11 +13,45 @@
 #include <vector>
 
 #include <meshoptimizer.h>
+#include <yaml-cpp/yaml.h>
 
 namespace Hockey {
 namespace fs = std::filesystem;
 
 namespace {
+
+struct MeshDescriptor {
+    fs::path sourceModel;
+    size_t meshIndex = 0;
+    std::vector<fs::path> materialPaths;
+};
+
+Result<MeshDescriptor> LoadMeshDescriptor(const fs::path& path) {
+    YAML::Node root;
+    try {
+        root = YAML::LoadFile(path.string());
+    } catch (const YAML::Exception& e) {
+        return Result<MeshDescriptor>::Fail(std::string("mesh descriptor parse error: ") + e.what());
+    }
+
+    const YAML::Node node = root["Mesh"];
+    if (!node || !node.IsMap()) {
+        return Result<MeshDescriptor>::Fail("mesh descriptor missing top-level 'Mesh' map: " + path.string());
+    }
+    if (!node["SourceModel"] || !node["MeshIndex"]) {
+        return Result<MeshDescriptor>::Fail("mesh descriptor missing SourceModel or MeshIndex: " + path.string());
+    }
+
+    MeshDescriptor descriptor;
+    descriptor.sourceModel = node["SourceModel"].as<std::string>();
+    descriptor.meshIndex = node["MeshIndex"].as<size_t>();
+    if (const YAML::Node materials = node["Materials"]; materials && materials.IsSequence()) {
+        for (const YAML::Node material : materials) {
+            descriptor.materialPaths.push_back(material.as<std::string>());
+        }
+    }
+    return Result<MeshDescriptor>::Ok(std::move(descriptor));
+}
 
 void Optimize(MeshAsset& mesh) {
     const size_t indexCount = mesh.indices.size();
@@ -66,10 +100,24 @@ CookResult MeshCooker::Cook(const CookContext& context) {
     fs::path modelRawPath;
     size_t meshIndex = 0;
     bool isMesh = false;
-    if (!GltfImporter::ParseSubAsset(metadata.rawPath, modelRawPath, meshIndex, isMesh) || !isMesh) {
-        result.success = false;
-        result.error = "mesh cooker expects a glTF mesh sub-asset path, got: " + metadata.rawPath.generic_string();
-        return result;
+    std::vector<fs::path> materialPaths;
+    const bool legacySubAsset = GltfImporter::ParseSubAsset(metadata.rawPath, modelRawPath, meshIndex, isMesh);
+    if (legacySubAsset) {
+        if (!isMesh) {
+            result.success = false;
+            result.error = "mesh cooker got a non-mesh glTF sub-asset path: " + metadata.rawPath.generic_string();
+            return result;
+        }
+    } else {
+        Result<MeshDescriptor> descriptor = LoadMeshDescriptor(context.projectRoot / metadata.rawPath);
+        if (!descriptor) {
+            result.success = false;
+            result.error = descriptor.error;
+            return result;
+        }
+        modelRawPath = descriptor.value.sourceModel;
+        meshIndex = descriptor.value.meshIndex;
+        materialPaths = std::move(descriptor.value.materialPaths);
     }
 
     const fs::path gltfAbsolute = context.projectRoot / modelRawPath;
@@ -101,8 +149,15 @@ CookResult MeshCooker::Cook(const CookContext& context) {
         if (materialIndex < 0 || context.database == nullptr) {
             continue;
         }
-        const std::string materialPath =
-            GltfImporter::MaterialSubAssetPath(modelRawPath, static_cast<size_t>(materialIndex));
+        fs::path materialPath;
+        if (legacySubAsset) {
+            materialPath = GltfImporter::MaterialSubAssetPath(modelRawPath, static_cast<size_t>(materialIndex));
+        } else if (static_cast<size_t>(materialIndex) < materialPaths.size()) {
+            materialPath = materialPaths[static_cast<size_t>(materialIndex)];
+        }
+        if (materialPath.empty()) {
+            continue;
+        }
         if (const AssetMetadata* materialMeta = context.database->FindByRawPath(materialPath)) {
             asset.submeshes[i].materialId = materialMeta->id;
             if (std::find(result.dependencies.begin(), result.dependencies.end(), materialMeta->id) ==

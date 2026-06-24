@@ -1,16 +1,16 @@
 Asset:
-  ID: 11175760132597001527
+  ID: 3465686706665373809
   Type: Scene
   Name: Main.scene
   ImporterVersion: 1.0.0
   CookerVersion: 1.0.0
   RawPath: data/raw/scenes/Main.scene.yaml
-  CookedPath: data/cooked/assets/scenes/11175760132597001527.scene.yaml
-  RawFileTimestamp: 134262196194952645
-  RawFileHash: 2014609549170639624
-  ImportedTimestamp: 1781818161
-  CookedTimestamp: 1781816480
-  Dependencies: [12715888057807001399, 8730987331800323447, 15640204396032829137, 11304597749339719697]
+  CookedPath: data/cooked/assets/scenes/3465686706665373809.scene.yaml
+  RawFileTimestamp: 134268019037366553
+  RawFileHash: 12695617322579790416
+  ImportedTimestamp: 1782329407
+  CookedTimestamp: 1782325310
+  Dependencies: []
   Dependents: []
   Dirty: true
   Missing: false

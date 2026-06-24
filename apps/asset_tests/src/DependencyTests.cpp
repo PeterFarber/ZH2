@@ -140,9 +140,9 @@ void RunDependencyTests() {
 
     // --- model depends on mesh + material; mesh/material chain to texture ---
     AssetMetadata* modelMeta = db.FindByRawPath("data/raw/models/model.gltf");
-    AssetMetadata* meshMeta = db.FindByRawPath("data/raw/models/model.gltf#mesh0");
-    AssetMetadata* modelMatMeta = db.FindByRawPath("data/raw/models/model.gltf#material0");
-    AssetMetadata* modelTexMeta = db.FindByRawPath("data/raw/models/model_basecolor.tga");
+    AssetMetadata* meshMeta = db.FindByRawPath("data/raw/meshes/model/M.mesh.yaml");
+    AssetMetadata* modelMatMeta = db.FindByRawPath("data/raw/materials/model/Mat.material.yaml");
+    AssetMetadata* modelTexMeta = db.FindByRawPath("data/raw/textures/model/model_basecolor.tga");
     HK_CHECK_MSG(modelMeta != nullptr && meshMeta != nullptr && modelMatMeta != nullptr && modelTexMeta != nullptr,
                  "model graph present");
     bool modelHasMesh = false, modelHasMat = false;
@@ -177,7 +177,7 @@ void RunDependencyTests() {
     if (modelTexMeta != nullptr) {
         db.MarkDirtyWithDependents(modelTexMeta->id);
     }
-    modelMatMeta = db.FindByRawPath("data/raw/models/model.gltf#material0");
+    modelMatMeta = db.FindByRawPath("data/raw/materials/model/Mat.material.yaml");
     HK_CHECK_MSG(modelMatMeta != nullptr && modelMatMeta->dirty, "transitive dependent material dirty");
 
     // --- missing dependency is reported ---

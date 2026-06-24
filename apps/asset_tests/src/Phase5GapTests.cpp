@@ -185,8 +185,8 @@ void RunTangentGenerationTests() {
     HK_CHECK_MSG(static_cast<bool>(manager.ImportAll()), "import all ok");
     HK_CHECK_MSG(static_cast<bool>(manager.CookAllDirty()), "cook all dirty ok");
 
-    AssetMetadata* meshMeta = manager.Database().FindByRawPath("data/raw/models/quad.gltf#mesh0");
-    HK_CHECK_MSG(meshMeta != nullptr, "quad mesh sub-asset generated");
+    AssetMetadata* meshMeta = manager.Database().FindByRawPath("data/raw/meshes/quad/Quad.mesh.yaml");
+    HK_CHECK_MSG(meshMeta != nullptr, "quad mesh descriptor generated");
     if (meshMeta == nullptr) {
         manager.Shutdown();
         FileSystem::Remove(workspace);

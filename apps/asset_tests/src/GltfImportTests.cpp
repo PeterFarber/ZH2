@@ -3,6 +3,7 @@
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Assets/Assets/ModelAsset.hpp"
+#include "Hockey/Assets/Serialization/MaterialSerializer.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
 
@@ -128,21 +129,33 @@ void RunGltfImportTests() {
     HK_CHECK_MSG(modelMeta != nullptr, "model discovered");
     HK_CHECK_MSG(modelMeta != nullptr && modelMeta->type == AssetType::Model, "type is model");
 
-    // Generated mesh metadata.
-    AssetMetadata* meshMeta = manager.Database().FindByRawPath("data/raw/models/triangle.gltf#mesh0");
-    HK_CHECK_MSG(meshMeta != nullptr, "mesh sub-asset generated");
+    const fs::path canonicalTexturePath = "data/raw/textures/triangle/tri_basecolor.tga";
+    const fs::path canonicalMaterialPath = "data/raw/materials/triangle/TriMat.material.yaml";
+    const fs::path canonicalMeshPath = "data/raw/meshes/triangle/Triangle.mesh.yaml";
+
+    // Generated mesh metadata and descriptor are routed through the raw meshes folder.
+    AssetMetadata* meshMeta = manager.Database().FindByRawPath(canonicalMeshPath);
+    HK_CHECK_MSG(meshMeta != nullptr, "mesh raw descriptor generated");
     HK_CHECK_MSG(meshMeta != nullptr && meshMeta->type == AssetType::Mesh, "sub-asset is mesh");
     HK_CHECK_MSG(meshMeta != nullptr && meshMeta->name == "Triangle", "mesh name extracted");
+    HK_CHECK_MSG(FileSystem::Exists(workspace / canonicalMeshPath), "mesh descriptor written under raw meshes");
 
-    // Generated material metadata.
-    AssetMetadata* materialMeta = manager.Database().FindByRawPath("data/raw/models/triangle.gltf#material0");
-    HK_CHECK_MSG(materialMeta != nullptr, "material sub-asset generated");
+    // Generated material metadata and authored YAML are routed through the raw materials folder.
+    AssetMetadata* materialMeta = manager.Database().FindByRawPath(canonicalMaterialPath);
+    HK_CHECK_MSG(materialMeta != nullptr, "material raw asset generated");
     HK_CHECK_MSG(materialMeta != nullptr && materialMeta->type == AssetType::Material, "sub-asset is material");
     HK_CHECK_MSG(materialMeta != nullptr && materialMeta->name == "TriMat", "material name");
+    Result<MaterialSource> materialSource = MaterialSerializer::LoadFile(workspace / canonicalMaterialPath);
+    HK_CHECK_MSG(static_cast<bool>(materialSource), "generated material yaml parses");
+    if (materialSource) {
+        HK_CHECK_MSG(materialSource.value.baseColorTexture == canonicalTexturePath.generic_string(),
+                     "generated material references canonical texture path");
+    }
 
     // Texture dependency detection (material -> texture).
-    AssetMetadata* texMeta = manager.Database().FindByRawPath("data/raw/models/tri_basecolor.tga");
+    AssetMetadata* texMeta = manager.Database().FindByRawPath(canonicalTexturePath);
     HK_CHECK_MSG(texMeta != nullptr, "texture discovered");
+    HK_CHECK_MSG(FileSystem::Exists(workspace / canonicalTexturePath), "texture copied under raw textures");
     bool materialDependsOnTexture = false;
     if (materialMeta != nullptr && texMeta != nullptr) {
         for (const AssetID dep : materialMeta->dependencies) {
@@ -164,7 +177,7 @@ void RunGltfImportTests() {
 
     // Cook everything.
     HK_CHECK_MSG(static_cast<bool>(manager.CookAllDirty()), "cook all dirty ok");
-    meshMeta = manager.Database().FindByRawPath("data/raw/models/triangle.gltf#mesh0");
+    meshMeta = manager.Database().FindByRawPath(canonicalMeshPath);
     HK_CHECK_MSG(meshMeta != nullptr && meshMeta->cooked, "mesh cooked");
 
     // Load cooked mesh.

@@ -1,17 +1,17 @@
 Asset:
-  ID: 14519070248207543035
+  ID: 212105626793489814
   Type: Model
   Name: wall
   ImporterVersion: 1.0.0
-  CookerVersion: 1.0.0
+  CookerVersion: ""
   RawPath: data/raw/models/wall.glb
-  CookedPath: data/cooked/assets/models/14519070248207543035.model.bin
+  CookedPath: ""
   RawFileTimestamp: 134262093458671043
   RawFileHash: 5404369872927073403
-  ImportedTimestamp: 1781818159
-  CookedTimestamp: 1781816480
-  Dependencies: [8730987331800323447, 12715888057807001399]
+  ImportedTimestamp: 1782330354
+  CookedTimestamp: 0
+  Dependencies: [616265134277951580, 2462135637550940025]
   Dependents: []
   Dirty: true
   Missing: false
-  Cooked: true
+  Cooked: false
