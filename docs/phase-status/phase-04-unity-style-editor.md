@@ -63,6 +63,7 @@ Source material:
 - [x] Shared editor tooltip helper exists and covers first-pass Toolbar, Hierarchy, Inspector, Project Settings, Project Panel, Scene View Overlay, Prefab, Stats, Console, and Scene Validation controls.
 - [x] Shared Font Awesome editor icon font/helper exists and covers first-pass Toolbar, Main Menu, Project Panel, Hierarchy, Inspector, asset inspector, field drawers, and Scene View Overlay controls.
 - [x] Project Settings tooltips describe scene impact for renderer, lighting/shadow, physics, gameplay, startup scene, asset, and preference controls.
+- [x] Gameplay Tuning panel exposes runtime gameplay settings and YAML tuning values.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 
@@ -94,13 +95,14 @@ Source material:
 - [x] Transform gizmos exist.
 - [x] Selection outline visuals exist.
 - [x] Viewport picking exists.
+- [x] Scene View draws selectable 2D icons for meshless hockey marker components.
 - [x] Full-window screenshot capture exists.
 - [x] Scene/Game viewport screenshot capture exists.
 - [x] Hockey rink tool exists.
-- [x] Hockey spawn tool exists.
+- [x] Hockey spawn tool creates team-owned normal `SpawnPointComponent` markers without role/index fields.
 - [x] Hockey goal tool exists.
 - [x] Hockey puck tool exists.
-- [x] Hockey faceoff tool exists.
+- [x] Hockey faceoff tool creates neutral, Home-penalty, and Away-penalty `SpawnPointComponent` faceoff pools.
 - [x] Hockey camera rig tool exists.
 - [x] Light tool exists.
 

@@ -29,8 +29,12 @@ bool IsActiveGameplayPhase(Scene& scene) {
 
 } // namespace
 
-Status GameplayWorld::Init(Scene& scene, PhysicsWorld* physicsWorld, const GameplaySettings& settings) {
+Status GameplayWorld::Init(Scene& scene,
+                           PhysicsWorld* physicsWorld,
+                           const GameplaySettings& settings,
+                           const GameplayTuning& tuning) {
     m_Settings = settings;
+    m_Tuning = tuning;
     m_PhysicsWorld = physicsWorld;
     m_InputBuffer.Reset();
     m_Events.Clear();
@@ -54,12 +58,16 @@ void GameplayWorld::Shutdown() {
 }
 
 void GameplayWorld::ResetMatch(Scene& scene) {
+    ResetMatchForFaceoff(scene, GameplayTeam::None);
+}
+
+void GameplayWorld::ResetMatchForFaceoff(Scene& scene, GameplayTeam causeTeam) {
     if (!m_Initialized) {
         return;
     }
 
-    ResetSystem::BeginReset(scene, m_Events);
-    ResetSystem::CompleteReset(scene, m_Events);
+    ResetSystem::BeginReset(scene, m_Events, causeTeam);
+    ResetSystem::CompleteReset(scene, m_Events, causeTeam, m_Settings);
 }
 
 void GameplayWorld::PushInput(const GameplayInputFrame& input) {
@@ -71,7 +79,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
         return;
     }
 
-    FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Events);
+    FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
     if (IsActiveGameplayPhase(scene)) {
         PuckPossession::FixedUpdate(scene, m_Events);

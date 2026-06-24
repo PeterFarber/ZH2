@@ -7,6 +7,7 @@
 #include "Hockey/Gameplay/GameplayEvents.hpp"
 #include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
+#include "Hockey/Gameplay/Teams/TeamTypes.hpp"
 #include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 
 namespace Hockey {
@@ -16,10 +17,14 @@ class Scene;
 
 class GameplayWorld {
 public:
-    Status Init(Scene& scene, PhysicsWorld* physicsWorld, const GameplaySettings& settings = {});
+    Status Init(Scene& scene,
+                PhysicsWorld* physicsWorld,
+                const GameplaySettings& settings = {},
+                const GameplayTuning& tuning = {});
     void Shutdown();
 
     void ResetMatch(Scene& scene);
+    void ResetMatchForFaceoff(Scene& scene, GameplayTeam causeTeam);
     void PushInput(const GameplayInputFrame& input);
     void FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t tick);
 

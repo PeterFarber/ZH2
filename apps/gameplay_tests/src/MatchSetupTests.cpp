@@ -1,5 +1,7 @@
 #include "Test.hpp"
 
+#include <vector>
+
 #include <entt/entt.hpp>
 
 #include "Hockey/Core/Paths.hpp"
@@ -24,15 +26,13 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
 
 void AddSpawn(Scene& scene,
               Team team,
-              PlayerRole role,
-              int index,
               const glm::vec3& position,
-              const std::filesystem::path& prefabPath = {}) {
+              const std::filesystem::path& prefabPath = {},
+              bool faceoffSpawn = false) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
-    component.role = role;
-    component.index = index;
+    component.faceoffSpawn = faceoffSpawn;
     component.playerPrefabPath = prefabPath;
     spawn.AddComponent<SpawnPointComponent>(component);
 }
@@ -50,15 +50,13 @@ void BuildValidGameplayScene(Scene& scene) {
     Entity awayGoal = AddMarker(scene, "Away Goal", {0.0f, 0.0f, 28.0f});
     awayGoal.AddComponent<GoalComponent>().defendingTeam = Team::Away;
 
-    Entity faceoff = AddMarker(scene, "Center Faceoff", {0.0f, 0.0f, 0.0f});
-    faceoff.AddComponent<FaceoffSpotComponent>().index = 0;
-
-    for (int i = 0; i < 3; ++i) {
-        AddSpawn(scene, Team::Home, PlayerRole::Skater, i, {-4.0f + static_cast<float>(i) * 2.0f, 0.0f, -4.0f});
-        AddSpawn(scene, Team::Away, PlayerRole::Skater, i, {-4.0f + static_cast<float>(i) * 2.0f, 0.0f, 4.0f});
+    for (int i = 0; i < 4; ++i) {
+        AddSpawn(scene, Team::Home, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, -5.0f});
+        AddSpawn(scene, Team::Away, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, 5.0f});
     }
-    AddSpawn(scene, Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -24.0f});
-    AddSpawn(scene, Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 24.0f});
+    for (int i = 0; i < 8; ++i) {
+        AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 0.0f}, {}, true);
+    }
 }
 
 Entity FindPlayer(Scene& scene, PlayerSlot slot) {
@@ -72,12 +70,16 @@ Entity FindPlayer(Scene& scene, PlayerSlot slot) {
     return {};
 }
 
-Entity FindSpawn(Scene& scene, Team team, PlayerRole role, int index) {
+Entity FindSpawn(Scene& scene, Team team, bool faceoffSpawn, std::size_t skip = 0) {
     auto view = scene.Registry().view<SpawnPointComponent>();
     for (const entt::entity handle : view) {
         Entity spawn(handle, &scene);
         const SpawnPointComponent& component = spawn.GetComponent<SpawnPointComponent>();
-        if (component.team == team && component.role == role && component.index == index) {
+        if (component.team == team && component.faceoffSpawn == faceoffSpawn) {
+            if (skip > 0) {
+                --skip;
+                continue;
+            }
             return spawn;
         }
     }
@@ -172,7 +174,7 @@ void RunMatchSetupTests() {
     {
         Scene prefabSpawnScene("PrefabSpawnScene");
         BuildValidGameplayScene(prefabSpawnScene);
-        Entity homeSpawn = FindSpawn(prefabSpawnScene, Team::Home, PlayerRole::Skater, 0);
+        Entity homeSpawn = FindSpawn(prefabSpawnScene, Team::Home, false);
         HK_CHECK(homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>());
         const std::filesystem::path prefabPath = SavePlayerPrefab();
         if (homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>()) {
@@ -180,7 +182,12 @@ void RunMatchSetupTests() {
         }
 
         HK_CHECK(static_cast<bool>(MatchSystem::InitializeMatch(prefabSpawnScene, settings)));
-        Entity prefabPlayer = FindPlayer(prefabSpawnScene, PlayerSlot::HomeSkater0);
+        Entity prefabPlayer;
+        auto prefabPlayerView = prefabSpawnScene.Registry().view<PlayerComponent, PrefabComponent>();
+        const auto prefabPlayerIt = prefabPlayerView.begin();
+        if (prefabPlayerIt != prefabPlayerView.end()) {
+            prefabPlayer = Entity(*prefabPlayerIt, &prefabSpawnScene);
+        }
         HK_CHECK(prefabPlayer.IsValid());
         if (prefabPlayer.IsValid()) {
             HK_CHECK(prefabPlayer.HasComponent<PrefabComponent>());
@@ -189,11 +196,33 @@ void RunMatchSetupTests() {
                 HK_CHECK_EQ(prefabPlayer.GetComponent<CameraRigMarkerComponent>().purpose,
                             std::string("PrefabSpawnMarker"));
             }
-            HK_CHECK_EQ(prefabPlayer.GetComponent<NameComponent>().name, std::string("HomeSkater0"));
-            HK_CHECK_NEAR(prefabPlayer.GetComponent<TransformComponent>().localPosition.z, -4.0f, 0.001f);
+            HK_CHECK(prefabPlayer.GetComponent<PlayerComponent>().team == GameplayTeam::Home);
+            HK_CHECK_NEAR(prefabPlayer.GetComponent<TransformComponent>().localPosition.z, -5.0f, 0.001f);
             HK_CHECK(prefabPlayer.HasComponent<PlayerRuntimeComponent>());
-            HK_CHECK(prefabPlayer.HasComponent<SkaterComponent>());
             HK_CHECK(prefabPlayer.HasComponent<StickComponent>());
+        }
+    }
+
+    {
+        Scene uniqueScene("UniqueSpawnPoolScene");
+        BuildValidGameplayScene(uniqueScene);
+        GameplaySettings uniqueSettings;
+        uniqueSettings.spawnRandomSeed = 1234u;
+        HK_CHECK(static_cast<bool>(MatchSystem::InitializeMatch(uniqueScene, uniqueSettings)));
+
+        std::vector<glm::vec3> occupiedHomePositions;
+        auto view = uniqueScene.Registry().view<PlayerComponent, TransformComponent>();
+        for (const entt::entity handle : view) {
+            const PlayerComponent& player = view.get<PlayerComponent>(handle);
+            if (player.team == GameplayTeam::Home) {
+                occupiedHomePositions.push_back(view.get<TransformComponent>(handle).localPosition);
+            }
+        }
+        HK_CHECK_EQ(occupiedHomePositions.size(), static_cast<std::size_t>(4));
+        for (std::size_t i = 0; i < occupiedHomePositions.size(); ++i) {
+            for (std::size_t j = i + 1; j < occupiedHomePositions.size(); ++j) {
+                HK_CHECK(occupiedHomePositions[i] != occupiedHomePositions[j]);
+            }
         }
     }
 }

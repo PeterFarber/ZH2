@@ -23,6 +23,13 @@ GameplaySettings LoadGameplaySettings(const Config& config) {
     settings.autoFaceoffAfterGoal = config.GetBool("gameplay.auto_faceoff_after_goal", settings.autoFaceoffAfterGoal);
     settings.postGoalDelaySeconds =
         static_cast<float>(config.GetDouble("gameplay.post_goal_delay_seconds", settings.postGoalDelaySeconds));
+    settings.faceoffDelaySeconds =
+        static_cast<float>(config.GetDouble("gameplay.faceoff_delay_seconds", settings.faceoffDelaySeconds));
+    settings.goalDetectionRadius =
+        static_cast<float>(config.GetDouble("gameplay.goal_detection_radius", settings.goalDetectionRadius));
+    settings.requirePuckForGoal = config.GetBool("gameplay.require_puck_for_goal", settings.requirePuckForGoal);
+    settings.spawnRandomSeed =
+        static_cast<uint32_t>(config.GetInt("gameplay.spawn_random_seed", static_cast<int>(settings.spawnRandomSeed)));
     settings.allowBodyChecking = config.GetBool("gameplay.allow_body_checking", settings.allowBodyChecking);
     settings.allowManualGoalie = config.GetBool("gameplay.allow_manual_goalie", settings.allowManualGoalie);
     settings.allowOutOfPlay = config.GetBool("gameplay.allow_out_of_play", settings.allowOutOfPlay);
@@ -44,6 +51,10 @@ void SaveGameplaySettings(Config& config, const GameplaySettings& settings) {
     config.SetBool("gameplay.stop_clock_after_goal", settings.stopClockAfterGoal);
     config.SetBool("gameplay.auto_faceoff_after_goal", settings.autoFaceoffAfterGoal);
     config.SetDouble("gameplay.post_goal_delay_seconds", settings.postGoalDelaySeconds);
+    config.SetDouble("gameplay.faceoff_delay_seconds", settings.faceoffDelaySeconds);
+    config.SetDouble("gameplay.goal_detection_radius", settings.goalDetectionRadius);
+    config.SetBool("gameplay.require_puck_for_goal", settings.requirePuckForGoal);
+    config.SetInt("gameplay.spawn_random_seed", static_cast<int>(settings.spawnRandomSeed));
     config.SetBool("gameplay.allow_body_checking", settings.allowBodyChecking);
     config.SetBool("gameplay.allow_manual_goalie", settings.allowManualGoalie);
     config.SetBool("gameplay.allow_out_of_play", settings.allowOutOfPlay);

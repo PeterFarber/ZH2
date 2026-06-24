@@ -112,11 +112,11 @@ Entities:
       TargetPosition: [0, 0, 0]
   - Entity: 100000000000022
     NameComponent:
-      Name: Away Goalie Spawn 0
+      Name: Away Spawn 3
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.9, 50]
+      Position: [9, 0.9, 22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -124,16 +124,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Away
-      Role: Goalie
-      Index: 0
-      PlayerPrefabPath: data/raw/prefabs/Away Goalie.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000021
     NameComponent:
-      Name: Away Skater Spawn 2
+      Name: Away Spawn 2
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [6, 0.9, 20]
+      Position: [3, 0.9, 22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -141,16 +139,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Away
-      Role: Skater
-      Index: 2
-      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000020
     NameComponent:
-      Name: Away Skater Spawn 1
+      Name: Away Spawn 1
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.9, 20]
+      Position: [-3, 0.9, 22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -158,16 +154,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Away
-      Role: Skater
-      Index: 1
-      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000019
     NameComponent:
-      Name: Away Skater Spawn 0
+      Name: Away Spawn 0
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [-6, 0.9, 20]
+      Position: [-9, 0.9, 22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -175,16 +169,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Away
-      Role: Skater
-      Index: 0
-      PlayerPrefabPath: data/raw/prefabs/Away Skater 0.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000018
     NameComponent:
-      Name: Home Goalie Spawn 0
+      Name: Home Spawn 3
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.9, -50]
+      Position: [9, 0.9, -22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -192,16 +184,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Home
-      Role: Goalie
-      Index: 0
-      PlayerPrefabPath: data/raw/prefabs/Home Goalie.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000017
     NameComponent:
-      Name: Home Skater Spawn 2
+      Name: Home Spawn 2
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [6, 0.9, -20]
+      Position: [3, 0.9, -22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -209,16 +199,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Home
-      Role: Skater
-      Index: 2
-      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000016
     NameComponent:
-      Name: Home Skater Spawn 1
+      Name: Home Spawn 1
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.9, -20]
+      Position: [-3, 0.9, -22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -226,16 +214,14 @@ Entities:
         []
     SpawnPointComponent:
       Team: Home
-      Role: Skater
-      Index: 1
-      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
+      FaceoffSpawn: false
   - Entity: 100000000000015
     NameComponent:
-      Name: Home Skater Spawn 0
+      Name: Home Spawn 0
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [-6, 0.9, -20]
+      Position: [-9, 0.9, -22]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
@@ -243,63 +229,367 @@ Entities:
         []
     SpawnPointComponent:
       Team: Home
-      Role: Skater
-      Index: 0
-      PlayerPrefabPath: data/raw/prefabs/Home Skater 0.prefab.yaml
-  - Entity: 100000000000014
+      FaceoffSpawn: false
+  - Entity: 100000000000035
     NameComponent:
-      Name: Away Defensive Faceoff Spot
+      Name: Neutral Faceoff Spawn 0
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, 35]
+      Position: [-9, 0, -4]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
       Children:
         []
-    FaceoffSpotComponent:
-      Index: 2
-    FaceoffGameplayComponent:
-      Index: 2
-      CenterIce: false
-      PreferredZone: Away
-  - Entity: 100000000000013
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000036
     NameComponent:
-      Name: Home Defensive Faceoff Spot
+      Name: Neutral Faceoff Spawn 1
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, -35]
+      Position: [-3, 0, -4]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
       Children:
         []
-    FaceoffSpotComponent:
-      Index: 1
-    FaceoffGameplayComponent:
-      Index: 1
-      CenterIce: false
-      PreferredZone: Home
-  - Entity: 100000000000012
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000037
     NameComponent:
-      Name: Center Faceoff Spot
+      Name: Neutral Faceoff Spawn 2
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, 0]
+      Position: [3, 0, -4]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ChildrenComponent:
       Children:
         []
-    FaceoffSpotComponent:
-      Index: 0
-    FaceoffGameplayComponent:
-      Index: 0
-      CenterIce: true
-      PreferredZone: None
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000038
+    NameComponent:
+      Name: Neutral Faceoff Spawn 3
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, -4]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000039
+    NameComponent:
+      Name: Neutral Faceoff Spawn 4
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-9, 0, 4]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000040
+    NameComponent:
+      Name: Neutral Faceoff Spawn 5
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3, 0, 4]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000041
+    NameComponent:
+      Name: Neutral Faceoff Spawn 6
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3, 0, 4]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000042
+    NameComponent:
+      Name: Neutral Faceoff Spawn 7
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, 4]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 100000000000043
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-9, 0, -32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000044
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3, 0, -32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000045
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3, 0, -32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000046
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 3
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, -32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000047
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 4
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-9, 0, -24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000048
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 5
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3, 0, -24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000049
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 6
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3, 0, -24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000050
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 7
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, -24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 100000000000051
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 0
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-9, 0, 24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000052
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 1
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3, 0, 24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000053
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 2
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3, 0, 24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000054
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 3
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, 24]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000055
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 4
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-9, 0, 32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000056
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 5
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-3, 0, 32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000057
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 6
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [3, 0, 32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 100000000000058
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 7
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [9, 0, 32]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
   - Entity: 100000000000011
     NameComponent:
       Name: Away Goal

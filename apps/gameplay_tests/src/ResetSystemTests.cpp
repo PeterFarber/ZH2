@@ -1,5 +1,7 @@
 #include "Test.hpp"
 
+#include <cmath>
+
 #include <entt/entt.hpp>
 
 #include "Hockey/ECS/Components.hpp"
@@ -19,12 +21,11 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
     return entity;
 }
 
-void AddSpawn(Scene& scene, Team team, PlayerRole role, int index, const glm::vec3& position) {
+void AddSpawn(Scene& scene, Team team, const glm::vec3& position, bool faceoffSpawn = false) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
-    component.role = role;
-    component.index = index;
+    component.faceoffSpawn = faceoffSpawn;
     spawn.AddComponent<SpawnPointComponent>(component);
 }
 
@@ -36,14 +37,15 @@ void BuildValidGameplayScene(Scene& scene) {
     AddMarker(scene, "Puck", {0.0f, 0.05f, 0.0f}).AddComponent<PuckComponent>();
     AddMarker(scene, "Home Goal", {0.0f, 0.0f, -28.0f}).AddComponent<GoalComponent>().defendingTeam = Team::Home;
     AddMarker(scene, "Away Goal", {0.0f, 0.0f, 28.0f}).AddComponent<GoalComponent>().defendingTeam = Team::Away;
-    AddMarker(scene, "Center Faceoff", {1.0f, 0.0f, 2.0f}).AddComponent<FaceoffSpotComponent>().index = 0;
-
-    for (int i = 0; i < 3; ++i) {
-        AddSpawn(scene, Team::Home, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, -5.0f});
-        AddSpawn(scene, Team::Away, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, 5.0f});
+    for (int i = 0; i < 4; ++i) {
+        AddSpawn(scene, Team::Home, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, -5.0f});
+        AddSpawn(scene, Team::Away, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, 5.0f});
     }
-    AddSpawn(scene, Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -24.0f});
-    AddSpawn(scene, Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 24.0f});
+    for (int i = 0; i < 8; ++i) {
+        AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 2.0f}, true);
+        AddSpawn(scene, Team::Home, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, -30.0f}, true);
+        AddSpawn(scene, Team::Away, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 30.0f}, true);
+    }
 }
 
 bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) {
@@ -78,6 +80,19 @@ Entity FindMatch(Scene& scene) {
     return it == view.end() ? Entity{} : Entity(*it, &scene);
 }
 
+bool AllPlayersInZBand(Scene& scene, float expectedZ) {
+    auto view = scene.Registry().view<PlayerComponent, TransformComponent>();
+    int count = 0;
+    for (const entt::entity handle : view) {
+        const glm::vec3 position = view.get<TransformComponent>(handle).localPosition;
+        if (std::abs(position.z - expectedZ) > 0.001f) {
+            return false;
+        }
+        ++count;
+    }
+    return count == 8;
+}
+
 } // namespace
 
 void RunResetSystemTests() {
@@ -110,12 +125,11 @@ void RunResetSystemTests() {
         HK_CHECK(SawEvent(events, GameplayEventType::ResetStarted));
         HK_CHECK(SawEvent(events, GameplayEventType::ResetCompleted));
         HK_CHECK_EQ(FindMatch(scene).GetComponent<MatchStateComponent>().phase, MatchPhase::FaceoffSetup);
-        const glm::vec3 expectedPlayerPosition{-2.0f, 0.0f, -5.0f};
         const glm::vec3 zero{0.0f};
-        HK_CHECK_EQ(player.GetComponent<TransformComponent>().localPosition, expectedPlayerPosition);
+        HK_CHECK_NEAR(player.GetComponent<TransformComponent>().localPosition.z, 2.0f, 0.001f);
         HK_CHECK_EQ(player.GetComponent<PlayerRuntimeComponent>().velocity, zero);
         HK_CHECK(!player.GetComponent<SkaterComponent>().hasPuck);
-        const glm::vec3 expectedPuckPosition{1.0f, 0.0f, 2.0f};
+        const glm::vec3 expectedPuckPosition{0.0f, 0.0f, 2.0f};
         HK_CHECK_EQ(puck.GetComponent<TransformComponent>().localPosition, expectedPuckPosition);
         HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
         HK_CHECK(!puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid());
@@ -143,5 +157,22 @@ void RunResetSystemTests() {
         world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
         HK_CHECK_EQ(FindMatch(scene).GetComponent<MatchStateComponent>().phase, MatchPhase::FaceoffSetup);
         HK_CHECK(SawEvent(world.DrainEvents(), GameplayEventType::ResetCompleted));
+    }
+
+    {
+        Scene scene("PenaltyFaceoffResetScene");
+        BuildValidGameplayScene(scene);
+
+        GameplayWorld world;
+        GameplaySettings settings;
+        settings.spawnRandomSeed = 1234u;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+
+        world.ResetMatchForFaceoff(scene, GameplayTeam::Home);
+        HK_CHECK(AllPlayersInZBand(scene, -30.0f));
+
+        world.ResetMatchForFaceoff(scene, GameplayTeam::Away);
+        HK_CHECK(AllPlayersInZBand(scene, 30.0f));
     }
 }

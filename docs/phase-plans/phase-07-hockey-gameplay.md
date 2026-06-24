@@ -46,8 +46,7 @@ stick handling
 puck possession/contact model
 contextual steal/shoot actions
 shooting
-passing
-checking/body-contact hooks
+stealing
 role-specific collider/trigger authoring
 out-of-play handling
 semantic gameplay input model independent from SDL
@@ -168,7 +167,7 @@ goal detection interpretation
 puck state
 player/skater/goalie simulation
 stick interaction model
-shot/pass/check gameplay logic
+steal/shoot gameplay logic
 out-of-play handling
 gameplay event queue
 gameplay scene validation
@@ -278,8 +277,7 @@ libs/
         StickComponents.hpp
         StickHandling.hpp
         ShootingSystem.hpp
-        PassingSystem.hpp
-        CheckingSystem.hpp
+        StealSystem.hpp
 
       Rink/
         RinkGameplayComponents.hpp
@@ -343,8 +341,7 @@ libs/
         StickComponents.cpp
         StickHandling.cpp
         ShootingSystem.cpp
-        PassingSystem.cpp
-        CheckingSystem.cpp
+        StealSystem.cpp
 
       Rink/
         RinkGameplayComponents.cpp
@@ -381,8 +378,7 @@ apps/
       PuckInteractionTests.cpp
       StickHandlingTests.cpp
       ShootingTests.cpp
-      PassingTests.cpp
-      CheckingTests.cpp
+      StealTests.cpp
       GoalDetectionTests.cpp
       ScoreTests.cpp
       FaceoffTests.cpp
@@ -526,7 +522,6 @@ struct GameplaySettings {
     bool autoFaceoffAfterGoal = true;
     float postGoalDelaySeconds = 3.0f;
 
-    bool allowBodyChecking = true;
     bool allowManualGoalie = true;
     bool allowOutOfPlay = true;
 
@@ -627,7 +622,6 @@ Puck:
 Stick:
   Reach: 1.5
   Width: 0.25
-  PokeCheckCooldown: 0.35
 
 Shot:
   MinPower: 8.0
@@ -635,16 +629,6 @@ Shot:
   ChargeSeconds: 1.0
   SelfCollisionGraceSeconds: 0.20
   AccuracyDegrees: 4.0
-
-Pass:
-  Power: 18.0
-  AssistRadius: 2.0
-  MaxAssistAngleDegrees: 25.0
-
-Check:
-  Cooldown: 0.75
-  Impulse: 8.0
-  Radius: 1.25
 ```
 
 Rules should include:
@@ -811,8 +795,6 @@ enum class GameplayEventType {
     GoalieShieldStarted,
     GoalieShieldEnded,
     PuckShot,
-    PuckPassed,
-    PlayerChecked,
     PuckOutOfPlay,
     ResetStarted,
     ResetCompleted,
@@ -860,8 +842,6 @@ struct GameplayInputFrame {
     bool clearMoveTarget = false;
 
     bool stealPressed = false;
-    bool stealHeld = false;
-    bool stealReleased = false;
 
     bool boostPressed = false;
     bool brakePressed = false;
@@ -872,12 +852,6 @@ struct GameplayInputFrame {
     bool shootHeld = false;
     bool shootReleased = false;
 
-    bool passPressed = false;
-    bool passHeld = false;
-    bool passReleased = false;
-
-    bool checkPressed = false;
-    bool pokeCheckPressed = false;
     bool switchPlayerPressed = false;
 
     bool goalieShieldPressed = false;
@@ -907,7 +881,7 @@ Input is independent from SDL.
 Input represents semantic gameplay actions, not mouse/key names.
 Input sequence fields prepare for Phase 8 networking.
 No networking code is implemented in Phase 7.
-Client mapping follows `GAMEPLAY.md`: left click is contextual steal without puck and shot charge/release with puck, mouse cursor on the ice sets shot aim while shooting, right click sets a waypoint, Z boosts, X quick-turns skaters or shields goalies, and S brakes/clears waypoint/double-tap stops.
+Client mapping follows `GAMEPLAY.md`: left click is contextual click-only steal without puck and shot charge/release with puck, mouse cursor on the ice sets shot aim while shooting, right click sets a waypoint, Z boosts, X quick-turns skaters or shields goalies, and S brakes/clears waypoint/double-tap stops.
 ```
 
 ## 6.4 Client Input Translation
@@ -971,8 +945,6 @@ struct PlayerRuntimeComponent {
     float shieldTimer = 0.0f;
     float shieldCooldown = 0.0f;
     float lastBrakePressedTime = -1000.0f;
-    float checkCooldown = 0.0f;
-    float pokeCheckCooldown = 0.0f;
 
     bool hasMoveTarget = false;
     bool shieldActive = false;
@@ -996,7 +968,6 @@ enum class PuckState {
     Loose,
     Possessed,
     Shot,
-    Passed,
     Frozen,
     Resetting
 };
@@ -1039,22 +1010,11 @@ struct StickComponent {
 
     bool canControlPuck = true;
     bool canShoot = true;
-    bool canPass = true;
-    bool canCheck = true;
 };
 
 struct ShotComponent {
     float charge = 0.0f;
     bool charging = false;
-};
-
-struct PassComponent {
-    UUID targetPlayer;
-    float assistRadius = 2.0f;
-};
-
-struct CheckComponent {
-    float cooldown = 0.0f;
 };
 ```
 
@@ -1080,10 +1040,11 @@ struct OutOfPlayComponent {
     float minY = -5.0f;
 };
 
-struct FaceoffGameplayComponent {
-    int index = 0;
-    bool centerIce = false;
-    GameplayTeam preferredZone = GameplayTeam::None;
+struct FaceoffComponent {
+    GameplayTeam causeTeam = GameplayTeam::None;
+    uint32_t spawnSequence = 0;
+    float timer = 0.0f;
+    bool locked = false;
 };
 ```
 
@@ -1114,11 +1075,9 @@ PuckGameplayComponent
 PuckRuntimeComponent where useful or runtime-only
 StickComponent
 ShotComponent
-PassComponent
-CheckComponent
 GoalGameplayComponent
 OutOfPlayComponent
-FaceoffGameplayComponent
+FaceoffComponent
 ```
 
 Rules:
@@ -1202,7 +1161,7 @@ Gameplay fixed tick order:
 5. Update goalie movement intent.
 6. Update stick positions/interactions.
 7. Update puck possession rules.
-8. Process shooting/pass/check actions.
+8. Process steal and shooting actions.
 9. Apply forces/velocities to physics bodies.
 10. Step physics through PhysicsSystem or coordinate with scene physics step.
 11. Read physics events.
@@ -1648,7 +1607,8 @@ Only one player can possess puck.
 Puck possession follows stick/control radius.
 Possession sets PuckGameplayComponent state to Possessed.
 Possessed puck position follows player/stick offset.
-Shot/pass/steal/check/goal/reset/out-of-play releases possession.
+Shot/goal/reset/out-of-play releases possession.
+Steal directly transfers possession from the current possessor to the stealing player when in range.
 Loose puck can be touched/controlled.
 ```
 
@@ -1665,7 +1625,7 @@ Handle:
 ```text
 loose puck pickup
 puck last touched player/team
-puck deflection by player/goalie/stick
+puck contact response by player/goalie/stick
 puck possession changes
 ```
 
@@ -1722,84 +1682,42 @@ No final animation/audio.
 
 ---
 
-# 19. Passing System
+# 19. Steal System
 
 Files:
 
 ```text
-Stick/PassingSystem.hpp/cpp
+Stick/StealSystem.hpp/cpp
 ```
 
 Implement:
 
 ```cpp
-class PassingSystem {
+class StealSystem {
 public:
-    static Entity FindBestPassTarget(Scene& scene, Entity passer, glm::vec2 aim, const GameplayTuning& tuning);
-    static void TryPass(Scene& scene, PhysicsWorld& physics, Entity player, Entity puck, const GameplayInputFrame& input, const GameplayTuning& tuning);
-};
-```
-
-Behavior:
-
-```text
-passPressed attempts pass
-requires possession or puck in stick range
-find teammate target based on aim cone
-assist target if within angle/radius
-release possession
-apply puck velocity toward target or aim direction
-emit PuckPassed
-```
-
-No networking.
-
-No UI pass target indicators required.
-
----
-
-# 20. Checking System
-
-Files:
-
-```text
-Stick/CheckingSystem.hpp/cpp
-```
-
-Implement:
-
-```cpp
-class CheckingSystem {
-public:
-    static void TryBodyCheck(Scene& scene, PhysicsWorld& physics, Entity player, const GameplayInputFrame& input, const GameplayTuning& tuning);
     static void TrySteal(Scene& scene, PhysicsWorld& physics, Entity player, Entity puck, const GameplayInputFrame& input, const GameplayTuning& tuning);
-    static void TryPokeCheck(Scene& scene, PhysicsWorld& physics, Entity player, Entity puck, const GameplayInputFrame& input, const GameplayTuning& tuning);
 };
 ```
 
 Behavior:
 
 ```text
-stealPressed/stealHeld attempts puck-first steal when player does not possess puck
-steal uses stick/control volume in front of player
+stealPressed attempts one puck-first steal when player does not possess puck
+steal uses stick/control volume in front of player and checks the current puck possessor
 steal has cooldown even on failed attempts
-steal can release opponent possession when in range
-body check has cooldown
-body check applies impulse/interaction to nearby opposing player
-poke check has cooldown
-poke check can knock puck loose if in stick range
-checking disabled if settings disallow body checking
-emit PlayerChecked
+steal directly transfers possession when the current possessor is in range
+steal does not make the puck loose as an intermediate result
 emit StealAttempted when useful for feedback/presentation
 ```
 
-No penalties system yet unless trivially represented as future field.
+Do not add passing, body checking, or poke checking. Contact can still exist as
+ordinary physics response, but gameplay exposes no check command or check event.
 
 ---
 
-# 21. Goal Detection and Score
+# 20. Goal Detection and Score
 
-## 21.1 Goal Detection
+## 20.1 Goal Detection
 
 Files:
 
@@ -1827,7 +1745,7 @@ ignore repeated goal trigger events while phase is GoalScored/Resetting
 emit GoalScored
 ```
 
-## 21.2 ScoreSystem
+## 20.2 ScoreSystem
 
 Files:
 
@@ -2064,9 +1982,9 @@ GoalieComponent
 PuckGameplayComponent
 StickComponent
 GoalGameplayComponent
-FaceoffGameplayComponent
 OutOfPlayComponent
 MatchStateComponent
+FaceoffComponent
 ```
 
 Runtime fields should be read-only where appropriate.
@@ -2095,13 +2013,12 @@ Goal tool:
   trigger collider
 
 Spawn tool:
-  SpawnPointComponent
+  SpawnPointComponent with FaceoffSpawn=false
   TeamComponent
-  PlayerRoleComponent
 
 Faceoff tool:
-  FaceoffSpotComponent
-  FaceoffGameplayComponent
+  SpawnPointComponent with FaceoffSpawn=true
+  neutral/Home/Away faceoff spawn pools
 
 Rink tool:
   RinkComponent
@@ -2156,8 +2073,7 @@ Minimum temporary controls:
 WASD/left stick direct movement fallback
 mouse/right stick aim
 right click set waypoint
-left click contextual steal or shot charge/release
-pass button/key
+left click contextual click-only steal or shot charge/release
 Z boost
 X skater slide stop / goalie shield
 S brake, clear waypoint, double-tap full stop
@@ -2363,35 +2279,19 @@ shot power clamps
 PuckShot event emitted
 ```
 
-## 29.11 PassingTests
+## 29.11 StealTests
 
 Test:
 
 ```text
-pass finds teammate target
-pass ignores opponent
-pass uses aim cone
-pass applies puck velocity
-PuckPassed event emitted
-```
-
-## 29.12 CheckingTests
-
-Test:
-
-```text
-body check cooldown works
-body check affects nearby opponent
 left click without possession attempts steal in client input
-steal releases opponent possession when in range
+steal takes possession directly from the current possessor when in range
 steal cooldown applies on failed attempts
-poke check can release puck
-checking disabled setting prevents body check
-PlayerChecked event emitted
 StealAttempted event emitted when useful
+steal does not expose held/released, pass, body-check, or poke-check input
 ```
 
-## 29.13 GoalDetectionTests
+## 29.12 GoalDetectionTests
 
 Test:
 
@@ -2403,7 +2303,7 @@ repeated trigger while GoalScored ignored
 GoalScored event emitted
 ```
 
-## 29.14 ScoreTests
+## 29.13 ScoreTests
 
 Test:
 
@@ -2415,7 +2315,7 @@ TeamState score updates
 ScoreChanged event emitted
 ```
 
-## 29.15 FaceoffTests
+## 29.14 FaceoffTests
 
 Test:
 
@@ -2429,7 +2329,7 @@ phase becomes Playing
 events emitted
 ```
 
-## 29.16 PeriodClockTests
+## 29.15 PeriodClockTests
 
 Test:
 
@@ -2447,7 +2347,7 @@ period ends at zero
 match ends after final period
 ```
 
-## 29.17 ResetSystemTests
+## 29.16 ResetSystemTests
 
 Test:
 
@@ -2460,7 +2360,7 @@ reset transitions to faceoff
 events emitted
 ```
 
-## 29.18 GameplayValidationTests
+## 29.17 GameplayValidationTests
 
 Test:
 
@@ -2478,7 +2378,7 @@ goalie-only collider authoring works
 goal trigger scores only puck
 ```
 
-## 29.19 GameplaySnapshotTests
+## 29.18 GameplaySnapshotTests
 
 Test:
 
@@ -2491,7 +2391,7 @@ snapshot updates after movement/goal
 snapshot has no networking dependency
 ```
 
-## 29.20 HeadlessServerGameplayTests
+## 29.19 HeadlessServerGameplayTests
 
 Test:
 
@@ -2559,13 +2459,11 @@ Implement in this exact order.
 8. Add PuckRuntimeComponent.
 9. Add StickComponent.
 10. Add ShotComponent.
-11. Add PassComponent.
-12. Add CheckComponent.
-13. Add GoalGameplayComponent.
-14. Add FaceoffGameplayComponent.
-15. Add OutOfPlayComponent.
-16. Add serialization/metadata.
-17. Build and test.
+11. Add GoalGameplayComponent.
+12. Add FaceoffComponent runtime state.
+13. Add OutOfPlayComponent.
+14. Add serialization/metadata.
+15. Build and test.
 ```
 
 ## Step 5 — Validation and Match Setup
@@ -2622,20 +2520,18 @@ Implement in this exact order.
 11. Add GoalieMovementTests.
 ```
 
-## Step 9 — Puck, Stick, Shot, Pass, Check
+## Step 9 — Puck, Stick, Shot, Steal
 
 ```text
 1. Add PuckPossession.
 2. Add PuckInteraction.
 3. Add StickHandling.
 4. Add ShootingSystem.
-5. Add PassingSystem.
-6. Add CheckingSystem with explicit steal action.
-7. Add PuckInteractionTests.
-8. Add StickHandlingTests.
-9. Add ShootingTests.
-10. Add PassingTests.
-11. Add CheckingTests and StealTests if split out.
+5. Add StealSystem.
+6. Add PuckInteractionTests.
+7. Add StickHandlingTests.
+8. Add ShootingTests.
+9. Add StealTests.
 ```
 
 ## Step 10 — Goal, Score, Out-of-Play
@@ -2771,7 +2667,7 @@ GoalieComponent serializes
 PuckGameplayComponent serializes
 StickComponent serializes
 GoalGameplayComponent serializes
-FaceoffGameplayComponent serializes
+FaceoffComponent serializes
 gameplay metadata registered
 gameplay validation works
 valid rink scene initializes match
@@ -2779,7 +2675,7 @@ valid rink scene initializes match
 3 skaters + 1 goalie per team works
 team assignment works
 role assignment works
-spawn assignment works
+deterministic spawn pool assignment works
 puck setup works
 faceoff works
 period clock works
@@ -2800,8 +2696,8 @@ stick control works
 puck possession works
 contextual left-click steal-or-shot behavior works
 shooting works
-passing works
-checking/poke check hooks work
+stealing works
+pass/body-check/poke-check actions are absent
 role-specific skater-only and goalie-only collider authoring works
 goal trigger scoring is puck-only
 gameplay snapshots work
@@ -2844,8 +2740,7 @@ Implemented:
 - stick handling
 - puck possession
 - shooting
-- passing
-- checking/poke check hooks
+- stealing
 - goal detection
 - score system
 - period clock

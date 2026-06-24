@@ -185,27 +185,13 @@ Status ApplyOne(Scene& scene, const PrefabOverride& ov) {
         }
         if (ov.fieldName == "Team") {
             component->team = TeamFromString(ov.value.as<std::string>());
-        } else if (ov.fieldName == "Role") {
-            component->role = PlayerRoleFromString(ov.value.as<std::string>());
-        } else if (ov.fieldName == "Index") {
-            component->index = ov.value.as<int>();
+        } else if (ov.fieldName == "FaceoffSpawn") {
+            component->faceoffSpawn = ov.value.as<bool>();
         } else if (ov.fieldName == "PlayerPrefabPath") {
             component->playerPrefabPath = ov.value.as<std::string>();
         } else {
             return Fail("unknown SpawnPointComponent field '" + ov.fieldName + "'");
         }
-        return Status::Ok();
-    }
-
-    if (ov.componentName == "FaceoffSpotComponent") {
-        auto* component = registry.try_get<FaceoffSpotComponent>(handle);
-        if (component == nullptr) {
-            return Fail("missing FaceoffSpotComponent");
-        }
-        if (ov.fieldName != "Index") {
-            return Fail("unknown FaceoffSpotComponent field '" + ov.fieldName + "'");
-        }
-        component->index = ov.value.as<int>();
         return Status::Ok();
     }
 

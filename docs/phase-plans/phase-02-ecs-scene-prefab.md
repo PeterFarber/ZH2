@@ -493,12 +493,8 @@ struct GoalComponent {
 
 struct SpawnPointComponent {
     Team team = Team::None;
-    PlayerRole role = PlayerRole::Skater;
-    int index = 0;
-};
-
-struct FaceoffSpotComponent {
-    int index = 0;
+    bool faceoffSpawn = false;
+    std::filesystem::path playerPrefabPath;
 };
 
 struct RinkComponent {
@@ -514,7 +510,7 @@ struct CameraRigMarkerComponent {
 };
 ```
 
-Do not add actual movement, puck physics, shooting, passing, checking, or scoring logic in Phase 2.
+Do not add actual movement, puck physics, stealing, shooting, or scoring logic in Phase 2.
 
 ---
 
@@ -1157,7 +1153,6 @@ PlayerRoleComponent
 PuckComponent
 GoalComponent
 SpawnPointComponent
-FaceoffSpotComponent
 RinkComponent
 PlayAreaComponent
 CameraRigMarkerComponent
@@ -1221,7 +1216,6 @@ PlayerRoleComponent
 PuckComponent
 GoalComponent
 SpawnPointComponent
-FaceoffSpotComponent
 RinkComponent
 PlayAreaComponent
 CameraRigMarkerComponent
@@ -1402,13 +1396,13 @@ ChildrenComponent child UUIDs exist
 parent/child links match
 no cyclic hierarchy
 spawn point index >= 0
-spawn point team/role valid
-faceoff spot index >= 0
+normal spawn point team is Home or Away
+faceoff spawn point can use Team None/Home/Away
 goal defending team is Home or Away
 hockey scene warning if no puck marker exists
 hockey scene warning if fewer than 2 goals exist
 hockey scene warning if more than 2 goals exist
-hockey scene warning if missing skater/goalie spawn markers
+hockey scene warning if missing normal team spawn markers
 ```
 
 Warnings should not fail scene loading unless severe.

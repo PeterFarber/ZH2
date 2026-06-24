@@ -28,6 +28,7 @@ void RunGameplayComponentTests() {
     HK_CHECK(ComponentRegistry::Get().FindByName("PassComponent") != nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("CheckComponent") != nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("FaceoffComponent") != nullptr);
+    HK_CHECK(ComponentRegistry::Get().FindByName("FaceoffGameplayComponent") == nullptr);
     HK_CHECK(ComponentRegistry::Get().FindByName("RespawnComponent") != nullptr);
 
     Scene scene("GameplayRoundTrip");
@@ -71,8 +72,11 @@ void RunGameplayComponentTests() {
     goalGameplay.defendingTeam = GameplayTeam::Away;
     goal.AddComponent<GoalGameplayComponent>(goalGameplay);
     goal.AddComponent<OutOfPlayComponent>().minY = -6.0f;
-    goal.AddComponent<FaceoffGameplayComponent>().centerIce = true;
-    goal.AddComponent<FaceoffComponent>().locked = true;
+    FaceoffComponent faceoff;
+    faceoff.causeTeam = GameplayTeam::Away;
+    faceoff.spawnSequence = 42;
+    faceoff.locked = true;
+    goal.AddComponent<FaceoffComponent>(faceoff);
 
     Entity team = scene.CreateEntity("Home Team State");
     TeamStateComponent teamState;
@@ -114,7 +118,8 @@ void RunGameplayComponentTests() {
     HK_CHECK_EQ(loadedGoal.GetComponent<GoalGameplayComponent>().scoringTeam, GameplayTeam::Home);
     HK_CHECK_EQ(loadedGoal.GetComponent<GoalGameplayComponent>().defendingTeam, GameplayTeam::Away);
     HK_CHECK_NEAR(loadedGoal.GetComponent<OutOfPlayComponent>().minY, -6.0f, 0.0001f);
-    HK_CHECK(loadedGoal.GetComponent<FaceoffGameplayComponent>().centerIce);
+    HK_CHECK_EQ(loadedGoal.GetComponent<FaceoffComponent>().causeTeam, GameplayTeam::Away);
+    HK_CHECK_EQ(loadedGoal.GetComponent<FaceoffComponent>().spawnSequence, 42u);
     HK_CHECK(loadedGoal.GetComponent<FaceoffComponent>().locked);
 
     Entity loadedTeam = loaded.FindEntityByName("Home Team State");

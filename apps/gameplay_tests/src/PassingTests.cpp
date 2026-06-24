@@ -21,12 +21,11 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
     return entity;
 }
 
-void AddSpawn(Scene& scene, Team team, PlayerRole role, int index, const glm::vec3& position) {
+void AddSpawn(Scene& scene, Team team, const glm::vec3& position, bool faceoffSpawn = false) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
-    component.role = role;
-    component.index = index;
+    component.faceoffSpawn = faceoffSpawn;
     spawn.AddComponent<SpawnPointComponent>(component);
 }
 
@@ -38,14 +37,13 @@ void BuildValidGameplayScene(Scene& scene) {
     AddMarker(scene, "Puck", {0.0f, 0.05f, 0.0f}).AddComponent<PuckComponent>();
     AddMarker(scene, "Home Goal", {0.0f, 0.0f, -28.0f}).AddComponent<GoalComponent>().defendingTeam = Team::Home;
     AddMarker(scene, "Away Goal", {0.0f, 0.0f, 28.0f}).AddComponent<GoalComponent>().defendingTeam = Team::Away;
-    AddMarker(scene, "Center Faceoff", {0.0f, 0.0f, 0.0f}).AddComponent<FaceoffSpotComponent>().index = 0;
-
-    for (int i = 0; i < 3; ++i) {
-        AddSpawn(scene, Team::Home, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, -5.0f});
-        AddSpawn(scene, Team::Away, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, 5.0f});
+    for (int i = 0; i < 4; ++i) {
+        AddSpawn(scene, Team::Home, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, -5.0f});
+        AddSpawn(scene, Team::Away, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, 5.0f});
     }
-    AddSpawn(scene, Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -24.0f});
-    AddSpawn(scene, Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 24.0f});
+    for (int i = 0; i < 8; ++i) {
+        AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 0.0f}, true);
+    }
 }
 
 Entity FindPlayer(Scene& scene, PlayerSlot slot) {

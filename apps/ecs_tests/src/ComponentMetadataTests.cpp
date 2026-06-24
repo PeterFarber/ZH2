@@ -1,5 +1,7 @@
 #include "Test.hpp"
 
+#include <type_traits>
+
 #include "Hockey/ECS/ComponentMetadata.hpp"
 #include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Components.hpp"
@@ -27,6 +29,16 @@ const FieldMetadata* FindField(const ComponentMetadata& md, const std::string& n
     }
     return nullptr;
 }
+
+template <typename T, typename = void> struct HasSpawnRoleField : std::false_type {};
+template <typename T> struct HasSpawnRoleField<T, std::void_t<decltype(&T::role)>> : std::true_type {};
+
+template <typename T, typename = void> struct HasSpawnIndexField : std::false_type {};
+template <typename T> struct HasSpawnIndexField<T, std::void_t<decltype(&T::index)>> : std::true_type {};
+
+template <typename T, typename = void> struct HasFaceoffSpawnField : std::false_type {};
+template <typename T>
+struct HasFaceoffSpawnField<T, std::void_t<decltype(&T::faceoffSpawn)>> : std::true_type {};
 
 } // namespace
 
@@ -75,8 +87,16 @@ void RunComponentMetadataTests() {
     HK_CHECK(spawn != nullptr);
     if (spawn != nullptr) {
         HK_CHECK_EQ(spawn->category, std::string("Hockey"));
+        HK_CHECK(HasField(*spawn, "Team"));
+        HK_CHECK(HasField(*spawn, "FaceoffSpawn"));
         HK_CHECK(HasField(*spawn, "PlayerPrefabPath"));
+        HK_CHECK(!HasField(*spawn, "Role"));
+        HK_CHECK(!HasField(*spawn, "Index"));
     }
+    HK_CHECK(!HasSpawnRoleField<SpawnPointComponent>::value);
+    HK_CHECK(!HasSpawnIndexField<SpawnPointComponent>::value);
+    HK_CHECK(HasFaceoffSpawnField<SpawnPointComponent>::value);
+    HK_CHECK(registry.FindByName("FaceoffSpotComponent") == nullptr);
 
     const ComponentMetadata* light = registry.FindByName("LightComponent");
     HK_CHECK(light != nullptr);

@@ -1,5 +1,7 @@
 #include "Hockey/Gameplay/Rink/GoalDetection.hpp"
 
+#include <algorithm>
+
 #include <entt/entt.hpp>
 #include <glm/geometric.hpp>
 
@@ -42,7 +44,7 @@ bool GoalDetection::HandleGoalTrigger(Scene& scene,
                                       const GameplaySettings& settings,
                                       GameplayEventQueue& events) {
     if (!CanScore(scene) || !goal.IsValid() || !other.IsValid() || !goal.HasComponent<GoalGameplayComponent>() ||
-        !other.HasComponent<PuckComponent>()) {
+        (settings.requirePuckForGoal && !other.HasComponent<PuckComponent>())) {
         return false;
     }
 
@@ -75,7 +77,8 @@ void GoalDetection::FixedUpdate(Scene& scene, const GameplaySettings& settings, 
         }
 
         const glm::vec3 goalPosition = goal.GetComponent<TransformComponent>().localPosition;
-        if (glm::length(puckPosition - goalPosition) <= 1.0f) {
+        const float radius = std::max(0.0f, settings.goalDetectionRadius);
+        if (glm::length(puckPosition - goalPosition) <= radius) {
             ScoreSystem::AddGoal(scene, gameplay.scoringTeam, settings, events);
             return;
         }

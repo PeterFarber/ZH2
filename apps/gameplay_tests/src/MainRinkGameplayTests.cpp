@@ -59,7 +59,9 @@ void RunMainRinkGameplayTests() {
         Entity playerEntity = scene.FindEntityByUUID(player.entity);
         HK_CHECK(playerEntity.IsValid());
         if (playerEntity.IsValid()) {
-            HK_CHECK(playerEntity.HasComponent<MeshRendererComponent>());
+            HK_CHECK(playerEntity.HasComponent<PlayerComponent>());
+            HK_CHECK(playerEntity.HasComponent<PlayerRuntimeComponent>());
+            HK_CHECK(playerEntity.HasComponent<StickComponent>());
             if (playerEntity.HasComponent<MeshRendererComponent>()) {
                 HK_CHECK(playerEntity.GetComponent<MeshRendererComponent>().castsShadows);
             }

@@ -1,5 +1,9 @@
 #include "Hockey/Gameplay/Match/ResetSystem.hpp"
 
+#include <algorithm>
+#include <random>
+#include <vector>
+
 #include <entt/entt.hpp>
 
 #include "Hockey/ECS/Components.hpp"
@@ -10,33 +14,19 @@
 namespace Hockey {
 namespace {
 
-GameplayTeam ToGameplayTeam(Team team) {
-    switch (team) {
-    case Team::Home: return GameplayTeam::Home;
-    case Team::Away: return GameplayTeam::Away;
-    case Team::None: return GameplayTeam::None;
-    }
-    return GameplayTeam::None;
-}
+struct SpawnCandidate {
+    glm::vec3 position{0.0f};
+};
 
-GameplayRole ToGameplayRole(PlayerRole role) {
-    return role == PlayerRole::Goalie ? GameplayRole::Goalie : GameplayRole::Skater;
-}
+struct PlayerCandidate {
+    entt::entity handle = entt::null;
+    uint32_t playerIndex = 0;
+};
 
 Entity FindMatch(Scene& scene) {
     auto view = scene.Registry().view<MatchStateComponent>();
     const auto it = view.begin();
     return it == view.end() ? Entity{} : Entity(*it, &scene);
-}
-
-Entity FindCenterFaceoff(Scene& scene) {
-    auto view = scene.Registry().view<FaceoffSpotComponent, TransformComponent>();
-    for (const entt::entity handle : view) {
-        if (view.get<FaceoffSpotComponent>(handle).index == 0) {
-            return Entity(handle, &scene);
-        }
-    }
-    return {};
 }
 
 Entity FindPuck(Scene& scene) {
@@ -45,29 +35,88 @@ Entity FindPuck(Scene& scene) {
     return it == view.end() ? Entity{} : Entity(*it, &scene);
 }
 
-Entity FindSpawnForPlayer(Scene& scene, const PlayerComponent& player) {
+Team MarkerTeamForFaceoffCause(GameplayTeam team) {
+    switch (team) {
+    case GameplayTeam::Home: return Team::Home;
+    case GameplayTeam::Away: return Team::Away;
+    case GameplayTeam::None: return Team::None;
+    }
+    return Team::None;
+}
+
+std::vector<SpawnCandidate> CollectFaceoffSpawns(Scene& scene, GameplayTeam causeTeam) {
+    std::vector<SpawnCandidate> spawns;
+    const Team markerTeam = MarkerTeamForFaceoffCause(causeTeam);
     auto view = scene.Registry().view<SpawnPointComponent, TransformComponent>();
     for (const entt::entity handle : view) {
         const SpawnPointComponent& spawn = view.get<SpawnPointComponent>(handle);
-        if (ToGameplayTeam(spawn.team) != player.team || ToGameplayRole(spawn.role) != player.role) {
+        if (spawn.team != markerTeam || !spawn.faceoffSpawn) {
             continue;
         }
-        if (player.role == GameplayRole::Goalie || spawn.index == static_cast<int>(player.playerIndex % 4u)) {
-            return Entity(handle, &scene);
-        }
+        spawns.push_back({view.get<TransformComponent>(handle).localPosition});
     }
-    return {};
+    return spawns;
 }
 
-void ResetPlayers(Scene& scene) {
+std::vector<SpawnCandidate> SelectFaceoffPool(Scene& scene, GameplayTeam causeTeam) {
+    std::vector<SpawnCandidate> spawns = CollectFaceoffSpawns(scene, causeTeam);
+    if (causeTeam == GameplayTeam::None || spawns.size() >= 8) {
+        return spawns;
+    }
+    return CollectFaceoffSpawns(scene, GameplayTeam::None);
+}
+
+std::vector<PlayerCandidate> CollectPlayers(Scene& scene) {
+    std::vector<PlayerCandidate> players;
     auto view = scene.Registry().view<PlayerComponent, TransformComponent>();
     for (const entt::entity handle : view) {
-        Entity player(handle, &scene);
-        const PlayerComponent& playerComponent = player.GetComponent<PlayerComponent>();
-        Entity spawn = FindSpawnForPlayer(scene, playerComponent);
-        if (spawn.IsValid()) {
-            player.GetComponent<TransformComponent>().localPosition = spawn.GetComponent<TransformComponent>().localPosition;
+        const PlayerComponent& player = view.get<PlayerComponent>(handle);
+        if (player.activeInMatch) {
+            players.push_back({handle, player.playerIndex});
         }
+    }
+    std::sort(players.begin(), players.end(), [](const PlayerCandidate& lhs, const PlayerCandidate& rhs) {
+        return lhs.playerIndex < rhs.playerIndex;
+    });
+    return players;
+}
+
+template <typename T> void ShuffleDeterministic(std::vector<T>& values, uint32_t seed) {
+    std::mt19937 rng(seed);
+    std::shuffle(values.begin(), values.end(), rng);
+}
+
+glm::vec3 ComputePoolCenter(const std::vector<SpawnCandidate>& spawns) {
+    if (spawns.empty()) {
+        return glm::vec3{0.0f};
+    }
+    glm::vec3 center{0.0f};
+    for (const SpawnCandidate& spawn : spawns) {
+        center += spawn.position;
+    }
+    return center / static_cast<float>(spawns.size());
+}
+
+uint32_t FaceoffSequence(Entity match) {
+    if (!match.IsValid() || !match.HasComponent<FaceoffComponent>()) {
+        return 0;
+    }
+    return match.GetComponent<FaceoffComponent>().spawnSequence;
+}
+
+void ResetPlayers(Scene& scene, GameplayTeam causeTeam, const GameplaySettings& settings, uint32_t spawnSequence) {
+    std::vector<SpawnCandidate> spawns = SelectFaceoffPool(scene, causeTeam);
+    std::vector<PlayerCandidate> players = CollectPlayers(scene);
+    if (spawns.size() < players.size()) {
+        return;
+    }
+
+    ShuffleDeterministic(spawns, settings.spawnRandomSeed ^ 0x3000u ^ spawnSequence);
+    ShuffleDeterministic(players, settings.spawnRandomSeed ^ 0x4000u ^ spawnSequence);
+
+    for (std::size_t i = 0; i < players.size(); ++i) {
+        Entity player(players[i].handle, &scene);
+        player.GetComponent<TransformComponent>().localPosition = spawns[i].position;
 
         if (player.HasComponent<PlayerRuntimeComponent>()) {
             PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
@@ -81,15 +130,15 @@ void ResetPlayers(Scene& scene) {
     }
 }
 
-void ResetPuck(Scene& scene) {
+void ResetPuck(Scene& scene, GameplayTeam causeTeam) {
     Entity puck = FindPuck(scene);
     if (!puck.IsValid()) {
         return;
     }
 
-    Entity faceoff = FindCenterFaceoff(scene);
-    if (faceoff.IsValid()) {
-        puck.GetComponent<TransformComponent>().localPosition = faceoff.GetComponent<TransformComponent>().localPosition;
+    std::vector<SpawnCandidate> spawns = SelectFaceoffPool(scene, causeTeam);
+    if (!spawns.empty()) {
+        puck.GetComponent<TransformComponent>().localPosition = ComputePoolCenter(spawns);
     }
 
     if (puck.HasComponent<PuckGameplayComponent>()) {
@@ -108,7 +157,7 @@ void ResetPuck(Scene& scene) {
 
 } // namespace
 
-void ResetSystem::BeginReset(Scene& scene, GameplayEventQueue& events) {
+void ResetSystem::BeginReset(Scene& scene, GameplayEventQueue& events, GameplayTeam causeTeam) {
     Entity match = FindMatch(scene);
     if (!match.IsValid()) {
         return;
@@ -118,17 +167,31 @@ void ResetSystem::BeginReset(Scene& scene, GameplayEventQueue& events) {
     state.phase = MatchPhase::GoalScored;
     state.phaseTimer = 0.0f;
     state.clockRunning = false;
+
+    FaceoffComponent faceoff;
+    if (match.HasComponent<FaceoffComponent>()) {
+        faceoff = match.GetComponent<FaceoffComponent>();
+    }
+    faceoff.causeTeam = causeTeam;
+    ++faceoff.spawnSequence;
+    faceoff.timer = 0.0f;
+    faceoff.locked = false;
+    match.AddOrReplaceComponent<FaceoffComponent>(faceoff);
+
     events.Push({GameplayEventType::ResetStarted});
 }
 
-void ResetSystem::CompleteReset(Scene& scene, GameplayEventQueue& events) {
+void ResetSystem::CompleteReset(Scene& scene,
+                                GameplayEventQueue& events,
+                                GameplayTeam causeTeam,
+                                const GameplaySettings& settings) {
     Entity match = FindMatch(scene);
     if (!match.IsValid()) {
         return;
     }
 
-    ResetPlayers(scene);
-    ResetPuck(scene);
+    ResetPlayers(scene, causeTeam, settings, FaceoffSequence(match));
+    ResetPuck(scene, causeTeam);
 
     MatchStateComponent& state = match.GetComponent<MatchStateComponent>();
     state.phase = MatchPhase::FaceoffSetup;
@@ -153,7 +216,11 @@ void ResetSystem::FixedUpdate(Scene& scene,
 
     state.phaseTimer += fixedDeltaSeconds;
     if (state.phaseTimer >= settings.postGoalDelaySeconds) {
-        CompleteReset(scene, events);
+        GameplayTeam causeTeam = GameplayTeam::None;
+        if (match.HasComponent<FaceoffComponent>()) {
+            causeTeam = match.GetComponent<FaceoffComponent>().causeTeam;
+        }
+        CompleteReset(scene, events, causeTeam, settings);
     }
 }
 

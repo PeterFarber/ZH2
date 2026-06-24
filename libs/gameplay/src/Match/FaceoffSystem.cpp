@@ -1,5 +1,7 @@
 #include "Hockey/Gameplay/Match/FaceoffSystem.hpp"
 
+#include <algorithm>
+
 #include <entt/entt.hpp>
 
 #include "Hockey/ECS/Entity.hpp"
@@ -8,7 +10,10 @@
 
 namespace Hockey {
 
-void FaceoffSystem::FixedUpdate(Scene& scene, float fixedDeltaSeconds, GameplayEventQueue& events) {
+void FaceoffSystem::FixedUpdate(Scene& scene,
+                                float fixedDeltaSeconds,
+                                const GameplaySettings& settings,
+                                GameplayEventQueue& events) {
     auto view = scene.Registry().view<MatchStateComponent>();
     const auto it = view.begin();
     if (it == view.end()) {
@@ -24,7 +29,8 @@ void FaceoffSystem::FixedUpdate(Scene& scene, float fixedDeltaSeconds, GameplayE
         events.Push({GameplayEventType::FaceoffStarted});
     } else if (match.phase == MatchPhase::Faceoff) {
         match.phaseTimer += fixedDeltaSeconds;
-        if (match.phaseTimer >= 1.0f) {
+        const float delaySeconds = std::max(0.0f, settings.faceoffDelaySeconds);
+        if (match.phaseTimer >= delaySeconds) {
             match.phase = MatchPhase::Playing;
             match.clockRunning = true;
             match.phaseTimer = 0.0f;

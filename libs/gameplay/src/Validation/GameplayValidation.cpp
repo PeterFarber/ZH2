@@ -1,6 +1,5 @@
 #include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
 
-#include <array>
 #include <string>
 
 #include <entt/entt.hpp>
@@ -18,28 +17,16 @@ void AddIssue(std::vector<SceneValidationIssue>& issues, Severity severity, std:
     issues.push_back({severity, std::move(message), entityId});
 }
 
-GameplayTeam ToGameplayTeam(Team team) {
-    switch (team) {
-    case Team::Home: return GameplayTeam::Home;
-    case Team::Away: return GameplayTeam::Away;
-    case Team::None: return GameplayTeam::None;
-    }
-    return GameplayTeam::None;
-}
-
-GameplayRole ToGameplayRole(PlayerRole role) {
-    return role == PlayerRole::Goalie ? GameplayRole::Goalie : GameplayRole::Skater;
-}
-
-bool HasSpawn(const entt::registry& registry, GameplayTeam team, GameplayRole role, int index) {
+int CountSpawns(const entt::registry& registry, Team team, bool faceoffSpawn) {
+    int count = 0;
     auto view = registry.view<const SpawnPointComponent>();
     for (const entt::entity handle : view) {
         const auto& spawn = view.get<const SpawnPointComponent>(handle);
-        if (ToGameplayTeam(spawn.team) == team && ToGameplayRole(spawn.role) == role && spawn.index == index) {
-            return true;
+        if (spawn.team == team && spawn.faceoffSpawn == faceoffSpawn) {
+            ++count;
         }
     }
-    return false;
+    return count;
 }
 
 } // namespace
@@ -50,7 +37,6 @@ void ValidateGameplayScene(const Scene& scene, std::vector<SceneValidationIssue>
     int puckCount = 0;
     int homeGoals = 0;
     int awayGoals = 0;
-    bool centerFaceoff = false;
     bool hasPlayArea = false;
     bool hasRink = false;
 
@@ -74,12 +60,6 @@ void ValidateGameplayScene(const Scene& scene, std::vector<SceneValidationIssue>
             if (goalGameplay->defendingTeam == GameplayTeam::None) {
                 AddIssue(issues, Severity::Error, "GoalGameplayComponent defending team must be Home or Away", id);
             }
-        }
-        if (const auto* faceoff = registry.try_get<FaceoffSpotComponent>(handle)) {
-            centerFaceoff = centerFaceoff || faceoff->index == 0;
-        }
-        if (const auto* faceoffGameplay = registry.try_get<FaceoffGameplayComponent>(handle)) {
-            centerFaceoff = centerFaceoff || faceoffGameplay->centerIce;
         }
         hasPlayArea = hasPlayArea || registry.all_of<PlayAreaComponent>(handle);
         hasRink = hasRink || registry.all_of<RinkComponent>(handle);
@@ -108,23 +88,23 @@ void ValidateGameplayScene(const Scene& scene, std::vector<SceneValidationIssue>
     if (!hasPlayArea) {
         AddIssue(issues, Severity::Error, "Gameplay scene is missing a play area");
     }
-    if (!centerFaceoff) {
-        AddIssue(issues, Severity::Error, "Gameplay scene is missing a center faceoff spot");
+    if (CountSpawns(registry, Team::Home, false) < 4) {
+        AddIssue(issues, Severity::Error, "Gameplay scene needs at least four Home normal spawns");
+    }
+    if (CountSpawns(registry, Team::Away, false) < 4) {
+        AddIssue(issues, Severity::Error, "Gameplay scene needs at least four Away normal spawns");
+    }
+    if (CountSpawns(registry, Team::None, true) < 8) {
+        AddIssue(issues, Severity::Error, "Gameplay scene needs at least eight neutral faceoff spawns");
     }
 
-    constexpr std::array<GameplayTeam, 2> kTeams = {GameplayTeam::Home, GameplayTeam::Away};
-    for (GameplayTeam team : kTeams) {
-        for (int i = 0; i < 3; ++i) {
-            if (!HasSpawn(registry, team, GameplayRole::Skater, i)) {
-                AddIssue(issues, Severity::Error,
-                         std::string("Gameplay scene is missing ") + GameplayTeamToString(team) +
-                             " skater spawn " + std::to_string(i));
-            }
-        }
-        if (!HasSpawn(registry, team, GameplayRole::Goalie, 0)) {
-            AddIssue(issues, Severity::Error,
-                     std::string("Gameplay scene is missing ") + GameplayTeamToString(team) + " goalie spawn");
-        }
+    const int homePenaltyFaceoffSpawns = CountSpawns(registry, Team::Home, true);
+    if (homePenaltyFaceoffSpawns > 0 && homePenaltyFaceoffSpawns < 8) {
+        AddIssue(issues, Severity::Warning, "Home penalty faceoff spawn pool should contain at least eight spawns");
+    }
+    const int awayPenaltyFaceoffSpawns = CountSpawns(registry, Team::Away, true);
+    if (awayPenaltyFaceoffSpawns > 0 && awayPenaltyFaceoffSpawns < 8) {
+        AddIssue(issues, Severity::Warning, "Away penalty faceoff spawn pool should contain at least eight spawns");
     }
 }
 

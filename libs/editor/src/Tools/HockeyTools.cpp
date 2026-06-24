@@ -193,26 +193,26 @@ void HockeySpawnTool::OnSelected(EditorContext& context) {
                 struct SpawnDef {
                     const char* name;
                     Team team;
-                    PlayerRole role;
-                    int index;
                     glm::vec3 position;
                 };
                 const SpawnDef defs[] = {
-                    {"Home Skater Spawn 0", Team::Home, PlayerRole::Skater, 0, {-6.0f, 0.0f, -20.0f}},
-                    {"Home Skater Spawn 1", Team::Home, PlayerRole::Skater, 1, {0.0f, 0.0f, -20.0f}},
-                    {"Home Skater Spawn 2", Team::Home, PlayerRole::Skater, 2, {6.0f, 0.0f, -20.0f}},
-                    {"Home Goalie Spawn 0", Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -45.0f}},
-                    {"Away Skater Spawn 0", Team::Away, PlayerRole::Skater, 0, {-6.0f, 0.0f, 20.0f}},
-                    {"Away Skater Spawn 1", Team::Away, PlayerRole::Skater, 1, {0.0f, 0.0f, 20.0f}},
-                    {"Away Skater Spawn 2", Team::Away, PlayerRole::Skater, 2, {6.0f, 0.0f, 20.0f}},
-                    {"Away Goalie Spawn 0", Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 45.0f}},
+                    {"Home Spawn 0", Team::Home, {-9.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 1", Team::Home, {-3.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 2", Team::Home, {3.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 3", Team::Home, {9.0f, 0.0f, -22.0f}},
+                    {"Away Spawn 0", Team::Away, {-9.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 1", Team::Away, {-3.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 2", Team::Away, {3.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 3", Team::Away, {9.0f, 0.0f, 22.0f}},
                 };
 
                 for (const SpawnDef& def : defs) {
                     Entity spawn = MakeEntity(scene, def.name, def.position);
-                    spawn.AddComponent<SpawnPointComponent>(SpawnPointComponent{def.team, def.role, def.index});
+                    SpawnPointComponent marker;
+                    marker.team = def.team;
+                    marker.faceoffSpawn = false;
+                    spawn.AddComponent<SpawnPointComponent>(marker);
                     spawn.AddComponent<TeamComponent>(TeamComponent{def.team});
-                    spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});
                     Reparent(scene, spawn, root);
                 }
                 return {root.GetUUID()};
@@ -356,30 +356,39 @@ void HockeyFaceoffTool::OnSelected(EditorContext& context) {
     context.undoRedo.Execute(
         EditorCommands::SpawnEntities("Create Faceoff Spots",
                                       [](Scene& scene) -> std::vector<UUID> {
-                                          Entity center = MakeEntity(scene, "Center Faceoff Spot", {0.0f, 0.0f, 0.0f});
-                                          center.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{0});
-                                          FaceoffGameplayComponent centerGameplay;
-                                          centerGameplay.index = 0;
-                                          centerGameplay.centerIce = true;
-                                          center.AddComponent<FaceoffGameplayComponent>(centerGameplay);
+                                          Entity root = MakeEntity(scene, "Faceoff Spawns", {0.0f, 0.0f, 0.0f});
 
-                                          Entity home =
-                                              MakeEntity(scene, "Home Defensive Faceoff Spot", {0.0f, 0.0f, -25.0f});
-                                          home.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{1});
-                                          FaceoffGameplayComponent homeGameplay;
-                                          homeGameplay.index = 1;
-                                          homeGameplay.preferredZone = GameplayTeam::Home;
-                                          home.AddComponent<FaceoffGameplayComponent>(homeGameplay);
+                                          struct FaceoffSpawnDef {
+                                              const char* prefix;
+                                              Team team;
+                                              float z0;
+                                              float z1;
+                                          };
+                                          const FaceoffSpawnDef defs[] = {
+                                              {"Neutral Faceoff Spawn", Team::None, -4.0f, 4.0f},
+                                              {"Home Penalty Faceoff Spawn", Team::Home, -32.0f, -24.0f},
+                                              {"Away Penalty Faceoff Spawn", Team::Away, 24.0f, 32.0f},
+                                          };
+                                          constexpr float xs[] = {-9.0f, -3.0f, 3.0f, 9.0f};
 
-                                          Entity away =
-                                              MakeEntity(scene, "Away Defensive Faceoff Spot", {0.0f, 0.0f, 25.0f});
-                                          away.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{2});
-                                          FaceoffGameplayComponent awayGameplay;
-                                          awayGameplay.index = 2;
-                                          awayGameplay.preferredZone = GameplayTeam::Away;
-                                          away.AddComponent<FaceoffGameplayComponent>(awayGameplay);
+                                          for (const FaceoffSpawnDef& def : defs) {
+                                              int index = 0;
+                                              for (const float z : {def.z0, def.z1}) {
+                                                  for (const float x : xs) {
+                                                      Entity spawn = MakeEntity(
+                                                          scene, std::string(def.prefix) + " " + std::to_string(index),
+                                                          {x, 0.0f, z});
+                                                      SpawnPointComponent marker;
+                                                      marker.team = def.team;
+                                                      marker.faceoffSpawn = true;
+                                                      spawn.AddComponent<SpawnPointComponent>(marker);
+                                                      Reparent(scene, spawn, root);
+                                                      ++index;
+                                                  }
+                                              }
+                                          }
 
-                                          return {center.GetUUID(), home.GetUUID(), away.GetUUID()};
+                                          return {root.GetUUID()};
                                       }),
         context);
 }

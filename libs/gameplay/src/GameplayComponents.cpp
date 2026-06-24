@@ -257,18 +257,11 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "MinY" << YAML::Value << c.minY;
         out << YAML::EndMap;
     }
-    if (entity.HasComponent<FaceoffGameplayComponent>()) {
-        const auto& c = entity.GetComponent<FaceoffGameplayComponent>();
-        out << YAML::Key << "FaceoffGameplayComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Index" << YAML::Value << c.index;
-        out << YAML::Key << "CenterIce" << YAML::Value << c.centerIce;
-        out << YAML::Key << "PreferredZone" << YAML::Value << GameplayTeamToString(c.preferredZone);
-        out << YAML::EndMap;
-    }
     if (entity.HasComponent<FaceoffComponent>()) {
         const auto& c = entity.GetComponent<FaceoffComponent>();
         out << YAML::Key << "FaceoffComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "SpotIndex" << YAML::Value << c.spotIndex;
+        out << YAML::Key << "CauseTeam" << YAML::Value << GameplayTeamToString(c.causeTeam);
+        out << YAML::Key << "SpawnSequence" << YAML::Value << c.spawnSequence;
         out << YAML::Key << "Timer" << YAML::Value << c.timer;
         out << YAML::Key << "Locked" << YAML::Value << c.locked;
         out << YAML::EndMap;
@@ -426,16 +419,10 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["MinY"]) c.minY = n["MinY"].as<float>();
         entity.AddOrReplaceComponent<OutOfPlayComponent>(c);
     }
-    if (const auto n = node["FaceoffGameplayComponent"]) {
-        FaceoffGameplayComponent c;
-        if (n["Index"]) c.index = n["Index"].as<int>();
-        if (n["CenterIce"]) c.centerIce = n["CenterIce"].as<bool>();
-        if (n["PreferredZone"]) GameplayTeamFromString(n["PreferredZone"].as<std::string>().c_str(), c.preferredZone);
-        entity.AddOrReplaceComponent<FaceoffGameplayComponent>(c);
-    }
     if (const auto n = node["FaceoffComponent"]) {
         FaceoffComponent c;
-        if (n["SpotIndex"]) c.spotIndex = n["SpotIndex"].as<int>();
+        if (n["CauseTeam"]) GameplayTeamFromString(n["CauseTeam"].as<std::string>().c_str(), c.causeTeam);
+        if (n["SpawnSequence"]) c.spawnSequence = n["SpawnSequence"].as<uint32_t>();
         if (n["Timer"]) c.timer = n["Timer"].as<float>();
         if (n["Locked"]) c.locked = n["Locked"].as<bool>();
         entity.AddOrReplaceComponent<FaceoffComponent>(c);
@@ -555,8 +542,17 @@ void RegisterMetadata() {
     registry.RegisterComponent<CheckComponent>({"CheckComponent", "Check", "Gameplay"});
     registry.RegisterComponent<ScoreComponent>({"ScoreComponent", "Score", "Gameplay"});
     registry.RegisterComponent<OutOfPlayComponent>({"OutOfPlayComponent", "Out Of Play", "Gameplay"});
-    registry.RegisterComponent<FaceoffGameplayComponent>({"FaceoffGameplayComponent", "Faceoff Gameplay", "Gameplay"});
-    registry.RegisterComponent<FaceoffComponent>({"FaceoffComponent", "Faceoff", "Gameplay"});
+    {
+        ComponentMetadata md;
+        md.name = "FaceoffComponent";
+        md.displayName = "Faceoff";
+        md.category = "Gameplay";
+        md.fields.push_back(MakeTeamField("CauseTeam", offsetof(FaceoffComponent, causeTeam)));
+        md.fields.push_back(MakeField("SpawnSequence", FieldType::Int, offsetof(FaceoffComponent, spawnSequence)));
+        md.fields.push_back(MakeField("Timer", FieldType::Float, offsetof(FaceoffComponent, timer)));
+        md.fields.push_back(MakeField("Locked", FieldType::Bool, offsetof(FaceoffComponent, locked)));
+        registry.RegisterComponent<FaceoffComponent>(std::move(md));
+    }
     registry.RegisterComponent<RespawnComponent>({"RespawnComponent", "Respawn", "Gameplay"});
 }
 

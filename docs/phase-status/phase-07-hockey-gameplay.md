@@ -1,6 +1,6 @@
 # Phase 7 - Hockey Gameplay
 
-Status: Implemented for local client, editor preview, and headless server use, with GAMEPLAY.md action-design follow-ups covered outside future networking/presentation phases.
+Status: Implemented for local client, editor preview, and headless server use, with the `_save/docs/GAMEPLAY.md` steal/shoot-only action model now requiring removal of legacy pass/check/poke-check surfaces.
 
 Source material:
 
@@ -41,6 +41,7 @@ Source material:
 - [x] Gameplay event names exist.
 - [x] Countdown, steal, boost, and goalie shield gameplay event names exist.
 - [x] Shot grace, puck floor height, and shot charge tuning exists.
+- [x] Gameplay tuning YAML is consumed by editor preview, client local play, and headless server runtime.
 - [x] Optional gameplay event logging exists.
 
 ## Finished - Components And Validation
@@ -66,7 +67,7 @@ Source material:
 ## Finished - Match And Rules
 
 - [x] Match initialization exists.
-- [x] Player spawn/setup flow exists.
+- [x] Player spawn/setup flow uses deterministic shuffled team spawn pools.
 - [x] 4v4 setup exists.
 - [x] Match clock exists.
 - [x] Period clock behavior exists.
@@ -74,7 +75,7 @@ Source material:
 - [x] Pregame countdown exists.
 - [x] Countdown tick/beep gameplay events exist.
 - [x] Faceoff flow exists.
-- [x] Reset flow exists.
+- [x] Reset flow uses neutral/Home/Away faceoff spawn pools with deterministic placement.
 - [x] Score system exists.
 - [x] Goal detection exists.
 - [x] Out-of-play handling exists.
@@ -91,8 +92,6 @@ Source material:
 - [x] Shooting exists.
 - [x] Shot release has a tuned shooter self-collision/reacquire grace window.
 - [x] Puck controller clamps puck height to the tuned ice/floor height.
-- [x] Passing exists.
-- [x] Checking/poke check hooks exist.
 - [x] Explicit steal action exists.
 - [x] Contextual left-click steal-or-shot mapping exists in local client/editor preview input translation.
 - [x] Local client/editor preview shots aim toward the mouse cursor projected onto the ice.
@@ -127,8 +126,6 @@ Source material:
 - [x] Shooting tests cover post-shot shooter grace.
 - [x] Puck controller tests cover floor-height clamping.
 - [x] Snapshot tests cover shot charge ratio.
-- [x] Passing tests exist.
-- [x] Checking tests exist.
 - [x] Goal tests exist.
 - [x] Goal trigger tests cover puck-only scoring.
 - [x] Out-of-play tests exist.
@@ -144,9 +141,14 @@ Source material:
 - [ ] `SceneMode::ClientPrediction` exists, but prediction/reconciliation are not implemented.
 - [ ] Client gameplay is local play, not networked multiplayer.
 - [ ] Gameplay events exist locally, but reliable network event replication is not implemented.
+- [ ] Legacy passing system, input fields, events, tuning, and tests still need removal for the steal/shoot-only target.
+- [ ] Legacy body-check and poke-check hooks, settings, tuning, editor controls, and tests still need removal for the steal/shoot-only target.
+- [ ] Legacy `stealHeld` and `stealReleased` input surfaces still need removal; steal is click-only.
+- [ ] Gameplay/editor/client tests need explicit coverage that pass, body-check, and poke-check actions are absent.
 
 ## Left To Do
 
+- [ ] Implement `plans/gameplay-steal-shoot-alignment.md`.
 - [ ] Connect input frames and snapshots to Phase 8 networking.
 - [ ] Add server-side network input validation during Phase 8.
 - [ ] Add snapshot interpolation, prediction, and reconciliation during Phase 8.

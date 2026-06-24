@@ -103,22 +103,12 @@ std::vector<SceneValidationIssue> SceneValidator::Validate(const Scene& scene) {
         }
 
         if (const auto* spawn = registry.try_get<SpawnPointComponent>(handle)) {
-            if (spawn->index < 0) {
-                AddIssue(issues, Severity::Error, "Spawn point index is negative", id);
+            if (!spawn->faceoffSpawn && spawn->team == Team::None) {
+                AddIssue(issues, Severity::Warning, "normal spawn point has no team assigned", id);
             }
-            if (spawn->team == Team::None) {
-                AddIssue(issues, Severity::Warning, "Spawn point has no team assigned", id);
-            }
-            if (spawn->role == PlayerRole::Skater) {
+            if (!spawn->faceoffSpawn && spawn->team != Team::None) {
                 hasSkaterSpawn = true;
-            } else if (spawn->role == PlayerRole::Goalie) {
                 hasGoalieSpawn = true;
-            }
-        }
-
-        if (const auto* faceoff = registry.try_get<FaceoffSpotComponent>(handle)) {
-            if (faceoff->index < 0) {
-                AddIssue(issues, Severity::Error, "Faceoff spot index is negative", id);
             }
         }
 

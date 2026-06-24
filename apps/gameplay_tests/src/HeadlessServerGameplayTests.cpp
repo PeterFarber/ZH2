@@ -18,12 +18,11 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
     return entity;
 }
 
-void AddSpawn(Scene& scene, Team team, PlayerRole role, int index, const glm::vec3& position) {
+void AddSpawn(Scene& scene, Team team, const glm::vec3& position, bool faceoffSpawn = false) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
-    component.role = role;
-    component.index = index;
+    component.faceoffSpawn = faceoffSpawn;
     spawn.AddComponent<SpawnPointComponent>(component);
 }
 
@@ -53,19 +52,13 @@ void BuildHeadlessServerScene(Scene& scene) {
     awayGameplayGoal.scoringTeam = GameplayTeam::Home;
     awayGoal.AddComponent<GoalGameplayComponent>(awayGameplayGoal);
 
-    Entity faceoff = AddMarker(scene, "Center Faceoff", {0.0f, 0.0f, 0.0f});
-    faceoff.AddComponent<FaceoffSpotComponent>().index = 0;
-    FaceoffGameplayComponent faceoffGameplay;
-    faceoffGameplay.index = 0;
-    faceoffGameplay.centerIce = true;
-    faceoff.AddComponent<FaceoffGameplayComponent>(faceoffGameplay);
-
-    for (int i = 0; i < 3; ++i) {
-        AddSpawn(scene, Team::Home, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, -5.0f});
-        AddSpawn(scene, Team::Away, PlayerRole::Skater, i, {-3.0f + static_cast<float>(i), 0.0f, 5.0f});
+    for (int i = 0; i < 4; ++i) {
+        AddSpawn(scene, Team::Home, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, -5.0f});
+        AddSpawn(scene, Team::Away, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, 5.0f});
     }
-    AddSpawn(scene, Team::Home, PlayerRole::Goalie, 0, {0.0f, 0.0f, -24.0f});
-    AddSpawn(scene, Team::Away, PlayerRole::Goalie, 0, {0.0f, 0.0f, 24.0f});
+    for (int i = 0; i < 8; ++i) {
+        AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 0.0f}, true);
+    }
 }
 
 bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) {

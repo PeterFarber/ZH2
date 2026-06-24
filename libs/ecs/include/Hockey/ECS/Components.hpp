@@ -86,13 +86,8 @@ struct GoalComponent {
 
 struct SpawnPointComponent {
     Team team = Team::None;
-    PlayerRole role = PlayerRole::Skater;
-    int index = 0;
+    bool faceoffSpawn = false;
     std::filesystem::path playerPrefabPath;
-};
-
-struct FaceoffSpotComponent {
-    int index = 0;
 };
 
 struct RinkComponent {
@@ -132,7 +127,6 @@ HK_DEFINE_COMPONENT_TRAITS(PlayerRoleComponent);
 HK_DEFINE_COMPONENT_TRAITS(PuckComponent);
 HK_DEFINE_COMPONENT_TRAITS(GoalComponent);
 HK_DEFINE_COMPONENT_TRAITS(SpawnPointComponent);
-HK_DEFINE_COMPONENT_TRAITS(FaceoffSpotComponent);
 HK_DEFINE_COMPONENT_TRAITS(RinkComponent);
 HK_DEFINE_COMPONENT_TRAITS(PlayAreaComponent);
 HK_DEFINE_COMPONENT_TRAITS(CameraRigMarkerComponent);

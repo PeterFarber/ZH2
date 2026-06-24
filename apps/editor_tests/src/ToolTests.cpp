@@ -97,7 +97,7 @@ void RunToolTests() {
         HK_CHECK_EQ(fix.scene.EntityCount(), before + 7);
     }
 
-    // --- HockeySpawnTool: 8 spawns under a root ------------------------------
+    // --- HockeySpawnTool: 8 normal spawn points under a root -----------------
     {
         ToolFixture fix;
         EditorContext& ctx = fix.context;
@@ -105,13 +105,14 @@ void RunToolTests() {
         ctx.toolManager.Activate("Hockey Spawns", ctx);
         HK_CHECK_EQ(fix.scene.EntityCount(), before + 9); // root + 8
 
-        Entity homeGoalie = fix.scene.FindEntityByName("Home Goalie Spawn 0");
-        HK_CHECK_MSG(homeGoalie && homeGoalie.HasComponent<SpawnPointComponent>(), "spawn has SpawnPointComponent");
-        if (homeGoalie) {
-            const auto& spawn = homeGoalie.GetComponent<SpawnPointComponent>();
-            HK_CHECK_MSG(spawn.team == Team::Home && spawn.role == PlayerRole::Goalie, "home goalie spawn data");
-            HK_CHECK_MSG(homeGoalie.HasComponent<TeamComponent>() && homeGoalie.HasComponent<PlayerRoleComponent>(),
-                         "spawn has team+role components");
+        Entity homeSpawn = fix.scene.FindEntityByName("Home Spawn 0");
+        HK_CHECK_MSG(homeSpawn && homeSpawn.HasComponent<SpawnPointComponent>(), "spawn has SpawnPointComponent");
+        if (homeSpawn) {
+            const auto& spawn = homeSpawn.GetComponent<SpawnPointComponent>();
+            HK_CHECK_MSG(spawn.team == Team::Home, "home spawn data");
+            HK_CHECK_MSG(!spawn.faceoffSpawn, "normal spawn is not faceoff spawn");
+            HK_CHECK_MSG(homeSpawn.HasComponent<TeamComponent>(), "spawn has team component");
+            HK_CHECK_MSG(!homeSpawn.HasComponent<PlayerRoleComponent>(), "spawn has no role component");
         }
 
         ctx.undoRedo.Undo(ctx);
@@ -194,17 +195,30 @@ void RunToolTests() {
         HK_CHECK_MSG(HasNamed<PuckRuntimeComponent>(fix.scene, "Puck Spawn"), "puck has PuckRuntimeComponent");
     }
 
-    // --- HockeyFaceoffTool: three spots --------------------------------------
+    // --- HockeyFaceoffTool: 24 faceoff spawn points under a root -------------
     {
         ToolFixture fix;
         EditorContext& ctx = fix.context;
         const std::size_t before = ctx.activeScene->EntityCount();
         ctx.toolManager.Activate("Hockey Faceoff Spots", ctx);
-        HK_CHECK_EQ(fix.scene.EntityCount(), before + 3);
-        HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Center Faceoff Spot"), "center faceoff spot");
-        HK_CHECK_MSG(HasNamed<FaceoffGameplayComponent>(fix.scene, "Center Faceoff Spot"), "center gameplay faceoff");
-        HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Home Defensive Faceoff Spot"), "home faceoff spot");
-        HK_CHECK_MSG(HasNamed<FaceoffSpotComponent>(fix.scene, "Away Defensive Faceoff Spot"), "away faceoff spot");
+        HK_CHECK_EQ(fix.scene.EntityCount(), before + 25); // root + 8 neutral + 8 home penalty + 8 away penalty
+
+        Entity neutral = fix.scene.FindEntityByName("Neutral Faceoff Spawn 0");
+        Entity home = fix.scene.FindEntityByName("Home Penalty Faceoff Spawn 0");
+        Entity away = fix.scene.FindEntityByName("Away Penalty Faceoff Spawn 0");
+
+        HK_CHECK_MSG(neutral && neutral.HasComponent<SpawnPointComponent>(), "neutral faceoff spawn");
+        HK_CHECK_MSG(home && home.HasComponent<SpawnPointComponent>(), "home penalty faceoff spawn");
+        HK_CHECK_MSG(away && away.HasComponent<SpawnPointComponent>(), "away penalty faceoff spawn");
+        if (neutral && home && away) {
+            HK_CHECK(neutral.GetComponent<SpawnPointComponent>().faceoffSpawn);
+            HK_CHECK(home.GetComponent<SpawnPointComponent>().faceoffSpawn);
+            HK_CHECK(away.GetComponent<SpawnPointComponent>().faceoffSpawn);
+            HK_CHECK(neutral.GetComponent<SpawnPointComponent>().team == Team::None);
+            HK_CHECK(home.GetComponent<SpawnPointComponent>().team == Team::Home);
+            HK_CHECK(away.GetComponent<SpawnPointComponent>().team == Team::Away);
+        }
+        HK_CHECK_MSG(!fix.scene.FindEntityByName("Center Faceoff Spot"), "old faceoff spot is not authored");
     }
 
     // --- HockeyCameraRigTool -------------------------------------------------

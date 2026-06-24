@@ -99,13 +99,12 @@ void RunMarkerSerializationTests() {
     Scene scene("Markers");
 
     Entity spawn = scene.CreateEntity("Spawn");
-    spawn.AddComponent<SpawnPointComponent>(
-        SpawnPointComponent{Team::Away, PlayerRole::Goalie, 2, "data/raw/prefabs/goalie.prefab.yaml"});
+    SpawnPointComponent spawnMarker;
+    spawnMarker.team = Team::Away;
+    spawnMarker.faceoffSpawn = true;
+    spawnMarker.playerPrefabPath = "data/raw/prefabs/goalie.prefab.yaml";
+    spawn.AddComponent<SpawnPointComponent>(spawnMarker);
     spawn.AddComponent<TeamComponent>(TeamComponent{Team::Away});
-    spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{PlayerRole::Goalie});
-
-    Entity faceoff = scene.CreateEntity("Faceoff");
-    faceoff.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{5});
 
     Entity area = scene.CreateEntity("Area");
     area.AddComponent<PlayAreaComponent>(PlayAreaComponent{glm::vec3(11.0f, 22.0f, 33.0f)});
@@ -114,7 +113,6 @@ void RunMarkerSerializationTests() {
     rig.AddComponent<CameraRigMarkerComponent>(CameraRigMarkerComponent{"BenchCam"});
 
     const UUID spawnId = spawn.GetUUID();
-    const UUID faceoffId = faceoff.GetUUID();
     const UUID areaId = area.GetUUID();
     const UUID rigId = rig.GetUUID();
 
@@ -131,19 +129,10 @@ void RunMarkerSerializationTests() {
     if (ls.IsValid() && ls.HasComponent<SpawnPointComponent>()) {
         const auto& sp = ls.GetComponent<SpawnPointComponent>();
         HK_CHECK(sp.team == Team::Away);
-        HK_CHECK(sp.role == PlayerRole::Goalie);
-        HK_CHECK_EQ(sp.index, 2);
+        HK_CHECK(sp.faceoffSpawn);
         HK_CHECK_EQ(sp.playerPrefabPath.generic_string(), std::string("data/raw/prefabs/goalie.prefab.yaml"));
     }
     HK_CHECK(ls.HasComponent<TeamComponent>() && ls.GetComponent<TeamComponent>().team == Team::Away);
-    HK_CHECK(ls.HasComponent<PlayerRoleComponent>() &&
-             ls.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie);
-
-    Entity lf = loaded.FindEntityByUUID(faceoffId);
-    HK_CHECK(lf.IsValid() && lf.HasComponent<FaceoffSpotComponent>());
-    if (lf.IsValid() && lf.HasComponent<FaceoffSpotComponent>()) {
-        HK_CHECK_EQ(lf.GetComponent<FaceoffSpotComponent>().index, 5);
-    }
 
     Entity la = loaded.FindEntityByUUID(areaId);
     HK_CHECK(la.IsValid() && la.HasComponent<PlayAreaComponent>());

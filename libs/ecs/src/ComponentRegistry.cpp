@@ -216,20 +216,10 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.displayName = "Spawn Point";
         md.category = "Hockey";
         md.fields.push_back(MakeTeamField("Team", offsetof(SpawnPointComponent, team)));
-        md.fields.push_back(MakeRoleField("Role", offsetof(SpawnPointComponent, role)));
-        md.fields.push_back(MakeField("Index", FieldType::Int, offsetof(SpawnPointComponent, index)));
+        md.fields.push_back(MakeField("FaceoffSpawn", FieldType::Bool, offsetof(SpawnPointComponent, faceoffSpawn)));
         md.fields.push_back(
             MakeField("PlayerPrefabPath", FieldType::Path, offsetof(SpawnPointComponent, playerPrefabPath)));
         RegisterComponent<SpawnPointComponent>(std::move(md));
-    }
-
-    {
-        ComponentMetadata md;
-        md.name = "FaceoffSpotComponent";
-        md.displayName = "Faceoff Spot";
-        md.category = "Hockey";
-        md.fields.push_back(MakeField("Index", FieldType::Int, offsetof(FaceoffSpotComponent, index)));
-        RegisterComponent<FaceoffSpotComponent>(std::move(md));
     }
 
     {

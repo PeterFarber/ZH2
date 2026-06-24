@@ -63,16 +63,16 @@ void RunInspectorFieldTests() {
         }
     }
 
-    // --- int field edit (SpawnPoint.index) ----------------------------------
+    // --- bool field edit (SpawnPoint.faceoffSpawn) --------------------------
     {
         entity.AddComponent<SpawnPointComponent>();
         const ComponentMetadata* md = registry.FindByName("SpawnPointComponent");
-        const FieldMetadata* field = md != nullptr ? FindField(*md, "Index") : nullptr;
-        HK_CHECK_MSG(field != nullptr, "Index field present");
+        const FieldMetadata* field = md != nullptr ? FindField(*md, "FaceoffSpawn") : nullptr;
+        HK_CHECK_MSG(field != nullptr, "FaceoffSpawn field present");
         if (md != nullptr && field != nullptr) {
-            int* value = static_cast<int*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
-            *value = 7;
-            HK_CHECK_EQ(entity.GetComponent<SpawnPointComponent>().index, 7);
+            bool* value = static_cast<bool*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
+            *value = true;
+            HK_CHECK(entity.GetComponent<SpawnPointComponent>().faceoffSpawn);
         }
     }
 

@@ -135,7 +135,7 @@ const std::unordered_set<std::string>& OverridableComponents() {
     static const std::unordered_set<std::string> kComponents = {
         "TransformComponent",   "NameComponent",        "ObjectSettingsComponent", "ActiveComponent",
         "TeamComponent",        "PlayerRoleComponent",  "GoalComponent",           "PuckComponent",
-        "SpawnPointComponent",  "FaceoffSpotComponent", "RinkComponent",           "PlayAreaComponent",
+        "SpawnPointComponent",  "RinkComponent",        "PlayAreaComponent",
         "CameraRigMarkerComponent"};
     return kComponents;
 }

@@ -23,6 +23,10 @@ struct GameplaySettings {
     bool stopClockAfterGoal = true;
     bool autoFaceoffAfterGoal = true;
     float postGoalDelaySeconds = 3.0f;
+    float faceoffDelaySeconds = 1.0f;
+    float goalDetectionRadius = 1.0f;
+    bool requirePuckForGoal = true;
+    uint32_t spawnRandomSeed = 0x5A02024u;
 
     bool allowBodyChecking = true;
     bool allowManualGoalie = true;

@@ -23,9 +23,12 @@ bool HasWarningContaining(const std::vector<SceneValidationIssue>& issues, const
     return false;
 }
 
-Entity MakeSpawn(Scene& scene, const std::string& name, Team team, PlayerRole role) {
+Entity MakeSpawn(Scene& scene, const std::string& name, Team team, bool faceoffSpawn = false) {
     Entity e = scene.CreateEntity(name);
-    e.AddComponent<SpawnPointComponent>(SpawnPointComponent{team, role, 0});
+    SpawnPointComponent spawn;
+    spawn.team = team;
+    spawn.faceoffSpawn = faceoffSpawn;
+    e.AddComponent<SpawnPointComponent>(spawn);
     return e;
 }
 
@@ -43,8 +46,8 @@ void RunSceneValidationTests() {
         awayGoal.AddComponent<GoalComponent>(GoalComponent{Team::Away});
         Entity puck = scene.CreateEntity("Puck");
         puck.AddComponent<PuckComponent>(PuckComponent{true});
-        MakeSpawn(scene, "Skater", Team::Home, PlayerRole::Skater);
-        MakeSpawn(scene, "Goalie", Team::Home, PlayerRole::Goalie);
+        MakeSpawn(scene, "Skater", Team::Home);
+        MakeSpawn(scene, "Goalie", Team::Home);
 
         const auto issues = SceneValidator::Validate(scene);
         HK_CHECK(!SceneValidator::HasErrors(issues));
@@ -100,13 +103,12 @@ void RunSceneValidationTests() {
         HK_CHECK(HasWarningContaining(issues, "goals"));
     }
 
-    // Negative spawn index -> error.
+    // Neutral normal spawns warn because they cannot place a team.
     {
-        Scene scene("BadSpawn");
-        Entity e = scene.CreateEntity("Spawn");
-        e.AddComponent<SpawnPointComponent>(SpawnPointComponent{Team::Home, PlayerRole::Skater, -1});
+        Scene scene("SpawnNoTeam");
+        MakeSpawn(scene, "Spawn", Team::None, false);
         const auto issues = SceneValidator::Validate(scene);
-        HK_CHECK(SceneValidator::HasErrors(issues));
+        HK_CHECK(HasWarningContaining(issues, "normal spawn point has no team"));
     }
 
     // More than two goals -> warning.
@@ -129,24 +131,15 @@ void RunSceneValidationTests() {
         HK_CHECK(SceneValidator::HasErrors(issues));
     }
 
-    // Spawn point with no team -> warning (not an error).
+    // Neutral faceoff spawns are valid authoring data.
     {
-        Scene scene("SpawnNoTeam");
-        MakeSpawn(scene, "Spawn", Team::None, PlayerRole::Skater);
+        Scene scene("NeutralFaceoffSpawn");
+        MakeSpawn(scene, "Neutral Faceoff Spawn", Team::None, true);
         const auto issues = SceneValidator::Validate(scene);
-        HK_CHECK(HasWarningContaining(issues, "no team"));
+        HK_CHECK(!SceneValidator::HasErrors(issues));
     }
 
-    // Negative faceoff index -> error.
-    {
-        Scene scene("BadFaceoff");
-        Entity f = scene.CreateEntity("Faceoff");
-        f.AddComponent<FaceoffSpotComponent>(FaceoffSpotComponent{-2});
-        const auto issues = SceneValidator::Validate(scene);
-        HK_CHECK(SceneValidator::HasErrors(issues));
-    }
-
-    // Missing skater/goalie spawn markers -> warnings.
+    // Missing normal team spawn markers -> warnings.
     {
         Scene scene("NoSpawns");
         const auto issues = SceneValidator::Validate(scene);

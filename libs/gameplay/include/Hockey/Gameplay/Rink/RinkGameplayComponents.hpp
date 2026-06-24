@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <glm/glm.hpp>
 
 #include "Hockey/ECS/Components.hpp"
@@ -18,14 +20,9 @@ struct OutOfPlayComponent {
     float minY = -5.0f;
 };
 
-struct FaceoffGameplayComponent {
-    int index = 0;
-    bool centerIce = false;
-    GameplayTeam preferredZone = GameplayTeam::None;
-};
-
 struct FaceoffComponent {
-    int spotIndex = 0;
+    GameplayTeam causeTeam = GameplayTeam::None;
+    uint32_t spawnSequence = 0;
     float timer = 0.0f;
     bool locked = false;
 };
@@ -35,9 +32,6 @@ template <> struct ComponentTraits<GoalGameplayComponent> {
 };
 template <> struct ComponentTraits<OutOfPlayComponent> {
     static constexpr const char* Name = "OutOfPlayComponent";
-};
-template <> struct ComponentTraits<FaceoffGameplayComponent> {
-    static constexpr const char* Name = "FaceoffGameplayComponent";
 };
 template <> struct ComponentTraits<FaceoffComponent> {
     static constexpr const char* Name = "FaceoffComponent";

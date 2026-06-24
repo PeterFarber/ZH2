@@ -1714,22 +1714,21 @@ default board/glass visual marker if render components exist
 Creates spawn markers for:
 
 ```text
-Home Skater Spawn 0
-Home Skater Spawn 1
-Home Skater Spawn 2
-Home Goalie Spawn 0
-Away Skater Spawn 0
-Away Skater Spawn 1
-Away Skater Spawn 2
-Away Goalie Spawn 0
+Home Spawn 0
+Home Spawn 1
+Home Spawn 2
+Home Spawn 3
+Away Spawn 0
+Away Spawn 1
+Away Spawn 2
+Away Spawn 3
 ```
 
 Each has:
 
 ```text
-SpawnPointComponent
+SpawnPointComponent with FaceoffSpawn=false
 TeamComponent
-PlayerRoleComponent
 TransformComponent
 ```
 
@@ -1771,15 +1770,15 @@ optional MeshRendererComponent with BuiltIn.PuckCylinder/BuiltIn.PuckBlack
 Creates:
 
 ```text
-Center Faceoff Spot
-Home Defensive Faceoff Spot
-Away Defensive Faceoff Spot
+8 Neutral Faceoff Spawn markers
+8 Home Penalty Faceoff Spawn markers
+8 Away Penalty Faceoff Spawn markers
 ```
 
 With:
 
 ```text
-FaceoffSpotComponent
+SpawnPointComponent with FaceoffSpawn=true
 TransformComponent
 ```
 
@@ -2223,7 +2222,7 @@ rink tool creates RinkComponent and PlayAreaComponent
 spawn tool creates valid SpawnPointComponent
 goal tool creates GoalComponent
 puck tool creates PuckComponent
-faceoff tool creates FaceoffSpotComponent
+faceoff tool creates neutral/Home/Away faceoff SpawnPointComponent pools
 camera rig tool creates CameraRigMarkerComponent
 light tool creates LightComponent
 scene validation passes for generated marker set where expected

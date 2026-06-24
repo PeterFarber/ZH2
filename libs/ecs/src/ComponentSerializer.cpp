@@ -54,16 +54,10 @@ void SerializeHockeyMarkers(YAML::Emitter& out, Entity entity) {
         const auto& spawn = entity.GetComponent<SpawnPointComponent>();
         out << YAML::Key << "SpawnPointComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Team" << YAML::Value << TeamToString(spawn.team);
-        out << YAML::Key << "Role" << YAML::Value << PlayerRoleToString(spawn.role);
-        out << YAML::Key << "Index" << YAML::Value << spawn.index;
+        out << YAML::Key << "FaceoffSpawn" << YAML::Value << spawn.faceoffSpawn;
         if (!spawn.playerPrefabPath.empty()) {
             out << YAML::Key << "PlayerPrefabPath" << YAML::Value << spawn.playerPrefabPath.generic_string();
         }
-        out << YAML::EndMap;
-    }
-    if (entity.HasComponent<FaceoffSpotComponent>()) {
-        out << YAML::Key << "FaceoffSpotComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Index" << YAML::Value << entity.GetComponent<FaceoffSpotComponent>().index;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<RinkComponent>()) {
@@ -346,24 +340,13 @@ bool ComponentSerializer::DeserializeHockeyMarkerComponents(Entity entity, const
         if (spawnNode["Team"]) {
             component.team = TeamFromString(spawnNode["Team"].as<std::string>());
         }
-        if (spawnNode["Role"]) {
-            component.role = PlayerRoleFromString(spawnNode["Role"].as<std::string>());
-        }
-        if (spawnNode["Index"]) {
-            component.index = spawnNode["Index"].as<int>();
+        if (spawnNode["FaceoffSpawn"]) {
+            component.faceoffSpawn = spawnNode["FaceoffSpawn"].as<bool>();
         }
         if (spawnNode["PlayerPrefabPath"]) {
             component.playerPrefabPath = spawnNode["PlayerPrefabPath"].as<std::string>();
         }
         registry.emplace_or_replace<SpawnPointComponent>(handle, component);
-    }
-
-    if (const auto faceoffNode = node["FaceoffSpotComponent"]) {
-        FaceoffSpotComponent component;
-        if (faceoffNode["Index"]) {
-            component.index = faceoffNode["Index"].as<int>();
-        }
-        registry.emplace_or_replace<FaceoffSpotComponent>(handle, component);
     }
 
     if (const auto rinkNode = node["RinkComponent"]) {
