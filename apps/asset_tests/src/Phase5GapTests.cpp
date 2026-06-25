@@ -321,6 +321,33 @@ void RunSceneAssetTests() {
 
     manager.StopWatching();
 
+    // --- DeleteAssetFiles drops raw + sidecar + cooked + db record -----------
+    const fs::path disposableRaw = raw / "textures" / "delete_me.tga";
+    WriteTga(disposableRaw, 2, 2, px);
+    HK_CHECK_MSG(static_cast<bool>(manager.ImportAsset(disposableRaw)), "import disposable texture");
+    HK_CHECK_MSG(static_cast<bool>(manager.CookAllDirty()), "cook disposable texture");
+
+    AssetMetadata* disposableMeta = manager.Database().FindByRawPath("data/raw/textures/delete_me.tga");
+    HK_CHECK_MSG(disposableMeta != nullptr, "disposable texture tracked before delete");
+    if (disposableMeta != nullptr) {
+        const AssetID disposableId = disposableMeta->id;
+        const fs::path sidecarAbs = workspace / disposableMeta->metadataPath;
+        const fs::path cookedAbs = workspace / disposableMeta->cookedPath;
+        HK_CHECK_MSG(FileSystem::Exists(disposableRaw), "raw file exists before asset delete");
+        HK_CHECK_MSG(FileSystem::Exists(sidecarAbs), "sidecar exists before asset delete");
+        HK_CHECK_MSG(FileSystem::Exists(cookedAbs), "cooked file exists before asset delete");
+
+        HK_CHECK_MSG(static_cast<bool>(manager.DeleteAssetFiles(disposableId)),
+                     "delete asset files ok");
+        HK_CHECK_MSG(manager.Database().Find(disposableId) == nullptr,
+                     "db record removed after asset delete");
+        HK_CHECK_MSG(manager.Database().FindByRawPath("data/raw/textures/delete_me.tga") == nullptr,
+                     "path index cleared after asset delete");
+        HK_CHECK_MSG(!FileSystem::Exists(disposableRaw), "raw file deleted with asset");
+        HK_CHECK_MSG(!FileSystem::Exists(sidecarAbs), "sidecar deleted with asset");
+        HK_CHECK_MSG(!FileSystem::Exists(cookedAbs), "cooked output deleted with asset");
+    }
+
     // --- DeleteMetadata drops the sidecar + db record, keeps the raw file ----
     AssetMetadata* texAgain = manager.Database().FindByRawPath("data/raw/textures/ice.tga");
     HK_CHECK_MSG(texAgain != nullptr, "texture still tracked before delete-metadata");

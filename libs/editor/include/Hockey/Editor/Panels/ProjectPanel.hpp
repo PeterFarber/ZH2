@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Hockey/Assets/AssetID.hpp"
+#include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Panel.hpp"
 #include "Hockey/Editor/Project/EditorAssetPreviewRenderer.hpp"
 #include "Hockey/Editor/Project/ProjectBrowser.hpp"
@@ -43,6 +44,19 @@ private:
         ConfirmDelete,
     };
 
+    enum class ContextTargetKind {
+        None,
+        Folder,
+        RawEntry,
+        EmptyArea,
+    };
+
+    struct ContextTarget {
+        ContextTargetKind kind = ContextTargetKind::None;
+        ProjectEntry entry;
+        std::filesystem::path folder;
+    };
+
     void EnsureSelectionState(EditorContext& context);
     void DrawToolbar(EditorContext& context);
     float SectionListWidth(EditorContext& context) const;
@@ -50,12 +64,26 @@ private:
     void DrawFolderContents(EditorContext& context);
     void DrawSearchResults(EditorContext& context);
     void DrawRawEntry(EditorContext& context, const ProjectEntry& entry);
+    void OpenContextMenuForEntry(EditorContext& context,
+                                 const ProjectEntry& entry,
+                                 const ImVec2& min,
+                                 const ImVec2& max);
+    void OpenContextMenuForFolder(EditorContext& context, const std::filesystem::path& folder);
+    void DrawContentBackgroundContextMenu(EditorContext& context);
+    void DrawProjectContextMenu(EditorContext& context);
+    void DrawFolderContextActions(EditorContext& context,
+                                  const std::filesystem::path& folder,
+                                  bool includeFolderRenameDelete);
+    void DrawRawEntryContextActions(EditorContext& context, const ProjectEntry& entry);
+    bool CanRenameDeletePath(const std::filesystem::path& path) const;
+    void SelectContextTarget(EditorContext& context);
     bool DrawProjectTileButton(EditorContext& context,
                                const ProjectEntry& entry,
                                const AssetMetadata* meta,
                                const ImVec2& size);
-    std::uint64_t ThumbnailTextureId(EditorContext& context, const ProjectEntry& entry, const AssetMetadata* meta);
-    void DrawRawContextMenu(EditorContext& context, const ProjectEntry& entry);
+    std::uint64_t ThumbnailTextureId(EditorContext& context,
+                                     const ProjectEntry& entry,
+                                     const AssetMetadata* meta);
     void DrawStatusStrip(EditorContext& context);
     void DrawViewSizeSlider();
     void DrawModals(EditorContext& context);
@@ -85,6 +113,9 @@ private:
     std::filesystem::path SelectedSectionRawFolder(EditorContext& context, AssetType fallbackType) const;
 
     void RequestModal(Modal modal, const std::filesystem::path& target);
+    Status DeleteProjectPath(EditorContext& context, const std::filesystem::path& target);
+    std::vector<AssetID> AssetIdsUnderPath(EditorContext& context,
+                                           const std::filesystem::path& target) const;
 
     ProjectBrowser m_Browser;
     ProjectSection m_SelectedSection = ProjectSection::All;
@@ -98,6 +129,7 @@ private:
     Modal m_Modal = Modal::None;
     bool m_OpenModalRequested = false;
     std::filesystem::path m_ModalTarget;
+    ContextTarget m_ContextTarget;
     char m_NameBuffer[256] = {};
     std::string m_Status;
 

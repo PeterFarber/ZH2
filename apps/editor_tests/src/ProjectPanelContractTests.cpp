@@ -44,6 +44,12 @@ void RunProjectPanelContractTests() {
     HK_CHECK_MSG(Contains(header, "m_TypeFilter"), "Project panel stores a cooked asset type filter");
     HK_CHECK_MSG(Contains(header, "DrawProjectTileButton"), "Project panel centralizes tile button rendering");
     HK_CHECK_MSG(Contains(header, "ThumbnailTextureId"), "Project panel resolves asset thumbnails for tile mode");
+    HK_CHECK_MSG(Contains(header, "enum class ContextTargetKind"), "Project panel has explicit right-click targets");
+    HK_CHECK_MSG(Contains(header, "struct ContextTarget"), "Project panel stores the right-click target");
+    HK_CHECK_MSG(Contains(header, "DrawContentBackgroundContextMenu"),
+                 "Project panel declares empty-pane right-click handling");
+    HK_CHECK_MSG(Contains(header, "DeleteProjectPath"), "Project panel routes destructive delete through a helper");
+    HK_CHECK_MSG(Contains(header, "AssetIdsUnderPath"), "Project panel can find tracked assets under a raw path");
     const std::string previewHeader =
         ReadProjectFile("libs/editor/include/Hockey/Editor/Project/EditorAssetPreviewRenderer.hpp");
     const std::string previewSource = ReadProjectFile("libs/editor/src/Project/EditorAssetPreviewRenderer.cpp");
@@ -81,9 +87,33 @@ void RunProjectPanelContractTests() {
                  "Project panel hides asset metadata sidecars from visible raw entries and search");
     HK_CHECK_MSG(Contains(source, "entry.type.supported") && Contains(source, "ImportAndCookRawAsset"),
                  "Project panel can import supported raw files before asset selection or drag");
-    HK_CHECK_MSG(Contains(source, "DrawRawContextMenu") && Contains(source, "Reveal Source") &&
+    HK_CHECK_MSG(Contains(source, "DrawRawEntryContextActions") && Contains(source, "Reveal Source") &&
                      Contains(source, "Rename...") && Contains(source, "Delete..."),
                  "Unsupported raw files still keep source file context actions");
+    HK_CHECK_MSG(Contains(source, "OpenContextMenuForEntry"), "Project panel opens context menus from item bounds");
+    HK_CHECK_MSG(Contains(source, "OpenContextMenuForFolder"),
+                 "Project panel opens context menus from folder/background targets");
+    HK_CHECK_MSG(Contains(source, "CanRenameDeletePath"), "Project panel guards rename/delete targets");
+    HK_CHECK_MSG(Contains(source, "ImGui::IsMouseHoveringRect(min, max)") &&
+                     Contains(source, "ImGui::IsMouseClicked(ImGuiMouseButton_Right)"),
+                 "Project entries open context menus from full visual bounds");
+    HK_CHECK_MSG(!Contains(source, "BeginPopupContextItem(\"##project-entry-context\")"),
+                 "Project panel no longer relies on item-local context popups");
+    HK_CHECK_MSG(Contains(source, "DrawContentBackgroundContextMenu"), "Project panel handles empty-pane right clicks");
+    HK_CHECK_MSG(Contains(source, "BeginPopupContextWindow(\"##project-content-context\"") ||
+                     Contains(source, "ImGui::IsWindowHovered"),
+                 "Project panel opens a context menu from the contents background");
+    HK_CHECK_MSG(Contains(source, "ImGuiPopupFlags_NoOpenOverItems") ||
+                     Contains(source, "!ImGui::IsAnyItemHovered()"),
+                 "Project background menu does not steal item right-clicks");
+    HK_CHECK_MSG(Contains(source, "DrawProjectContextMenu"), "Project panel renders one shared context menu");
+    HK_CHECK_MSG(Contains(source, "DrawFolderContextActions"), "Project panel has reusable folder context actions");
+    HK_CHECK_MSG(Contains(source, "DrawRawEntryContextActions"), "Project panel has reusable file/asset context actions");
+    HK_CHECK_MSG(Contains(source, "Project roots cannot be renamed or deleted"),
+                 "Project root rename/delete is disabled");
+    HK_CHECK_MSG(Contains(source, "DeleteAssetFiles"), "Project panel deletes cooked outputs for tracked raw assets");
+    HK_CHECK_MSG(Contains(source, "InvalidateAssetEvents(context)"),
+                 "Project panel invalidates renderer asset caches after delete");
     HK_CHECK_MSG(!Contains(source, "##project-details"), "Project panel no longer owns asset details/editor pane");
     HK_CHECK_MSG(Contains(source, "context.SelectAsset") && Contains(source, "requestedPanelFocus"),
                  "Project asset clicks hand selection to Inspector");

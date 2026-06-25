@@ -108,6 +108,9 @@ void RunProjectBrowserTests() {
         HK_CHECK_MSG(static_cast<bool>(browser.RenameEntry(dir / "Models", "Meshes")), "rename folder");
         HK_CHECK_MSG(!std::filesystem::exists(dir / "Models") && std::filesystem::is_directory(dir / "Meshes"),
                      "rename moved the folder");
+        HK_CHECK_MSG(!browser.RenameEntry(dir / "Meshes", "../Outside"), "rename rejects parent traversal");
+        HK_CHECK_MSG(!browser.RenameEntry(dir / "Meshes", "Nested/Outside"), "rename rejects forward slash path");
+        HK_CHECK_MSG(!browser.RenameEntry(dir / "Meshes", "Nested\\Outside"), "rename rejects backslash path");
 
         WriteFile(dir / "scratch.txt", "junk");
         HK_CHECK_MSG(static_cast<bool>(browser.DeleteEntry(dir / "scratch.txt")), "delete file");

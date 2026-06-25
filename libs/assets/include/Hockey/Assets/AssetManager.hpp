@@ -75,6 +75,11 @@ public:
     // asset can be re-discovered/re-imported with a fresh id afterwards.
     Status DeleteMetadata(AssetID id);
 
+    // Removes an asset's raw source, metadata sidecar, cooked output, database
+    // record, and any live runtime instance. This is the destructive delete
+    // used by editor/project-window raw asset deletion.
+    Status DeleteAssetFiles(AssetID id);
+
     // Returns aggregated validation issues; the Status is failed if any error
     // (not just warning) was found.
     Status ValidateReferences(std::vector<AssetValidationIssue>* issues = nullptr);

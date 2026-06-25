@@ -285,6 +285,10 @@ Status ProjectBrowser::RenameEntry(const std::filesystem::path& path, const std:
     if (newName.empty()) {
         return Status::Fail("New name is empty");
     }
+    if (newName == "." || newName == ".." || newName.find('/') != std::string::npos ||
+        newName.find('\\') != std::string::npos) {
+        return Status::Fail("New name must be a file or folder name, not a path");
+    }
     const std::filesystem::path target = path.parent_path() / newName;
     std::error_code ec;
     if (std::filesystem::exists(target, ec)) {

@@ -308,6 +308,8 @@ void ProjectPanel::OnImGui(EditorContext& context) {
                     } else {
                         DrawFolderContents(context);
                     }
+                    DrawContentBackgroundContextMenu(context);
+                    DrawProjectContextMenu(context);
                 }
                 ImGui::EndChild();
             }
@@ -515,19 +517,21 @@ void ProjectPanel::DrawRawEntry(EditorContext& context, const ProjectEntry& entr
     const AssetMetadata* meta = MetadataForRawEntry(context, entry);
     const bool selected =
         entry.isDirectory ? SamePath(entry.path, m_SelectedFolder)
-                          : ((meta != nullptr && meta->id == m_SelectedAssetId) || SamePath(entry.path, m_Browser.Selected()));
+                          : ((meta != nullptr && meta->id == m_SelectedAssetId) ||
+                             SamePath(entry.path, m_Browser.Selected()));
     const ImVec4 color = ColorForType(entry.type.type, entry.type.supported);
     ImGui::BeginGroup();
     ImGui::PushStyleColor(ImGuiCol_Text, color);
 
     if (m_IconSize <= kListModeThreshold) {
         const std::string label = EditorIconLabel(EditorIconForAssetType(entry.type.type), entry.name);
-        if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
+        if (ImGui::Selectable(label.c_str(),
+                              selected,
+                              ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick)) {
             SelectRawEntry(context, entry);
         }
         BeginRawDragSource(context, entry);
         HandleRawActivation(context, entry);
-        DrawRawContextMenu(context, entry);
     } else {
         const ImVec2 size(m_IconSize, m_IconSize);
         if (DrawProjectTileButton(context, entry, meta, size)) {
@@ -539,12 +543,79 @@ void ProjectPanel::DrawRawEntry(EditorContext& context, const ProjectEntry& entr
         }
         BeginRawDragSource(context, entry);
         HandleRawActivation(context, entry);
-        DrawRawContextMenu(context, entry);
         ImGui::TextWrapped("%s", entry.name.c_str());
     }
     ImGui::PopStyleColor();
     ImGui::EndGroup();
+    const ImVec2 groupMin = ImGui::GetItemRectMin();
+    const ImVec2 groupMax = ImGui::GetItemRectMax();
+    OpenContextMenuForEntry(context, entry, groupMin, groupMax);
     ImGui::PopID();
+}
+
+void ProjectPanel::OpenContextMenuForEntry(EditorContext& context,
+                                           const ProjectEntry& entry,
+                                           const ImVec2& min,
+                                           const ImVec2& max) {
+    if (!ImGui::IsMouseHoveringRect(min, max) || !ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        return;
+    }
+
+    m_ContextTarget = {};
+    m_ContextTarget.kind = entry.isDirectory ? ContextTargetKind::Folder : ContextTargetKind::RawEntry;
+    m_ContextTarget.entry = entry;
+    m_ContextTarget.folder = entry.isDirectory ? entry.path : entry.path.parent_path();
+    SelectContextTarget(context);
+    ImGui::OpenPopup("##project-context-menu");
+}
+
+void ProjectPanel::OpenContextMenuForFolder(EditorContext& context,
+                                            const std::filesystem::path& folder) {
+    m_ContextTarget = {};
+    m_ContextTarget.kind = ContextTargetKind::EmptyArea;
+    m_ContextTarget.folder = folder;
+    SelectContextTarget(context);
+    ImGui::OpenPopup("##project-context-menu");
+}
+
+bool ProjectPanel::CanRenameDeletePath(const std::filesystem::path& path) const {
+    if (path.empty()) {
+        return false;
+    }
+    if (!m_Browser.IsWithinRoots(path)) {
+        return false;
+    }
+    return !SamePath(m_Browser.RootForPath(path), path);
+}
+
+void ProjectPanel::SelectContextTarget(EditorContext& context) {
+    if (m_ContextTarget.kind == ContextTargetKind::Folder) {
+        m_SelectedFolder = m_ContextTarget.entry.path;
+        m_SelectedAssetId = {};
+        m_Browser.Select(m_ContextTarget.entry.path);
+        context.ClearAssetSelection();
+        return;
+    }
+
+    if (m_ContextTarget.kind == ContextTargetKind::RawEntry) {
+        const ProjectEntry& entry = m_ContextTarget.entry;
+        m_Browser.Select(entry.path);
+        if (const AssetMetadata* meta = MetadataForRawEntry(context, entry)) {
+            m_SelectedAssetId = meta->id;
+            context.SelectAsset(meta->id);
+            context.requestedPanelFocus = EditorPanelNames::kInspector;
+        } else {
+            m_SelectedAssetId = {};
+            context.ClearAssetSelection();
+        }
+        return;
+    }
+
+    if (m_ContextTarget.kind == ContextTargetKind::EmptyArea && !m_ContextTarget.folder.empty()) {
+        m_SelectedFolder = m_ContextTarget.folder;
+        m_SelectedAssetId = {};
+        context.ClearAssetSelection();
+    }
 }
 
 bool ProjectPanel::DrawProjectTileButton(EditorContext& context,
@@ -573,7 +644,9 @@ bool ProjectPanel::DrawProjectTileButton(EditorContext& context,
     return pressed;
 }
 
-std::uint64_t ProjectPanel::ThumbnailTextureId(EditorContext& context, const ProjectEntry& entry, const AssetMetadata* meta) {
+std::uint64_t ProjectPanel::ThumbnailTextureId(EditorContext& context,
+                                               const ProjectEntry& entry,
+                                               const AssetMetadata* meta) {
     (void)entry;
     if (meta == nullptr || context.imguiBridge == nullptr) {
         return 0;
@@ -587,41 +660,87 @@ std::uint64_t ProjectPanel::ThumbnailTextureId(EditorContext& context, const Pro
     return 0;
 }
 
-void ProjectPanel::DrawRawContextMenu(EditorContext& context, const ProjectEntry& entry) {
-    if (!ImGui::BeginPopupContextItem("##project-entry-context")) {
+void ProjectPanel::DrawContentBackgroundContextMenu(EditorContext& context) {
+    const std::filesystem::path folder =
+        m_SelectedFolder.empty() ? SelectedSectionRawFolder(context, SelectedSectionAssetType())
+                                 : m_SelectedFolder;
+
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && !ImGui::IsAnyItemHovered() &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        OpenContextMenuForFolder(context, folder);
+    }
+}
+
+void ProjectPanel::DrawProjectContextMenu(EditorContext& context) {
+    if (!ImGui::BeginPopup("##project-context-menu")) {
         return;
     }
 
-    if (entry.isDirectory) {
-        m_SelectedFolder = entry.path;
-        m_SelectedAssetId = {};
-        if (ImGui::MenuItem("New Folder...")) {
-            RequestModal(Modal::CreateFolder, entry.path);
+    switch (m_ContextTarget.kind) {
+    case ContextTargetKind::Folder:
+        DrawFolderContextActions(context, m_ContextTarget.entry.path, true);
+        break;
+    case ContextTargetKind::RawEntry:
+        DrawRawEntryContextActions(context, m_ContextTarget.entry);
+        break;
+    case ContextTargetKind::EmptyArea:
+        DrawFolderContextActions(context, m_ContextTarget.folder, true);
+        break;
+    case ContextTargetKind::None:
+        ImGui::TextDisabled("No Project item selected.");
+        break;
+    }
+
+    ImGui::EndPopup();
+}
+
+void ProjectPanel::DrawFolderContextActions(EditorContext& context,
+                                            const std::filesystem::path& folder,
+                                            bool includeFolderRenameDelete) {
+    if (ImGui::MenuItem("New Folder...")) {
+        RequestModal(Modal::CreateFolder, folder);
+    }
+    if (context.assetManager != nullptr && ImGui::MenuItem("New Material")) {
+        CreateMaterialAsset(context, folder);
+    }
+
+    if (m_ContextTarget.kind == ContextTargetKind::EmptyArea) {
+        ImGui::Separator();
+        if (context.assetManager != nullptr && ImGui::MenuItem("Import...")) {
+            ImportSelectedFile(context);
         }
-        if (context.assetManager != nullptr && ImGui::MenuItem("New Material")) {
-            CreateMaterialAsset(context, entry.path);
+        if (context.assetManager != nullptr && ImGui::MenuItem("Import All & Cook")) {
+            ImportAllAndCook(context);
         }
+        if (context.assetManager != nullptr && ImGui::MenuItem("Recook Dirty")) {
+            RecookDirty(context);
+        }
+    }
+
+    ImGui::Separator();
+    if (includeFolderRenameDelete && CanRenameDeletePath(folder)) {
         if (ImGui::MenuItem("Rename...")) {
-            RequestModal(Modal::Rename, entry.path);
+            RequestModal(Modal::Rename, folder);
         }
         if (ImGui::MenuItem("Delete...")) {
-            RequestModal(Modal::ConfirmDelete, entry.path);
+            RequestModal(Modal::ConfirmDelete, folder);
         }
-        ImGui::Separator();
-        if (ImGui::MenuItem("Reveal Source")) {
-            ProjectBrowser::Reveal(entry.path);
-        }
-        ImGui::EndPopup();
-        return;
+    } else if (includeFolderRenameDelete) {
+        ImGui::BeginDisabled();
+        ImGui::MenuItem("Rename...");
+        ImGui::MenuItem("Delete...");
+        ImGui::EndDisabled();
+        EditorTooltip::ForLastItem("Project roots cannot be renamed or deleted from this menu.");
     }
 
-    m_Browser.Select(entry.path);
-    const AssetMetadata* meta = MetadataForRawEntry(context, entry);
-    if (meta != nullptr) {
-        m_SelectedAssetId = meta->id;
-        context.SelectAsset(meta->id);
-        context.requestedPanelFocus = EditorPanelNames::kInspector;
+    ImGui::Separator();
+    if (ImGui::MenuItem("Reveal Source")) {
+        ProjectBrowser::Reveal(folder);
     }
+}
+
+void ProjectPanel::DrawRawEntryContextActions(EditorContext& context, const ProjectEntry& entry) {
+    const AssetMetadata* meta = MetadataForRawEntry(context, entry);
     if (entry.type.type == EditorFileType::Scene && ImGui::MenuItem("Open Scene")) {
         OpenSceneFile(context, entry.path);
     }
@@ -631,7 +750,8 @@ void ProjectPanel::DrawRawContextMenu(EditorContext& context, const ProjectEntry
     if (entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab) {
         ImGui::Separator();
     }
-    if (context.assetManager != nullptr && meta == nullptr && entry.type.supported && ImGui::MenuItem("Import & Cook")) {
+    if (context.assetManager != nullptr && meta == nullptr && entry.type.supported &&
+        ImGui::MenuItem("Import & Cook")) {
         ImportAndCookRawAsset(context, entry.path);
     }
     EditorTooltip::ForLastItem("Import this supported raw source asset and cook dirty dependents");
@@ -663,13 +783,12 @@ void ProjectPanel::DrawRawContextMenu(EditorContext& context, const ProjectEntry
     }
     EditorTooltip::ForLastItem("Reveal the cooked output file in the system file manager");
     ImGui::Separator();
-    if (ImGui::MenuItem("Rename...")) {
+    if (CanRenameDeletePath(entry.path) && ImGui::MenuItem("Rename...")) {
         RequestModal(Modal::Rename, entry.path);
     }
-    if (ImGui::MenuItem("Delete...")) {
+    if (CanRenameDeletePath(entry.path) && ImGui::MenuItem("Delete...")) {
         RequestModal(Modal::ConfirmDelete, entry.path);
     }
-    ImGui::EndPopup();
 }
 
 void ProjectPanel::DrawStatusStrip(EditorContext& context) {
@@ -1034,6 +1153,58 @@ void ProjectPanel::InstantiatePrefabFile(EditorContext& context, const std::file
     context.undoRedo.Execute(EditorCommands::InstantiatePrefab(path), context);
 }
 
+std::vector<AssetID> ProjectPanel::AssetIdsUnderPath(EditorContext& context,
+                                                     const std::filesystem::path& target) const {
+    std::vector<AssetID> ids;
+    if (context.assetManager == nullptr || target.empty()) {
+        return ids;
+    }
+
+    for (const AssetMetadata* metadata : context.assetManager->Database().All()) {
+        if (metadata == nullptr) {
+            continue;
+        }
+        const std::filesystem::path raw = ResolveProjectPath(metadata->rawPath);
+        if (SamePath(raw, target) || PathIsWithin(raw, target)) {
+            ids.push_back(metadata->id);
+        }
+    }
+    return ids;
+}
+
+Status ProjectPanel::DeleteProjectPath(EditorContext& context, const std::filesystem::path& target) {
+    if (!CanRenameDeletePath(target)) {
+        return Status::Fail("Project roots cannot be renamed or deleted from this menu");
+    }
+
+    const std::vector<AssetID> assetIds = AssetIdsUnderPath(context, target);
+    for (const AssetID id : assetIds) {
+        if (const Status status = context.assetManager->DeleteAssetFiles(id); !status) {
+            return status;
+        }
+    }
+
+    if (std::filesystem::exists(target)) {
+        if (const Status status = m_Browser.DeleteEntry(target); !status) {
+            return status;
+        }
+    }
+
+    if (context.assetManager != nullptr) {
+        if (const Status status = context.assetManager->DiscoverRawAssets(); !status) {
+            return status;
+        }
+        if (const Status status = context.assetManager->CookAllDirty(); !status) {
+            return status;
+        }
+        if (const Status status = context.assetManager->SaveDatabase(); !status) {
+            return status;
+        }
+    }
+
+    return Status::Ok();
+}
+
 void ProjectPanel::DrawModals(EditorContext& context) {
     if (m_OpenModalRequested) {
         switch (m_Modal) {
@@ -1061,6 +1232,12 @@ void ProjectPanel::DrawModals(EditorContext& context) {
         const bool submit =
             ImGui::InputText("##foldername", m_NameBuffer, sizeof(m_NameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
         if (ImGui::Button("Create") || submit) {
+            if (!m_Browser.IsWithinRoots(m_ModalTarget)) {
+                m_Status = "Cannot create a folder outside project asset roots";
+                ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+                return;
+            }
             if (const Status status = m_Browser.CreateFolder(m_ModalTarget, m_NameBuffer); !status) {
                 m_Status = status.error;
             } else {
@@ -1082,6 +1259,12 @@ void ProjectPanel::DrawModals(EditorContext& context) {
         const bool submit = ImGui::InputText("##rename", m_NameBuffer, sizeof(m_NameBuffer),
                                              ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
         if (ImGui::Button("Rename") || submit) {
+            if (!CanRenameDeletePath(m_ModalTarget)) {
+                m_Status = "Project roots cannot be renamed or deleted from this menu";
+                ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+                return;
+            }
             const std::filesystem::path oldPath = m_ModalTarget;
             const std::filesystem::path newPath = oldPath.parent_path() / m_NameBuffer;
             if (const Status status = m_Browser.RenameEntry(oldPath, m_NameBuffer); !status) {
@@ -1111,18 +1294,20 @@ void ProjectPanel::DrawModals(EditorContext& context) {
         ImGui::TextDisabled("This permanently removes the source file/folder from disk.");
         ImGui::Separator();
         if (ImGui::Button("Delete")) {
-            if (const Status status = m_Browser.DeleteEntry(m_ModalTarget); !status) {
+            if (!CanRenameDeletePath(m_ModalTarget)) {
+                m_Status = "Project roots cannot be renamed or deleted from this menu";
+                ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+                return;
+            }
+            if (const Status status = DeleteProjectPath(context, m_ModalTarget); !status) {
                 m_Status = status.error;
             } else {
-                if (context.assetManager != nullptr) {
-                    context.assetManager->DiscoverRawAssets();
-                    context.assetManager->CookAllDirty();
-                    context.assetManager->SaveDatabase();
-                }
-                if (SamePath(m_SelectedFolder, m_ModalTarget)) {
+                if (SamePath(m_SelectedFolder, m_ModalTarget) || PathIsWithin(m_SelectedFolder, m_ModalTarget)) {
                     m_SelectedFolder = m_Browser.ParentFolderWithinRoots(m_ModalTarget);
                 }
                 m_SelectedAssetId = {};
+                InvalidateAssetEvents(context);
                 m_Status.clear();
             }
             ImGui::CloseCurrentPopup();

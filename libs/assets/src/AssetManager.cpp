@@ -579,6 +579,51 @@ Status AssetManager::DeleteMetadata(AssetID id) {
     return SaveDatabase();
 }
 
+Status AssetManager::DeleteAssetFiles(AssetID id) {
+    AssetMetadata* metadata = m_Database.Find(id);
+    if (metadata == nullptr) {
+        return Status::Fail("unknown asset id: " + id.ToString());
+    }
+
+    const fs::path rawPath = metadata->rawPath;
+    const fs::path rawAbs = AbsoluteRaw(metadata->rawPath);
+    const fs::path sidecarAbs =
+        metadata->metadataPath.empty() ? fs::path{} : AbsoluteRaw(metadata->metadataPath);
+    const fs::path cookedAbs =
+        metadata->cookedPath.empty() ? fs::path{} : AbsoluteRaw(metadata->cookedPath);
+
+    if (m_Registry.IsLoaded(id)) {
+        m_Registry.Unload(id);
+    }
+
+    std::vector<std::string> errors;
+    auto removeIfPresent = [&errors](const fs::path& path, const char* label) {
+        if (path.empty() || !FileSystem::Exists(path)) {
+            return;
+        }
+        if (const Status status = FileSystem::Remove(path); !status) {
+            errors.push_back(std::string(label) + ": " + status.error);
+        }
+    };
+
+    removeIfPresent(cookedAbs, "cooked output");
+    removeIfPresent(sidecarAbs, "metadata sidecar");
+    removeIfPresent(rawAbs, "raw source");
+
+    if (!errors.empty()) {
+        std::string message = "asset delete failed";
+        for (const std::string& error : errors) {
+            message += "; " + error;
+        }
+        return Status::Fail(message);
+    }
+
+    m_Database.Remove(id);
+    m_Database.RebuildDependencyGraph();
+    PushEvent({AssetEventType::Deleted, id, rawPath, "asset files deleted"});
+    return SaveDatabase();
+}
+
 void AssetManager::StartWatching() {
     m_Watcher.Start(m_Info.rawRoot);
 }
