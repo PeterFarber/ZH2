@@ -96,6 +96,7 @@ Source material:
 - [x] Possessed pucks from pickup or steal preserve stick X/Z while locking Y to the tuned puck floor height.
 - [x] Stick handling exists.
 - [x] Shooting exists.
+- [x] Shot release pushes velocity into dynamic puck physics bodies so physics sync does not keep the puck at the stick.
 - [x] Shot release has a tuned shooter self-collision/reacquire grace window.
 - [x] Puck controller clamps puck height to the tuned ice/floor height.
 - [x] Explicit steal action exists.
@@ -133,6 +134,7 @@ Source material:
 - [x] Puck interaction tests cover player-body contact possession.
 - [x] Puck interaction tests cover scaled puck/player body-contact possession.
 - [x] Shooting tests exist.
+- [x] Shooting tests cover dynamic puck physics body velocity on shot release.
 - [x] Shooting tests cover post-shot shooter grace.
 - [x] Puck controller tests cover floor-height clamping.
 - [x] Snapshot tests cover shot charge ratio.

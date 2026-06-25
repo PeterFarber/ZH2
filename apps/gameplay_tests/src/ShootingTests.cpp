@@ -10,6 +10,10 @@
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Physics/Physics.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
+#include "Hockey/Physics/PhysicsSettings.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 using namespace Hockey;
 
@@ -89,13 +93,13 @@ void PushShoot(GameplayWorld& world, uint32_t playerIndex, uint64_t tick, bool h
     world.PushInput(input);
 }
 
-void GivePuckToShooter(Scene& scene, Entity skater, Entity puck) {
+void GivePuckToShooter(Scene& scene, Entity skater, Entity puck, PhysicsWorld* physicsWorld = nullptr) {
     skater.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
     skater.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
     puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(skater);
 
     GameplayEventQueue events;
-    HK_CHECK(PuckPossession::TryAcquire(scene, skater, puck, events));
+    HK_CHECK(PuckPossession::TryAcquire(scene, skater, puck, events, physicsWorld));
     events.Clear();
 }
 
@@ -177,5 +181,58 @@ void RunShootingTests() {
         HK_CHECK_EQ(gameplay.state, PuckState::Shot);
         HK_CHECK(!gameplay.possessingPlayer.IsValid());
         HK_CHECK(!shooter.GetComponent<SkaterComponent>().hasPuck);
+    }
+
+    {
+        Scene physicsScene("DynamicPuckShotPhysicsSync");
+        BuildValidGameplayScene(physicsScene);
+
+        Entity physicsPuck = FindPuck(physicsScene);
+        RigidBodyComponent puckRigidBody;
+        puckRigidBody.type = RigidBodyType::Dynamic;
+        puckRigidBody.useGravity = false;
+        puckRigidBody.layer = PhysicsLayer::Puck;
+        physicsPuck.AddComponent<RigidBodyComponent>(puckRigidBody);
+        CylinderColliderComponent puckCollider;
+        puckCollider.radius = 0.3f;
+        puckCollider.halfHeight = 0.05f;
+        physicsPuck.AddComponent<CylinderColliderComponent>(puckCollider);
+
+        HK_CHECK_MSG(static_cast<bool>(Physics::Init()), "physics initializes for dynamic puck shot sync");
+        PhysicsWorld physicsWorld;
+        HK_CHECK_MSG(static_cast<bool>(physicsWorld.Init(MakeDefaultPhysicsSettings())),
+                     "physics world initializes for dynamic puck shot sync");
+
+        GameplayWorld physicsWorldGameplay;
+        HK_CHECK_MSG(static_cast<bool>(physicsWorldGameplay.Init(physicsScene, &physicsWorld, settings)),
+                     "gameplay world initializes");
+        physicsWorldGameplay.DrainEvents();
+        FindMatch(physicsScene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+        physicsWorld.CreateBodiesFromScene(physicsScene);
+
+        Entity shooter = FindPlayer(physicsScene, PlayerSlot::HomeSkater0);
+        GivePuckToShooter(physicsScene, shooter, physicsPuck, &physicsWorld);
+
+        const uint32_t shooterIndex = shooter.GetComponent<PlayerComponent>().playerIndex;
+        PushShoot(physicsWorldGameplay, shooterIndex, 1, true, false);
+        physicsWorldGameplay.FixedUpdate(physicsScene, settings.fixedDeltaSeconds, 1);
+        const glm::vec3 beforeRelease = physicsPuck.GetComponent<TransformComponent>().localPosition;
+        PushShoot(physicsWorldGameplay, shooterIndex, 2, false, true);
+        physicsWorldGameplay.FixedUpdate(physicsScene, settings.fixedDeltaSeconds, 2);
+
+        const glm::vec3 runtimeVelocity = physicsPuck.GetComponent<PuckRuntimeComponent>().velocity;
+        HK_CHECK_EQ(physicsPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Shot);
+        HK_CHECK(glm::length(runtimeVelocity) > 0.0f);
+        const glm::vec3 physicsVelocity = physicsWorld.GetLinearVelocity(physicsPuck);
+        HK_CHECK(physicsVelocity.x > 0.0f);
+        HK_CHECK_NEAR(physicsVelocity.z, 0.0f, 0.001f);
+
+        physicsWorld.SyncSceneToPhysics(physicsScene);
+        physicsWorld.Step(settings.fixedDeltaSeconds);
+        physicsWorld.SyncPhysicsToScene(physicsScene);
+        HK_CHECK(physicsPuck.GetComponent<TransformComponent>().localPosition.x > beforeRelease.x);
+
+        physicsWorld.Shutdown();
+        Physics::Shutdown();
     }
 }
