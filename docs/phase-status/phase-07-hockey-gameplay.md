@@ -103,6 +103,7 @@ Source material:
 - [x] Successful steals directly transfer possession from the current possessor to the stealing player.
 - [x] Legacy passing, body-check, and poke-check gameplay systems are removed.
 - [x] Contextual left-click steal-or-shot mapping exists in local client/editor preview input translation.
+- [x] Successful steals require the steal click to be released before the same player can charge or release a shot.
 - [x] Local client/editor preview shots aim toward the mouse cursor projected onto the ice.
 
 ## Finished - World, Snapshots, Integration
@@ -139,6 +140,7 @@ Source material:
 - [x] Puck controller tests cover floor-height clamping.
 - [x] Snapshot tests cover shot charge ratio.
 - [x] Steal tests cover direct possession transfer, cooldown, attempt events, failed steals, and no loose-puck poke behavior.
+- [x] Steal tests cover blocking shot charge/release until after the steal click is released.
 - [x] Gameplay/editor tests cover the absence of pass, body-check, poke-check, and steal held/released action surfaces.
 - [x] Goal tests exist.
 - [x] Goal trigger tests cover puck-only scoring.

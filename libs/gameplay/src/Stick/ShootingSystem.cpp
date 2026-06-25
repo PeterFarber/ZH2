@@ -34,6 +34,33 @@ glm::vec3 DirectionFromInputOrFacing(Entity player, const GameplayInputFrame& in
     return {0.0f, 0.0f, 1.0f};
 }
 
+bool HasShotInput(const GameplayInputFrame& input) {
+    return input.shootPressed || input.shootHeld || input.shootReleased;
+}
+
+bool ConsumeBlockedStealClickShotInput(Entity player, ShotComponent& shot, const GameplayInputFrame& input) {
+    if (!player.HasComponent<PlayerRuntimeComponent>()) {
+        return false;
+    }
+
+    PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
+    if (!runtime.shotBlockedUntilRelease) {
+        return false;
+    }
+
+    const bool hasShotInput = HasShotInput(input);
+    if (input.shootReleased || !hasShotInput) {
+        runtime.shotBlockedUntilRelease = false;
+    }
+    if (!hasShotInput) {
+        return false;
+    }
+
+    shot.charge = 0.0f;
+    shot.charging = false;
+    return true;
+}
+
 void SyncShotPuckBody(Entity puck, PhysicsWorld* physicsWorld, const glm::vec3& velocity) {
     if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid() ||
         !puck.HasComponent<TransformComponent>() || !physicsWorld->HasBody(puck)) {
@@ -77,6 +104,10 @@ void ShootingSystem::FixedUpdate(Scene& scene,
     }
 
     ShotComponent& shot = player.GetComponent<ShotComponent>();
+    if (ConsumeBlockedStealClickShotInput(player, shot, input)) {
+        return;
+    }
+
     if (input.shootPressed || input.shootHeld) {
         shot.charging = true;
         shot.charge = std::min(tuning.shot.chargeSeconds, shot.charge + fixedDeltaSeconds);

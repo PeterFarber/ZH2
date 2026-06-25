@@ -66,6 +66,14 @@ void TransferPossession(Scene& scene,
     if (stealer.HasComponent<SkaterComponent>()) {
         stealer.GetComponent<SkaterComponent>().hasPuck = true;
     }
+    if (stealer.HasComponent<PlayerRuntimeComponent>()) {
+        stealer.GetComponent<PlayerRuntimeComponent>().shotBlockedUntilRelease = true;
+    }
+    if (stealer.HasComponent<ShotComponent>()) {
+        ShotComponent& shot = stealer.GetComponent<ShotComponent>();
+        shot.charge = 0.0f;
+        shot.charging = false;
+    }
     if (puck.HasComponent<TransformComponent>()) {
         glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(stealer);
         puckPosition.y = puckFloorY;

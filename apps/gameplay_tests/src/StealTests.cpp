@@ -97,6 +97,23 @@ void PushSteal(GameplayWorld& world, uint32_t playerIndex, uint64_t tick) {
     world.PushInput(input);
 }
 
+void PushShoot(GameplayWorld& world,
+               uint32_t playerIndex,
+               uint64_t tick,
+               bool pressed,
+               bool held,
+               bool released) {
+    GameplayInputFrame input;
+    input.playerIndex = playerIndex;
+    input.inputSequence = tick;
+    input.simulationTick = tick;
+    input.aim = {1.0f, 0.0f};
+    input.shootPressed = pressed;
+    input.shootHeld = held;
+    input.shootReleased = released;
+    world.PushInput(input);
+}
+
 } // namespace
 
 void RunStealTests() {
@@ -140,6 +157,68 @@ void RunStealTests() {
         PushSteal(world, stealer.GetComponent<PlayerComponent>().playerIndex, 2);
         world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
         HK_CHECK(!SawEvent(world.DrainEvents(), GameplayEventType::StealAttempted));
+    }
+
+    {
+        Scene scene("StealClickMustReleaseBeforeShotScene");
+        BuildValidGameplayScene(scene);
+
+        GameplaySettings settings;
+        GameplayWorld world;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+        FindMatch(scene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+
+        Entity stealer = FindPlayer(scene, PlayerSlot::HomeSkater0);
+        Entity carrier = FindPlayer(scene, PlayerSlot::AwaySkater0);
+        Entity puck = FindPuck(scene);
+        stealer.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
+        stealer.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+        carrier.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 1.0f};
+        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, -1.0f};
+        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
+
+        GameplayEventQueue events;
+        HK_CHECK(PuckPossession::TryAcquire(scene, carrier, puck, events));
+        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(stealer);
+
+        const uint32_t stealerIndex = stealer.GetComponent<PlayerComponent>().playerIndex;
+        PushSteal(world, stealerIndex, 1);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+        world.DrainEvents();
+
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().possessingPlayer, stealer.GetUUID());
+        HK_CHECK(stealer.GetComponent<SkaterComponent>().hasPuck);
+
+        PushShoot(world, stealerIndex, 2, false, true, false);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
+        std::vector<GameplayEvent> heldEvents = world.DrainEvents();
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().possessingPlayer, stealer.GetUUID());
+        HK_CHECK(!stealer.GetComponent<ShotComponent>().charging);
+        HK_CHECK_NEAR(stealer.GetComponent<ShotComponent>().charge, 0.0f, 0.001f);
+        HK_CHECK(!SawEvent(heldEvents, GameplayEventType::PuckShot));
+
+        PushShoot(world, stealerIndex, 3, false, false, true);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 3);
+        std::vector<GameplayEvent> releaseEvents = world.DrainEvents();
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().possessingPlayer, stealer.GetUUID());
+        HK_CHECK(!stealer.GetComponent<ShotComponent>().charging);
+        HK_CHECK_NEAR(stealer.GetComponent<ShotComponent>().charge, 0.0f, 0.001f);
+        HK_CHECK(!SawEvent(releaseEvents, GameplayEventType::PuckShot));
+
+        PushShoot(world, stealerIndex, 4, true, true, false);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 4);
+        HK_CHECK(stealer.GetComponent<ShotComponent>().charging);
+        HK_CHECK(stealer.GetComponent<ShotComponent>().charge > 0.0f);
+
+        PushShoot(world, stealerIndex, 5, false, false, true);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 5);
+        std::vector<GameplayEvent> shotEvents = world.DrainEvents();
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Shot);
+        HK_CHECK(SawEvent(shotEvents, GameplayEventType::PuckShot));
     }
 
     {

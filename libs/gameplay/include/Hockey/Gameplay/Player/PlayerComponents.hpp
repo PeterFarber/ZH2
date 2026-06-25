@@ -47,6 +47,7 @@ struct PlayerRuntimeComponent {
     float stealCooldown = 0.0f;
     bool hasMoveTarget = false;
     bool shieldActive = false;
+    bool shotBlockedUntilRelease = false;
     bool inputEnabled = true;
     bool movementEnabled = true;
 };
