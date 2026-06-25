@@ -6,6 +6,7 @@
 
 namespace Hockey {
 
+class PhysicsWorld;
 class Scene;
 
 class StealSystem {
@@ -14,7 +15,8 @@ public:
                             const GameplayInputBuffer& inputs,
                             const GameplayTuning& tuning,
                             float fixedDeltaSeconds,
-                            GameplayEventQueue& events);
+                            GameplayEventQueue& events,
+                            PhysicsWorld* physicsWorld = nullptr);
 };
 
 }

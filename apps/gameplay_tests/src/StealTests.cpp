@@ -11,6 +11,9 @@
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Stick/StealSystem.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Physics/Physics.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 using namespace Hockey;
 
@@ -77,6 +80,12 @@ bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) 
         }
     }
     return false;
+}
+
+glm::vec3 FloorStickPosition(Entity player, float floorY) {
+    glm::vec3 position = StickHandling::GetStickWorldPosition(player);
+    position.y = floorY;
+    return position;
 }
 
 void PushSteal(GameplayWorld& world, uint32_t playerIndex, uint64_t tick) {
@@ -190,5 +199,63 @@ void RunStealTests() {
         HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().possessingPlayer, UUID(0));
         HK_CHECK_EQ(puck.GetComponent<PuckRuntimeComponent>().velocity, glm::vec3{0.0f});
         HK_CHECK(SawEvent(events.Drain(), GameplayEventType::StealAttempted));
+    }
+
+    {
+        Scene scene("DynamicPuckStealPhysicsSyncScene");
+        BuildValidGameplayScene(scene);
+
+        Entity authoredPuck = FindPuck(scene);
+        RigidBodyComponent rb;
+        rb.type = RigidBodyType::Dynamic;
+        rb.useGravity = false;
+        rb.layer = PhysicsLayer::Puck;
+        authoredPuck.AddComponent<RigidBodyComponent>(rb);
+        CylinderColliderComponent puckCollider;
+        puckCollider.radius = 0.3f;
+        puckCollider.halfHeight = 0.05f;
+        authoredPuck.AddComponent<CylinderColliderComponent>(puckCollider);
+
+        HK_CHECK_MSG(static_cast<bool>(Physics::Init()), "physics initializes for stolen dynamic puck sync");
+        PhysicsWorld physicsWorld;
+        HK_CHECK_MSG(static_cast<bool>(physicsWorld.Init(MakeDefaultPhysicsSettings())),
+                     "physics world initializes for stolen dynamic puck sync");
+
+        GameplaySettings settings;
+        GameplayTuning tuning;
+        GameplayWorld world;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, &physicsWorld, settings, tuning)),
+                     "gameplay world initializes with physics for stolen puck sync");
+        physicsWorld.CreateBodiesFromScene(scene);
+        world.DrainEvents();
+        FindMatch(scene).GetComponent<MatchStateComponent>().phase = MatchPhase::Playing;
+
+        Entity stealer = FindPlayer(scene, PlayerSlot::HomeSkater0);
+        Entity carrier = FindPlayer(scene, PlayerSlot::AwaySkater0);
+        Entity puck = FindPuck(scene);
+        stealer.GetComponent<TransformComponent>().localPosition = {-1.0f, 1.25f, 0.0f};
+        stealer.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+        stealer.GetComponent<StickComponent>().reach = 3.0f;
+        carrier.GetComponent<TransformComponent>().localPosition = {-2.0f, 1.25f, 0.0f};
+        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+        carrier.GetComponent<StickComponent>().reach = 3.0f;
+        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
+
+        GameplayEventQueue events;
+        HK_CHECK(PuckPossession::TryAcquire(scene, carrier, puck, events, &physicsWorld, tuning.puck.floorY));
+
+        PushSteal(world, stealer.GetComponent<PlayerComponent>().playerIndex, 1);
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+        physicsWorld.SyncSceneToPhysics(scene);
+        physicsWorld.Step(settings.fixedDeltaSeconds);
+        physicsWorld.SyncPhysicsToScene(scene);
+
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+        HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().possessingPlayer, stealer.GetUUID());
+        HK_CHECK_EQ(puck.GetComponent<TransformComponent>().localPosition,
+                    FloorStickPosition(stealer, tuning.puck.floorY));
+
+        physicsWorld.Shutdown();
+        Physics::Shutdown();
     }
 }

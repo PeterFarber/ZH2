@@ -81,9 +81,9 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
     if (IsActiveGameplayPhase(scene)) {
-        PuckPossession::FixedUpdate(scene, m_Events, m_PhysicsWorld);
+        PuckPossession::FixedUpdate(scene, m_Events, m_PhysicsWorld, m_Tuning.puck.floorY);
         ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
-        StealSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
+        StealSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events, m_PhysicsWorld);
         PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);
         GoalDetection::FixedUpdate(scene, m_Settings, m_Events);
         OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);

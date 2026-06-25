@@ -11,6 +11,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsWorld.hpp"
 
@@ -141,13 +142,16 @@ void SyncPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
 void FollowPossessingPlayer(Scene& scene,
                             Entity puck,
                             const PuckGameplayComponent& gameplay,
-                            PhysicsWorld* physicsWorld) {
+                            PhysicsWorld* physicsWorld,
+                            float puckFloorY) {
     Entity player = FindEntity(scene, gameplay.possessingPlayer);
     if (!player.IsValid() || !player.HasComponent<TransformComponent>() || !puck.HasComponent<TransformComponent>()) {
         return;
     }
 
-    puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(player);
+    glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(player);
+    puckPosition.y = puckFloorY;
+    puck.GetComponent<TransformComponent>().localPosition = puckPosition;
     if (puck.HasComponent<PuckRuntimeComponent>()) {
         PuckRuntimeComponent& runtime = puck.GetComponent<PuckRuntimeComponent>();
         runtime.velocity = glm::vec3{0.0f};
@@ -163,6 +167,15 @@ bool PuckPossession::TryAcquire(Scene& scene,
                                 Entity puck,
                                 GameplayEventQueue& events,
                                 PhysicsWorld* physicsWorld) {
+    return TryAcquire(scene, player, puck, events, physicsWorld, PuckTuning{}.floorY);
+}
+
+bool PuckPossession::TryAcquire(Scene& scene,
+                                Entity player,
+                                Entity puck,
+                                GameplayEventQueue& events,
+                                PhysicsWorld* physicsWorld,
+                                float puckFloorY) {
     if (!player.IsValid() || !puck.IsValid() || !player.HasComponent<PlayerComponent>() ||
         !puck.HasComponent<PuckGameplayComponent>() || !CanAcquireByContact(player, puck)) {
         return false;
@@ -190,7 +203,7 @@ bool PuckPossession::TryAcquire(Scene& scene,
         player.GetComponent<SkaterComponent>().hasPuck = true;
     }
 
-    FollowPossessingPlayer(scene, puck, gameplay, physicsWorld);
+    FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY);
     events.Push({GameplayEventType::PuckPossessionChanged, puck.GetUUID(), player.GetUUID(), playerComponent.team,
                  puck.GetComponent<TransformComponent>().localPosition});
     return true;
@@ -222,6 +235,13 @@ void PuckPossession::Release(Scene& scene, Entity puck, GameplayEventQueue& even
 }
 
 void PuckPossession::FixedUpdate(Scene& scene, GameplayEventQueue& events, PhysicsWorld* physicsWorld) {
+    FixedUpdate(scene, events, physicsWorld, PuckTuning{}.floorY);
+}
+
+void PuckPossession::FixedUpdate(Scene& scene,
+                                 GameplayEventQueue& events,
+                                 PhysicsWorld* physicsWorld,
+                                 float puckFloorY) {
     Entity puck = FindPuck(scene);
     if (!puck.IsValid() || !puck.HasComponent<PuckGameplayComponent>()) {
         return;
@@ -229,7 +249,7 @@ void PuckPossession::FixedUpdate(Scene& scene, GameplayEventQueue& events, Physi
 
     PuckGameplayComponent& gameplay = puck.GetComponent<PuckGameplayComponent>();
     if (gameplay.state == PuckState::Possessed && gameplay.possessingPlayer.IsValid()) {
-        FollowPossessingPlayer(scene, puck, gameplay, physicsWorld);
+        FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY);
         return;
     }
 
@@ -240,7 +260,7 @@ void PuckPossession::FixedUpdate(Scene& scene, GameplayEventQueue& events, Physi
     auto players = scene.Registry().view<PlayerComponent>();
     for (const entt::entity handle : players) {
         Entity player(handle, &scene);
-        if (TryAcquire(scene, player, puck, events, physicsWorld)) {
+        if (TryAcquire(scene, player, puck, events, physicsWorld, puckFloorY)) {
             return;
         }
     }

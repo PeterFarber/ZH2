@@ -10,6 +10,7 @@
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsWorld.hpp"
@@ -81,6 +82,12 @@ bool SawEvent(const std::vector<GameplayEvent>& events, GameplayEventType type) 
     return false;
 }
 
+glm::vec3 FloorStickPosition(Entity player, float floorY) {
+    glm::vec3 position = StickHandling::GetStickWorldPosition(player);
+    position.y = floorY;
+    return position;
+}
+
 } // namespace
 
 void RunStickHandlingTests() {
@@ -116,6 +123,7 @@ void RunPuckInteractionTests() {
 
     Scene scene("PuckInteractionScene");
     BuildValidGameplayScene(scene);
+    const GameplayTuning defaultTuning;
 
     GameplayWorld world;
     HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, {})), "gameplay world initializes");
@@ -149,7 +157,7 @@ void RunPuckInteractionTests() {
 
     home.GetComponent<TransformComponent>().localPosition = {2.0f, 0.0f, 0.0f};
     PuckPossession::FixedUpdate(scene, events);
-    HK_CHECK_EQ(puck.GetComponent<TransformComponent>().localPosition, StickHandling::GetStickWorldPosition(home));
+    HK_CHECK_EQ(puck.GetComponent<TransformComponent>().localPosition, FloorStickPosition(home, defaultTuning.puck.floorY));
 
     PuckPossession::Release(scene, puck, events);
     HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
@@ -222,6 +230,26 @@ void RunPuckInteractionTests() {
     HK_CHECK_EQ(scaledPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
     HK_CHECK_EQ(scaledPuck.GetComponent<PuckGameplayComponent>().possessingPlayer, scaledPlayer.GetUUID());
 
+    Scene floorContactScene("PossessedPuckFloorHeight");
+    Entity floorPlayer = AddMarker(floorContactScene, "Floor Body Player", {0.0f, 1.25f, 0.0f});
+    floorPlayer.AddComponent<PlayerComponent>(bodyPlayerComponent);
+    floorPlayer.AddComponent<SkaterComponent>();
+    floorPlayer.AddComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+    shortStick.ownerPlayer = floorPlayer.GetUUID();
+    floorPlayer.AddComponent<StickComponent>(shortStick);
+
+    Entity floorPuck = AddMarker(floorContactScene, "Floor Puck", StickHandling::GetStickWorldPosition(floorPlayer));
+    floorPuck.AddComponent<PuckComponent>();
+    floorPuck.AddComponent<PuckGameplayComponent>();
+    floorPuck.AddComponent<PuckRuntimeComponent>();
+
+    GameplayEventQueue floorEvents;
+    HK_CHECK(PuckPossession::TryAcquire(floorContactScene, floorPlayer, floorPuck, floorEvents));
+    HK_CHECK_EQ(floorPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+    HK_CHECK_NEAR(floorPuck.GetComponent<TransformComponent>().localPosition.y,
+                  defaultTuning.puck.floorY,
+                  0.0001f);
+
     Scene physicsContactScene("DynamicPuckPossessionPhysicsSync");
     Entity physicsPlayer = AddMarker(physicsContactScene, "Physics Body Player", {0.0f, 0.0f, 0.0f});
     physicsPlayer.AddComponent<PlayerComponent>(bodyPlayerComponent);
@@ -255,7 +283,7 @@ void RunPuckInteractionTests() {
                                         physicsContactEvents,
                                         &physicsWorld));
     const glm::vec3 acquiredPosition = physicsPuck.GetComponent<TransformComponent>().localPosition;
-    HK_CHECK_EQ(acquiredPosition, StickHandling::GetStickWorldPosition(physicsPlayer));
+    HK_CHECK_EQ(acquiredPosition, FloorStickPosition(physicsPlayer, defaultTuning.puck.floorY));
 
     physicsWorld.SyncSceneToPhysics(physicsContactScene);
     physicsWorld.Step(1.0f / 60.0f);

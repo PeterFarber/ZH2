@@ -93,6 +93,7 @@ Source material:
 - [x] Loose and eligible shot pucks can be acquired by stick range or player-body collider contact.
 - [x] Body-contact puck acquisition respects authored collider transform scale.
 - [x] Possessed dynamic pucks drive their physics body transform so physics sync does not undo pickup.
+- [x] Possessed pucks from pickup or steal preserve stick X/Z while locking Y to the tuned puck floor height.
 - [x] Stick handling exists.
 - [x] Shooting exists.
 - [x] Shot release has a tuned shooter self-collision/reacquire grace window.

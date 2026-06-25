@@ -3,12 +3,14 @@
 #include <algorithm>
 
 #include <entt/entt.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 namespace Hockey {
 namespace {
@@ -30,7 +32,25 @@ bool PlayerPossessesPuck(Entity player, const PuckGameplayComponent& puck) {
     return player.IsValid() && puck.possessingPlayer == player.GetUUID();
 }
 
-void TransferPossession(Scene& scene, Entity stealer, Entity puck, GameplayEventQueue& events) {
+void SyncPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
+    if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid() ||
+        !puck.HasComponent<TransformComponent>() || !physicsWorld->HasBody(puck)) {
+        return;
+    }
+
+    const TransformComponent& transform = puck.GetComponent<TransformComponent>();
+    physicsWorld->SetBodyTransform(puck,
+                                   transform.localPosition,
+                                   glm::quat(glm::radians(transform.localRotation)));
+    physicsWorld->SetLinearVelocity(puck, glm::vec3{0.0f});
+}
+
+void TransferPossession(Scene& scene,
+                        Entity stealer,
+                        Entity puck,
+                        float puckFloorY,
+                        GameplayEventQueue& events,
+                        PhysicsWorld* physicsWorld) {
     PuckGameplayComponent& puckGameplay = puck.GetComponent<PuckGameplayComponent>();
     const PlayerComponent& player = stealer.GetComponent<PlayerComponent>();
 
@@ -47,7 +67,9 @@ void TransferPossession(Scene& scene, Entity stealer, Entity puck, GameplayEvent
         stealer.GetComponent<SkaterComponent>().hasPuck = true;
     }
     if (puck.HasComponent<TransformComponent>()) {
-        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(stealer);
+        glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(stealer);
+        puckPosition.y = puckFloorY;
+        puck.GetComponent<TransformComponent>().localPosition = puckPosition;
     }
     if (puck.HasComponent<PuckRuntimeComponent>()) {
         PuckRuntimeComponent& runtime = puck.GetComponent<PuckRuntimeComponent>();
@@ -55,6 +77,7 @@ void TransferPossession(Scene& scene, Entity stealer, Entity puck, GameplayEvent
         runtime.targetPosition =
             puck.HasComponent<TransformComponent>() ? puck.GetComponent<TransformComponent>().localPosition : glm::vec3{0.0f};
     }
+    SyncPuckBody(puck, physicsWorld);
 
     events.Push({GameplayEventType::PuckPossessionChanged,
                  puck.GetUUID(),
@@ -70,7 +93,8 @@ void StealSystem::FixedUpdate(Scene& scene,
                               const GameplayInputBuffer& inputs,
                               const GameplayTuning& tuning,
                               float fixedDeltaSeconds,
-                              GameplayEventQueue& events) {
+                              GameplayEventQueue& events,
+                              PhysicsWorld* physicsWorld) {
     Entity puck = FindPuck(scene);
     auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, StickComponent, TransformComponent>();
 
@@ -98,7 +122,7 @@ void StealSystem::FixedUpdate(Scene& scene,
             continue;
         }
 
-        TransferPossession(scene, stealer, puck, events);
+        TransferPossession(scene, stealer, puck, tuning.puck.floorY, events, physicsWorld);
     }
 }
 
