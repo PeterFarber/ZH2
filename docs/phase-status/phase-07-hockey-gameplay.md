@@ -90,6 +90,9 @@ Source material:
 - [x] Puck gameplay state exists.
 - [x] Puck controller exists.
 - [x] Puck possession exists.
+- [x] Loose and eligible shot pucks can be acquired by stick range or player-body collider contact.
+- [x] Body-contact puck acquisition respects authored collider transform scale.
+- [x] Possessed dynamic pucks drive their physics body transform so physics sync does not undo pickup.
 - [x] Stick handling exists.
 - [x] Shooting exists.
 - [x] Shot release has a tuned shooter self-collision/reacquire grace window.
@@ -126,6 +129,8 @@ Source material:
 - [x] Reset tests exist.
 - [x] Player movement tests exist.
 - [x] Puck interaction/controller tests exist.
+- [x] Puck interaction tests cover player-body contact possession.
+- [x] Puck interaction tests cover scaled puck/player body-contact possession.
 - [x] Shooting tests exist.
 - [x] Shooting tests cover post-shot shooter grace.
 - [x] Puck controller tests cover floor-height clamping.

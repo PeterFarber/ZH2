@@ -15,6 +15,16 @@ void RunCollisionLayerTests() {
                  "puck collides with goal trigger");
     HK_CHECK_MSG(CollisionFilter::ShouldCollide(PhysicsLayer::Player, PhysicsLayer::Static),
                  "player collides with static");
+    HK_CHECK_MSG(!CollisionFilter::ShouldCollide(PhysicsLayer::Player, PhysicsLayer::Puck),
+                 "player bodies do not physically bounce the puck");
+    HK_CHECK_MSG(!CollisionFilter::ShouldCollide(PhysicsLayer::Goalie, PhysicsLayer::Puck),
+                 "goalie bodies do not physically bounce the puck");
+    HK_CHECK_MSG(!CollisionFilter::ShouldCollide(PhysicsLayer::Player, PhysicsLayer::Player),
+                 "players do not collide with other players");
+    HK_CHECK_MSG(!CollisionFilter::ShouldCollide(PhysicsLayer::Player, PhysicsLayer::Goalie),
+                 "skaters do not collide with goalies");
+    HK_CHECK_MSG(!CollisionFilter::ShouldCollide(PhysicsLayer::Goalie, PhysicsLayer::Goalie),
+                 "goalies do not collide with other goalies");
     HK_CHECK_MSG(CollisionFilter::ShouldCollide(PhysicsLayer::Stick, PhysicsLayer::Puck), "stick collides with puck");
 
     // Symmetry.

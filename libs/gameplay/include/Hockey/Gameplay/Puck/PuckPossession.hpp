@@ -5,13 +5,18 @@
 namespace Hockey {
 
 class Entity;
+class PhysicsWorld;
 class Scene;
 
 class PuckPossession {
 public:
-    static bool TryAcquire(Scene& scene, Entity player, Entity puck, GameplayEventQueue& events);
+    static bool TryAcquire(Scene& scene,
+                           Entity player,
+                           Entity puck,
+                           GameplayEventQueue& events,
+                           PhysicsWorld* physicsWorld = nullptr);
     static void Release(Scene& scene, Entity puck, GameplayEventQueue& events);
-    static void FixedUpdate(Scene& scene, GameplayEventQueue& events);
+    static void FixedUpdate(Scene& scene, GameplayEventQueue& events, PhysicsWorld* physicsWorld = nullptr);
 };
 
 }

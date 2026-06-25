@@ -42,6 +42,7 @@ Source material:
 - [x] Physics shutdown path exists.
 - [x] Collision layers exist for static, player, goalie, puck, rink, goal, trigger/sensor, and related hockey objects.
 - [x] Collision filtering matrix exists.
+- [x] Player and goalie body layers ignore each other and the puck by default; gameplay owns puck pickup from body contact.
 - [x] Sensor layer collides with players/goalies/puck/stick and not static geometry.
 - [x] Physics materials exist for hockey surfaces and bodies.
 - [x] Friction and restitution combine behavior is applied at contacts.
@@ -98,6 +99,7 @@ Source material:
 
 - [x] Physics initialization tests exist.
 - [x] Collision layer tests exist.
+- [x] Collision layer tests cover non-colliding player/goalie body pairs and non-physical player/goalie puck contact.
 - [x] Material tests exist.
 - [x] Component serialization/metadata tests exist.
 - [x] Collider validation tests exist.

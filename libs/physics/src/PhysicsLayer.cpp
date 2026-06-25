@@ -27,16 +27,12 @@ Matrix MakeDefaultMatrix() {
     enable(PhysicsLayer::Static, PhysicsLayer::Puck);
     enable(PhysicsLayer::Static, PhysicsLayer::Stick);
 
-    // Players / goalies interact with each other and the world.
-    enable(PhysicsLayer::Player, PhysicsLayer::Player);
-    enable(PhysicsLayer::Player, PhysicsLayer::Goalie);
-    enable(PhysicsLayer::Player, PhysicsLayer::Puck);
+    // Player bodies ignore each other and the puck. Gameplay overlap rules own
+    // puck acquisition so Jolt does not bounce loose pucks off skaters.
     enable(PhysicsLayer::Player, PhysicsLayer::Rink);
     enable(PhysicsLayer::Player, PhysicsLayer::Goal);
     enable(PhysicsLayer::Player, PhysicsLayer::Trigger);
 
-    enable(PhysicsLayer::Goalie, PhysicsLayer::Goalie);
-    enable(PhysicsLayer::Goalie, PhysicsLayer::Puck);
     enable(PhysicsLayer::Goalie, PhysicsLayer::Rink);
     enable(PhysicsLayer::Goalie, PhysicsLayer::Goal);
     enable(PhysicsLayer::Goalie, PhysicsLayer::Trigger);

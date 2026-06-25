@@ -10,6 +10,9 @@
 #include "Hockey/Gameplay/Puck/PuckPossession.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Stick/StickHandling.hpp"
+#include "Hockey/Physics/Physics.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 using namespace Hockey;
 
@@ -153,4 +156,114 @@ void RunPuckInteractionTests() {
     HK_CHECK(!puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid());
     HK_CHECK(!home.GetComponent<SkaterComponent>().hasPuck);
     HK_CHECK(SawEvent(events.Drain(), GameplayEventType::PuckPossessionChanged));
+
+    Scene bodyContactScene("PuckBodyContactAcquire");
+    Entity bodyPlayer = AddMarker(bodyContactScene, "Body Player", {0.0f, 0.0f, 0.0f});
+    PlayerComponent bodyPlayerComponent;
+    bodyPlayerComponent.team = GameplayTeam::Home;
+    bodyPlayerComponent.slot = PlayerSlot::HomeSkater0;
+    bodyPlayer.AddComponent<PlayerComponent>(bodyPlayerComponent);
+    bodyPlayer.AddComponent<SkaterComponent>();
+    bodyPlayer.AddComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+    StickComponent shortStick;
+    shortStick.ownerPlayer = bodyPlayer.GetUUID();
+    shortStick.reach = 0.05f;
+    shortStick.localOffset = {0.0f, 0.0f, 1.0f};
+    bodyPlayer.AddComponent<StickComponent>(shortStick);
+    CylinderColliderComponent playerCollider;
+    playerCollider.radius = 0.45f;
+    playerCollider.halfHeight = 0.9f;
+    bodyPlayer.AddComponent<CylinderColliderComponent>(playerCollider);
+
+    Entity contactPuck = AddMarker(bodyContactScene, "Contact Puck", {0.7f, 0.05f, 0.0f});
+    contactPuck.AddComponent<PuckComponent>();
+    contactPuck.AddComponent<PuckGameplayComponent>();
+    contactPuck.AddComponent<PuckRuntimeComponent>();
+    CylinderColliderComponent puckCollider;
+    puckCollider.radius = 0.3f;
+    puckCollider.halfHeight = 0.05f;
+    contactPuck.AddComponent<CylinderColliderComponent>(puckCollider);
+
+    GameplayEventQueue contactEvents;
+    HK_CHECK(!StickHandling::CanControlPuck(bodyPlayer, contactPuck));
+    HK_CHECK(PuckPossession::TryAcquire(bodyContactScene, bodyPlayer, contactPuck, contactEvents));
+    HK_CHECK(SawEvent(contactEvents.Drain(), GameplayEventType::PuckPossessionChanged));
+    HK_CHECK_EQ(contactPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+    HK_CHECK_EQ(contactPuck.GetComponent<PuckGameplayComponent>().possessingPlayer, bodyPlayer.GetUUID());
+    HK_CHECK(bodyPlayer.GetComponent<SkaterComponent>().hasPuck);
+
+    Scene scaledContactScene("ScaledPuckBodyContactAcquire");
+    Entity scaledPlayer = AddMarker(scaledContactScene, "Scaled Body Player", {0.0f, 0.0f, 0.0f});
+    scaledPlayer.GetComponent<TransformComponent>().localScale = {0.5f, 1.8f, 0.5f};
+    scaledPlayer.AddComponent<PlayerComponent>(bodyPlayerComponent);
+    scaledPlayer.AddComponent<SkaterComponent>();
+    scaledPlayer.AddComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+    shortStick.ownerPlayer = scaledPlayer.GetUUID();
+    scaledPlayer.AddComponent<StickComponent>(shortStick);
+    CylinderColliderComponent scaledPlayerCollider;
+    scaledPlayerCollider.radius = 0.25f;
+    scaledPlayerCollider.halfHeight = 0.9f;
+    scaledPlayer.AddComponent<CylinderColliderComponent>(scaledPlayerCollider);
+
+    Entity scaledPuck = AddMarker(scaledContactScene, "Scaled Contact Puck", {1.0f, 0.08f, 0.0f});
+    scaledPuck.GetComponent<TransformComponent>().localScale = {4.0f, 4.0f, 4.0f};
+    scaledPuck.AddComponent<PuckComponent>();
+    scaledPuck.AddComponent<PuckGameplayComponent>();
+    scaledPuck.AddComponent<PuckRuntimeComponent>();
+    CylinderColliderComponent scaledPuckCollider;
+    scaledPuckCollider.radius = 0.3f;
+    scaledPuckCollider.halfHeight = 0.05f;
+    scaledPuck.AddComponent<CylinderColliderComponent>(scaledPuckCollider);
+
+    GameplayEventQueue scaledContactEvents;
+    HK_CHECK(!StickHandling::CanControlPuck(scaledPlayer, scaledPuck));
+    HK_CHECK(PuckPossession::TryAcquire(scaledContactScene, scaledPlayer, scaledPuck, scaledContactEvents));
+    HK_CHECK(SawEvent(scaledContactEvents.Drain(), GameplayEventType::PuckPossessionChanged));
+    HK_CHECK_EQ(scaledPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+    HK_CHECK_EQ(scaledPuck.GetComponent<PuckGameplayComponent>().possessingPlayer, scaledPlayer.GetUUID());
+
+    Scene physicsContactScene("DynamicPuckPossessionPhysicsSync");
+    Entity physicsPlayer = AddMarker(physicsContactScene, "Physics Body Player", {0.0f, 0.0f, 0.0f});
+    physicsPlayer.AddComponent<PlayerComponent>(bodyPlayerComponent);
+    physicsPlayer.AddComponent<SkaterComponent>();
+    physicsPlayer.AddComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
+    shortStick.ownerPlayer = physicsPlayer.GetUUID();
+    physicsPlayer.AddComponent<StickComponent>(shortStick);
+    physicsPlayer.AddComponent<CylinderColliderComponent>(playerCollider);
+
+    Entity physicsPuck = AddMarker(physicsContactScene, "Physics Contact Puck", {0.7f, 0.05f, 0.0f});
+    physicsPuck.AddComponent<PuckComponent>();
+    physicsPuck.AddComponent<PuckGameplayComponent>();
+    physicsPuck.AddComponent<PuckRuntimeComponent>();
+    RigidBodyComponent puckRigidBody;
+    puckRigidBody.type = RigidBodyType::Dynamic;
+    puckRigidBody.useGravity = false;
+    puckRigidBody.layer = PhysicsLayer::Puck;
+    physicsPuck.AddComponent<RigidBodyComponent>(puckRigidBody);
+    physicsPuck.AddComponent<CylinderColliderComponent>(puckCollider);
+
+    HK_CHECK_MSG(static_cast<bool>(Physics::Init()), "physics initializes for possessed dynamic puck sync");
+    PhysicsWorld physicsWorld;
+    HK_CHECK_MSG(static_cast<bool>(physicsWorld.Init(MakeDefaultPhysicsSettings())),
+                 "physics world initializes for possessed dynamic puck sync");
+    physicsWorld.CreateBodiesFromScene(physicsContactScene);
+
+    GameplayEventQueue physicsContactEvents;
+    HK_CHECK(PuckPossession::TryAcquire(physicsContactScene,
+                                        physicsPlayer,
+                                        physicsPuck,
+                                        physicsContactEvents,
+                                        &physicsWorld));
+    const glm::vec3 acquiredPosition = physicsPuck.GetComponent<TransformComponent>().localPosition;
+    HK_CHECK_EQ(acquiredPosition, StickHandling::GetStickWorldPosition(physicsPlayer));
+
+    physicsWorld.SyncSceneToPhysics(physicsContactScene);
+    physicsWorld.Step(1.0f / 60.0f);
+    physicsWorld.SyncPhysicsToScene(physicsContactScene);
+
+    HK_CHECK_EQ(physicsPuck.GetComponent<PuckGameplayComponent>().state, PuckState::Possessed);
+    HK_CHECK_EQ(physicsPuck.GetComponent<PuckGameplayComponent>().possessingPlayer, physicsPlayer.GetUUID());
+    HK_CHECK_EQ(physicsPuck.GetComponent<TransformComponent>().localPosition, acquiredPosition);
+    physicsWorld.Shutdown();
+    Physics::Shutdown();
 }
