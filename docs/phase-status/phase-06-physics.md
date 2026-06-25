@@ -15,6 +15,7 @@ Source material:
 - [x] Physics settings/config.
 - [x] Physics initialization/shutdown.
 - [x] Collision layers, layer filtering, and physics materials.
+- [x] Per-body discrete/continuous collision detection mode authoring and Jolt mapping.
 - [x] ECS physics components, serialization, metadata, and validation.
 - [x] Physics body/shape abstractions and scene synchronization.
 - [x] Contact events, trigger events, raycasts, overlaps, shape casts, and debug draw.
@@ -50,6 +51,8 @@ Source material:
 ## Finished - ECS Components And Shapes
 
 - [x] `RigidBodyComponent` exists.
+- [x] `RigidBodyComponent` exposes `Discrete` and `Continuous` collision detection modes through YAML and metadata.
+- [x] Legacy serialized dynamic puck bodies without a collision detection field migrate to continuous detection.
 - [x] `PhysicsMaterialComponent` exists.
 - [x] Box collider component exists.
 - [x] Sphere collider component exists.
@@ -104,6 +107,8 @@ Source material:
 - [x] Component serialization/metadata tests exist.
 - [x] Collider validation tests exist.
 - [x] Rigid body/world stepping tests exist.
+- [x] Rigid body tests cover a continuous fast puck colliding with a thin wall without tunneling.
+- [x] Component serialization tests cover collision detection round trip and legacy dynamic puck migration.
 - [x] Scene sync tests exist.
 - [x] Contact/trigger tests exist.
 - [x] Raycast and raycast-all tests exist.

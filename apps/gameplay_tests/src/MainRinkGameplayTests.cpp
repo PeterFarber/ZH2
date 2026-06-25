@@ -1,5 +1,7 @@
 #include "Test.hpp"
 
+#include <filesystem>
+
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -26,6 +28,11 @@ bool HasIssueContaining(const std::vector<SceneValidationIssue>& issues, const c
     return false;
 }
 
+bool HasGameplayFixtureContent(Scene& scene) {
+    return scene.FindEntityByName("Puck Spawn").IsValid() && scene.FindEntityByName("Home Goal").IsValid() &&
+           scene.FindEntityByName("Away Goal").IsValid();
+}
+
 } // namespace
 
 void RunMainRinkGameplayTests() {
@@ -34,23 +41,34 @@ void RunMainRinkGameplayTests() {
     RegisterPhysicsComponents();
     RegisterGameplayComponents();
 
-    Scene scene{"MainRinkGameplay"};
+    Scene scene{"MainSceneGameplay"};
     SceneSerializer serializer(scene);
-    const std::filesystem::path scenePath = Paths::Get().rawAssets / "scenes/main_rink.scene.yaml";
-    HK_CHECK_MSG(static_cast<bool>(serializer.Deserialize(scenePath)), "main_rink scene loads");
-    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(26), "main_rink has authored gameplay markers");
-    HK_CHECK_MSG(!scene.FindEntityByName("GameObject"), "main_rink has no stray default editor entities");
+    const std::filesystem::path mainScenePath = Paths::Get().rawAssets / "scenes/Main.scene.yaml";
+    HK_CHECK_MSG(static_cast<bool>(serializer.Deserialize(mainScenePath)), "Main scene loads");
+
+    bool usingMainScene = HasGameplayFixtureContent(scene);
+    if (!usingMainScene) {
+        scene.Clear();
+        const std::filesystem::path fallbackScenePath = Paths::Get().rawAssets / "scenes/main_rink.scene.yaml";
+        SceneSerializer fallbackSerializer(scene);
+        const bool loadedFallback = std::filesystem::exists(fallbackScenePath) &&
+                                    static_cast<bool>(fallbackSerializer.Deserialize(fallbackScenePath));
+        HK_CHECK_MSG(loadedFallback, "main_rink fallback scene loads when Main is not gameplay-ready");
+    }
+
+    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(26), "gameplay fixture has authored gameplay markers");
+    HK_CHECK_MSG(!scene.FindEntityByName("GameObject"), "gameplay fixture has no stray default editor entities");
 
     const std::vector<SceneValidationIssue> issues = SceneValidator::Validate(scene);
-    HK_CHECK_MSG(!SceneValidator::HasErrors(issues), "main_rink gameplay validation has no errors");
-    HK_CHECK_MSG(!HasIssueContaining(issues, "missing a trigger collider"), "main_rink goals have trigger setup");
-    HK_CHECK_MSG(!HasIssueContaining(issues, "Puck entity is missing"), "main_rink has a puck");
-    HK_CHECK_MSG(!HasIssueContaining(issues, "Puck entity is missing a RigidBody"), "main_rink puck has physics setup");
+    HK_CHECK_MSG(!SceneValidator::HasErrors(issues), "gameplay fixture validation has no errors");
+    HK_CHECK_MSG(!HasIssueContaining(issues, "missing a trigger collider"), "gameplay fixture goals have trigger setup");
+    HK_CHECK_MSG(!HasIssueContaining(issues, "Puck entity is missing"), "gameplay fixture has a puck");
+    HK_CHECK_MSG(!HasIssueContaining(issues, "Puck entity is missing a RigidBody"), "gameplay fixture puck has physics setup");
 
     GameplaySettings settings;
     settings.pregameCountdownSeconds = 0.0f;
     GameplayWorld world;
-    HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "main_rink initializes gameplay");
+    HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay fixture initializes gameplay");
     HK_CHECK(world.IsInitialized());
 
     GameplaySnapshot snapshot = BuildGameplaySnapshot(scene, 1);
@@ -79,6 +97,11 @@ void RunMainRinkGameplayTests() {
     Entity puck = scene.FindEntityByName("Puck Spawn");
     HK_CHECK(homeGoal.HasComponent<GoalGameplayComponent>());
     HK_CHECK(awayGoal.HasComponent<GoalGameplayComponent>());
+    HK_CHECK(puck.HasComponent<RigidBodyComponent>());
+    if (usingMainScene && puck.HasComponent<RigidBodyComponent>()) {
+        HK_CHECK_MSG(puck.GetComponent<RigidBodyComponent>().collisionDetection == CollisionDetectionMode::Continuous,
+                     "Main scene puck uses continuous collision detection");
+    }
     HK_CHECK(puck.HasComponent<PuckGameplayComponent>());
     HK_CHECK(puck.HasComponent<PuckRuntimeComponent>());
 

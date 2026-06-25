@@ -18,35 +18,38 @@
 
 using namespace Hockey;
 
-// Loads the shipped main rink scene end-to-end and checks structural integrity.
+// Loads the shipped main scene end-to-end and checks structural integrity.
 void RunMainRinkLoadTests() {
     HockeyTest::BeginSuite("MainRinkLoadTests");
 
-    const std::filesystem::path path = Paths::RawAsset("scenes/main_rink.scene.yaml");
+    const std::filesystem::path path = Paths::RawAsset("scenes/Main.scene.yaml");
     if (!FileSystem::Exists(path)) {
-        HK_CHECK_MSG(false, "main_rink.scene.yaml not found under data/raw/scenes");
+        HK_CHECK_MSG(false, "Main.scene.yaml not found under data/raw/scenes");
         return;
     }
 
     Scene scene("Loaded");
     SceneSerializer serializer(scene);
     const Status loaded = serializer.Deserialize(path);
-    HK_CHECK_MSG(static_cast<bool>(loaded), "main_rink.scene.yaml deserializes");
+    HK_CHECK_MSG(static_cast<bool>(loaded), "Main.scene.yaml deserializes");
     if (!loaded) {
         return;
     }
 
-    HK_CHECK_EQ(scene.GetName(), std::string("Main Rink"));
-    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(16), "main rink scene has expected authored content");
+    HK_CHECK_EQ(scene.GetName(), std::string("Main"));
+    HK_CHECK_MSG(scene.EntityCount() >= static_cast<std::size_t>(8), "Main scene has expected authored content");
 
-    // Expected hockey markers are present.
-    HK_CHECK(scene.FindEntityByName("Home Goal").IsValid());
-    HK_CHECK(scene.FindEntityByName("Away Goal").IsValid());
-    HK_CHECK(scene.FindEntityByName("Puck Spawn").IsValid());
+    // Main is a valid editor scene in the tracked baseline; local playtest
+    // copies may additionally contain gameplay markers.
+    HK_CHECK(scene.FindEntityByName("Camera").IsValid());
+    if (scene.FindEntityByName("Puck Spawn").IsValid()) {
+        HK_CHECK(scene.FindEntityByName("Home Goal").IsValid());
+        HK_CHECK(scene.FindEntityByName("Away Goal").IsValid());
+    }
 
     // The shipped scene must be structurally valid (no errors).
     const auto issues = SceneValidator::Validate(scene);
-    HK_CHECK_MSG(!SceneValidator::HasErrors(issues), "main rink scene validates without errors");
+    HK_CHECK_MSG(!SceneValidator::HasErrors(issues), "Main scene validates without errors");
 }
 
 // DestroyEntity detaches children to root while preserving their world transform.

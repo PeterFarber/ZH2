@@ -92,6 +92,7 @@ Source material:
 - [x] Puck possession exists.
 - [x] Loose and eligible shot pucks can be acquired by stick range or player-body collider contact.
 - [x] Body-contact puck acquisition respects authored collider transform scale.
+- [x] Local Main scene gameplay regression asserts continuous puck collision detection when `Main.scene.yaml` contains the authored puck/goals fixture.
 - [x] Possessed dynamic pucks drive their physics body transform so physics sync does not undo pickup.
 - [x] Possessed pucks from pickup or steal preserve stick X/Z while locking Y to the tuned puck floor height.
 - [x] Stick handling exists.
@@ -146,7 +147,7 @@ Source material:
 - [x] Goal trigger tests cover puck-only scoring.
 - [x] Out-of-play tests exist.
 - [x] Snapshot tests exist.
-- [x] Main rink regression coverage exists.
+- [x] Gameplay scene regression prefers `data/raw/scenes/Main.scene.yaml` and falls back to the tracked main rink fixture when Main lacks gameplay markers.
 - [x] Headless server gameplay path is covered.
 - [x] Editor Hockey Players tool tests cover role-specific skater and goalie collider authoring.
 

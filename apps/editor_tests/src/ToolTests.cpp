@@ -193,6 +193,12 @@ void RunToolTests() {
         HK_CHECK_MSG(HasNamed<PuckComponent>(fix.scene, "Puck Spawn"), "puck has PuckComponent");
         HK_CHECK_MSG(HasNamed<PuckGameplayComponent>(fix.scene, "Puck Spawn"), "puck has PuckGameplayComponent");
         HK_CHECK_MSG(HasNamed<PuckRuntimeComponent>(fix.scene, "Puck Spawn"), "puck has PuckRuntimeComponent");
+        Entity puck = fix.scene.FindEntityByName("Puck Spawn");
+        HK_CHECK_MSG(puck && puck.HasComponent<RigidBodyComponent>(), "puck has RigidBodyComponent");
+        if (puck && puck.HasComponent<RigidBodyComponent>()) {
+            HK_CHECK_MSG(puck.GetComponent<RigidBodyComponent>().collisionDetection == CollisionDetectionMode::Continuous,
+                         "puck tool authors continuous collision detection");
+        }
     }
 
     // --- HockeyFaceoffTool: 24 faceoff spawn points under a root -------------

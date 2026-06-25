@@ -336,8 +336,10 @@ void HockeyPuckTool::OnSelected(EditorContext& context) {
                                           puck.AddComponent<PuckGameplayComponent>();
                                           puck.AddComponent<PuckRuntimeComponent>();
                                           AddMesh(puck, "BuiltIn.PuckCylinder", "BuiltIn.PuckBlack");
-                                          AddRigidBody(puck, RigidBodyType::Dynamic, PhysicsLayer::Puck, "PuckRubber",
-                                                       /*mass=*/0.17f, /*useGravity=*/true);
+                                          RigidBodyComponent& body =
+                                              AddRigidBody(puck, RigidBodyType::Dynamic, PhysicsLayer::Puck,
+                                                           "PuckRubber", /*mass=*/0.17f, /*useGravity=*/true);
+                                          body.collisionDetection = CollisionDetectionMode::Continuous;
                                           CylinderColliderComponent collider;
                                           collider.radius = 0.1f;
                                           collider.halfHeight = 0.02f;

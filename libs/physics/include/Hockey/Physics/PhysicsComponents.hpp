@@ -24,8 +24,14 @@ enum class RigidBodyType { Static, Kinematic, Dynamic };
 const char* RigidBodyTypeToString(RigidBodyType type);
 bool RigidBodyTypeFromString(std::string_view text, RigidBodyType& out);
 
+enum class CollisionDetectionMode { Discrete, Continuous };
+
+const char* CollisionDetectionModeToString(CollisionDetectionMode mode);
+bool CollisionDetectionModeFromString(std::string_view text, CollisionDetectionMode& out);
+
 struct RigidBodyComponent {
     RigidBodyType type = RigidBodyType::Static;
+    CollisionDetectionMode collisionDetection = CollisionDetectionMode::Discrete;
 
     float mass = 1.0f;
     bool useGravity = true;

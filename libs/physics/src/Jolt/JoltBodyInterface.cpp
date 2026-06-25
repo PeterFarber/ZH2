@@ -2,6 +2,7 @@
 
 #include <Jolt/Physics/Body/AllowedDOFs.h>
 #include <Jolt/Physics/Body/MassProperties.h>
+#include <Jolt/Physics/Body/MotionQuality.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 
 #include "Hockey/Physics/Jolt/JoltTypeConversions.hpp"
@@ -72,6 +73,9 @@ JPH::BodyCreationSettings MakeBodyCreationSettings(const RigidBodyComponent& rb,
 
     if (motionType == JPH::EMotionType::Dynamic) {
         settings.mAllowedDOFs = ComputeAllowedDOFs(rb);
+        if (rb.collisionDetection == CollisionDetectionMode::Continuous) {
+            settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
+        }
         if (rb.mass > 0.0f) {
             settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
             settings.mMassPropertiesOverride.mMass = rb.mass;

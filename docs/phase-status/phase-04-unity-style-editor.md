@@ -77,6 +77,7 @@ Source material:
 - [x] Hierarchy drag sorting uses distinct custom previews for sibling insertion versus parent/inside drops.
 - [x] Focus selected behavior exists.
 - [x] Metadata-driven inspector field drawers exist.
+- [x] Rigid Body collision detection mode is exposed through metadata-driven Inspector enum fields.
 - [x] Component add/remove workflow exists.
 - [x] Undo/redo command stack exists.
 - [x] Clipboard and entity/component snapshot commands exist.
@@ -102,6 +103,7 @@ Source material:
 - [x] Hockey spawn tool creates team-owned normal `SpawnPointComponent` markers without role/index fields.
 - [x] Hockey goal tool exists.
 - [x] Hockey puck tool exists.
+- [x] Hockey puck tool authors dynamic puck bodies with continuous collision detection.
 - [x] Hockey faceoff tool creates neutral, Home-penalty, and Away-penalty `SpawnPointComponent` faceoff pools.
 - [x] Hockey camera rig tool exists.
 - [x] Light tool exists.

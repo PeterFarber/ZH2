@@ -101,5 +101,37 @@ void RunRigidBodyTests() {
     world.GetBodyPosition(lockedEntity, lockedPos);
     HK_CHECK_NEAR(lockedPos.x, 0.0f, 1e-2);
 
+    // Continuous collision detection keeps a fast puck from tunneling through
+    // a thin wall in one fixed step.
+    Entity wall = scene.CreateEntity("ThinWall");
+    wall.GetComponent<TransformComponent>().localPosition = glm::vec3(2.0f, 70.0f, 0.0f);
+    RigidBodyComponent wallRb;
+    wallRb.type = RigidBodyType::Static;
+    wallRb.layer = PhysicsLayer::Static;
+    wall.AddComponent<RigidBodyComponent>(wallRb);
+    BoxColliderComponent wallBox;
+    wallBox.halfExtents = glm::vec3(0.05f, 1.0f, 1.0f);
+    wall.AddComponent<BoxColliderComponent>(wallBox);
+    world.CreateBody(wall);
+
+    Entity fastPuck = scene.CreateEntity("FastPuck");
+    fastPuck.GetComponent<TransformComponent>().localPosition = glm::vec3(0.0f, 70.0f, 0.0f);
+    RigidBodyComponent puckRb;
+    puckRb.type = RigidBodyType::Dynamic;
+    puckRb.useGravity = false;
+    puckRb.layer = PhysicsLayer::Puck;
+    puckRb.collisionDetection = CollisionDetectionMode::Continuous;
+    puckRb.initialLinearVelocity = glm::vec3(240.0f, 0.0f, 0.0f);
+    fastPuck.AddComponent<RigidBodyComponent>(puckRb);
+    SphereColliderComponent puckSphere;
+    puckSphere.radius = 0.1f;
+    fastPuck.AddComponent<SphereColliderComponent>(puckSphere);
+    world.CreateBody(fastPuck);
+
+    world.Step(1.0f / 60.0f);
+    glm::vec3 fastPuckPos;
+    HK_CHECK_MSG(world.GetBodyPosition(fastPuck, fastPuckPos), "fast puck body remains queryable");
+    HK_CHECK_MSG(fastPuckPos.x < 2.0f, "continuous fast puck stays in front of thin wall");
+
     world.Shutdown();
 }

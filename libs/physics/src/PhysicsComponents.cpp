@@ -39,6 +39,28 @@ bool RigidBodyTypeFromString(std::string_view text, RigidBodyType& out) {
     return false;
 }
 
+const char* CollisionDetectionModeToString(CollisionDetectionMode mode) {
+    switch (mode) {
+    case CollisionDetectionMode::Discrete:
+        return "Discrete";
+    case CollisionDetectionMode::Continuous:
+        return "Continuous";
+    }
+    return "Discrete";
+}
+
+bool CollisionDetectionModeFromString(std::string_view text, CollisionDetectionMode& out) {
+    if (text == "Discrete") {
+        out = CollisionDetectionMode::Discrete;
+        return true;
+    }
+    if (text == "Continuous") {
+        out = CollisionDetectionMode::Continuous;
+        return true;
+    }
+    return false;
+}
+
 namespace {
 
 // ------------------------------------------------------------------ YAML ----
@@ -48,6 +70,8 @@ void SerializePhysics(YAML::Emitter& out, Entity entity) {
         const auto& rb = entity.GetComponent<RigidBodyComponent>();
         out << YAML::Key << "RigidBodyComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Type" << YAML::Value << RigidBodyTypeToString(rb.type);
+        out << YAML::Key << "CollisionDetection" << YAML::Value
+            << CollisionDetectionModeToString(rb.collisionDetection);
         out << YAML::Key << "Mass" << YAML::Value << rb.mass;
         out << YAML::Key << "UseGravity" << YAML::Value << rb.useGravity;
         out << YAML::Key << "AllowSleeping" << YAML::Value << rb.allowSleeping;
@@ -147,8 +171,12 @@ void SerializePhysics(YAML::Emitter& out, Entity entity) {
 void DeserializePhysics(Entity entity, const YAML::Node& node) {
     if (const auto n = node["RigidBodyComponent"]) {
         RigidBodyComponent rb;
+        const bool hasCollisionDetection = static_cast<bool>(n["CollisionDetection"]);
         if (n["Type"]) {
             RigidBodyTypeFromString(n["Type"].as<std::string>(), rb.type);
+        }
+        if (hasCollisionDetection) {
+            CollisionDetectionModeFromString(n["CollisionDetection"].as<std::string>(), rb.collisionDetection);
         }
         if (n["Mass"]) {
             rb.mass = n["Mass"].as<float>();
@@ -190,6 +218,9 @@ void DeserializePhysics(Entity entity, const YAML::Node& node) {
         }
         if (n["Material"]) {
             rb.materialName = n["Material"].as<std::string>();
+        }
+        if (!hasCollisionDetection && rb.type == RigidBodyType::Dynamic && rb.layer == PhysicsLayer::Puck) {
+            rb.collisionDetection = CollisionDetectionMode::Continuous;
         }
         entity.AddOrReplaceComponent<RigidBodyComponent>(rb);
     }
@@ -325,6 +356,14 @@ FieldMetadata MakeRigidBodyTypeField(std::size_t offset) {
     return field;
 }
 
+FieldMetadata MakeCollisionDetectionField(std::size_t offset) {
+    FieldMetadata field = MakeField("CollisionDetection", FieldType::Enum, offset, "Collision Detection");
+    field.enumNames = {"Discrete", "Continuous"};
+    field.enumValues = {static_cast<int>(CollisionDetectionMode::Discrete),
+                        static_cast<int>(CollisionDetectionMode::Continuous)};
+    return field;
+}
+
 FieldMetadata MakeLayerField(std::string name, std::size_t offset) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Enum, offset);
     field.enumNames = {"Static", "Player", "Goalie", "Puck", "Stick", "Rink", "Goal", "Trigger", "Sensor", "Editor"};
@@ -346,6 +385,7 @@ void RegisterMetadata() {
         md.displayName = "Rigid Body";
         md.category = "Physics";
         md.fields.push_back(MakeRigidBodyTypeField(offsetof(RigidBodyComponent, type)));
+        md.fields.push_back(MakeCollisionDetectionField(offsetof(RigidBodyComponent, collisionDetection)));
         md.fields.push_back(MakeField("Mass", FieldType::Float, offsetof(RigidBodyComponent, mass)));
         md.fields.push_back(MakeField("UseGravity", FieldType::Bool, offsetof(RigidBodyComponent, useGravity)));
         md.fields.push_back(MakeField("AllowSleeping", FieldType::Bool, offsetof(RigidBodyComponent, allowSleeping)));

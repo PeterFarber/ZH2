@@ -81,6 +81,7 @@ Source material:
 - [x] ECS tests cover scene validation.
 - [x] ECS tests cover prefab behavior.
 - [x] ECS tests cover metadata behavior.
+- [x] ECS scene fixture coverage loads `data/raw/scenes/Main.scene.yaml`.
 - [x] ECS tests cover lifecycle and scene events.
 - [x] ECS tests cover marker component round trips.
 - [x] Client/editor/server scene integration exists.
