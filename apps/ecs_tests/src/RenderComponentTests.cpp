@@ -45,8 +45,8 @@ void RunRenderComponentTests() {
 
         Entity meshEntity = scene.CreateEntity("Rink");
         MeshRendererComponent mesh;
-        mesh.meshName = "BuiltIn.RinkPlane";
-        mesh.materialName = "BuiltIn.Ice";
+        mesh.meshAsset = 16045454102454522057ull;
+        mesh.materialAsset = 18328928024750434439ull;
         mesh.visible = true;
         mesh.castsShadows = false;
         mesh.receivesShadows = true;
@@ -69,7 +69,7 @@ void RunRenderComponentTests() {
 
         Entity decalEntity = scene.CreateEntity("Logo");
         DecalComponent decal;
-        decal.materialName = "BuiltIn.DebugTrigger";
+        decal.materialAsset = 12160806417561339961ull;
         decal.size = {2.0f, 1.0f, 2.0f};
         decal.affectsBaseColor = true;
         decal.affectsNormals = false;
@@ -102,8 +102,8 @@ void RunRenderComponentTests() {
         HK_CHECK(loadedMesh.HasComponent<MeshRendererComponent>());
         if (loadedMesh.HasComponent<MeshRendererComponent>()) {
             const auto& m = loadedMesh.GetComponent<MeshRendererComponent>();
-            HK_CHECK_EQ(m.meshName, std::string("BuiltIn.RinkPlane"));
-            HK_CHECK_EQ(m.materialName, std::string("BuiltIn.Ice"));
+            HK_CHECK_EQ(m.meshAsset, 16045454102454522057ull);
+            HK_CHECK_EQ(m.materialAsset, 18328928024750434439ull);
             HK_CHECK(m.visible);
             HK_CHECK(!m.castsShadows);
             HK_CHECK(m.receivesShadows);
@@ -126,7 +126,7 @@ void RunRenderComponentTests() {
         HK_CHECK(loadedDecal.HasComponent<ReflectionProbeComponent>());
         if (loadedDecal.HasComponent<DecalComponent>()) {
             const auto& d = loadedDecal.GetComponent<DecalComponent>();
-            HK_CHECK_EQ(d.materialName, std::string("BuiltIn.DebugTrigger"));
+            HK_CHECK_EQ(d.materialAsset, 12160806417561339961ull);
             HK_CHECK_NEAR(d.size.x, 2.0f, 1e-4);
             HK_CHECK(d.affectsBaseColor);
             HK_CHECK(!d.affectsNormals);

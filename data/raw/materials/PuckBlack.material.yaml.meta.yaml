@@ -1,0 +1,17 @@
+Asset:
+  ID: 15902365976934225153
+  Type: Material
+  Name: PuckBlack
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/PuckBlack.material.yaml
+  CookedPath: data/cooked/assets/materials/15902365976934225153.material.yaml
+  RawFileTimestamp: 134269646331257634
+  RawFileHash: 15018315603097574059
+  ImportedTimestamp: 1782494520
+  CookedTimestamp: 1782494530
+  Dependencies: []
+  Dependents: [3465686706665373809]
+  Dirty: false
+  Missing: false
+  Cooked: true

@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/cylinder.glb
+  MeshIndex: 0
+  Name: cylinder_mesh
+  Materials:
+    []

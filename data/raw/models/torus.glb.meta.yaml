@@ -1,0 +1,17 @@
+Asset:
+  ID: 4847304758356720494
+  Type: Model
+  Name: torus
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/torus.glb
+  CookedPath: data/cooked/assets/models/4847304758356720494.model.bin
+  RawFileTimestamp: 134269648191424722
+  RawFileHash: 3117240706414132668
+  ImportedTimestamp: 1782494520
+  CookedTimestamp: 1782494530
+  Dependencies: [7218028831466573626]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

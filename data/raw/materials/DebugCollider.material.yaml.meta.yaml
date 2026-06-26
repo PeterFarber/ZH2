@@ -1,0 +1,17 @@
+Asset:
+  ID: 740162671739725182
+  Type: Material
+  Name: DebugCollider
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/DebugCollider.material.yaml
+  CookedPath: data/cooked/assets/materials/740162671739725182.material.yaml
+  RawFileTimestamp: 134269646331378258
+  RawFileHash: 3748708596226732933
+  ImportedTimestamp: 1782494520
+  CookedTimestamp: 1782494530
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

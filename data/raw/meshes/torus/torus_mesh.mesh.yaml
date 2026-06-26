@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/torus.glb
+  MeshIndex: 0
+  Name: torus_mesh
+  Materials:
+    []

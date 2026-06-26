@@ -1,10 +1,15 @@
 #include "Hockey/Editor/Tools/HockeyTools.hpp"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
 
+#include "Hockey/Assets/AssetDatabase.hpp"
+#include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Assets/AssetMetadata.hpp"
+#include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -20,6 +25,19 @@
 namespace Hockey {
 
 namespace {
+
+struct BasicMeshAssets {
+    std::uint64_t cube = 0;
+    std::uint64_t cylinder = 0;
+    std::uint64_t plane = 0;
+};
+
+struct HockeyToolMaterialAssets {
+    std::uint64_t ice = 0;
+    std::uint64_t boards = 0;
+    std::uint64_t goalNet = 0;
+    std::uint64_t puckBlack = 0;
+};
 
 // Hockey play area is roughly 60m x 120m centred on the origin (half extents
 // 30 x 60). Markers below are placed in that space; nothing here drives
@@ -86,10 +104,38 @@ uint32_t ToPlayerIndex(Team team, PlayerRole role, int index) {
     return 0u;
 }
 
-void AddMesh(Entity entity, const char* mesh, const char* material) {
+std::uint64_t ResolveAssetId(AssetManager* assets, const char* rawPath, AssetType type) {
+    if (assets == nullptr) {
+        return 0;
+    }
+    const AssetMetadata* meta = assets->Database().FindByRawPath(rawPath);
+    if (meta == nullptr || meta->type != type) {
+        return 0;
+    }
+    return meta->id.Value();
+}
+
+BasicMeshAssets ResolveBasicMeshAssets(AssetManager* assets) {
+    BasicMeshAssets out;
+    out.cube = ResolveAssetId(assets, "data/raw/meshes/cube/cube_mesh.mesh.yaml", AssetType::Mesh);
+    out.cylinder = ResolveAssetId(assets, "data/raw/meshes/cylinder/cylinder_mesh.mesh.yaml", AssetType::Mesh);
+    out.plane = ResolveAssetId(assets, "data/raw/meshes/plane/plane_mesh.mesh.yaml", AssetType::Mesh);
+    return out;
+}
+
+HockeyToolMaterialAssets ResolveHockeyToolMaterials(AssetManager* assets) {
+    HockeyToolMaterialAssets out;
+    out.ice = ResolveAssetId(assets, "data/raw/materials/Ice.material.yaml", AssetType::Material);
+    out.boards = ResolveAssetId(assets, "data/raw/materials/Boards.material.yaml", AssetType::Material);
+    out.goalNet = ResolveAssetId(assets, "data/raw/materials/GoalNet.material.yaml", AssetType::Material);
+    out.puckBlack = ResolveAssetId(assets, "data/raw/materials/PuckBlack.material.yaml", AssetType::Material);
+    return out;
+}
+
+void AddMesh(Entity entity, std::uint64_t meshAsset, std::uint64_t materialAsset) {
     MeshRendererComponent& renderer = entity.AddComponent<MeshRendererComponent>();
-    renderer.meshName = mesh;
-    renderer.materialName = material;
+    renderer.meshAsset = meshAsset;
+    renderer.materialAsset = materialAsset;
 }
 
 void Reparent(Scene& scene, Entity child, Entity parent) {
@@ -159,10 +205,12 @@ void HockeyRinkTool::OnSelected(EditorContext& context) {
     if (context.activeScene == nullptr) {
         return;
     }
+    const BasicMeshAssets meshes = ResolveBasicMeshAssets(context.assetManager);
+    const HockeyToolMaterialAssets materials = ResolveHockeyToolMaterials(context.assetManager);
     context.undoRedo.Execute(
         EditorCommands::SpawnEntities(
             "Create Hockey Rink",
-            [](Scene& scene) -> std::vector<UUID> {
+            [meshes, materials](Scene& scene) -> std::vector<UUID> {
                 Entity rink = MakeEntity(scene, "Rink", {0.0f, 0.0f, 0.0f});
                 rink.AddComponent<RinkComponent>();
                 rink.AddComponent<PlayAreaComponent>();
@@ -172,7 +220,7 @@ void HockeyRinkTool::OnSelected(EditorContext& context) {
 
                 Entity ice = MakeEntity(scene, "Ice", {0.0f, 0.0f, 0.0f});
                 ice.GetComponent<TransformComponent>().localScale = {60.0f, 1.0f, 120.0f};
-                AddMesh(ice, "BuiltIn.RinkPlane", "BuiltIn.Ice");
+                AddMesh(ice, meshes.plane, materials.ice);
                 // Static floor collider (absolute size; physics ignores the
                 // entity's visual scale). Top surface sits at y = 0.
                 AddRigidBody(ice, RigidBodyType::Static, PhysicsLayer::Rink, "Ice");
@@ -181,7 +229,7 @@ void HockeyRinkTool::OnSelected(EditorContext& context) {
 
                 Entity boards = MakeEntity(scene, "Boards", {0.0f, 1.0f, 0.0f});
                 boards.GetComponent<TransformComponent>().localScale = {62.0f, 2.0f, 122.0f};
-                AddMesh(boards, "BuiltIn.Cube", "BuiltIn.Boards");
+                AddMesh(boards, meshes.cube, materials.boards);
                 Reparent(scene, boards, rink);
 
                 // Perimeter board walls (collision only) keep the puck/players
@@ -240,10 +288,12 @@ void HockeyPlayerTool::OnSelected(EditorContext& context) {
     if (context.activeScene == nullptr) {
         return;
     }
+    const BasicMeshAssets meshes = ResolveBasicMeshAssets(context.assetManager);
+    const HockeyToolMaterialAssets materials = ResolveHockeyToolMaterials(context.assetManager);
     context.undoRedo.Execute(
         EditorCommands::SpawnEntities(
             "Create Player Bodies",
-            [](Scene& scene) -> std::vector<UUID> {
+            [meshes, materials](Scene& scene) -> std::vector<UUID> {
                 Entity root = MakeEntity(scene, "Players", {0.0f, 0.0f, 0.0f});
 
                 struct PlayerDef {
@@ -294,7 +344,7 @@ void HockeyPlayerTool::OnSelected(EditorContext& context) {
                     player.AddComponent<StickComponent>(stick);
                     player.AddComponent<ShotComponent>();
                     // Visible placeholder body so authors can see the capsule.
-                    AddMesh(player, "BuiltIn.Cube", "BuiltIn.Boards");
+                    AddMesh(player, meshes.cube, materials.boards);
                     player.GetComponent<TransformComponent>().localScale = {0.8f, 1.8f, 0.8f};
                     Reparent(scene, player, root);
                 }
@@ -307,9 +357,11 @@ void HockeyGoalTool::OnSelected(EditorContext& context) {
     if (context.activeScene == nullptr) {
         return;
     }
+    const BasicMeshAssets meshes = ResolveBasicMeshAssets(context.assetManager);
+    const HockeyToolMaterialAssets materials = ResolveHockeyToolMaterials(context.assetManager);
     context.undoRedo.Execute(EditorCommands::SpawnEntities(
                                  "Create Hockey Goals",
-                                 [](Scene& scene) -> std::vector<UUID> {
+                                 [meshes, materials](Scene& scene) -> std::vector<UUID> {
                                      const glm::vec3 goalHalfExtents{0.9f, 0.6f, 0.5f};
 
                                      Entity home = MakeEntity(scene, "Home Goal", {0.0f, 1.0f, -55.0f});
@@ -318,7 +370,7 @@ void HockeyGoalTool::OnSelected(EditorContext& context) {
                                      homeGameplayGoal.defendingTeam = GameplayTeam::Home;
                                      homeGameplayGoal.scoringTeam = GameplayTeam::Away;
                                      home.AddComponent<GoalGameplayComponent>(homeGameplayGoal);
-                                     AddMesh(home, "BuiltIn.Cube", "BuiltIn.GoalNet");
+                                     AddMesh(home, meshes.cube, materials.goalNet);
                                      AddRigidBody(home, RigidBodyType::Static, PhysicsLayer::Goal, "Trigger");
                                      AddBoxCollider(home, goalHalfExtents, glm::vec3(0.0f), /*isTrigger=*/true);
                                      home.AddComponent<TriggerComponent>(TriggerComponent{"Goal", false, false, true});
@@ -329,7 +381,7 @@ void HockeyGoalTool::OnSelected(EditorContext& context) {
                                      awayGameplayGoal.defendingTeam = GameplayTeam::Away;
                                      awayGameplayGoal.scoringTeam = GameplayTeam::Home;
                                      away.AddComponent<GoalGameplayComponent>(awayGameplayGoal);
-                                     AddMesh(away, "BuiltIn.Cube", "BuiltIn.GoalNet");
+                                     AddMesh(away, meshes.cube, materials.goalNet);
                                      AddRigidBody(away, RigidBodyType::Static, PhysicsLayer::Goal, "Trigger");
                                      AddBoxCollider(away, goalHalfExtents, glm::vec3(0.0f), /*isTrigger=*/true);
                                      away.AddComponent<TriggerComponent>(TriggerComponent{"Goal", false, false, true});
@@ -343,14 +395,17 @@ void HockeyPuckTool::OnSelected(EditorContext& context) {
     if (context.activeScene == nullptr) {
         return;
     }
+    const BasicMeshAssets meshes = ResolveBasicMeshAssets(context.assetManager);
+    const HockeyToolMaterialAssets materials = ResolveHockeyToolMaterials(context.assetManager);
     context.undoRedo.Execute(
         EditorCommands::SpawnEntities("Create Puck Spawn",
-                                      [](Scene& scene) -> std::vector<UUID> {
+                                      [meshes, materials](Scene& scene) -> std::vector<UUID> {
                                           Entity puck = MakeEntity(scene, "Puck Spawn", {0.0f, 0.1f, 0.0f});
                                           puck.AddComponent<PuckComponent>();
                                           puck.AddComponent<PuckGameplayComponent>();
                                           puck.AddComponent<PuckRuntimeComponent>();
-                                          AddMesh(puck, "BuiltIn.PuckCylinder", "BuiltIn.PuckBlack");
+                                          AddMesh(puck, meshes.cylinder, materials.puckBlack);
+                                          puck.GetComponent<TransformComponent>().localScale = {0.2f, 0.04f, 0.2f};
                                           RigidBodyComponent& body =
                                               AddRigidBody(puck, RigidBodyType::Dynamic, PhysicsLayer::Puck,
                                                            "PuckRubber", /*mass=*/0.17f, /*useGravity=*/true);

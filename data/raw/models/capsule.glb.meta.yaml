@@ -1,0 +1,17 @@
+Asset:
+  ID: 8074149833177858028
+  Type: Model
+  Name: capsule
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/capsule.glb
+  CookedPath: data/cooked/assets/models/8074149833177858028.model.bin
+  RawFileTimestamp: 134269648191183154
+  RawFileHash: 2830308207536219292
+  ImportedTimestamp: 1782494518
+  CookedTimestamp: 1782494538
+  Dependencies: [14503252706931961359]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

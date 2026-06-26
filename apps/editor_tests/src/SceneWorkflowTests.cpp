@@ -167,7 +167,7 @@ void RunSceneWorkflowTests() {
         const std::filesystem::path prefabPath = dir / "Widget.prefab.yaml";
 
         Entity source = fix.scene.CreateEntity("Widget");
-        source.AddComponent<MeshRendererComponent>().meshName = "BuiltIn.Cube";
+        source.AddComponent<MeshRendererComponent>().meshAsset = 111u;
         Entity child = fix.scene.CreateEntity("WidgetChild");
         fix.scene.SetParent(child, source);
         HK_CHECK_MSG(static_cast<bool>(PrefabSerializer::Save(fix.scene, source, prefabPath)), "prefab saved");

@@ -62,9 +62,11 @@ Source material:
 - [x] Texture `maxSize` downsample/clamp behavior exists.
 - [x] Material import and YAML serialization exist.
 - [x] Material cook path exists.
+- [x] Canonical reusable visual materials are authored as raw PBR material assets under `data/raw/materials`.
 - [x] PBR texture slot handling exists for base color, normal, metallic/roughness, occlusion, and emissive.
 - [x] glTF/GLB import exists through fastgltf.
 - [x] Mesh optimization/cooking exists through meshoptimizer.
+- [x] Canonical basic shape mesh assets exist for cube, sphere, cylinder, capsule, torus, and plane.
 - [x] Tangent generation exists for glTF primitives that omit tangents.
 - [x] Model cook/load path exists.
 - [x] Shader import/cook path exists through shaderc.

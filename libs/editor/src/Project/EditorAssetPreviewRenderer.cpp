@@ -1,5 +1,8 @@
 #include "Hockey/Editor/Project/EditorAssetPreviewRenderer.hpp"
 
+#include "Hockey/Assets/AssetDatabase.hpp"
+#include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Assets/AssetMetadata.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
@@ -36,7 +39,12 @@ std::uint64_t EditorAssetPreviewRenderer::MaterialPreviewTextureId(EditorContext
                                                                    std::uint64_t materialAssetId,
                                                                    std::uint32_t previewSize) {
     if (context.renderer == nullptr || context.imguiBridge == nullptr || !context.renderer->CanRender() ||
-        materialAssetId == 0 || previewSize == 0) {
+        context.assetManager == nullptr || materialAssetId == 0 || previewSize == 0) {
+        return 0;
+    }
+    const AssetMetadata* sphereMesh =
+        context.assetManager->Database().FindByRawPath("data/raw/meshes/sphere/sphere_mesh.mesh.yaml");
+    if (sphereMesh == nullptr) {
         return 0;
     }
 
@@ -69,7 +77,7 @@ std::uint64_t EditorAssetPreviewRenderer::MaterialPreviewTextureId(EditorContext
 
     Entity sphere = scene.CreateEntity("MaterialPreviewSphere");
     auto& mesh = sphere.AddComponent<MeshRendererComponent>();
-    mesh.meshName = "BuiltIn.Sphere";
+    mesh.meshAsset = sphereMesh->id.Value();
     mesh.materialAsset = materialAssetId;
     mesh.castsShadows = false;
 

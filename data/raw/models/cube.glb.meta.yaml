@@ -1,0 +1,17 @@
+Asset:
+  ID: 5157995233327843126
+  Type: Model
+  Name: cube
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/cube.glb
+  CookedPath: data/cooked/assets/models/5157995233327843126.model.bin
+  RawFileTimestamp: 134268844170961368
+  RawFileHash: 9552102359210212491
+  ImportedTimestamp: 1782494520
+  CookedTimestamp: 1782494530
+  Dependencies: [1834512563645225461]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

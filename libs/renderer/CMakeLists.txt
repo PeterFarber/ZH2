@@ -23,8 +23,6 @@ target_sources(hockey_renderer
         src/Shader.cpp
         src/Pipeline.cpp
         src/DescriptorSet.cpp
-        src/Mesh.cpp
-        src/Material.cpp
         src/RenderTarget.cpp
         src/RenderPass.cpp
         src/RenderGraph.cpp

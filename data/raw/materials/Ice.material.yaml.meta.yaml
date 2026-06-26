@@ -1,0 +1,17 @@
+Asset:
+  ID: 18328928024750434439
+  Type: Material
+  Name: Ice
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/Ice.material.yaml
+  CookedPath: data/cooked/assets/materials/18328928024750434439.material.yaml
+  RawFileTimestamp: 134269646331257634
+  RawFileHash: 4095287344907846030
+  ImportedTimestamp: 1782494524
+  CookedTimestamp: 1782494537
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

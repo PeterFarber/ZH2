@@ -92,8 +92,6 @@ void SerializeRenderComponents(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "MeshRendererComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "MeshAsset" << YAML::Value << mesh.meshAsset;
         out << YAML::Key << "MaterialAsset" << YAML::Value << mesh.materialAsset;
-        out << YAML::Key << "MeshName" << YAML::Value << mesh.meshName;
-        out << YAML::Key << "MaterialName" << YAML::Value << mesh.materialName;
         out << YAML::Key << "Visible" << YAML::Value << mesh.visible;
         out << YAML::Key << "CastsShadows" << YAML::Value << mesh.castsShadows;
         out << YAML::Key << "ReceivesShadows" << YAML::Value << mesh.receivesShadows;
@@ -128,7 +126,7 @@ void SerializeRenderComponents(YAML::Emitter& out, Entity entity) {
     if (entity.HasComponent<DecalComponent>()) {
         const auto& decal = entity.GetComponent<DecalComponent>();
         out << YAML::Key << "DecalComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "MaterialName" << YAML::Value << decal.materialName;
+        out << YAML::Key << "MaterialAsset" << YAML::Value << decal.materialAsset;
         out << YAML::Key << "Size" << YAML::Value << decal.size;
         out << YAML::Key << "AffectsBaseColor" << YAML::Value << decal.affectsBaseColor;
         out << YAML::Key << "AffectsNormals" << YAML::Value << decal.affectsNormals;
@@ -403,12 +401,6 @@ bool ComponentSerializer::DeserializeRenderComponents(Entity entity, const YAML:
         if (meshNode["MaterialAsset"]) {
             component.materialAsset = meshNode["MaterialAsset"].as<std::uint64_t>();
         }
-        if (meshNode["MeshName"]) {
-            component.meshName = meshNode["MeshName"].as<std::string>();
-        }
-        if (meshNode["MaterialName"]) {
-            component.materialName = meshNode["MaterialName"].as<std::string>();
-        }
         if (meshNode["Visible"]) {
             component.visible = meshNode["Visible"].as<bool>();
         }
@@ -467,8 +459,8 @@ bool ComponentSerializer::DeserializeRenderComponents(Entity entity, const YAML:
 
     if (const auto decalNode = node["DecalComponent"]) {
         DecalComponent component;
-        if (decalNode["MaterialName"]) {
-            component.materialName = decalNode["MaterialName"].as<std::string>();
+        if (decalNode["MaterialAsset"]) {
+            component.materialAsset = decalNode["MaterialAsset"].as<std::uint64_t>();
         }
         ReadVec3(decalNode["Size"], component.size);
         if (decalNode["AffectsBaseColor"]) {

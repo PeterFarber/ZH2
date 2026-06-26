@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/capsule.glb
+  MeshIndex: 0
+  Name: capsule_mesh
+  Materials:
+    []

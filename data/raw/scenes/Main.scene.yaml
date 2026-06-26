@@ -93,8 +93,6 @@ Entities:
     MeshRendererComponent:
       MeshAsset: 13159441835091159249
       MaterialAsset: 2175547380742926098
-      MeshName: ""
-      MaterialName: ""
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -117,8 +115,6 @@ Entities:
     MeshRendererComponent:
       MeshAsset: 2462135637550940025
       MaterialAsset: 616265134277951580
-      MeshName: ""
-      MaterialName: ""
       Visible: true
       CastsShadows: true
       ReceivesShadows: true

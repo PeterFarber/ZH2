@@ -277,9 +277,6 @@ void ComponentRegistry::RegisterPhase2Components() {
             MakeField("MaterialAsset", FieldType::AssetRef, offsetof(MeshRendererComponent, materialAsset));
         materialAsset.assetTypeName = "Material";
         md.fields.push_back(materialAsset);
-        md.fields.push_back(MakeField("MeshName", FieldType::String, offsetof(MeshRendererComponent, meshName)));
-        md.fields.push_back(
-            MakeField("MaterialName", FieldType::String, offsetof(MeshRendererComponent, materialName)));
         md.fields.push_back(MakeField("Visible", FieldType::Bool, offsetof(MeshRendererComponent, visible)));
         md.fields.push_back(MakeField("CastsShadows", FieldType::Bool, offsetof(MeshRendererComponent, castsShadows)));
         md.fields.push_back(
@@ -334,7 +331,10 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.name = "DecalComponent";
         md.displayName = "Decal";
         md.category = "Rendering";
-        md.fields.push_back(MakeField("MaterialName", FieldType::String, offsetof(DecalComponent, materialName)));
+        FieldMetadata materialAsset =
+            MakeField("MaterialAsset", FieldType::AssetRef, offsetof(DecalComponent, materialAsset));
+        materialAsset.assetTypeName = "Material";
+        md.fields.push_back(materialAsset);
         md.fields.push_back(
             MakeVecRangeField("Size", FieldType::Vec3, offsetof(DecalComponent, size), 0.0f, 100.0f, 0.1f));
         md.fields.push_back(MakeField("AffectsBaseColor", FieldType::Bool, offsetof(DecalComponent, affectsBaseColor)));

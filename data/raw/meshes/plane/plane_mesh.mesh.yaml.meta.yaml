@@ -1,0 +1,17 @@
+Asset:
+  ID: 16045454102454522057
+  Type: Mesh
+  Name: plane_mesh
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/meshes/plane/plane_mesh.mesh.yaml
+  CookedPath: data/cooked/assets/meshes/16045454102454522057.mesh.bin
+  RawFileTimestamp: 134269681214141089
+  RawFileHash: 9950122771686160816
+  ImportedTimestamp: 1782494524
+  CookedTimestamp: 1782494537
+  Dependencies: []
+  Dependents: [2018126858195272879, 7400055902900099391]
+  Dirty: true
+  Missing: false
+  Cooked: true

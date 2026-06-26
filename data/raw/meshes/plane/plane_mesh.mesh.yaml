@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/plane.glb
+  MeshIndex: 0
+  Name: plane_mesh
+  Materials:
+    []

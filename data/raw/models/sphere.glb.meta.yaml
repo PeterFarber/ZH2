@@ -1,0 +1,17 @@
+Asset:
+  ID: 16053632770209735033
+  Type: Model
+  Name: sphere
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/sphere.glb
+  CookedPath: data/cooked/assets/models/16053632770209735033.model.bin
+  RawFileTimestamp: 134269648191163156
+  RawFileHash: 3317158183532487839
+  ImportedTimestamp: 1782494521
+  CookedTimestamp: 1782494531
+  Dependencies: [1580850430864872346]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

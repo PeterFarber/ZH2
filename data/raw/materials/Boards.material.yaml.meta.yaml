@@ -1,0 +1,17 @@
+Asset:
+  ID: 1683526106923192655
+  Type: Material
+  Name: Boards
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/Boards.material.yaml
+  CookedPath: data/cooked/assets/materials/1683526106923192655.material.yaml
+  RawFileTimestamp: 134269646331277610
+  RawFileHash: 15805894419148813783
+  ImportedTimestamp: 1782494520
+  CookedTimestamp: 1782494530
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

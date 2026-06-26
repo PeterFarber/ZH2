@@ -99,9 +99,6 @@ public:
     TextureHandle CreateTexture(const TextureDesc& desc);
     MaterialHandle CreateMaterial(const MaterialDesc& desc);
 
-    MeshHandle GetBuiltInMesh(BuiltInMesh mesh) const;
-    MaterialHandle GetBuiltInMaterial(BuiltInMaterial material) const;
-
     // ----- Content pipeline integration -----
     // Supplies the asset manager used to resolve MeshRendererComponent asset
     // ids to GPU resources. The renderer loads/cooks on demand and caches the

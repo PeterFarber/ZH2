@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -20,10 +22,18 @@ namespace {
 
 struct ToolFixture {
     Scene scene{"ToolTest"};
+    AssetManager assets;
     EditorContext context;
     ToolFixture() {
+        HK_CHECK_MSG(static_cast<bool>(assets.Init(AssetManager::DefaultCreateInfo(Paths::Get().root))),
+                     "tool test asset manager initializes");
         context.activeScene = &scene;
+        context.assetManager = &assets;
         RegisterEditorTools(context.toolManager);
+    }
+
+    ~ToolFixture() {
+        assets.Shutdown();
     }
 };
 
@@ -31,6 +41,15 @@ struct ToolFixture {
 template <typename T> bool HasNamed(Scene& scene, const std::string& name) {
     Entity entity = scene.FindEntityByName(name);
     return entity && entity.HasComponent<T>();
+}
+
+void CheckVisualAssetRefs(Entity entity, const char* label) {
+    HK_CHECK_MSG(entity && entity.HasComponent<MeshRendererComponent>(), std::string(label) + " has mesh renderer");
+    if (entity && entity.HasComponent<MeshRendererComponent>()) {
+        const MeshRendererComponent& renderer = entity.GetComponent<MeshRendererComponent>();
+        HK_CHECK_MSG(renderer.meshAsset != 0, std::string(label) + " uses mesh asset");
+        HK_CHECK_MSG(renderer.materialAsset != 0, std::string(label) + " uses material asset");
+    }
 }
 
 } // namespace
@@ -85,6 +104,8 @@ void RunToolTests() {
         HK_CHECK_MSG(HasNamed<OutOfPlayComponent>(fix.scene, "Rink"), "rink has OutOfPlayComponent");
         HK_CHECK_MSG(fix.scene.FindEntityByName("Ice"), "rink creates Ice child");
         HK_CHECK_MSG(fix.scene.FindEntityByName("Boards"), "rink creates Boards child");
+        CheckVisualAssetRefs(fix.scene.FindEntityByName("Ice"), "ice");
+        CheckVisualAssetRefs(fix.scene.FindEntityByName("Boards"), "boards");
         // Rink, Ice, Boards (visual) + 4 board-wall colliders.
         HK_CHECK_EQ(fix.scene.EntityCount(), before + 7);
 
@@ -136,6 +157,8 @@ void RunToolTests() {
             HK_CHECK_MSG(home.GetComponent<GoalComponent>().defendingTeam == Team::Home, "home goal team");
             HK_CHECK_MSG(away.GetComponent<GoalComponent>().defendingTeam == Team::Away, "away goal team");
         }
+        CheckVisualAssetRefs(home, "home goal");
+        CheckVisualAssetRefs(away, "away goal");
         ctx.undoRedo.Undo(ctx);
         HK_CHECK_EQ(fix.scene.EntityCount(), before);
     }
@@ -158,6 +181,10 @@ void RunToolTests() {
             HK_CHECK_EQ(player.playerIndex, 0u);
             HK_CHECK_EQ(player.slot, PlayerSlot::HomeSkater0);
             HK_CHECK_MSG(player.controlledByLocalInput, "home skater 0 receives local input");
+            CheckVisualAssetRefs(homeSkater, "home skater");
+        }
+        if (homeGoalie) {
+            CheckVisualAssetRefs(homeGoalie, "home goalie");
         }
         if (homeSkater && homeSkater.HasComponent<RigidBodyComponent>() &&
             homeSkater.HasComponent<CapsuleColliderComponent>()) {
@@ -209,9 +236,16 @@ void RunToolTests() {
         HK_CHECK_MSG(HasNamed<PuckRuntimeComponent>(fix.scene, "Puck Spawn"), "puck has PuckRuntimeComponent");
         Entity puck = fix.scene.FindEntityByName("Puck Spawn");
         HK_CHECK_MSG(puck && puck.HasComponent<RigidBodyComponent>(), "puck has RigidBodyComponent");
+        CheckVisualAssetRefs(puck, "puck");
         if (puck && puck.HasComponent<RigidBodyComponent>()) {
             HK_CHECK_MSG(puck.GetComponent<RigidBodyComponent>().collisionDetection == CollisionDetectionMode::Continuous,
                          "puck tool authors continuous collision detection");
+        }
+        if (puck) {
+            const glm::vec3 scale = puck.GetComponent<TransformComponent>().localScale;
+            HK_CHECK_NEAR(scale.x, 0.2f, 0.0001f);
+            HK_CHECK_NEAR(scale.y, 0.04f, 0.0001f);
+            HK_CHECK_NEAR(scale.z, 0.2f, 0.0001f);
         }
     }
 

@@ -1,0 +1,17 @@
+Asset:
+  ID: 15706789347486569996
+  Type: Model
+  Name: cylinder
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/cylinder.glb
+  CookedPath: data/cooked/assets/models/15706789347486569996.model.bin
+  RawFileTimestamp: 134268860728844425
+  RawFileHash: 4761709595739898576
+  ImportedTimestamp: 1782494523
+  CookedTimestamp: 1782494535
+  Dependencies: [11795346347216253737]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

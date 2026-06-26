@@ -1,0 +1,17 @@
+Asset:
+  ID: 15440424719225186514
+  Type: Material
+  Name: HomeJersey
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/HomeJersey.material.yaml
+  CookedPath: data/cooked/assets/materials/15440424719225186514.material.yaml
+  RawFileTimestamp: 134269646331267609
+  RawFileHash: 13738238847739765333
+  ImportedTimestamp: 1782494523
+  CookedTimestamp: 1782494535
+  Dependencies: []
+  Dependents: [2018126858195272879, 13754134128618196032]
+  Dirty: false
+  Missing: false
+  Cooked: true

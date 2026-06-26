@@ -1,0 +1,16 @@
+Material:
+  Name: ErrorMagenta
+  Type: PBR
+  BaseColor: [1, 0, 1, 1]
+  Metallic: 0
+  Roughness: 0.9
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0.4, 0, 0.4]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    {}

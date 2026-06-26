@@ -13,6 +13,7 @@ void RunHeadlessServerLinkTests();
 void RunShaderCompileTests();
 void RunRenderGraphTests();
 void RunRendererShadowContractTests();
+void RunMaterialAssetContractTests();
 
 // GPU smoke tests (skipped when no display/GPU is available).
 void RunRendererSmokeTests();
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
     RunShaderCompileTests();
     RunRenderGraphTests();
     RunRendererShadowContractTests();
+    RunMaterialAssetContractTests();
 
     if (!commandLine.Has("--no-gpu")) {
         RunRendererSmokeTests();

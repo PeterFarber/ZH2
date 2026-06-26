@@ -11,15 +11,11 @@ namespace Hockey {
 
 // ---------------------------------------------------------------------------
 // Phase 3 render components. These hold only backend-agnostic data; the
-// renderer resolves resource references (mesh/material names) to GPU handles.
+// renderer resolves resource references to GPU handles.
 // The ECS library never depends on the renderer.
 //
-// Resource references prefer a content-pipeline AssetID, falling back to a
-// built-in name when the asset id is 0/invalid, e.g.
-//   meshName = "BuiltIn.RinkPlane", materialName = "BuiltIn.Ice".
-// Asset ids are stored as raw uint64 values (the AssetID type lives in
-// hockey_assets, which the ECS must not depend on); the renderer interprets
-// them as AssetIDs.
+// Mesh/material references are content-pipeline AssetIDs stored as raw uint64
+// values because AssetID lives in hockey_assets, which ECS must not depend on.
 // ---------------------------------------------------------------------------
 
 struct CameraComponent {
@@ -30,13 +26,10 @@ struct CameraComponent {
 };
 
 struct MeshRendererComponent {
-    // Preferred references (0 == none; fall back to the built-in names below).
+    // 0 means no asset assigned.
     uint64_t meshAsset = 0;
     uint64_t materialAsset = 0;
 
-    // Built-in fallback resource names, e.g. "BuiltIn.RinkPlane".
-    std::string meshName;
-    std::string materialName;
     bool visible = true;
     bool castsShadows = true;
     bool receivesShadows = true;
@@ -65,7 +58,7 @@ struct ReflectionProbeComponent {
 };
 
 struct DecalComponent {
-    std::string materialName;
+    uint64_t materialAsset = 0;
     glm::vec3 size{1.0f};
     bool affectsBaseColor = true;
     bool affectsNormals = true;

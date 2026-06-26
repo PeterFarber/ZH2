@@ -18,6 +18,7 @@ void RunHotReloadTests();
 void RunTextureMaxSizeTests();
 void RunTangentGenerationTests();
 void RunSceneAssetTests();
+void RunBasicShapeAssetTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -37,6 +38,7 @@ int main(int argc, char** argv) {
     RunTextureMaxSizeTests();
     RunTangentGenerationTests();
     RunSceneAssetTests();
+    RunBasicShapeAssetTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Asset tests completed: {} passed, {} failed", stats.passed, stats.failed);

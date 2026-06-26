@@ -272,7 +272,7 @@ void RunUndoRedoTests() {
         CommandFixture fix;
         Entity entity = fix.scene.CreateEntity("RemoveMe");
         const UUID id = entity.GetUUID();
-        entity.AddComponent<MeshRendererComponent>().meshName = "puck.mesh";
+        entity.AddComponent<MeshRendererComponent>().meshAsset = 111u;
 
         fix.context.undoRedo.Execute(EditorCommands::RemoveComponent(fix.scene, id, "MeshRendererComponent"),
                                      fix.context);
@@ -283,7 +283,7 @@ void RunUndoRedoTests() {
         Entity restored = fix.scene.FindEntityByUUID(id);
         HK_CHECK_MSG(restored.HasComponent<MeshRendererComponent>(), "undo restores component");
         if (restored.HasComponent<MeshRendererComponent>()) {
-            HK_CHECK_EQ(restored.GetComponent<MeshRendererComponent>().meshName, std::string("puck.mesh"));
+            HK_CHECK_EQ(restored.GetComponent<MeshRendererComponent>().meshAsset, 111u);
         }
 
         fix.context.undoRedo.Redo(fix.context);
@@ -295,22 +295,19 @@ void RunUndoRedoTests() {
         CommandFixture fix;
         Entity entity = fix.scene.CreateEntity("FieldEdit");
         const UUID id = entity.GetUUID();
-        entity.AddComponent<MeshRendererComponent>().meshName = "before.mesh";
+        entity.AddComponent<MeshRendererComponent>().meshAsset = 111u;
 
         const std::string before = EntitySnapshot::CaptureEntity(fix.scene, id);
-        fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshName = "after.mesh";
+        fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshAsset = 222u;
         const std::string after = EntitySnapshot::CaptureEntity(fix.scene, id);
 
         fix.context.undoRedo.Execute(EditorCommands::EditComponentField(id, "Mesh Renderer", before, after),
                                      fix.context);
-        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshName,
-                    std::string("after.mesh"));
+        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshAsset, 222u);
         fix.context.undoRedo.Undo(fix.context);
-        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshName,
-                    std::string("before.mesh"));
+        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshAsset, 111u);
         fix.context.undoRedo.Redo(fix.context);
-        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshName,
-                    std::string("after.mesh"));
+        HK_CHECK_EQ(fix.scene.FindEntityByUUID(id).GetComponent<MeshRendererComponent>().meshAsset, 222u);
     }
 
     // --- delete entity undo/redo restores subtree, UUIDs and hierarchy ------
@@ -721,7 +718,7 @@ void RunUndoRedoTests() {
         CommandFixture fix;
         Entity source = fix.scene.CreateEntity("CompSource");
         Entity target = fix.scene.CreateEntity("CompTarget");
-        source.AddComponent<MeshRendererComponent>().meshName = "shared.mesh";
+        source.AddComponent<MeshRendererComponent>().meshAsset = 333u;
         const UUID targetId = target.GetUUID();
 
         fix.context.clipboard.CopyComponent(fix.scene, source.GetUUID(), "MeshRendererComponent");
@@ -733,7 +730,7 @@ void RunUndoRedoTests() {
         Entity pastedTarget = fix.scene.FindEntityByUUID(targetId);
         HK_CHECK_MSG(pastedTarget.HasComponent<MeshRendererComponent>(), "paste adds the component to target");
         if (pastedTarget.HasComponent<MeshRendererComponent>()) {
-            HK_CHECK_EQ(pastedTarget.GetComponent<MeshRendererComponent>().meshName, std::string("shared.mesh"));
+            HK_CHECK_EQ(pastedTarget.GetComponent<MeshRendererComponent>().meshAsset, 333u);
         }
 
         fix.context.undoRedo.Undo(fix.context);
@@ -745,7 +742,7 @@ void RunUndoRedoTests() {
     {
         CommandFixture fix;
         Entity entity = fix.scene.CreateEntity("PrefabSource");
-        entity.AddComponent<MeshRendererComponent>().meshName = "puck.mesh";
+        entity.AddComponent<MeshRendererComponent>().meshAsset = 111u;
         const UUID id = entity.GetUUID();
         const std::filesystem::path path =
             std::filesystem::temp_directory_path() / "hk_create_prefab_test.prefab.yaml";

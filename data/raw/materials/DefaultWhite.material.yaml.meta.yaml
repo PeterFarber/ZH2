@@ -1,0 +1,17 @@
+Asset:
+  ID: 9899130797286881812
+  Type: Material
+  Name: DefaultWhite
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/DefaultWhite.material.yaml
+  CookedPath: data/cooked/assets/materials/9899130797286881812.material.yaml
+  RawFileTimestamp: 134269646331247609
+  RawFileHash: 4281679364754178099
+  ImportedTimestamp: 1782494521
+  CookedTimestamp: 1782494531
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

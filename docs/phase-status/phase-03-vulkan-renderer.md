@@ -58,8 +58,8 @@ Source material:
 
 ## Finished - Render Path
 
-- [x] Built-in meshes exist.
-- [x] Built-in hockey materials exist.
+- [x] Renderer consumes asset-backed mesh resources without renderer-owned built-in mesh primitives.
+- [x] Renderer consumes canonical asset-backed hockey and debug materials from `data/raw/materials`.
 - [x] Asset-backed mesh/material/texture upload and caching exist.
 - [x] ECS camera, mesh renderer, light, and environment data are consumed at render time.
 - [x] Forward PBR scene rendering exists.

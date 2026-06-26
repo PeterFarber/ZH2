@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/sphere.glb
+  MeshIndex: 0
+  Name: sphere_mesh
+  Materials:
+    []

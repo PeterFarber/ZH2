@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 13768070735824353435
+  Name: Glass
+  BaseColor: [0.6, 0.75, 0.85, 0.25]
+  Metallic: 0
+  Roughness: 0.05
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 0
+  AlphaMode: Blend
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 0
+    Normal: 0
+    MetallicRoughness: 0
+    Occlusion: 0
+    Emissive: 0

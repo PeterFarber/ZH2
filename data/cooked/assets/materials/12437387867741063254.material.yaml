@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 12437387867741063254
+  Name: Metal
+  BaseColor: [0.7, 0.72, 0.75, 1]
+  Metallic: 1
+  Roughness: 0.28
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 0
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 0
+    Normal: 0
+    MetallicRoughness: 0
+    Occlusion: 0
+    Emissive: 0

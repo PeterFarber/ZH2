@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 15350148161379860780
+  Name: SolidRed
+  BaseColor: [0.8, 0.08, 0.08, 1]
+  Metallic: 0
+  Roughness: 0.9
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 0
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 0
+    Normal: 0
+    MetallicRoughness: 0
+    Occlusion: 0
+    Emissive: 0

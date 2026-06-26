@@ -1,0 +1,16 @@
+Material:
+  Name: DebugCollider
+  Type: PBR
+  BaseColor: [0.1, 0.9, 0.2, 0.4]
+  Metallic: 0
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0.05, 0.4, 0.1]
+  EmissiveStrength: 0.5
+  AlphaMode: Blend
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    {}

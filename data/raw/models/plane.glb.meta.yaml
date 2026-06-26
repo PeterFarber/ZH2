@@ -1,0 +1,17 @@
+Asset:
+  ID: 7400055902900099391
+  Type: Model
+  Name: plane
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/plane.glb
+  CookedPath: data/cooked/assets/models/7400055902900099391.model.bin
+  RawFileTimestamp: 134268862757888149
+  RawFileHash: 17966049299641883799
+  ImportedTimestamp: 1782494521
+  CookedTimestamp: 1782494538
+  Dependencies: [16045454102454522057]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

@@ -124,7 +124,9 @@ void RunProjectPanelContractTests() {
                  "Project material tiles request rendered material previews from the shared helper");
     HK_CHECK_MSG(!Contains(source, "RenderSceneToTarget") && !Contains(source, "BuiltIn.Sphere"),
                  "Project panel does not own material preview scene rendering");
-    HK_CHECK_MSG(Contains(previewSource, "RenderSceneToTarget") && Contains(previewSource, "BuiltIn.Sphere") &&
+    HK_CHECK_MSG(Contains(previewSource, "RenderSceneToTarget") &&
+                     Contains(previewSource, "sphere_mesh.mesh.yaml") &&
+                     Contains(previewSource, "mesh.meshAsset = sphereMesh->id.Value()") &&
                      Contains(previewSource, "materialAsset = materialAssetId") &&
                      Contains(previewSource, "ViewportTextureId"),
                  "Shared preview renderer renders material assets on a sphere into an ImGui texture");

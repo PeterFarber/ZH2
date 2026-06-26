@@ -1,8 +1,13 @@
 #include "Test.hpp"
 
+#include <cstdint>
+
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 
+#include "Hockey/Assets/AssetDatabase.hpp"
+#include "Hockey/Assets/AssetManager.hpp"
+#include "Hockey/Assets/AssetMetadata.hpp"
 #include "Hockey/Core/EventQueue.hpp"
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
@@ -13,6 +18,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Renderer/Camera.hpp"
 #include "Hockey/Renderer/DebugDraw.hpp"
+#include "Hockey/Renderer/Mesh.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 using namespace Hockey;
@@ -28,9 +34,31 @@ void PumpEvents(Window& window) {
     }
 }
 
+uint64_t MeshId(AssetManager& assets, const char* rawPath) {
+    const AssetMetadata* meta = assets.Database().FindByRawPath(rawPath);
+    return meta != nullptr ? meta->id.Value() : 0;
+}
+
+uint64_t MaterialId(AssetManager& assets, const char* rawPath) {
+    const AssetMetadata* meta = assets.Database().FindByRawPath(rawPath);
+    return meta != nullptr ? meta->id.Value() : 0;
+}
+
+MeshDesc MakeSmokeTriangleMesh() {
+    MeshDesc desc;
+    desc.debugName = "SmokeTestTriangle";
+    desc.vertices = {
+        Vertex{{-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        Vertex{{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+        Vertex{{0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 1.0f}},
+    };
+    desc.indices = {0, 1, 2};
+    return desc;
+}
+
 // Builds a small scene: ground plane, an opaque cube + sphere, a transparent
 // glass sphere, plus a directional light and ambient environment.
-void PopulateScene(Scene& scene) {
+void PopulateScene(Scene& scene, AssetManager& assets) {
     Entity env = scene.CreateEntity("Environment");
     auto& environment = env.AddComponent<EnvironmentComponent>();
     environment.ambientColor = {0.05f, 0.06f, 0.08f};
@@ -45,33 +73,27 @@ void PopulateScene(Scene& scene) {
 
     Entity floor = scene.CreateEntity("Floor");
     auto& floorMesh = floor.AddComponent<MeshRendererComponent>();
-    floorMesh.meshName = "BuiltIn.RinkPlane";
-    floorMesh.materialName = "BuiltIn.Ice";
+    floorMesh.meshAsset = MeshId(assets, "data/raw/meshes/plane/plane_mesh.mesh.yaml");
+    floorMesh.materialAsset = MaterialId(assets, "data/raw/materials/Ice.material.yaml");
+    floor.GetComponent<TransformComponent>().localScale = {60.96f, 1.0f, 25.91f};
 
     Entity cube = scene.CreateEntity("Cube");
     cube.GetComponent<TransformComponent>().localPosition = {-1.5f, 0.5f, 0.0f};
     auto& cubeMesh = cube.AddComponent<MeshRendererComponent>();
-    cubeMesh.meshName = "BuiltIn.Cube";
-    cubeMesh.materialName = "BuiltIn.HomeJersey";
+    cubeMesh.meshAsset = MeshId(assets, "data/raw/meshes/cube/cube_mesh.mesh.yaml");
+    cubeMesh.materialAsset = MaterialId(assets, "data/raw/materials/HomeJersey.material.yaml");
 
     Entity sphere = scene.CreateEntity("Sphere");
     sphere.GetComponent<TransformComponent>().localPosition = {1.5f, 0.5f, 0.0f};
     auto& sphereMesh = sphere.AddComponent<MeshRendererComponent>();
-    sphereMesh.meshName = "BuiltIn.Sphere";
-    sphereMesh.materialName = "BuiltIn.AwayJersey";
+    sphereMesh.meshAsset = MeshId(assets, "data/raw/meshes/sphere/sphere_mesh.mesh.yaml");
+    sphereMesh.materialAsset = MaterialId(assets, "data/raw/materials/AwayJersey.material.yaml");
 
     Entity glass = scene.CreateEntity("Glass");
     glass.GetComponent<TransformComponent>().localPosition = {0.0f, 0.5f, 1.5f};
     auto& glassMesh = glass.AddComponent<MeshRendererComponent>();
-    glassMesh.meshName = "BuiltIn.Sphere";
-    glassMesh.materialName = "BuiltIn.Glass";
-
-    // Unknown references must fall back to the magenta error material/cube.
-    Entity missing = scene.CreateEntity("MissingAsset");
-    missing.GetComponent<TransformComponent>().localPosition = {0.0f, 0.5f, -1.5f};
-    auto& missingMesh = missing.AddComponent<MeshRendererComponent>();
-    missingMesh.meshName = "Asset.DoesNotExist";
-    missingMesh.materialName = "Asset.DoesNotExist";
+    glassMesh.meshAsset = MeshId(assets, "data/raw/meshes/sphere/sphere_mesh.mesh.yaml");
+    glassMesh.materialAsset = MaterialId(assets, "data/raw/materials/Glass.material.yaml");
 }
 
 CameraRenderData MakeOrbitCamera(float aspect) {
@@ -128,6 +150,11 @@ void RunRendererSmokeTests() {
     HK_CHECK(renderer.IsInitialized());
     HK_CHECK(renderer.CanRender());
 
+    AssetManager assetManager;
+    const Status assetStatus = assetManager.Init(AssetManager::DefaultCreateInfo(Paths::Get().root));
+    HK_CHECK_MSG(static_cast<bool>(assetStatus), "asset manager initializes for renderer smoke test");
+    renderer.SetAssetManager(&assetManager);
+
     // Create a small texture from CPU pixel data and validate the handle.
     const uint32_t kPixels[4] = {0xFFFFFFFFu, 0xFF808080u, 0xFF404040u, 0xFFFFFFFFu};
     TextureDesc texDesc;
@@ -140,16 +167,8 @@ void RunRendererSmokeTests() {
     const TextureHandle tex = renderer.CreateTexture(texDesc);
     HK_CHECK(tex.IsValid());
 
-    // Built-in meshes and materials should resolve to valid handles.
-    HK_CHECK(renderer.GetBuiltInMesh(BuiltInMesh::Cube).IsValid());
-    HK_CHECK(renderer.GetBuiltInMesh(BuiltInMesh::Sphere).IsValid());
-    HK_CHECK(renderer.GetBuiltInMesh(BuiltInMesh::RinkPlane).IsValid());
-    HK_CHECK(renderer.GetBuiltInMaterial(BuiltInMaterial::DefaultWhite).IsValid());
-    HK_CHECK(renderer.GetBuiltInMaterial(BuiltInMaterial::Ice).IsValid());
-    HK_CHECK(renderer.GetBuiltInMaterial(BuiltInMaterial::ErrorMagenta).IsValid());
-
     // Custom mesh + material creation returns valid handles.
-    const MeshHandle customMesh = renderer.CreateMesh(MakeCubeMesh(2.0f));
+    const MeshHandle customMesh = renderer.CreateMesh(MakeSmokeTriangleMesh());
     HK_CHECK(customMesh.IsValid());
     MaterialDesc matDesc;
     matDesc.baseColor = {0.2f, 0.6f, 0.9f, 1.0f};
@@ -179,7 +198,7 @@ void RunRendererSmokeTests() {
     // Render an actual scene through the gather + forward PBR path.
     {
         Scene scene("SmokeScene");
-        PopulateScene(scene);
+        PopulateScene(scene, assetManager);
         const float aspect = 800.0f / 600.0f;
         const CameraRenderData camera = MakeOrbitCamera(aspect);
         for (int i = 0; i < 8; ++i) {
@@ -188,9 +207,9 @@ void RunRendererSmokeTests() {
             renderer.RenderScene(scene, camera);
             renderer.EndFrame();
         }
-        // The frame after a scene render should have issued draws (6 meshes:
-        // floor + cube + sphere + glass + fallback; glass is the lone transparent).
-        HK_CHECK(renderer.GetStats().drawCalls >= 5);
+        // The frame after a scene render should have issued draws for floor,
+        // cube, sphere, and transparent glass.
+        HK_CHECK(renderer.GetStats().drawCalls >= 4);
         HK_CHECK(renderer.GetStats().triangleCount > 0);
         // Default settings (High shadows) render 4 cascades of opaque geometry,
         // plus the HDR -> bloom -> tonemap -> FXAA post chain.
@@ -208,7 +227,7 @@ void RunRendererSmokeTests() {
         renderer.ApplySettings(noPost);
 
         Scene scene("NoPostScene");
-        PopulateScene(scene);
+        PopulateScene(scene, assetManager);
         const CameraRenderData camera = MakeOrbitCamera(800.0f / 600.0f);
         for (int i = 0; i < 4; ++i) {
             PumpEvents(window);
@@ -216,7 +235,7 @@ void RunRendererSmokeTests() {
             renderer.RenderScene(scene, camera);
             renderer.EndFrame();
         }
-        HK_CHECK(renderer.GetStats().drawCalls >= 5);
+        HK_CHECK(renderer.GetStats().drawCalls >= 4);
         HK_CHECK(renderer.GetStats().shadowDrawCalls == 0);
     }
 
@@ -230,7 +249,7 @@ void RunRendererSmokeTests() {
         renderer.ApplySettings(full);
 
         Scene scene("DebugScene");
-        PopulateScene(scene);
+        PopulateScene(scene, assetManager);
         const CameraRenderData camera = MakeOrbitCamera(800.0f / 600.0f);
         for (int i = 0; i < 4; ++i) {
             PumpEvents(window);
@@ -254,7 +273,7 @@ void RunRendererSmokeTests() {
         HK_CHECK(viewport.IsValid());
 
         Scene scene("ViewportScene");
-        PopulateScene(scene);
+        PopulateScene(scene, assetManager);
         for (int i = 0; i < 4; ++i) {
             PumpEvents(window);
             renderer.BeginFrame();
@@ -262,7 +281,7 @@ void RunRendererSmokeTests() {
             renderer.BlitTargetToSwapchain(viewport);
             renderer.EndFrame();
         }
-        HK_CHECK(renderer.GetStats().drawCalls >= 5);
+        HK_CHECK(renderer.GetStats().drawCalls >= 4);
 
         renderer.ResizeRenderTarget(viewport, 1024, 576);
         for (int i = 0; i < 4; ++i) {
@@ -279,6 +298,7 @@ void RunRendererSmokeTests() {
     HK_CHECK(renderer.GetStats().budgetVRAMBytes > 0);
 
     renderer.Shutdown();
+    assetManager.Shutdown();
     HK_CHECK(!renderer.IsInitialized());
 
     window.Destroy();

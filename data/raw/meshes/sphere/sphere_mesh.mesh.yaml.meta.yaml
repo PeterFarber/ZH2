@@ -1,0 +1,17 @@
+Asset:
+  ID: 1580850430864872346
+  Type: Mesh
+  Name: sphere_mesh
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/meshes/sphere/sphere_mesh.mesh.yaml
+  CookedPath: data/cooked/assets/meshes/1580850430864872346.mesh.bin
+  RawFileTimestamp: 134269681215087758
+  RawFileHash: 576459801744706714
+  ImportedTimestamp: 1782494521
+  CookedTimestamp: 1782494528
+  Dependencies: []
+  Dependents: [16053632770209735033]
+  Dirty: true
+  Missing: false
+  Cooked: true

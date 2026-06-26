@@ -70,10 +70,8 @@ Entities:
     PuckComponent:
       StartsInPlay: true
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.PuckCylinder
-      MaterialName: BuiltIn.PuckBlack
+      MeshAsset: 11795346347216253737
+      MaterialAsset: 15902365976934225153
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -693,10 +691,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidBlue
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 9507614320415798529
       Visible: true
       CastsShadows: false
       ReceivesShadows: false
@@ -713,10 +709,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidBlue
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 9507614320415798529
       Visible: true
       CastsShadows: false
       ReceivesShadows: false
@@ -733,10 +727,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.SolidRed
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 15350148161379860780
       Visible: true
       CastsShadows: false
       ReceivesShadows: false
@@ -753,10 +745,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.Boards
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 1683526106923192655
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -795,10 +785,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.Boards
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 1683526106923192655
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -837,10 +825,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.Boards
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 1683526106923192655
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -879,10 +865,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.Cube
-      MaterialName: BuiltIn.Boards
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 1683526106923192655
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -921,10 +905,8 @@ Entities:
       Children:
         []
     MeshRendererComponent:
-      MeshAsset: 0
-      MaterialAsset: 0
-      MeshName: BuiltIn.RinkPlane
-      MaterialName: BuiltIn.Ice
+      MeshAsset: 16045454102454522057
+      MaterialAsset: 18328928024750434439
       Visible: true
       CastsShadows: false
       ReceivesShadows: true

@@ -1,0 +1,17 @@
+Asset:
+  ID: 15350148161379860780
+  Type: Material
+  Name: SolidRed
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/SolidRed.material.yaml
+  CookedPath: data/cooked/assets/materials/15350148161379860780.material.yaml
+  RawFileTimestamp: 134269646331383294
+  RawFileHash: 1663541226657633452
+  ImportedTimestamp: 1782494522
+  CookedTimestamp: 1782494534
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

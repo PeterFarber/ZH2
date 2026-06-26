@@ -5,9 +5,10 @@ add_executable(HockeyRendererTests
     src/ShaderCompileTests.cpp
     src/RenderGraphTests.cpp
     src/RendererShadowContractTests.cpp
+    src/MaterialAssetContractTests.cpp
     src/RendererSmokeTests.cpp
     src/HeadlessServerLinkTests.cpp
 )
 
-target_link_libraries(HockeyRendererTests PRIVATE hockey_core hockey_ecs hockey_renderer)
+target_link_libraries(HockeyRendererTests PRIVATE hockey_core hockey_ecs hockey_renderer hockey_assets)
 set_target_properties(HockeyRendererTests PROPERTIES OUTPUT_NAME "HockeyRendererTests")

@@ -36,29 +36,4 @@ struct MaterialDesc {
     std::string debugName;
 };
 
-enum class BuiltInMaterial {
-    DefaultWhite,
-    ErrorMagenta,
-    Ice,
-    PuckBlack,
-    HomeJersey,
-    AwayJersey,
-    Boards,
-    Glass,
-    GoalNet,
-    DebugCollider,
-    DebugTrigger,
-    // Opaque solid colors, handy for prototyping and distinguishing objects.
-    SolidRed,
-    SolidGreen,
-    SolidBlue,
-    SolidAmber
-};
-
-// Number of built-in materials; keep in sync with the enum above.
-inline constexpr int kBuiltInMaterialCount = 15;
-
-MaterialDesc MakeBuiltInMaterial(BuiltInMaterial material);
-const char* BuiltInMaterialName(BuiltInMaterial material);
-
 } // namespace Hockey

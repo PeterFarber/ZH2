@@ -204,39 +204,6 @@ GpuLight PackLight(const LightRenderData& light) {
     return out;
 }
 
-// Maps a "BuiltIn.<Name>" mesh reference to its enum, or false if not built-in.
-bool ParseBuiltInMesh(const std::string& name, BuiltInMesh& out) {
-    constexpr const char* prefix = "BuiltIn.";
-    if (name.rfind(prefix, 0) != 0) {
-        return false;
-    }
-    const std::string suffix = name.substr(8);
-    for (int i = 0; i < 8; ++i) {
-        const auto mesh = static_cast<BuiltInMesh>(i);
-        if (suffix == BuiltInMeshName(mesh)) {
-            out = mesh;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool ParseBuiltInMaterial(const std::string& name, BuiltInMaterial& out) {
-    constexpr const char* prefix = "BuiltIn.";
-    if (name.rfind(prefix, 0) != 0) {
-        return false;
-    }
-    const std::string suffix = name.substr(8);
-    for (int i = 0; i < kBuiltInMaterialCount; ++i) {
-        const auto material = static_cast<BuiltInMaterial>(i);
-        if (suffix == BuiltInMaterialName(material)) {
-            out = material;
-            return true;
-        }
-    }
-    return false;
-}
-
 // Full-screen post-process push constants (mirror the *.frag layouts).
 struct TonemapPush {
     glm::vec4 params{1.0f, 2.0f, 2.2f, 0.0f}; // x exposure, y mode, z gamma
@@ -594,10 +561,6 @@ struct Renderer::Impl {
     std::deque<VulkanMesh> meshes;
     std::deque<GpuMaterial> materials;
 
-    // Built-in resource handles, populated once during Init.
-    std::array<MeshHandle, 8> builtInMeshes{};
-    std::array<MaterialHandle, kBuiltInMaterialCount> builtInMaterials{};
-
     // Forward PBR pipelines (shared layout: set0 global, set1 material, push
     // constant model matrix). The debug-line pipeline is built for Step 13.
     VkPipelineLayout meshPipelineLayout = VK_NULL_HANDLE;
@@ -729,11 +692,8 @@ struct Renderer::Impl {
     Status AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInFlight>& sets,
                               std::array<VulkanBuffer, kFramesInFlight>& cameras,
                               std::array<VulkanBuffer, kFramesInFlight>& scenes);
-    void BuildBuiltInResources();
     uint32_t CreateMaterialInternal(const MaterialDesc& desc);
     VkImageView ResolveTextureView(TextureHandle handle) const;
-    MeshHandle ResolveMesh(const std::string& name) const;
-    MaterialHandle ResolveMaterial(const std::string& name) const;
     MeshHandle ResolveAssetMesh(uint64_t assetId);
     MaterialHandle ResolveAssetMaterial(uint64_t assetId);
     TextureHandle ResolveAssetTexture(uint64_t assetId);
@@ -758,23 +718,6 @@ struct Renderer::Impl {
     void WriteGlobalSet(VkDescriptorSet set, uint32_t frame, VulkanFrameTargets& setTargets);
     OffscreenTarget* ResolveRenderTarget(TextureHandle handle);
 };
-
-void Renderer::Impl::BuildBuiltInResources() {
-    for (uint32_t i = 0; i < builtInMeshes.size(); ++i) {
-        const MeshDesc meshDesc = MakeBuiltInMesh(static_cast<BuiltInMesh>(i));
-        VulkanMesh gpuMesh = ::Hockey::CreateMesh(device, command, meshDesc);
-        if (gpuMesh.IsValid()) {
-            meshes.push_back(gpuMesh);
-            builtInMeshes[i] = MeshHandle{static_cast<uint32_t>(meshes.size())};
-        }
-    }
-    for (uint32_t i = 0; i < builtInMaterials.size(); ++i) {
-        const uint32_t id = CreateMaterialInternal(MakeBuiltInMaterial(static_cast<BuiltInMaterial>(i)));
-        builtInMaterials[i] = MaterialHandle{id};
-    }
-    stats.meshCount = static_cast<uint32_t>(meshes.size());
-    stats.materialCount = static_cast<uint32_t>(materials.size());
-}
 
 VkImageView Renderer::Impl::ResolveTextureView(TextureHandle handle) const {
     if (handle.IsValid() && handle.id <= textures.size()) {
@@ -900,22 +843,6 @@ void Renderer::Impl::PreviewMaterial(uint64_t materialAssetId, const MaterialPre
         writer.Update(device, newSet);
         mat.set = newSet;
     }
-}
-
-MeshHandle Renderer::Impl::ResolveMesh(const std::string& name) const {
-    BuiltInMesh builtIn{};
-    if (ParseBuiltInMesh(name, builtIn)) {
-        return builtInMeshes[static_cast<size_t>(builtIn)];
-    }
-    return {};
-}
-
-MaterialHandle Renderer::Impl::ResolveMaterial(const std::string& name) const {
-    BuiltInMaterial builtIn{};
-    if (ParseBuiltInMaterial(name, builtIn)) {
-        return builtInMaterials[static_cast<size_t>(builtIn)];
-    }
-    return {};
 }
 
 MeshHandle Renderer::Impl::ResolveAssetMesh(uint64_t assetId) {
@@ -1496,8 +1423,6 @@ Status Renderer::Init(const RendererInitInfo& info) {
     if (Status s = r.BuildMeshPipelines(); !s) {
         return s;
     }
-    r.BuildBuiltInResources();
-
     r.stats.usedVRAMBytes = 0;
     r.stats.budgetVRAMBytes = 0;
     r.initialized = true;
@@ -1778,21 +1703,13 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera, c
             continue;
         }
 
-        // Prefer the content-pipeline asset id; fall back to the built-in name,
-        // then to a default mesh/error material so a bad reference still draws.
         MeshHandle meshHandle = ResolveAssetMesh(mr.meshAsset);
         if (!meshHandle.IsValid()) {
-            meshHandle = ResolveMesh(mr.meshName);
-        }
-        if (!meshHandle.IsValid()) {
-            meshHandle = builtInMeshes[static_cast<size_t>(BuiltInMesh::Cube)];
+            continue;
         }
         MaterialHandle materialHandle = ResolveAssetMaterial(mr.materialAsset);
         if (!materialHandle.IsValid()) {
-            materialHandle = ResolveMaterial(mr.materialName);
-        }
-        if (!materialHandle.IsValid()) {
-            materialHandle = builtInMaterials[static_cast<size_t>(BuiltInMaterial::ErrorMagenta)];
+            continue;
         }
         if (!meshHandle.IsValid() || meshHandle.id > meshes.size() || !materialHandle.IsValid() ||
             materialHandle.id > materials.size()) {
@@ -2824,20 +2741,6 @@ MaterialHandle Renderer::CreateMaterial(const MaterialDesc& desc) {
         return {};
     }
     return MaterialHandle{r.CreateMaterialInternal(desc)};
-}
-MeshHandle Renderer::GetBuiltInMesh(BuiltInMesh mesh) const {
-    const auto index = static_cast<size_t>(mesh);
-    if (index < m_Impl->builtInMeshes.size()) {
-        return m_Impl->builtInMeshes[index];
-    }
-    return {};
-}
-MaterialHandle Renderer::GetBuiltInMaterial(BuiltInMaterial material) const {
-    const auto index = static_cast<size_t>(material);
-    if (index < m_Impl->builtInMaterials.size()) {
-        return m_Impl->builtInMaterials[index];
-    }
-    return {};
 }
 
 void Renderer::SetAssetManager(AssetManager* assetManager) {

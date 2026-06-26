@@ -1,0 +1,17 @@
+Asset:
+  ID: 14503252706931961359
+  Type: Mesh
+  Name: capsule_mesh
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/meshes/capsule/capsule_mesh.mesh.yaml
+  CookedPath: data/cooked/assets/meshes/14503252706931961359.mesh.bin
+  RawFileTimestamp: 134269681188797054
+  RawFileHash: 17304149311294016906
+  ImportedTimestamp: 1782494522
+  CookedTimestamp: 1782494534
+  Dependencies: []
+  Dependents: [8074149833177858028]
+  Dirty: true
+  Missing: false
+  Cooked: true

@@ -114,6 +114,7 @@ Source material:
 - [x] Project browser integrates asset discovery/import/cook workflows.
 - [x] Asset drag/drop into editor workflows exists.
 - [x] Material and asset reference picker behavior exists.
+- [x] Material picker and hockey placement tools assign authored mesh/material assets instead of built-in render names.
 - [x] Hot reload polling hooks exist.
 - [x] Physics preview exists with play/pause/step/reset.
 - [x] Collider/trigger viewport visualization exists.
