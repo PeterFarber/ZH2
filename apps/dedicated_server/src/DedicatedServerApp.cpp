@@ -164,6 +164,9 @@ void DedicatedServerApp::OnFixedUpdate(double fixedDeltaSeconds) {
     }
 
     m_Scene.OnFixedUpdate(delta);
+    if (m_GameplayEnabled && m_GameplayWorld.IsInitialized()) {
+        m_GameplayWorld.SyncPhysicsState(m_Scene);
+    }
     ++m_Tick;
 
     if (m_PhysicsSystem != nullptr) {

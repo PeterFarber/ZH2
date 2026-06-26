@@ -66,7 +66,7 @@ void GameplayWorld::ResetMatchForFaceoff(Scene& scene, GameplayTeam causeTeam) {
     }
 
     ResetSystem::BeginReset(scene, m_Events, causeTeam);
-    ResetSystem::CompleteReset(scene, m_Events, causeTeam, m_Settings);
+    ResetSystem::CompleteReset(scene, m_Events, causeTeam, m_Settings, m_PhysicsWorld);
 }
 
 void GameplayWorld::PushInput(const GameplayInputFrame& input) {
@@ -89,8 +89,15 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
         OutOfPlaySystem::HandleOutOfPlay(scene, m_Settings, m_Events);
     }
     MatchClock::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
-    ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
+    ResetSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events, m_PhysicsWorld);
     m_InputBuffer.ClearForTick(tick);
+}
+
+void GameplayWorld::SyncPhysicsState(Scene& scene) {
+    if (!m_Initialized || m_PhysicsWorld == nullptr) {
+        return;
+    }
+    PlayerMovement::SyncFromPhysics(scene, m_PhysicsWorld);
 }
 
 std::vector<GameplayEvent> GameplayWorld::DrainEvents() {

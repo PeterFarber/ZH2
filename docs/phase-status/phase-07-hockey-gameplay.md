@@ -110,6 +110,7 @@ Source material:
 ## Finished - World, Snapshots, Integration
 
 - [x] `GameplayWorld` orchestrates scene, physics, input, events, and tuning on a fixed step.
+- [x] Local gameplay player and goalie bodies are dynamic, gravity-free physics actors driven by gameplay velocity while physics owns movement and board response.
 - [x] Gameplay system/world ticking exists.
 - [x] Match snapshots exist.
 - [x] Player snapshots exist.

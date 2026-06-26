@@ -5,11 +5,14 @@
 #include <vector>
 
 #include <entt/entt.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/ECS/Transform.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 namespace Hockey {
 namespace {
@@ -104,7 +107,25 @@ uint32_t FaceoffSequence(Entity match) {
     return match.GetComponent<FaceoffComponent>().spawnSequence;
 }
 
-void ResetPlayers(Scene& scene, GameplayTeam causeTeam, const GameplaySettings& settings, uint32_t spawnSequence) {
+void SyncBodyToTransform(Scene& scene, Entity entity, PhysicsWorld* physicsWorld) {
+    if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !physicsWorld->HasBody(entity) ||
+        !entity.HasComponent<TransformComponent>()) {
+        return;
+    }
+
+    glm::vec3 position{0.0f};
+    glm::vec3 rotationDegrees{0.0f};
+    glm::vec3 scale{1.0f};
+    DecomposeTransform(scene.GetWorldTransform(entity), position, rotationDegrees, scale);
+    physicsWorld->SetBodyTransform(entity, position, glm::quat(glm::radians(rotationDegrees)));
+    physicsWorld->SetLinearVelocity(entity, glm::vec3{0.0f});
+}
+
+void ResetPlayers(Scene& scene,
+                  GameplayTeam causeTeam,
+                  const GameplaySettings& settings,
+                  uint32_t spawnSequence,
+                  PhysicsWorld* physicsWorld) {
     std::vector<SpawnCandidate> spawns = SelectFaceoffPool(scene, causeTeam);
     std::vector<PlayerCandidate> players = CollectPlayers(scene);
     if (spawns.size() < players.size()) {
@@ -127,10 +148,11 @@ void ResetPlayers(Scene& scene, GameplayTeam causeTeam, const GameplaySettings& 
         if (player.HasComponent<SkaterComponent>()) {
             player.GetComponent<SkaterComponent>().hasPuck = false;
         }
+        SyncBodyToTransform(scene, player, physicsWorld);
     }
 }
 
-void ResetPuck(Scene& scene, GameplayTeam causeTeam) {
+void ResetPuck(Scene& scene, GameplayTeam causeTeam, PhysicsWorld* physicsWorld) {
     Entity puck = FindPuck(scene);
     if (!puck.IsValid()) {
         return;
@@ -153,6 +175,7 @@ void ResetPuck(Scene& scene, GameplayTeam causeTeam) {
         runtime.velocity = glm::vec3{0.0f};
         runtime.targetPosition = puck.GetComponent<TransformComponent>().localPosition;
     }
+    SyncBodyToTransform(scene, puck, physicsWorld);
 }
 
 } // namespace
@@ -184,14 +207,15 @@ void ResetSystem::BeginReset(Scene& scene, GameplayEventQueue& events, GameplayT
 void ResetSystem::CompleteReset(Scene& scene,
                                 GameplayEventQueue& events,
                                 GameplayTeam causeTeam,
-                                const GameplaySettings& settings) {
+                                const GameplaySettings& settings,
+                                PhysicsWorld* physicsWorld) {
     Entity match = FindMatch(scene);
     if (!match.IsValid()) {
         return;
     }
 
-    ResetPlayers(scene, causeTeam, settings, FaceoffSequence(match));
-    ResetPuck(scene, causeTeam);
+    ResetPlayers(scene, causeTeam, settings, FaceoffSequence(match), physicsWorld);
+    ResetPuck(scene, causeTeam, physicsWorld);
 
     MatchStateComponent& state = match.GetComponent<MatchStateComponent>();
     state.phase = MatchPhase::FaceoffSetup;
@@ -203,7 +227,8 @@ void ResetSystem::CompleteReset(Scene& scene,
 void ResetSystem::FixedUpdate(Scene& scene,
                               float fixedDeltaSeconds,
                               const GameplaySettings& settings,
-                              GameplayEventQueue& events) {
+                              GameplayEventQueue& events,
+                              PhysicsWorld* physicsWorld) {
     Entity match = FindMatch(scene);
     if (!match.IsValid()) {
         return;
@@ -220,7 +245,7 @@ void ResetSystem::FixedUpdate(Scene& scene,
         if (match.HasComponent<FaceoffComponent>()) {
             causeTeam = match.GetComponent<FaceoffComponent>().causeTeam;
         }
-        CompleteReset(scene, events, causeTeam, settings);
+        CompleteReset(scene, events, causeTeam, settings, physicsWorld);
     }
 }
 

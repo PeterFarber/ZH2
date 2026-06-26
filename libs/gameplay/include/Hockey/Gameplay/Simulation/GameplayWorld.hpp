@@ -27,6 +27,7 @@ public:
     void ResetMatchForFaceoff(Scene& scene, GameplayTeam causeTeam);
     void PushInput(const GameplayInputFrame& input);
     void FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t tick);
+    void SyncPhysicsState(Scene& scene);
 
     std::vector<GameplayEvent> DrainEvents();
 

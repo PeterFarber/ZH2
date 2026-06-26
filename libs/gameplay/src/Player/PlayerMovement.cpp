@@ -4,11 +4,13 @@
 
 #include <entt/entt.hpp>
 #include <glm/geometric.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsWorld.hpp"
 
 namespace Hockey {
@@ -163,6 +165,12 @@ void ApplyGoalieShield(Scene& scene,
     }
 }
 
+bool HasDynamicPhysicsBody(Entity player, PhysicsWorld* physicsWorld) {
+    return physicsWorld != nullptr && physicsWorld->IsInitialized() && physicsWorld->HasBody(player) &&
+           player.HasComponent<RigidBodyComponent>() &&
+           player.GetComponent<RigidBodyComponent>().type == RigidBodyType::Dynamic;
+}
+
 } // namespace
 
 void PlayerMovement::FixedUpdate(Scene& scene,
@@ -269,10 +277,41 @@ void PlayerMovement::FixedUpdate(Scene& scene,
             runtime.facingDirection = glm::normalize(runtime.velocity);
         }
 
-        transform.localPosition += runtime.velocity * fixedDeltaSeconds;
+        if (HasDynamicPhysicsBody(player, physicsWorld)) {
+            glm::vec3 physicsVelocity = runtime.velocity;
+            physicsVelocity.y = 0.0f;
+            physicsWorld->SetLinearVelocity(player, physicsVelocity);
+        } else {
+            transform.localPosition += runtime.velocity * fixedDeltaSeconds;
 
-        if (physicsWorld != nullptr && physicsWorld->IsInitialized() && physicsWorld->HasBody(player)) {
-            physicsWorld->SetLinearVelocity(player, runtime.velocity);
+            if (physicsWorld != nullptr && physicsWorld->IsInitialized() && physicsWorld->HasBody(player)) {
+                const glm::vec3 worldPosition = glm::vec3(scene.GetWorldTransform(player)[3]);
+                physicsWorld->SetBodyTransform(player, worldPosition, glm::quat(glm::radians(transform.localRotation)));
+                physicsWorld->SetLinearVelocity(player, runtime.velocity);
+            }
+        }
+    }
+}
+
+void PlayerMovement::SyncFromPhysics(Scene& scene, PhysicsWorld* physicsWorld) {
+    if (physicsWorld == nullptr || !physicsWorld->IsInitialized()) {
+        return;
+    }
+
+    auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent, RigidBodyComponent>();
+    for (const entt::entity handle : view) {
+        Entity player(handle, &scene);
+        if (!HasDynamicPhysicsBody(player, physicsWorld)) {
+            continue;
+        }
+
+        glm::vec3 velocity = physicsWorld->GetLinearVelocity(player);
+        velocity.y = 0.0f;
+
+        PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
+        runtime.velocity = velocity;
+        if (glm::length(velocity) > 0.0001f) {
+            runtime.facingDirection = glm::normalize(velocity);
         }
     }
 }

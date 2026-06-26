@@ -163,7 +163,14 @@ void RunToolTests() {
             homeSkater.HasComponent<CapsuleColliderComponent>()) {
             const RigidBodyComponent& body = homeSkater.GetComponent<RigidBodyComponent>();
             const CapsuleColliderComponent& capsule = homeSkater.GetComponent<CapsuleColliderComponent>();
-            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "skater body is dynamic");
+            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "skater body is a dynamic physics actor");
+            HK_CHECK_MSG(body.collisionDetection == CollisionDetectionMode::Continuous,
+                         "skater body uses continuous collision detection");
+            HK_CHECK_MSG(!body.useGravity, "skater body ignores gravity");
+            HK_CHECK_MSG(!body.allowSleeping, "skater body stays awake for gameplay velocity control");
+            HK_CHECK_MSG(body.lockTranslationY, "skater body locks vertical translation");
+            HK_CHECK_MSG(body.lockRotationX, "skater body locks pitch");
+            HK_CHECK_MSG(body.lockRotationZ, "skater body locks roll");
             HK_CHECK_MSG(body.layer == PhysicsLayer::Player, "skater body uses Player collision layer");
             HK_CHECK_EQ(body.materialName, std::string("PlayerBody"));
             HK_CHECK_MSG(!capsule.isTrigger, "skater capsule is solid");
@@ -175,7 +182,14 @@ void RunToolTests() {
             homeGoalie.HasComponent<CapsuleColliderComponent>()) {
             const RigidBodyComponent& body = homeGoalie.GetComponent<RigidBodyComponent>();
             const CapsuleColliderComponent& capsule = homeGoalie.GetComponent<CapsuleColliderComponent>();
-            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "goalie body is dynamic");
+            HK_CHECK_MSG(body.type == RigidBodyType::Dynamic, "goalie body is a dynamic physics actor");
+            HK_CHECK_MSG(body.collisionDetection == CollisionDetectionMode::Continuous,
+                         "goalie body uses continuous collision detection");
+            HK_CHECK_MSG(!body.useGravity, "goalie body ignores gravity");
+            HK_CHECK_MSG(!body.allowSleeping, "goalie body stays awake for gameplay velocity control");
+            HK_CHECK_MSG(body.lockTranslationY, "goalie body locks vertical translation");
+            HK_CHECK_MSG(body.lockRotationX, "goalie body locks pitch");
+            HK_CHECK_MSG(body.lockRotationZ, "goalie body locks roll");
             HK_CHECK_MSG(body.layer == PhysicsLayer::Goalie, "goalie body uses Goalie collision layer");
             HK_CHECK_EQ(body.materialName, std::string("GoalieBody"));
             HK_CHECK_MSG(!capsule.isTrigger, "goalie capsule is solid");

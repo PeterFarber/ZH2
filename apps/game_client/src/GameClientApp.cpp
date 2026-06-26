@@ -397,6 +397,9 @@ void GameClientApp::StepSimulation(float deltaTime) {
         if (m_PhysicsReady) {
             m_Scene.OnFixedUpdate(fixedDelta);
         }
+        if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
+            m_GameplayWorld.SyncPhysicsState(m_Scene);
+        }
         m_SimulationTimestep.AdvanceTick();
     }
     if (m_PhysicsReady) {

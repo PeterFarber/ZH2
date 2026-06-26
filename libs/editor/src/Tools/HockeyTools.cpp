@@ -110,6 +110,22 @@ RigidBodyComponent& AddRigidBody(Entity entity, RigidBodyType type, PhysicsLayer
     return entity.AddComponent<RigidBodyComponent>(rb);
 }
 
+RigidBodyComponent& AddGameplayActorRigidBody(Entity entity, PhysicsLayer layer, const char* material,
+                                               float mass = 80.0f) {
+    RigidBodyComponent rb;
+    rb.type = RigidBodyType::Dynamic;
+    rb.collisionDetection = CollisionDetectionMode::Continuous;
+    rb.layer = layer;
+    rb.materialName = material;
+    rb.mass = mass;
+    rb.useGravity = false;
+    rb.allowSleeping = false;
+    rb.lockTranslationY = true;
+    rb.lockRotationX = true;
+    rb.lockRotationZ = true;
+    return entity.AddComponent<RigidBodyComponent>(rb);
+}
+
 void AddBoxCollider(Entity entity, const glm::vec3& halfExtents, const glm::vec3& offset = glm::vec3(0.0f),
                     bool isTrigger = false) {
     BoxColliderComponent box;
@@ -253,10 +269,9 @@ void HockeyPlayerTool::OnSelected(EditorContext& context) {
                 for (const PlayerDef& def : defs) {
                     const bool goalie = def.role == PlayerRole::Goalie;
                     Entity player = MakeEntity(scene, def.name, def.position);
-                    // Dynamic capsule body on the Player/Goalie layer (placeholder
-                    // mass; gameplay tuning happens in a later phase).
-                    AddRigidBody(player, RigidBodyType::Dynamic, goalie ? PhysicsLayer::Goalie : PhysicsLayer::Player,
-                                 goalie ? "GoalieBody" : "PlayerBody", /*mass=*/80.0f, /*useGravity=*/true);
+                    // Gameplay controls desired velocity; physics owns body motion and board response.
+                    AddGameplayActorRigidBody(player, goalie ? PhysicsLayer::Goalie : PhysicsLayer::Player,
+                                               goalie ? "GoalieBody" : "PlayerBody", /*mass=*/80.0f);
                     AddCapsuleCollider(player, /*radius=*/0.4f, /*halfHeight=*/0.5f);
                     player.AddComponent<TeamComponent>(TeamComponent{def.team});
                     player.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});

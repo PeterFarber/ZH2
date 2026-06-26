@@ -285,6 +285,7 @@ void EditorGameplayPreview::StepFixed(Scene& scene, EditorPhysicsPreview& physic
     m_World.PushInput(BuildLocalInput(scene, m_Tick));
     m_World.FixedUpdate(scene, fixedDeltaSeconds, m_Tick);
     physicsPreview.AdvanceFixed(scene, fixedDeltaSeconds);
+    m_World.SyncPhysicsState(scene);
     ++m_Tick;
 }
 

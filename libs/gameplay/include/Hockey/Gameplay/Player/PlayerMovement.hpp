@@ -17,6 +17,7 @@ public:
                             const GameplayTuning& tuning,
                             float fixedDeltaSeconds,
                             GameplayEventQueue& events);
+    static void SyncFromPhysics(Scene& scene, PhysicsWorld* physicsWorld);
 };
 
 }

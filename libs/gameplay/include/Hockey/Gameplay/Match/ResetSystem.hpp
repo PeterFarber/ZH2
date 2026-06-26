@@ -6,6 +6,7 @@
 
 namespace Hockey {
 
+class PhysicsWorld;
 class Scene;
 
 class ResetSystem {
@@ -14,8 +15,13 @@ public:
     static void CompleteReset(Scene& scene,
                               GameplayEventQueue& events,
                               GameplayTeam causeTeam = GameplayTeam::None,
-                              const GameplaySettings& settings = {});
-    static void FixedUpdate(Scene& scene, float fixedDeltaSeconds, const GameplaySettings& settings, GameplayEventQueue& events);
+                              const GameplaySettings& settings = {},
+                              PhysicsWorld* physicsWorld = nullptr);
+    static void FixedUpdate(Scene& scene,
+                            float fixedDeltaSeconds,
+                            const GameplaySettings& settings,
+                            GameplayEventQueue& events,
+                            PhysicsWorld* physicsWorld = nullptr);
 };
 
 }

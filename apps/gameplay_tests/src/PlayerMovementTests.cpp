@@ -8,6 +8,9 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
+#include "Hockey/Physics/Physics.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
+#include "Hockey/Physics/PhysicsWorld.hpp"
 
 using namespace Hockey;
 
@@ -133,6 +136,132 @@ void PushGoalieShield(GameplayWorld& world, uint32_t playerIndex, uint64_t tick)
     world.PushInput(input);
 }
 
+void AddGameplayActorPhysics(Entity player, PhysicsLayer layer, const char* materialName) {
+    RigidBodyComponent body;
+    body.type = RigidBodyType::Dynamic;
+    body.collisionDetection = CollisionDetectionMode::Continuous;
+    body.mass = player.HasComponent<GoalieComponent>() ? 95.0f : 80.0f;
+    body.useGravity = false;
+    body.allowSleeping = false;
+    body.lockTranslationY = true;
+    body.lockRotationX = true;
+    body.lockRotationZ = true;
+    body.layer = layer;
+    body.materialName = materialName;
+    player.AddOrReplaceComponent<RigidBodyComponent>(body);
+
+    CapsuleColliderComponent capsule;
+    capsule.radius = player.HasComponent<GoalieComponent>() ? 0.55f : 0.4f;
+    capsule.halfHeight = player.HasComponent<GoalieComponent>() ? 0.6f : 0.5f;
+    player.AddOrReplaceComponent<CapsuleColliderComponent>(capsule);
+}
+
+Entity AddBoardWall(Scene& scene, const glm::vec3& position) {
+    Entity wall = scene.CreateEntity("Board Wall");
+    wall.GetComponent<TransformComponent>().localPosition = position;
+
+    RigidBodyComponent body;
+    body.type = RigidBodyType::Static;
+    body.layer = PhysicsLayer::Rink;
+    body.materialName = "Boards";
+    wall.AddComponent<RigidBodyComponent>(body);
+
+    BoxColliderComponent box;
+    box.halfExtents = {0.05f, 1.0f, 2.0f};
+    wall.AddComponent<BoxColliderComponent>(box);
+    return wall;
+}
+
+void TestPhysicsBackedMovementLetsPhysicsOwnPosition() {
+    Scene scene("SkaterPhysicsOwnedScene");
+    BuildValidGameplayScene(scene);
+
+    GameplaySettings settings;
+    settings.pregameCountdownSeconds = 0.0f;
+    GameplayWorld world;
+    HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+    SetPlaying(scene);
+
+    Entity skater = FindPlayer(scene, PlayerSlot::HomeSkater0);
+    HK_CHECK(skater.IsValid());
+    AddGameplayActorPhysics(skater, PhysicsLayer::Player, "PlayerBody");
+
+    HK_CHECK_MSG(static_cast<bool>(Physics::Init()), "physics initializes");
+    PhysicsWorld physicsWorld;
+    HK_CHECK_MSG(static_cast<bool>(physicsWorld.Init(MakeDefaultPhysicsSettings())), "physics world initializes");
+    physicsWorld.CreateBodiesFromScene(scene);
+
+    GameplayWorld physicsBackedWorld;
+    HK_CHECK_MSG(static_cast<bool>(physicsBackedWorld.Init(scene, &physicsWorld, settings)),
+                 "physics-backed gameplay initializes");
+    SetPlaying(scene);
+
+    const glm::vec3 beforeGameplay = skater.GetComponent<TransformComponent>().localPosition;
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = {12.0f, 0.0f, 0.0f};
+    physicsBackedWorld.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+    const glm::vec3 afterGameplay = skater.GetComponent<TransformComponent>().localPosition;
+
+    HK_CHECK_NEAR(afterGameplay.x, beforeGameplay.x, 0.001f);
+    HK_CHECK_NEAR(afterGameplay.y, beforeGameplay.y, 0.001f);
+    HK_CHECK_NEAR(afterGameplay.z, beforeGameplay.z, 0.001f);
+
+    physicsWorld.SyncSceneToPhysics(scene);
+    physicsWorld.Step(settings.fixedDeltaSeconds);
+    physicsWorld.SyncPhysicsToScene(scene);
+    physicsBackedWorld.SyncPhysicsState(scene);
+    const glm::vec3 afterPhysics = skater.GetComponent<TransformComponent>().localPosition;
+
+    HK_CHECK_MSG(afterPhysics.x > afterGameplay.x, "physics step advances dynamic player body");
+
+    physicsWorld.Shutdown();
+    Physics::Shutdown();
+}
+
+void TestDynamicPlayerBouncesOffBoardAndSyncsVelocity() {
+    Scene scene("SkaterBoardBounceScene");
+    BuildValidGameplayScene(scene);
+
+    GameplaySettings settings;
+    settings.pregameCountdownSeconds = 0.0f;
+    GameplayWorld world;
+    HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+    SetPlaying(scene);
+
+    Entity skater = FindPlayer(scene, PlayerSlot::HomeSkater0);
+    HK_CHECK(skater.IsValid());
+    skater.GetComponent<TransformComponent>().localPosition = {0.0f, 0.9f, 0.0f};
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = {72.0f, 0.0f, 0.0f};
+    AddGameplayActorPhysics(skater, PhysicsLayer::Player, "PlayerBody");
+    AddBoardWall(scene, {1.2f, 0.9f, 0.0f});
+
+    HK_CHECK_MSG(static_cast<bool>(Physics::Init()), "physics initializes");
+    PhysicsWorld physicsWorld;
+    HK_CHECK_MSG(static_cast<bool>(physicsWorld.Init(MakeDefaultPhysicsSettings())), "physics world initializes");
+    physicsWorld.CreateBodiesFromScene(scene);
+
+    GameplayWorld physicsBackedWorld;
+    HK_CHECK_MSG(static_cast<bool>(physicsBackedWorld.Init(scene, &physicsWorld, settings)),
+                 "physics-backed gameplay initializes");
+    SetPlaying(scene);
+    skater.GetComponent<TransformComponent>().localPosition = {0.0f, 0.9f, 0.0f};
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = {72.0f, 0.0f, 0.0f};
+    physicsWorld.SetBodyTransform(skater, skater.GetComponent<TransformComponent>().localPosition, glm::quat{1.0f, 0.0f, 0.0f, 0.0f});
+
+    physicsBackedWorld.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);
+    physicsWorld.SyncSceneToPhysics(scene);
+    physicsWorld.Step(settings.fixedDeltaSeconds);
+    physicsWorld.SyncPhysicsToScene(scene);
+    physicsBackedWorld.SyncPhysicsState(scene);
+
+    const PlayerRuntimeComponent& runtime = skater.GetComponent<PlayerRuntimeComponent>();
+    HK_CHECK_MSG(runtime.velocity.x < -1.0f, "post-collision player velocity rebounds from the board");
+    HK_CHECK_MSG(skater.GetComponent<TransformComponent>().localPosition.x < 1.15f,
+                 "player body remains on the playable side of the board");
+
+    physicsWorld.Shutdown();
+    Physics::Shutdown();
+}
+
 } // namespace
 
 void RunSkaterMovementTests() {
@@ -219,6 +348,9 @@ void RunSkaterMovementTests() {
     world.FixedUpdate(scene, settings.fixedDeltaSeconds, 200);
     const glm::vec3 zero{0.0f};
     HK_CHECK_EQ(skater.GetComponent<PlayerRuntimeComponent>().velocity, zero);
+
+    TestPhysicsBackedMovementLetsPhysicsOwnPosition();
+    TestDynamicPlayerBouncesOffBoardAndSyncsVelocity();
 }
 
 void RunGoalieMovementTests() {
