@@ -1,5 +1,6 @@
 #include "Test.hpp"
 
+#include <filesystem>
 #include <string>
 #include <type_traits>
 
@@ -71,6 +72,8 @@ void RunSettingsTuningTests() {
     HK_CHECK_NEAR(defaults.pregameCountdownSeconds, 10.0f, 0.0001f);
     HK_CHECK_NEAR(defaults.countdownBeepStartSeconds, 4.0f, 0.0001f);
     HK_CHECK_EQ(defaults.spawnRandomSeed, 0x5A02024u);
+    HK_CHECK_EQ(defaults.waypointPrefabPath.generic_string(),
+                std::string("data/raw/prefabs/Waypoint_Marker.prefab.yaml"));
 
     GameplaySettings source;
     source.enabled = false;
@@ -79,6 +82,7 @@ void RunSettingsTuningTests() {
     source.pregameCountdownSeconds = 7.0f;
     source.countdownBeepStartSeconds = 3.0f;
     source.spawnRandomSeed = 424242u;
+    source.waypointPrefabPath = "data/raw/prefabs/CustomWaypoint.prefab.yaml";
     source.logGameplayEvents = true;
     SaveGameplaySettings(config, source);
     GameplaySettings loaded = LoadGameplaySettings(config);
@@ -88,6 +92,8 @@ void RunSettingsTuningTests() {
     HK_CHECK_NEAR(loaded.pregameCountdownSeconds, 7.0f, 0.0001f);
     HK_CHECK_NEAR(loaded.countdownBeepStartSeconds, 3.0f, 0.0001f);
     HK_CHECK_EQ(loaded.spawnRandomSeed, 424242u);
+    HK_CHECK_EQ(loaded.waypointPrefabPath.generic_string(),
+                std::string("data/raw/prefabs/CustomWaypoint.prefab.yaml"));
     HK_CHECK(loaded.logGameplayEvents);
     HK_CHECK(!HasAllowBodyChecking<GameplaySettings>::value);
     HK_CHECK(!config.Has("gameplay.allow_body_checking"));

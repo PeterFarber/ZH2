@@ -1,0 +1,17 @@
+Asset:
+  ID: 7252246192033565360
+  Type: Prefab
+  Name: Waypoint_Marker.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Waypoint_Marker.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/7252246192033565360.prefab.yaml
+  RawFileTimestamp: 134269657895911196
+  RawFileHash: 5494771044202053180
+  ImportedTimestamp: 1782492352
+  CookedTimestamp: 1782492278
+  Dependencies: [2462135637550940025, 616265134277951580]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

@@ -28,6 +28,7 @@ target_sources(hockey_gameplay
         src/Teams/TeamTypes.cpp
         src/Tuning/GameplayTuning.cpp
         src/Tuning/TuningSerializer.cpp
+        src/Waypoint/WaypointMarkerSystem.cpp
         src/Validation/GameplayValidation.cpp
 )
 

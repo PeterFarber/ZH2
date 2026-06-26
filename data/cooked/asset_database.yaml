@@ -1,6 +1,6 @@
 AssetDatabase:
   Version: 1
-  Count: 14
+  Count: 15
 Assets:
   - Asset:
       ID: 212105626793489814
@@ -32,7 +32,7 @@ Assets:
       ImportedTimestamp: 1782330410
       CookedTimestamp: 1782330410
       Dependencies: [11605109223550927380, 15702033425252339247, 18380893089174589515]
-      Dependents: [212105626793489814, 2462135637550940025]
+      Dependents: [212105626793489814, 2462135637550940025, 7252246192033565360]
       Dirty: false
       Missing: false
       Cooked: true
@@ -83,7 +83,7 @@ Assets:
       ImportedTimestamp: 1782330354
       CookedTimestamp: 1782330410
       Dependencies: [616265134277951580]
-      Dependents: [212105626793489814]
+      Dependents: [212105626793489814, 7252246192033565360]
       Dirty: false
       Missing: false
       Cooked: true
@@ -135,6 +135,23 @@ Assets:
       CookedTimestamp: 1782329411
       Dependencies: []
       Dependents: [2175547380742926098]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7252246192033565360
+      Type: Prefab
+      Name: Waypoint_Marker.prefab
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/prefabs/Waypoint_Marker.prefab.yaml
+      CookedPath: data/cooked/assets/prefabs/7252246192033565360.prefab.yaml
+      RawFileTimestamp: 134269657895911196
+      RawFileHash: 5494771044202053180
+      ImportedTimestamp: 1782492352
+      CookedTimestamp: 1782492278
+      Dependencies: [2462135637550940025, 616265134277951580]
+      Dependents: []
       Dirty: false
       Missing: false
       Cooked: true

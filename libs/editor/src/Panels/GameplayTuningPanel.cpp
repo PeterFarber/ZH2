@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
+#include <filesystem>
+#include <string>
 
 #include <imgui.h>
 
@@ -10,6 +13,7 @@
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorGameplayPreview.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
+#include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
 
 namespace Hockey {
@@ -45,6 +49,34 @@ bool DrawVec3Value(const char* label, glm::vec3& value, float speed, float minVa
         value.y = std::clamp(temp[1], minValue, maxValue);
         value.z = std::clamp(temp[2], minValue, maxValue);
     }
+    return changed;
+}
+
+bool DrawPrefabPathValue(const char* label, std::filesystem::path& path) {
+    char buffer[512];
+    std::snprintf(buffer, sizeof(buffer), "%s", path.generic_string().c_str());
+
+    bool changed = false;
+    if (ImGui::InputText(label, buffer, sizeof(buffer))) {
+        path = buffer;
+        changed = true;
+    }
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
+            path = std::filesystem::path(static_cast<const char*>(payload->Data));
+            changed = true;
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    ImGui::SameLine();
+    const std::string clearId = std::string("Clear##") + label;
+    if (ImGui::SmallButton(clearId.c_str())) {
+        path.clear();
+        changed = true;
+    }
+
     return changed;
 }
 
@@ -200,6 +232,7 @@ void GameplayTuningPanel::DrawSettings(EditorContext& context, GameplaySettings&
     changed |= ImGui::Checkbox("Require puck for goal", &settings.requirePuckForGoal);
     changed |= ImGui::Checkbox("Allow manual goalie", &settings.allowManualGoalie);
     changed |= ImGui::Checkbox("Allow out of play", &settings.allowOutOfPlay);
+    changed |= DrawPrefabPathValue("Waypoint prefab", settings.waypointPrefabPath);
     changed |= ImGui::Checkbox("Debug draw gameplay", &settings.debugDrawGameplay);
     changed |= ImGui::Checkbox("Log gameplay events", &settings.logGameplayEvents);
 

@@ -30,6 +30,8 @@ GameplaySettings LoadGameplaySettings(const Config& config) {
     settings.requirePuckForGoal = config.GetBool("gameplay.require_puck_for_goal", settings.requirePuckForGoal);
     settings.spawnRandomSeed =
         static_cast<uint32_t>(config.GetInt("gameplay.spawn_random_seed", static_cast<int>(settings.spawnRandomSeed)));
+    settings.waypointPrefabPath =
+        config.GetString("gameplay.waypoint_prefab_path", settings.waypointPrefabPath.generic_string());
     settings.allowManualGoalie = config.GetBool("gameplay.allow_manual_goalie", settings.allowManualGoalie);
     settings.allowOutOfPlay = config.GetBool("gameplay.allow_out_of_play", settings.allowOutOfPlay);
     settings.debugDrawGameplay = config.GetBool("gameplay.debug_draw_gameplay", settings.debugDrawGameplay);
@@ -54,6 +56,7 @@ void SaveGameplaySettings(Config& config, const GameplaySettings& settings) {
     config.SetDouble("gameplay.goal_detection_radius", settings.goalDetectionRadius);
     config.SetBool("gameplay.require_puck_for_goal", settings.requirePuckForGoal);
     config.SetInt("gameplay.spawn_random_seed", static_cast<int>(settings.spawnRandomSeed));
+    config.SetString("gameplay.waypoint_prefab_path", settings.waypointPrefabPath.generic_string());
     config.SetBool("gameplay.allow_manual_goalie", settings.allowManualGoalie);
     config.SetBool("gameplay.allow_out_of_play", settings.allowOutOfPlay);
     config.SetBool("gameplay.debug_draw_gameplay", settings.debugDrawGameplay);

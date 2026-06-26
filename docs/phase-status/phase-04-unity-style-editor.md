@@ -64,6 +64,7 @@ Source material:
 - [x] Shared Font Awesome editor icon font/helper exists and covers first-pass Toolbar, Main Menu, Project Panel, Hierarchy, Inspector, asset inspector, field drawers, and Scene View Overlay controls.
 - [x] Project Settings tooltips describe scene impact for renderer, lighting/shadow, physics, gameplay, startup scene, asset, and preference controls.
 - [x] Gameplay Tuning panel exposes runtime gameplay settings and YAML tuning values.
+- [x] Project Settings and Gameplay Tuning expose waypoint marker prefab selection with prefab drag/drop.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 

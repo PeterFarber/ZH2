@@ -13,6 +13,7 @@
 #include "Hockey/Gameplay/Rink/OutOfPlaySystem.hpp"
 #include "Hockey/Gameplay/Stick/ShootingSystem.hpp"
 #include "Hockey/Gameplay/Stick/StealSystem.hpp"
+#include "Hockey/Gameplay/Waypoint/WaypointMarkerSystem.hpp"
 
 namespace Hockey {
 namespace {
@@ -80,6 +81,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
 
     FaceoffSystem::FixedUpdate(scene, fixedDeltaSeconds, m_Settings, m_Events);
     PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
+    WaypointMarkerSystem::FixedUpdate(scene, m_Settings);
     if (IsActiveGameplayPhase(scene)) {
         PuckPossession::FixedUpdate(scene, m_Events, m_PhysicsWorld, m_Tuning.puck.floorY);
         ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events, m_PhysicsWorld);

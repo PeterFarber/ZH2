@@ -64,6 +64,10 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "Local Light Shadows"), "local light shadow tuning controls exist");
     HK_CHECK_MSG(Contains(source, "ClampRendererSettings(settings)"),
                  "Project Settings clamps advanced renderer edits before saving");
+    HK_CHECK_MSG(Contains(source, "Waypoint prefab"), "Project Settings exposes the waypoint prefab selector");
+    HK_CHECK_MSG(Contains(source, "waypointPrefabPath"),
+                 "Project Settings edits GameplaySettings waypoint prefab path");
+    HK_CHECK_MSG(Contains(source, "kPrefabDragDropType"), "Project Settings accepts prefab drag/drop payloads");
     HK_CHECK_MSG(Contains(source, "SaveClientConfig()"), "Project Settings still writes client config");
     HK_CHECK_MSG(Contains(source, "SaveServerConfig()"), "Project Settings still writes server config");
     HK_CHECK_MSG(!Contains(source, "Allow body checking"), "Project Settings omits removed body-checking setting");

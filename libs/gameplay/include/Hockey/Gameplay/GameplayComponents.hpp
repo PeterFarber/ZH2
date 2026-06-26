@@ -6,6 +6,7 @@
 #include "Hockey/Gameplay/Rink/RinkGameplayComponents.hpp"
 #include "Hockey/Gameplay/Stick/StickComponents.hpp"
 #include "Hockey/Gameplay/Teams/TeamState.hpp"
+#include "Hockey/Gameplay/Waypoint/WaypointMarkerComponents.hpp"
 
 namespace Hockey {
 

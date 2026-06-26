@@ -78,6 +78,7 @@ goal_detection_radius = 1.0
 require_puck_for_goal = true
 debug_draw_gameplay = false
 log_gameplay_events = false
+waypoint_prefab_path = "data/raw/prefabs/Waypoint_Marker.prefab.yaml"
 
 [assets]
 # The client loads cooked assets only; cooking is owned by the editor/asset tool.

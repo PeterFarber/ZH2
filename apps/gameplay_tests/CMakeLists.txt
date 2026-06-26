@@ -9,6 +9,7 @@ add_executable(HockeyGameplayTests
     src/GameplayWorldTests.cpp
     src/ResetSystemTests.cpp
     src/PlayerMovementTests.cpp
+    src/WaypointMarkerTests.cpp
     src/PuckInteractionTests.cpp
     src/PuckControllerTests.cpp
     src/ShootingTests.cpp

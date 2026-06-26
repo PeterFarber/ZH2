@@ -182,6 +182,14 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "MovementEnabled" << YAML::Value << c.movementEnabled;
         out << YAML::EndMap;
     }
+    if (entity.HasComponent<WaypointMarkerComponent>()) {
+        const auto& c = entity.GetComponent<WaypointMarkerComponent>();
+        out << YAML::Key << "WaypointMarkerComponent" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "OwnerPlayerIndex" << YAML::Value << c.ownerPlayerIndex;
+        out << YAML::Key << "TargetPosition" << YAML::Value << c.targetPosition;
+        out << YAML::Key << "Active" << YAML::Value << c.active;
+        out << YAML::EndMap;
+    }
     if (entity.HasComponent<PuckGameplayComponent>()) {
         const auto& c = entity.GetComponent<PuckGameplayComponent>();
         out << YAML::Key << "PuckGameplayComponent" << YAML::Value << YAML::BeginMap;
@@ -336,6 +344,13 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["InputEnabled"]) c.inputEnabled = n["InputEnabled"].as<bool>();
         if (n["MovementEnabled"]) c.movementEnabled = n["MovementEnabled"].as<bool>();
         entity.AddOrReplaceComponent<PlayerRuntimeComponent>(c);
+    }
+    if (const auto n = node["WaypointMarkerComponent"]) {
+        WaypointMarkerComponent c;
+        if (n["OwnerPlayerIndex"]) c.ownerPlayerIndex = n["OwnerPlayerIndex"].as<uint32_t>();
+        ReadVec3(n["TargetPosition"], c.targetPosition);
+        if (n["Active"]) c.active = n["Active"].as<bool>();
+        entity.AddOrReplaceComponent<WaypointMarkerComponent>(c);
     }
     if (const auto n = node["PuckGameplayComponent"]) {
         PuckGameplayComponent c;
@@ -505,6 +520,18 @@ void RegisterMetadata() {
         registry.RegisterComponent<GoalGameplayComponent>(std::move(md));
     }
 
+    {
+        ComponentMetadata md;
+        md.name = "WaypointMarkerComponent";
+        md.displayName = "Waypoint Marker";
+        md.category = "Gameplay";
+        md.fields.push_back(MakeField("OwnerPlayerIndex", FieldType::Int,
+                                      offsetof(WaypointMarkerComponent, ownerPlayerIndex)));
+        md.fields.push_back(MakeField("TargetPosition", FieldType::Vec3,
+                                      offsetof(WaypointMarkerComponent, targetPosition)));
+        md.fields.push_back(MakeField("Active", FieldType::Bool, offsetof(WaypointMarkerComponent, active)));
+        registry.RegisterComponent<WaypointMarkerComponent>(std::move(md));
+    }
     registry.RegisterComponent<PlayerRuntimeComponent>({"PlayerRuntimeComponent", "Player Runtime", "Gameplay"});
     registry.RegisterComponent<PuckRuntimeComponent>({"PuckRuntimeComponent", "Puck Runtime", "Gameplay"});
     registry.RegisterComponent<PossessionComponent>({"PossessionComponent", "Possession", "Gameplay"});

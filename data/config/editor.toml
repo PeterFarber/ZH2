@@ -30,6 +30,7 @@ skaters_per_team = 3
 stop_clock_after_goal = true
 target_player_count = 8
 validate_on_load = true
+waypoint_prefab_path = "data/raw/prefabs/Waypoint_Marker.prefab.yaml"
 
 [input]
 gamepad_enabled = false

@@ -44,6 +44,7 @@ Source material:
 - [x] Gameplay input exposes click-only steal and shot press/hold/release, with no pass, body-check, poke-check, steal-held, or steal-released action fields.
 - [x] Gameplay settings, tuning, config, and editor controls expose no pass, body-check, or poke-check controls.
 - [x] Gameplay tuning YAML is consumed by editor preview, client local play, and headless server runtime.
+- [x] Gameplay settings expose a selectable waypoint marker prefab path.
 - [x] Optional gameplay event logging exists.
 
 ## Finished - Components And Validation
@@ -106,6 +107,7 @@ Source material:
 - [x] Contextual left-click steal-or-shot mapping exists in local client/editor preview input translation.
 - [x] Successful steals require the steal click to be released before the same player can charge or release a shot.
 - [x] Local client/editor preview shots aim toward the mouse cursor projected onto the ice.
+- [x] Click-to-move waypoint targets instantiate and reuse configured prefab markers while move targets are active.
 
 ## Finished - World, Snapshots, Integration
 

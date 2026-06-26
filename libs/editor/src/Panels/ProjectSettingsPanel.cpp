@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <filesystem>
 #include <string>
 
 #include <imgui.h>
@@ -16,6 +17,7 @@
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
+#include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
 
 namespace Hockey {
@@ -129,6 +131,36 @@ bool DrawConfigString(Config& config, const char* key, const char* label, const 
         return true;
     }
     return false;
+}
+
+bool DrawPrefabPath(const char* label, std::filesystem::path& path, const char* tooltip = nullptr) {
+    char buffer[512];
+    std::snprintf(buffer, sizeof(buffer), "%s", path.generic_string().c_str());
+
+    bool changed = false;
+    if (ImGui::InputText(label, buffer, sizeof(buffer))) {
+        path = buffer;
+        changed = true;
+    }
+    EditorTooltip::ForLastItem(tooltip);
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kPrefabDragDropType)) {
+            path = std::filesystem::path(static_cast<const char*>(payload->Data));
+            changed = true;
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    ImGui::SameLine();
+    const std::string clearId = std::string("Clear##") + label;
+    if (ImGui::SmallButton(clearId.c_str())) {
+        path.clear();
+        changed = true;
+    }
+    EditorTooltip::ForLastItem("Clears the waypoint prefab so gameplay stops spawning visible waypoint markers.");
+
+    return changed;
 }
 
 void DrawRestartBadge(bool restartRequired, const char* text) {
@@ -545,6 +577,9 @@ bool DrawGameplaySettings(GameplaySettings& settings) {
                             "Allows a player-controlled goalie role when the scene has goalie spawns.");
     changed |= DrawCheckbox("Allow out of play", settings.allowOutOfPlay,
                             "Allows puck and player state to enter out-of-play handling when leaving legal areas.");
+    changed |= DrawPrefabPath("Waypoint prefab", settings.waypointPrefabPath,
+                              "Prefab instantiated for visible click-to-move waypoint markers. Drag a prefab from "
+                              "the Project panel or type a project-relative .prefab.yaml path.");
     changed |= DrawCheckbox("Debug draw gameplay", settings.debugDrawGameplay,
                             "Draws gameplay markers, zones, and role debug information over the scene.");
     changed |= DrawCheckbox("Log gameplay events", settings.logGameplayEvents,

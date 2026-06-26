@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 
 #include "Hockey/Core/Config.hpp"
 
@@ -27,6 +28,7 @@ struct GameplaySettings {
     float goalDetectionRadius = 1.0f;
     bool requirePuckForGoal = true;
     uint32_t spawnRandomSeed = 0x5A02024u;
+    std::filesystem::path waypointPrefabPath = "data/raw/prefabs/Waypoint_Marker.prefab.yaml";
 
     bool allowManualGoalie = true;
     bool allowOutOfPlay = true;

@@ -51,7 +51,8 @@ void RunGameplayTuningPanelContractTests() {
         "Shield duration seconds", "Shield cooldown seconds", "Shield reflect impulse",
         "Possession offset", "Loose puck drag", "Floor Y", "Out of play Y", "Reach", "Width",
         "Min power", "Max power", "Charge seconds", "Self collision grace seconds", "Accuracy degrees",
-        "Faceoff delay seconds", "Post goal delay seconds", "Goal detection radius", "Require puck for goal"
+        "Faceoff delay seconds", "Post goal delay seconds", "Goal detection radius", "Require puck for goal",
+        "Waypoint prefab", "waypointPrefabPath", "kPrefabDragDropType"
     };
 
     for (const char* field : requiredFields) {
