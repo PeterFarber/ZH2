@@ -498,6 +498,39 @@ void BeginRenderingScope(VkCommandBuffer cmd, VkExtent2D extent, VkImageView col
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
+struct UIOverlayPush {
+    glm::mat4 transform{1.0f};
+    glm::vec4 viewportAndTranslation{1.0f, 1.0f, 0.0f, 0.0f};
+};
+
+VertexInputDesc UIOverlayVertexInput() {
+    VertexInputDesc desc;
+    desc.stride = sizeof(UIOverlayVertex);
+    desc.attributes = {
+        {0, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(UIOverlayVertex, position))},
+        {1, 0, VK_FORMAT_R32G32_SFLOAT, static_cast<uint32_t>(offsetof(UIOverlayVertex, texCoord))},
+        {2, 0, VK_FORMAT_R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(UIOverlayVertex, color))},
+    };
+    return desc;
+}
+
+std::optional<VkRect2D> ClampUIOverlayScissor(const UIOverlayScissor& scissor, VkExtent2D targetExtent) {
+    const int32_t targetWidth = static_cast<int32_t>(targetExtent.width);
+    const int32_t targetHeight = static_cast<int32_t>(targetExtent.height);
+    const int32_t left = std::clamp(scissor.x, 0, targetWidth);
+    const int32_t top = std::clamp(scissor.y, 0, targetHeight);
+    const int32_t right = std::clamp(scissor.x + static_cast<int32_t>(scissor.width), 0, targetWidth);
+    const int32_t bottom = std::clamp(scissor.y + static_cast<int32_t>(scissor.height), 0, targetHeight);
+    if (right <= left || bottom <= top) {
+        return std::nullopt;
+    }
+
+    VkRect2D rect{};
+    rect.offset = {left, top};
+    rect.extent = {static_cast<uint32_t>(right - left), static_cast<uint32_t>(bottom - top)};
+    return rect;
+}
+
 } // namespace
 
 struct Renderer::Impl {
@@ -565,20 +598,21 @@ struct Renderer::Impl {
 
     struct UIOverlayGeometryResource {
         bool valid = false;
-        std::vector<UIOverlayVertex> vertices;
-        std::vector<uint32_t> indices;
+        VulkanBuffer vertexBuffer;
+        VulkanBuffer indexBuffer;
+        uint32_t indexCount = 0;
         std::string debugName;
     };
     struct UIOverlayTextureResource {
         bool valid = false;
-        uint32_t width = 0;
-        uint32_t height = 0;
-        std::vector<std::byte> rgba8Pixels;
+        VulkanTexture texture;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
         std::string debugName;
     };
     std::vector<UIOverlayGeometryResource> uiOverlayGeometries;
     std::vector<UIOverlayTextureResource> uiOverlayTextures;
     std::vector<UIOverlayDrawCommand> uiOverlayCommands;
+    VkDescriptorSet uiOverlayDefaultTextureSet = VK_NULL_HANDLE;
 
     // Forward PBR pipelines (shared layout: set0 global, set1 material, push
     // constant model matrix). The debug-line pipeline is built for Step 13.
@@ -586,6 +620,7 @@ struct Renderer::Impl {
     VulkanPipeline opaquePipeline;
     VulkanPipeline transparentPipeline;
     VulkanPipeline debugLinePipeline;
+    VulkanPipeline uiOverlayPipeline;
 
     // Depth-only pipelines (position-only input, push = mat4 MVP). The shadow
     // pipeline applies depth bias; the prepass one does not (so its depth equals
@@ -699,8 +734,12 @@ struct Renderer::Impl {
     bool BeginRecording();
     Status CreateDepthTarget(uint32_t width, uint32_t height);
     Status BuildBuiltInPipelines();
+    Status BuildUIOverlayPipeline();
     Status BuildMeshPipelines();
     void DestroyMeshPipelines();
+    void DestroyUIOverlayPipeline();
+    void DestroyUIOverlayGeometry(UIOverlayGeometryResource& resource);
+    void DestroyUIOverlayTexture(UIOverlayTextureResource& resource);
     Status SetupDescriptors();
     Status RebuildTargets();
     void UpdateGlobalImageBindings();
@@ -724,6 +763,7 @@ struct Renderer::Impl {
     void RecordAmbientOcclusion(VkCommandBuffer cmd, VulkanTexture& depth);
     void RecordBloom(VkCommandBuffer cmd, VulkanTexture& hdr);
     void RecordDebugLines(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent);
+    void RecordUIOverlay(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent);
     void RenderSceneInternal(Scene& scene, const CameraRenderData& camera, VkImageView outputColor,
                              VkExtent2D outputExtent, const SceneRenderFilter* filter);
     std::optional<std::filesystem::path> TakeScreenshotRequest(ScreenshotSource source, TextureHandle target);
@@ -1048,6 +1088,15 @@ Status Renderer::Impl::SetupDescriptors() {
     if (!defaultTexture.IsValid()) {
         return Status::Fail("Failed to create default texture");
     }
+    uiOverlayDefaultTextureSet = descriptorAllocator.Allocate(descriptorLayouts.perPass);
+    if (uiOverlayDefaultTextureSet == VK_NULL_HANDLE) {
+        return Status::Fail("Failed to allocate UI overlay default texture descriptor");
+    }
+    DescriptorWriter uiTextureWriter;
+    uiTextureWriter
+        .WriteImage(0, defaultTexture.view, samplers.LinearClamp(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    DescriptorType::CombinedImageSampler)
+        .Update(device, uiOverlayDefaultTextureSet);
 
     // 1x1 flat tangent-space normal (0.5, 0.5, 1.0) so materials without a normal
     // map keep their geometric normal. Bytes are R,G,B,A => 0x80,0x80,0xFF,0xFF.
@@ -1189,6 +1238,66 @@ Status Renderer::Impl::BuildBuiltInPipelines() {
     return Status::Ok();
 }
 
+Status Renderer::Impl::BuildUIOverlayPipeline() {
+    if (swapchain.Get() == VK_NULL_HANDLE) {
+        return Status::Ok();
+    }
+
+    ShaderDesc vsDesc;
+    vsDesc.sourcePath = shaderSourceDir / "ui.vert";
+    vsDesc.stage = ShaderStage::Vertex;
+    ShaderDesc fsDesc;
+    fsDesc.sourcePath = shaderSourceDir / "ui.frag";
+    fsDesc.stage = ShaderStage::Fragment;
+
+    Result<VulkanShaderModule> vs = LoadShaderModule(device, vsDesc, shaderBinaryDir);
+    if (!vs) {
+        return Status::Fail(vs.error);
+    }
+    Result<VulkanShaderModule> fs = LoadShaderModule(device, fsDesc, shaderBinaryDir);
+    if (!fs) {
+        DestroyShaderModule(device, vs.value.module);
+        return Status::Fail(fs.error);
+    }
+
+    VkPushConstantRange pushConstant{};
+    pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstant.offset = 0;
+    pushConstant.size = sizeof(UIOverlayPush);
+
+    VkPipelineLayout layout = CreatePipelineLayout(device, {descriptorLayouts.perPass}, {pushConstant});
+    if (layout == VK_NULL_HANDLE) {
+        DestroyShaderModule(device, vs.value.module);
+        DestroyShaderModule(device, fs.value.module);
+        return Status::Fail("Failed to create UI overlay pipeline layout");
+    }
+
+    GraphicsPipelineDesc desc;
+    desc.vertexShader = vs.value.module;
+    desc.fragmentShader = fs.value.module;
+    desc.layout = layout;
+    desc.vertexInput = UIOverlayVertexInput();
+    desc.colorFormats = {swapchain.ColorFormat()};
+    desc.topology = PrimitiveTopology::TriangleList;
+    desc.cullMode = CullMode::None;
+    desc.depthTest = false;
+    desc.depthWrite = false;
+    desc.blend = BlendMode::PremultipliedAlpha;
+    desc.debugName = "UIOverlayPipeline";
+    uiOverlayPipeline = CreateGraphicsPipeline(device, desc);
+    uiOverlayPipeline.layout = layout;
+    uiOverlayPipeline.ownsLayout = true;
+
+    DestroyShaderModule(device, vs.value.module);
+    DestroyShaderModule(device, fs.value.module);
+
+    if (!uiOverlayPipeline.IsValid()) {
+        DestroyPipeline(device, uiOverlayPipeline);
+        return Status::Fail("Failed to build UI overlay pipeline");
+    }
+    return Status::Ok();
+}
+
 Status Renderer::Impl::CreateDepthTarget(uint32_t width, uint32_t height) {
     for (VulkanTexture& depth : depthTargets) {
         if (depth.IsValid()) {
@@ -1222,6 +1331,21 @@ void Renderer::Impl::DestroyMeshPipelines() {
     meshPipelineLayout = VK_NULL_HANDLE;
     DestroyPipelineLayout(device, shadowPipelineLayout);
     shadowPipelineLayout = VK_NULL_HANDLE;
+}
+
+void Renderer::Impl::DestroyUIOverlayPipeline() {
+    DestroyPipeline(device, uiOverlayPipeline);
+}
+
+void Renderer::Impl::DestroyUIOverlayGeometry(UIOverlayGeometryResource& resource) {
+    DestroyBuffer(device, resource.vertexBuffer);
+    DestroyBuffer(device, resource.indexBuffer);
+    resource = {};
+}
+
+void Renderer::Impl::DestroyUIOverlayTexture(UIOverlayTextureResource& resource) {
+    DestroyTexture(device, resource.texture);
+    resource = {};
 }
 
 Status Renderer::Impl::BuildMeshPipelines() {
@@ -1439,6 +1563,9 @@ Status Renderer::Init(const RendererInitInfo& info) {
     if (Status s = r.BuildBuiltInPipelines(); !s) {
         return s;
     }
+    if (Status s = r.BuildUIOverlayPipeline(); !s) {
+        return s;
+    }
     if (Status s = r.BuildMeshPipelines(); !s) {
         return s;
     }
@@ -1483,7 +1610,17 @@ void Renderer::Shutdown() {
         DestroyBuffer(r.device, mat.ubo);
     }
     r.materials.clear();
+    for (Impl::UIOverlayGeometryResource& resource : r.uiOverlayGeometries) {
+        r.DestroyUIOverlayGeometry(resource);
+    }
+    r.uiOverlayGeometries.clear();
+    for (Impl::UIOverlayTextureResource& resource : r.uiOverlayTextures) {
+        r.DestroyUIOverlayTexture(resource);
+    }
+    r.uiOverlayTextures.clear();
+    r.uiOverlayCommands.clear();
     r.DestroyMeshPipelines();
+    r.DestroyUIOverlayPipeline();
     DestroyPipeline(r.device, r.debugLinePipeline);
     for (Impl::OffscreenTarget& t : r.renderTargets) {
         if (t.valid) {
@@ -2198,6 +2335,65 @@ void Renderer::Impl::RecordDebugLines(VkCommandBuffer cmd, VkImageView color, Vk
     EndDebugLabel(cmd);
 }
 
+void Renderer::Impl::RecordUIOverlay(VkCommandBuffer cmd, VkImageView color, VkExtent2D extent) {
+    if (uiOverlayCommands.empty() || !uiOverlayPipeline.IsValid() || uiOverlayDefaultTextureSet == VK_NULL_HANDLE) {
+        return;
+    }
+
+    BeginDebugLabel(cmd, "UIOverlay");
+    BeginRenderingScope(cmd, extent, color, VK_ATTACHMENT_LOAD_OP_LOAD, clearColor, VK_NULL_HANDLE, false);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiOverlayPipeline.pipeline);
+
+    const VkRect2D fullScissor{{0, 0}, extent};
+    for (const UIOverlayDrawCommand& drawCommand : uiOverlayCommands) {
+        if (!drawCommand.geometry.IsValid() || drawCommand.geometry.id > uiOverlayGeometries.size()) {
+            continue;
+        }
+        UIOverlayGeometryResource& geometry = uiOverlayGeometries[drawCommand.geometry.id - 1];
+        if (!geometry.valid || !geometry.vertexBuffer.IsValid() || !geometry.indexBuffer.IsValid() ||
+            geometry.indexCount == 0) {
+            continue;
+        }
+
+        VkDescriptorSet textureSet = uiOverlayDefaultTextureSet;
+        if (drawCommand.texture.IsValid() && drawCommand.texture.id <= uiOverlayTextures.size()) {
+            const UIOverlayTextureResource& texture = uiOverlayTextures[drawCommand.texture.id - 1];
+            if (texture.valid && texture.descriptorSet != VK_NULL_HANDLE) {
+                textureSet = texture.descriptorSet;
+            }
+        }
+
+        VkRect2D scissor = fullScissor;
+        if (drawCommand.scissor.has_value()) {
+            const std::optional<VkRect2D> clamped = ClampUIOverlayScissor(*drawCommand.scissor, extent);
+            if (!clamped.has_value()) {
+                continue;
+            }
+            scissor = *clamped;
+        }
+        vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+        UIOverlayPush push;
+        push.transform = drawCommand.transform.value_or(glm::mat4(1.0f));
+        push.viewportAndTranslation =
+            glm::vec4(static_cast<float>(extent.width), static_cast<float>(extent.height), drawCommand.translation.x,
+                      drawCommand.translation.y);
+
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, uiOverlayPipeline.layout, 0, 1, &textureSet, 0,
+                                nullptr);
+        vkCmdPushConstants(cmd, uiOverlayPipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UIOverlayPush), &push);
+        const VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &geometry.vertexBuffer.buffer, &offset);
+        vkCmdBindIndexBuffer(cmd, geometry.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(cmd, geometry.indexCount, 1, 0, 0, 0);
+        ++stats.drawCalls;
+        stats.triangleCount += geometry.indexCount / 3;
+    }
+
+    vkCmdEndRendering(cmd);
+    EndDebugLabel(cmd);
+}
+
 std::optional<std::filesystem::path> Renderer::Impl::TakeScreenshotRequest(ScreenshotSource source,
                                                                            TextureHandle target) {
     for (auto it = screenshotRequests.begin(); it != screenshotRequests.end(); ++it) {
@@ -2418,6 +2614,14 @@ void Renderer::EndFrame() {
         vkCmdEndRendering(cmd);
     }
 
+    if (!r.uiOverlayCommands.empty()) {
+        TransitionImage(cmd, r.swapchain.Image(r.imageIndex), r.swapchainLayout,
+                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+        r.swapchainLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        r.RecordUIOverlay(cmd, r.swapchain.ImageView(r.imageIndex), r.swapchain.Extent());
+        r.sceneRendered = true;
+    }
+
     if (std::optional<std::filesystem::path> path =
             r.TakeScreenshotRequest(Impl::ScreenshotSource::Swapchain, TextureHandle{})) {
         if (r.swapchain.SupportsTransferSrc()) {
@@ -2481,6 +2685,7 @@ void Renderer::EndFrame() {
     r.allocator.QueryMemory(r.stats.usedVRAMBytes, r.stats.budgetVRAMBytes);
 
     r.debugDraw.Clear();
+    r.uiOverlayCommands.clear();
     // CPU time spent producing this frame (record/submit/present). GPU timing
     // (gpuFrameMs) still requires timestamp queries and is left unpopulated.
     r.stats.cpuFrameMs = static_cast<float>(r.frameCpuTimer.ElapsedMilliseconds());
@@ -2764,10 +2969,38 @@ MaterialHandle Renderer::CreateMaterial(const MaterialDesc& desc) {
 
 UIOverlayGeometryHandle Renderer::CreateUIOverlayGeometry(const UIOverlayGeometryDesc& desc) {
     Impl& r = *m_Impl;
+    if (!r.initialized || desc.vertices.empty() || desc.indices.empty()) {
+        return {};
+    }
+
     Impl::UIOverlayGeometryResource resource;
-    resource.valid = !desc.vertices.empty() && !desc.indices.empty();
-    resource.vertices = desc.vertices;
-    resource.indices = desc.indices;
+    resource.debugName = desc.debugName;
+    resource.indexCount = static_cast<uint32_t>(desc.indices.size());
+
+    BufferDesc vertexDesc;
+    vertexDesc.size = desc.vertices.size() * sizeof(UIOverlayVertex);
+    vertexDesc.usage = BufferUsage::Vertex;
+    vertexDesc.cpuVisible = false;
+    vertexDesc.debugName = desc.debugName.empty() ? std::string("UIOverlayVertexBuffer") : desc.debugName + ".VB";
+    resource.vertexBuffer = CreateBuffer(r.device, vertexDesc);
+    if (!resource.vertexBuffer.IsValid()) {
+        return {};
+    }
+    UploadBuffer(r.device, r.command, resource.vertexBuffer, desc.vertices.data(), vertexDesc.size);
+
+    BufferDesc indexDesc;
+    indexDesc.size = desc.indices.size() * sizeof(uint32_t);
+    indexDesc.usage = BufferUsage::Index;
+    indexDesc.cpuVisible = false;
+    indexDesc.debugName = desc.debugName.empty() ? std::string("UIOverlayIndexBuffer") : desc.debugName + ".IB";
+    resource.indexBuffer = CreateBuffer(r.device, indexDesc);
+    if (!resource.indexBuffer.IsValid()) {
+        r.DestroyUIOverlayGeometry(resource);
+        return {};
+    }
+    UploadBuffer(r.device, r.command, resource.indexBuffer, desc.indices.data(), indexDesc.size);
+
+    resource.valid = true;
     resource.debugName = desc.debugName;
     r.uiOverlayGeometries.push_back(std::move(resource));
     return UIOverlayGeometryHandle{static_cast<uint32_t>(r.uiOverlayGeometries.size())};
@@ -2778,20 +3011,48 @@ void Renderer::ReleaseUIOverlayGeometry(UIOverlayGeometryHandle handle) {
     if (!handle.IsValid() || handle.id > r.uiOverlayGeometries.size()) {
         return;
     }
-    r.uiOverlayGeometries[handle.id - 1] = {};
+    if (r.initialized && r.device.device != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(r.device.device);
+    }
+    r.DestroyUIOverlayGeometry(r.uiOverlayGeometries[handle.id - 1]);
 }
 
 UIOverlayTextureHandle Renderer::CreateUIOverlayTexture(const UIOverlayTextureDesc& desc) {
     Impl& r = *m_Impl;
-    Impl::UIOverlayTextureResource resource;
-    resource.valid = desc.width > 0 && desc.height > 0;
-    resource.width = desc.width;
-    resource.height = desc.height;
-    resource.debugName = desc.debugName;
-    if (desc.rgba8Pixels != nullptr && desc.rgba8ByteCount > 0) {
-        const auto* begin = static_cast<const std::byte*>(desc.rgba8Pixels);
-        resource.rgba8Pixels.assign(begin, begin + desc.rgba8ByteCount);
+    const size_t expectedBytes = static_cast<size_t>(desc.width) * static_cast<size_t>(desc.height) * 4u;
+    if (!r.initialized || desc.width == 0 || desc.height == 0 || desc.rgba8Pixels == nullptr ||
+        desc.rgba8ByteCount < expectedBytes) {
+        return {};
     }
+
+    Impl::UIOverlayTextureResource resource;
+    resource.debugName = desc.debugName;
+
+    TextureDesc textureDesc;
+    textureDesc.width = desc.width;
+    textureDesc.height = desc.height;
+    textureDesc.format = TextureFormat::RGBA8;
+    textureDesc.usageFlags = TextureUsage_Sampled;
+    textureDesc.initialData = desc.rgba8Pixels;
+    textureDesc.initialDataSize = expectedBytes;
+    textureDesc.debugName = desc.debugName.empty() ? std::string("UIOverlayTexture") : desc.debugName;
+    resource.texture = ::Hockey::CreateTexture(r.device, r.command, textureDesc);
+    if (!resource.texture.IsValid()) {
+        return {};
+    }
+
+    resource.descriptorSet = r.descriptorAllocator.Allocate(r.descriptorLayouts.perPass);
+    if (resource.descriptorSet == VK_NULL_HANDLE) {
+        r.DestroyUIOverlayTexture(resource);
+        return {};
+    }
+    DescriptorWriter writer;
+    writer
+        .WriteImage(0, resource.texture.view, r.samplers.LinearClamp(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    DescriptorType::CombinedImageSampler)
+        .Update(r.device, resource.descriptorSet);
+
+    resource.valid = true;
     r.uiOverlayTextures.push_back(std::move(resource));
     return UIOverlayTextureHandle{static_cast<uint32_t>(r.uiOverlayTextures.size())};
 }
@@ -2801,7 +3062,10 @@ void Renderer::ReleaseUIOverlayTexture(UIOverlayTextureHandle handle) {
     if (!handle.IsValid() || handle.id > r.uiOverlayTextures.size()) {
         return;
     }
-    r.uiOverlayTextures[handle.id - 1] = {};
+    if (r.initialized && r.device.device != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(r.device.device);
+    }
+    r.DestroyUIOverlayTexture(r.uiOverlayTextures[handle.id - 1]);
 }
 
 void Renderer::RenderUIOverlay(const std::vector<UIOverlayDrawCommand>& commands) {

@@ -90,7 +90,8 @@ Source material:
 - [x] Add UI settings.
 - [x] Add UI core primitives.
 - [ ] Add UI layout/widgets.
-- [ ] Add full Vulkan-backed UI rendering path.
+- [x] Add Vulkan-backed swapchain UI rendering path for runtime RmlUi overlay geometry/textures.
+- [ ] Add offscreen/editor Client Preview UI rendering path.
 - [x] Add main menu RML document.
 - [x] Add loading screen RML document.
 - [x] Add lobby screen RML document with networking-unavailable state.
@@ -161,8 +162,8 @@ Source material:
 - [ ] No audio library/system exists yet.
 - [ ] Runtime RmlUi foundation exists through `hockey_ui`, including guarded file/system/render interfaces, context lifetime, input mapping, click binding, UI settings, and client-flow YAML.
 - [ ] First-pass RML/RCSS assets exist for home, loading, lobby, team select, match HUD, pause, settings, scoreboard, and end-match screens.
-- [ ] Game client can initialize RmlUi from `[ui]`, boot the startup flow home screen, route basic button actions, render RmlUi-generated overlay commands, and bypass UI with `--no-ui`.
-- [ ] Renderer UI overlay work is currently a generic handle/draw-command API and CPU-side command capture; Vulkan swapchain/offscreen UI drawing, UI shaders, alpha/scissor pipeline state, and screenshot-visible UI still need implementation.
+- [ ] Game client can initialize RmlUi from `[ui]`, boot the startup flow home screen, route basic button actions, draw RmlUi-generated overlay commands through the renderer swapchain UI pass, and bypass UI with `--no-ui`.
+- [ ] Renderer UI overlay work uploads RmlUi geometry/textures to GPU resources and draws onto the swapchain with `ui.vert`/`ui.frag`, premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering; offscreen/editor Client Preview UI target rendering and broader visual validation still need implementation.
 - [ ] Match HUD RML exists, but gameplay snapshot data is not yet bound into live RmlUi elements.
 - [ ] Editor Client Preview and client-flow authoring panels are not implemented yet.
 - [ ] No configurable bindings, controller presets, vibration, or input settings UI exists yet.

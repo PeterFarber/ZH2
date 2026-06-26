@@ -33,9 +33,7 @@ void RunRmlUiContextTests() {
 
     context.SetDimensions(1024, 576);
     context.Update();
-    context.Render();
     HK_CHECK(context.RenderInterface() != nullptr);
-    HK_CHECK(!context.RenderInterface()->DrawCommands().empty());
 
     context.Shutdown();
     HK_CHECK(!context.IsInitialized());

@@ -56,4 +56,25 @@ void RunUIOverlayContractTests() {
     HK_CHECK_MSG(Contains(rendererHeader, "CreateUIOverlayTexture"), "Renderer exposes UI texture creation");
     HK_CHECK_MSG(Contains(rendererHeader, "ReleaseUIOverlayTexture"), "Renderer exposes UI texture release");
     HK_CHECK_MSG(Contains(rendererHeader, "RenderUIOverlay"), "Renderer exposes ordered UI overlay rendering");
+
+    const std::string rendererSource = ReadProjectFile("libs/renderer/src/Renderer.cpp");
+    HK_CHECK_MSG(Contains(rendererSource, "BuildUIOverlayPipeline"), "Renderer builds a UI overlay pipeline");
+    HK_CHECK_MSG(Contains(rendererSource, "RecordUIOverlay"), "Renderer records UI overlay draw commands");
+    HK_CHECK_MSG(Contains(rendererSource, "vkCmdDrawIndexed(cmd, geometry.indexCount"),
+                 "Renderer draws UI overlay geometry on the GPU");
+    HK_CHECK_MSG(Contains(rendererSource, "VK_ATTACHMENT_LOAD_OP_LOAD"), "UI overlay loads existing scene output");
+    HK_CHECK_MSG(Contains(rendererSource, "ClampUIOverlayScissor"), "UI overlay clamps top-left scissor rectangles");
+    HK_CHECK_MSG(Contains(rendererSource, "uiOverlayCommands.clear()"), "UI overlay commands clear after each frame");
+
+    const std::string pipelineSource = ReadProjectFile("libs/renderer/src/Vulkan/VulkanPipeline.cpp");
+    HK_CHECK_MSG(Contains(pipelineSource, "BlendMode::PremultipliedAlpha"),
+                 "Renderer has premultiplied-alpha blend state for UI");
+    HK_CHECK_MSG(Contains(pipelineSource, "VK_BLEND_FACTOR_ONE"),
+                 "Premultiplied-alpha UI blend uses one as the source factor");
+
+    const std::string shaderList = ReadProjectFile("libs/renderer/src/Shader.cpp");
+    HK_CHECK_MSG(Contains(shaderList, "\"ui.vert\""), "UI vertex shader is required");
+    HK_CHECK_MSG(Contains(shaderList, "\"ui.frag\""), "UI fragment shader is required");
+    const std::string uiFrag = ReadProjectFile("data/shaders/src/ui.frag");
+    HK_CHECK_MSG(Contains(uiFrag, "texture(uTexture"), "UI fragment shader samples renderer-owned UI textures");
 }

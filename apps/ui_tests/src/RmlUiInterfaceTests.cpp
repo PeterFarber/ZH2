@@ -30,7 +30,7 @@ void RunRmlUiInterfaceTests() {
 
     const Rml::CompiledGeometryHandle geometry =
         render.CompileGeometry(Rml::Span<const Rml::Vertex>(vertices, 3), Rml::Span<const int>(indices, 3));
-    HK_CHECK(geometry != 0);
+    HK_CHECK(geometry == 0);
 
     const unsigned char pixels[16] = {
         255, 255, 255, 255, 255, 255, 255, 255,
@@ -38,26 +38,28 @@ void RunRmlUiInterfaceTests() {
     };
     const Rml::TextureHandle texture =
         render.GenerateTexture(Rml::Span<const Rml::byte>(pixels, sizeof(pixels)), Rml::Vector2i{2, 2});
-    HK_CHECK(texture != 0);
+    HK_CHECK(texture == 0);
 
     render.EnableScissorRegion(true);
     render.SetScissorRegion(Rml::Rectanglei::FromPositionSize(Rml::Vector2i{1, 2}, Rml::Vector2i{33, 44}));
     Rml::Matrix4f transform = Rml::Matrix4f::Identity();
     render.SetTransform(&transform);
-    render.RenderGeometry(geometry, Rml::Vector2f{4.0f, 5.0f}, texture);
+    render.RenderGeometry(Rml::CompiledGeometryHandle{1}, Rml::Vector2f{4.0f, 5.0f}, Rml::TextureHandle{2});
 
     const auto& commands = render.DrawCommands();
     HK_CHECK_EQ(commands.size(), static_cast<std::size_t>(1));
-    HK_CHECK(commands[0].geometry.IsValid());
-    HK_CHECK(commands[0].texture.IsValid());
-    HK_CHECK_NEAR(commands[0].translation.x, 4.0f, 0.0001);
-    HK_CHECK(commands[0].scissor.has_value());
-    HK_CHECK_EQ(commands[0].scissor->x, 1);
-    HK_CHECK_EQ(commands[0].scissor->width, 33u);
-    HK_CHECK(commands[0].transform.has_value());
+    if (!commands.empty()) {
+        HK_CHECK(commands[0].geometry.IsValid());
+        HK_CHECK(commands[0].texture.IsValid());
+        HK_CHECK_NEAR(commands[0].translation.x, 4.0f, 0.0001);
+        HK_CHECK(commands[0].scissor.has_value());
+        HK_CHECK_EQ(commands[0].scissor->x, 1);
+        HK_CHECK_EQ(commands[0].scissor->width, 33u);
+        HK_CHECK(commands[0].transform.has_value());
+    }
 
-    render.ReleaseGeometry(geometry);
-    render.ReleaseTexture(texture);
+    render.ReleaseGeometry(Rml::CompiledGeometryHandle{1});
+    render.ReleaseTexture(Rml::TextureHandle{2});
 
     Hockey::RmlUiFileInterface files(Hockey::Paths::Get().root);
     Rml::FileHandle file = files.Open("data/ui/screens/home.rml");

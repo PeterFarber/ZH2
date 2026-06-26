@@ -37,7 +37,7 @@ enum class CullMode { None, Front, Back };
 
 enum class CompareOp { Never, Less, LessOrEqual, Greater, GreaterOrEqual, Equal, Always };
 
-enum class BlendMode { Opaque, AlphaBlend, Additive };
+enum class BlendMode { Opaque, AlphaBlend, PremultipliedAlpha, Additive };
 
 // True when a format carries depth (and possibly stencil) data.
 bool IsDepthFormat(TextureFormat format);

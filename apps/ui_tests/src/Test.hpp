@@ -22,10 +22,12 @@ inline void RecordPass() {
 inline void RecordFail(const char* file, int line, const std::string& message) {
     ++GetStats().failed;
     std::fprintf(stderr, "[FAIL] %s:%d  %s\n", file, line, message.c_str());
+    std::fflush(stderr);
 }
 
 inline void BeginSuite(const char* name) {
     std::fprintf(stderr, "[RUN ] %s\n", name);
+    std::fflush(stderr);
 }
 } // namespace HockeyTest
 

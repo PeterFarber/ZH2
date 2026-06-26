@@ -79,6 +79,7 @@ Source material:
 - [x] Offscreen render targets exist for editor Scene/Game viewports.
 - [x] Swapchain and render-target PNG readback exists.
 - [x] `RenderGraph` abstraction and tests exist.
+- [x] Runtime UI overlay geometry/textures can be uploaded to GPU resources and drawn over the swapchain with premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering.
 
 ## Finished - Tests And Verification
 
@@ -102,7 +103,7 @@ Source material:
 - [ ] Decal components serialize, but decal projection rendering is not implemented.
 - [ ] Some renderer settings are persisted only and are not live-applied.
 - [ ] Hockey-specific polish visuals such as ice reflections, skate spray, and puck trails are material/settings names only.
-- [ ] Runtime UI overlay draw commands are captured through the renderer API, but the Vulkan swapchain/offscreen UI draw path, UI shaders, alpha blending, and scissor pipeline integration are not finished.
+- [ ] Runtime UI overlay supports the game-client swapchain path, but offscreen editor Client Preview UI target rendering and broader display/GPU validation are not finished.
 - [ ] `gpuFrameMs` is not populated.
 - [ ] Tracy or equivalent profiling integration is not implemented.
 - [ ] Pixel-correct rendering and minimize behavior still need broader display/GPU verification.
@@ -113,7 +114,7 @@ Source material:
 - [ ] Add TAA motion vectors/history buffers if TAA is requested.
 - [ ] Add MSAA render-pass/pipeline changes if MSAA is requested.
 - [ ] Implement reflection probes and decals when renderer polish resumes.
-- [ ] Implement the Phase 9 UI overlay Vulkan draw path when runtime UI rendering resumes.
+- [ ] Add offscreen editor Client Preview UI target rendering and broader display/GPU validation when runtime UI/editor preview work resumes.
 - [ ] Implement live sampler/descriptor recreation for relevant setting changes.
 - [ ] Add GPU timestamp queries and profiling integration.
 - [ ] Add Phase 9 visual polish systems for ice, skates, puck trails, crowd, and presentation.

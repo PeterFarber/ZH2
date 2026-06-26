@@ -164,6 +164,8 @@ const std::vector<RequiredShaderFile>& RequiredShaderFiles() {
         {"debug_line.frag", true, ShaderStage::Fragment},
         {"debug_shape.vert", true, ShaderStage::Vertex},
         {"debug_shape.frag", true, ShaderStage::Fragment},
+        {"ui.vert", true, ShaderStage::Vertex},
+        {"ui.frag", true, ShaderStage::Fragment},
     };
     return kFiles;
 }
