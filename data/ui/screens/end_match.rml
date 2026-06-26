@@ -1,0 +1,13 @@
+<rml>
+<head>
+    <title>Match Complete</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="end-match-screen" class="screen">
+        <div class="title">Final</div>
+        <div id="final-score">0 - 0</div>
+        <button id="end-return-to-menu">Return to Menu</button>
+    </div>
+</body>
+</rml>

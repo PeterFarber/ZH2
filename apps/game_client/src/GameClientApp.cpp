@@ -26,6 +26,8 @@
 #include "Hockey/Renderer/DebugDraw.hpp"
 #include "Hockey/Renderer/RendererInitInfo.hpp"
 #include "Hockey/Renderer/RendererSettings.hpp"
+#include "Hockey/UI/ClientFlowSerializer.hpp"
+#include "Hockey/UI/UISettings.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -161,6 +163,8 @@ bool GameClientApp::OnInit() {
     const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
                                                 : Hockey::Paths::ConfigFile("client.toml");
     m_Config.Load(configPath);
+    m_UISettings = Hockey::LoadUISettings(m_Config);
+    m_UIEnabled = m_UISettings.enabled && !cmd.Has("--no-ui");
     // Honor the input.gamepad_enabled config key (closes pads opened at init).
     Hockey::Input::SetGamepadEnabled(m_Config.GetBool("input.gamepad_enabled", true));
     if (!CreateAppWindowFromConfig(m_Config)) {
@@ -275,13 +279,90 @@ bool GameClientApp::OnInit() {
     } else {
         HK_CLIENT_INFO("Asset manager unavailable: {}", status.error);
     }
+
+    if (m_UIEnabled) {
+        Hockey::ClientFlow flow = Hockey::MakeDefaultClientFlow();
+        const std::filesystem::path flowPath = Hockey::Paths::Resolve(m_UISettings.startFlow);
+        if (const Hockey::Result<Hockey::ClientFlow> loaded = Hockey::ClientFlowSerializer::Load(flowPath)) {
+            flow = loaded.value;
+        } else {
+            HK_CLIENT_INFO("Client flow load failed: {}. Using built-in default flow.", loaded.error);
+        }
+        m_ClientFlow.SetFlow(flow);
+        m_ClientFlow.Boot();
+
+        Hockey::RmlUiContextDesc uiDesc;
+        uiDesc.renderer = &m_Renderer;
+        uiDesc.root = Hockey::Paths::Get().root;
+        uiDesc.settings = m_UISettings;
+        uiDesc.name = "game-client-ui";
+        uiDesc.width = GetWindow().Width();
+        uiDesc.height = GetWindow().Height();
+        if (!m_UIContext.Initialize(uiDesc)) {
+            HK_CLIENT_INFO("Runtime UI disabled: RmlUi context initialization failed");
+            m_UIEnabled = false;
+        } else if (!LoadRuntimeUIScreen()) {
+            HK_CLIENT_INFO("Runtime UI disabled: could not load '{}'",
+                           m_ClientFlow.Flow().ScreenDocument(m_ClientFlow.ActiveScreen()));
+            m_UIContext.Shutdown();
+            m_UIEnabled = false;
+        } else {
+            HK_CLIENT_INFO("Runtime UI booted to '{}' from '{}'", Hockey::ToString(m_ClientFlow.ActiveScreen()),
+                           flowPath.string());
+        }
+    }
     m_LastWidth = GetWindow().Width();
     m_LastHeight = GetWindow().Height();
     return true;
 }
 
+bool GameClientApp::LoadRuntimeUIScreen() {
+    if (!m_UIContext.IsInitialized()) {
+        return false;
+    }
+
+    m_UIContext.UnloadAllDocuments();
+    m_UIContext.Update();
+    if (!m_UIContext.LoadDocument(m_ClientFlow.Flow().ScreenDocument(m_ClientFlow.ActiveScreen()))) {
+        return false;
+    }
+    BindRuntimeUIActions();
+    return true;
+}
+
+void GameClientApp::BindRuntimeUIActions() {
+    m_UIContext.BindClickAction("play-offline", [this]() { QueueRuntimeUIAction(Hockey::UIAction::StartOffline); });
+    m_UIContext.BindClickAction("open-settings", [this]() { QueueRuntimeUIAction(Hockey::UIAction::OpenSettings); });
+    m_UIContext.BindClickAction("open-lobby", [this]() { QueueRuntimeUIAction(Hockey::UIAction::OpenLobby); });
+    m_UIContext.BindClickAction("quit-game", [this]() { QueueRuntimeUIAction(Hockey::UIAction::Quit); });
+    m_UIContext.BindClickAction("settings-back", [this]() { QueueRuntimeUIAction(Hockey::UIAction::ReturnToMenu); });
+    m_UIContext.BindClickAction("lobby-back", [this]() { QueueRuntimeUIAction(Hockey::UIAction::ReturnToMenu); });
+    m_UIContext.BindClickAction("resume-game", [this]() { QueueRuntimeUIAction(Hockey::UIAction::Resume); });
+    m_UIContext.BindClickAction("return-to-menu", [this]() { QueueRuntimeUIAction(Hockey::UIAction::ReturnToMenu); });
+    m_UIContext.BindClickAction("pause-quit", [this]() { QueueRuntimeUIAction(Hockey::UIAction::Quit); });
+    m_UIContext.BindClickAction("scoreboard-close", [this]() { QueueRuntimeUIAction(Hockey::UIAction::Resume); });
+    m_UIContext.BindClickAction("end-return-to-menu", [this]() { QueueRuntimeUIAction(Hockey::UIAction::ReturnToMenu); });
+}
+
+void GameClientApp::QueueRuntimeUIAction(Hockey::UIAction action) {
+    if (action == Hockey::UIAction::Quit) {
+        RequestQuit();
+        return;
+    }
+
+    m_ClientFlow.Dispatch(action);
+    if (action == Hockey::UIAction::StartOffline) {
+        (void)m_ClientFlow.TakeRequestedGameplayScene();
+        m_ClientFlow.Dispatch(Hockey::UIAction::Resume);
+    }
+    m_UIReloadRequested = true;
+}
 void GameClientApp::OnShutdown() {
     HK_CLIENT_INFO("Shutdown");
+    if (m_UIContext.IsInitialized()) {
+        m_UIContext.Shutdown();
+    }
+    m_UIEnabled = false;
     m_GameplayWorld.Shutdown();
     if (m_PhysicsReady) {
         m_Scene.OnSimulationStop();
@@ -310,6 +391,9 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
+    if (m_UIEnabled && m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud) {
+        return input;
+    }
     const Hockey::Entity localPlayer = FindLocalGameplayPlayer(m_Scene, input.playerIndex);
     const bool localHasPuck = PlayerHasPuck(m_Scene, localPlayer);
     const bool localIsGoalie = localPlayer.IsValid() && localPlayer.HasComponent<Hockey::GoalieComponent>();
@@ -476,6 +560,9 @@ void GameClientApp::OnUpdate(float deltaTime) {
     const uint32_t height = GetWindow().Height();
     if (width != m_LastWidth || height != m_LastHeight) {
         m_Renderer.Resize(width, height);
+        if (m_UIEnabled && m_UIContext.IsInitialized()) {
+            m_UIContext.SetDimensions(width, height);
+        }
         m_LastWidth = width;
         m_LastHeight = height;
     }
@@ -507,12 +594,41 @@ void GameClientApp::OnUpdate(float deltaTime) {
     if (Hockey::FindActiveCamera(m_Scene, aspect, camera)) {
         m_Renderer.RenderScene(m_Scene, camera);
     }
+    if (m_UIEnabled && m_UIContext.IsInitialized()) {
+        if (m_UIReloadRequested) {
+            if (!LoadRuntimeUIScreen()) {
+                HK_CLIENT_INFO("Runtime UI screen reload failed for '{}'",
+                               m_ClientFlow.Flow().ScreenDocument(m_ClientFlow.ActiveScreen()));
+                m_UIContext.Shutdown();
+                m_UIEnabled = false;
+            }
+            m_UIReloadRequested = false;
+        }
+        m_UIContext.Update();
+        m_UIContext.Render();
+    }
     m_Renderer.EndFrame();
 }
 
 void GameClientApp::OnEvent(const Hockey::Event& event) {
-    if (event.type == Hockey::EventType::KeyPressed &&
-        Hockey::Keyboard::FromScancode(event.key) == Hockey::KeyCode::Escape) {
+    const bool isEscape = event.type == Hockey::EventType::KeyPressed &&
+                          Hockey::Keyboard::FromScancode(event.key) == Hockey::KeyCode::Escape;
+    if (m_UIEnabled && m_UIContext.IsInitialized()) {
+        if (event.type == Hockey::EventType::WindowResize) {
+            m_UIContext.SetDimensions(event.windowWidth, event.windowHeight);
+        } else {
+            m_UIInput.ProcessEvent(*m_UIContext.RawContext(), event);
+        }
+        if (isEscape) {
+            if (m_ClientFlow.ActiveScreen() == Hockey::UIScreenId::MatchHud) {
+                QueueRuntimeUIAction(Hockey::UIAction::Pause);
+            } else if (m_ClientFlow.ActiveScreen() == Hockey::UIScreenId::PauseMenu) {
+                QueueRuntimeUIAction(Hockey::UIAction::Resume);
+            }
+            return;
+        }
+    }
+    if (isEscape && !m_UIInput.WantsKeyboardCapture()) {
         RequestQuit();
     }
 }

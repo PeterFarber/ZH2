@@ -1,0 +1,7 @@
+Inter Regular
+
+Source: https://github.com/rsms/inter
+License: SIL Open Font License 1.1
+
+`Inter-Regular.ttf` is copied from the Inter 4.1 release asset as the upright
+variable TTF and renamed to keep the runtime settings stable.

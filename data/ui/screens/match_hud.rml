@@ -1,0 +1,21 @@
+<rml>
+<head>
+    <title>Match HUD</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="match-hud" class="hud-root">
+        <div class="score-strip">
+            <span id="home-score" class="score">0</span>
+            <span id="match-clock">20:00</span>
+            <span id="period-label">P1</span>
+            <span id="away-score" class="score">0</span>
+        </div>
+        <div id="phase-label" class="notification">Faceoff</div>
+        <div id="local-player-label">Player 1</div>
+        <div id="possession-label">Loose puck</div>
+        <div id="shot-charge">0%</div>
+        <div id="hud-notification" class="notification"></div>
+    </div>
+</body>
+</rml>

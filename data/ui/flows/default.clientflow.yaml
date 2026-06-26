@@ -1,0 +1,15 @@
+startup_screen: home
+screens:
+  home: data/ui/screens/home.rml
+  loading: data/ui/screens/loading.rml
+  lobby: data/ui/screens/lobby.rml
+  team_select: data/ui/screens/team_select.rml
+  match_hud: data/ui/screens/match_hud.rml
+  pause_menu: data/ui/screens/pause_menu.rml
+  settings: data/ui/screens/settings.rml
+  scoreboard: data/ui/screens/scoreboard.rml
+  end_match: data/ui/screens/end_match.rml
+backgrounds: {}
+offline:
+  default_scene: data/raw/scenes/Main.scene.yaml
+  use_current_editor_scene_when_previewing: true

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <vector>
 
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/Core/Result.hpp"
@@ -14,6 +15,7 @@
 #include "Hockey/Renderer/RendererSettings.hpp"
 #include "Hockey/Renderer/RendererStats.hpp"
 #include "Hockey/Renderer/Texture.hpp"
+#include "Hockey/Renderer/UIOverlay.hpp"
 
 namespace Hockey {
 
@@ -98,6 +100,13 @@ public:
     MeshHandle CreateMesh(const MeshDesc& desc);
     TextureHandle CreateTexture(const TextureDesc& desc);
     MaterialHandle CreateMaterial(const MaterialDesc& desc);
+
+    // ----- Runtime UI overlay -----
+    UIOverlayGeometryHandle CreateUIOverlayGeometry(const UIOverlayGeometryDesc& desc);
+    void ReleaseUIOverlayGeometry(UIOverlayGeometryHandle handle);
+    UIOverlayTextureHandle CreateUIOverlayTexture(const UIOverlayTextureDesc& desc);
+    void ReleaseUIOverlayTexture(UIOverlayTextureHandle handle);
+    void RenderUIOverlay(const std::vector<UIOverlayDrawCommand>& commands);
 
     // ----- Content pipeline integration -----
     // Supplies the asset manager used to resolve MeshRendererComponent asset

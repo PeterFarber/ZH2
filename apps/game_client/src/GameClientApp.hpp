@@ -9,6 +9,10 @@
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 #include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
+#include "Hockey/UI/ClientFlowRunner.hpp"
+#include "Hockey/UI/RmlUiContext.hpp"
+#include "Hockey/UI/UIInputMapper.hpp"
+#include "Hockey/UI/UISettings.hpp"
 
 #include <cstdint>
 #include <string>
@@ -28,6 +32,10 @@ protected:
     void OnEvent(const Hockey::Event& event) override;
 
 private:
+    bool LoadRuntimeUIScreen();
+    void BindRuntimeUIActions();
+    void QueueRuntimeUIAction(Hockey::UIAction action);
+
     void StepSimulation(float deltaTime);
     Hockey::GameplayInputFrame BuildLocalInput(uint64_t simulationTick);
     void SubmitPhysicsDebugDraw();
@@ -40,8 +48,14 @@ private:
     Hockey::GameplayTuning m_GameplayTuning;
     Hockey::Renderer m_Renderer;
     Hockey::AssetManager m_AssetManager;
+    Hockey::UISettings m_UISettings;
+    Hockey::ClientFlowRunner m_ClientFlow;
+    Hockey::RmlUiContext m_UIContext;
+    Hockey::UIInputMapper m_UIInput;
     bool m_RendererReady = false;
     bool m_AssetsReady = false;
+    bool m_UIEnabled = false;
+    bool m_UIReloadRequested = false;
 
     Hockey::PhysicsSystem* m_PhysicsSystem = nullptr; // owned by m_Scene
     Hockey::FixedTimestep m_SimulationTimestep{60.0};

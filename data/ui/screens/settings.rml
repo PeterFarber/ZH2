@@ -1,0 +1,14 @@
+<rml>
+<head>
+    <title>Settings</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="settings-screen" class="screen">
+        <div class="title">Settings</div>
+        <label>UI Scale</label>
+        <input id="ui-scale" type="range" min="0.5" max="3.0" step="0.1"/>
+        <button id="settings-back">Back</button>
+    </div>
+</body>
+</rml>

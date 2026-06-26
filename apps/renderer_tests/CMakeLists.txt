@@ -7,6 +7,7 @@ add_executable(HockeyRendererTests
     src/RendererShadowContractTests.cpp
     src/MaterialAssetContractTests.cpp
     src/RendererSmokeTests.cpp
+    src/UIOverlayContractTests.cpp
     src/HeadlessServerLinkTests.cpp
 )
 

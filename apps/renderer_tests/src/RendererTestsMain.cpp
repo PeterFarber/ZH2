@@ -14,6 +14,7 @@ void RunShaderCompileTests();
 void RunRenderGraphTests();
 void RunRendererShadowContractTests();
 void RunMaterialAssetContractTests();
+void RunUIOverlayContractTests();
 
 // GPU smoke tests (skipped when no display/GPU is available).
 void RunRendererSmokeTests();
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
     RunRenderGraphTests();
     RunRendererShadowContractTests();
     RunMaterialAssetContractTests();
+    RunUIOverlayContractTests();
 
     if (!commandLine.Has("--no-gpu")) {
         RunRendererSmokeTests();

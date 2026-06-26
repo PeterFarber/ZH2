@@ -37,6 +37,7 @@ Source material:
 - [x] Renderer stats include CPU frame timing.
 - [x] Material preview support exists for editor UI.
 - [x] Built-in screenshot request/readback API exists.
+- [x] Renderer exposes an RmlUi-free UI overlay handle/draw-command API for Phase 9 runtime UI integration.
 
 ## Finished - Vulkan Base And Resources
 
@@ -101,6 +102,7 @@ Source material:
 - [ ] Decal components serialize, but decal projection rendering is not implemented.
 - [ ] Some renderer settings are persisted only and are not live-applied.
 - [ ] Hockey-specific polish visuals such as ice reflections, skate spray, and puck trails are material/settings names only.
+- [ ] Runtime UI overlay draw commands are captured through the renderer API, but the Vulkan swapchain/offscreen UI draw path, UI shaders, alpha blending, and scissor pipeline integration are not finished.
 - [ ] `gpuFrameMs` is not populated.
 - [ ] Tracy or equivalent profiling integration is not implemented.
 - [ ] Pixel-correct rendering and minimize behavior still need broader display/GPU verification.
@@ -111,6 +113,7 @@ Source material:
 - [ ] Add TAA motion vectors/history buffers if TAA is requested.
 - [ ] Add MSAA render-pass/pipeline changes if MSAA is requested.
 - [ ] Implement reflection probes and decals when renderer polish resumes.
+- [ ] Implement the Phase 9 UI overlay Vulkan draw path when runtime UI rendering resumes.
 - [ ] Implement live sampler/descriptor recreation for relevant setting changes.
 - [ ] Add GPU timestamp queries and profiling integration.
 - [ ] Add Phase 9 visual polish systems for ice, skates, puck trails, crowd, and presentation.

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <deque>
 #include <filesystem>
@@ -31,6 +32,7 @@
 #include "Hockey/Renderer/Light.hpp"
 #include "Hockey/Renderer/RenderDevice.hpp"
 #include "Hockey/Renderer/RendererImGuiSupport.hpp"
+#include "Hockey/Renderer/UIOverlay.hpp"
 #include "Hockey/Renderer/Vulkan/VulkanAllocator.hpp"
 #include "Hockey/Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Hockey/Renderer/Vulkan/VulkanCommand.hpp"
@@ -560,6 +562,23 @@ struct Renderer::Impl {
     std::vector<VulkanBuffer> buffers;
     std::deque<VulkanMesh> meshes;
     std::deque<GpuMaterial> materials;
+
+    struct UIOverlayGeometryResource {
+        bool valid = false;
+        std::vector<UIOverlayVertex> vertices;
+        std::vector<uint32_t> indices;
+        std::string debugName;
+    };
+    struct UIOverlayTextureResource {
+        bool valid = false;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        std::vector<std::byte> rgba8Pixels;
+        std::string debugName;
+    };
+    std::vector<UIOverlayGeometryResource> uiOverlayGeometries;
+    std::vector<UIOverlayTextureResource> uiOverlayTextures;
+    std::vector<UIOverlayDrawCommand> uiOverlayCommands;
 
     // Forward PBR pipelines (shared layout: set0 global, set1 material, push
     // constant model matrix). The debug-line pipeline is built for Step 13.
@@ -2741,6 +2760,65 @@ MaterialHandle Renderer::CreateMaterial(const MaterialDesc& desc) {
         return {};
     }
     return MaterialHandle{r.CreateMaterialInternal(desc)};
+}
+
+UIOverlayGeometryHandle Renderer::CreateUIOverlayGeometry(const UIOverlayGeometryDesc& desc) {
+    Impl& r = *m_Impl;
+    Impl::UIOverlayGeometryResource resource;
+    resource.valid = !desc.vertices.empty() && !desc.indices.empty();
+    resource.vertices = desc.vertices;
+    resource.indices = desc.indices;
+    resource.debugName = desc.debugName;
+    r.uiOverlayGeometries.push_back(std::move(resource));
+    return UIOverlayGeometryHandle{static_cast<uint32_t>(r.uiOverlayGeometries.size())};
+}
+
+void Renderer::ReleaseUIOverlayGeometry(UIOverlayGeometryHandle handle) {
+    Impl& r = *m_Impl;
+    if (!handle.IsValid() || handle.id > r.uiOverlayGeometries.size()) {
+        return;
+    }
+    r.uiOverlayGeometries[handle.id - 1] = {};
+}
+
+UIOverlayTextureHandle Renderer::CreateUIOverlayTexture(const UIOverlayTextureDesc& desc) {
+    Impl& r = *m_Impl;
+    Impl::UIOverlayTextureResource resource;
+    resource.valid = desc.width > 0 && desc.height > 0;
+    resource.width = desc.width;
+    resource.height = desc.height;
+    resource.debugName = desc.debugName;
+    if (desc.rgba8Pixels != nullptr && desc.rgba8ByteCount > 0) {
+        const auto* begin = static_cast<const std::byte*>(desc.rgba8Pixels);
+        resource.rgba8Pixels.assign(begin, begin + desc.rgba8ByteCount);
+    }
+    r.uiOverlayTextures.push_back(std::move(resource));
+    return UIOverlayTextureHandle{static_cast<uint32_t>(r.uiOverlayTextures.size())};
+}
+
+void Renderer::ReleaseUIOverlayTexture(UIOverlayTextureHandle handle) {
+    Impl& r = *m_Impl;
+    if (!handle.IsValid() || handle.id > r.uiOverlayTextures.size()) {
+        return;
+    }
+    r.uiOverlayTextures[handle.id - 1] = {};
+}
+
+void Renderer::RenderUIOverlay(const std::vector<UIOverlayDrawCommand>& commands) {
+    Impl& r = *m_Impl;
+    r.uiOverlayCommands.clear();
+    r.uiOverlayCommands.reserve(commands.size());
+    for (const UIOverlayDrawCommand& command : commands) {
+        const bool geometryValid =
+            command.geometry.IsValid() && command.geometry.id <= r.uiOverlayGeometries.size() &&
+            r.uiOverlayGeometries[command.geometry.id - 1].valid;
+        const bool textureValid =
+            !command.texture.IsValid() ||
+            (command.texture.id <= r.uiOverlayTextures.size() && r.uiOverlayTextures[command.texture.id - 1].valid);
+        if (geometryValid && textureValid) {
+            r.uiOverlayCommands.push_back(command);
+        }
+    }
 }
 
 void Renderer::SetAssetManager(AssetManager* assetManager) {

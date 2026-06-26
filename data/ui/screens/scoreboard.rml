@@ -1,0 +1,14 @@
+<rml>
+<head>
+    <title>Scoreboard</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="scoreboard-screen" class="screen">
+        <div class="title">Scoreboard</div>
+        <div id="scoreboard-home">Home 0</div>
+        <div id="scoreboard-away">Away 0</div>
+        <button id="scoreboard-close">Close</button>
+    </div>
+</body>
+</rml>

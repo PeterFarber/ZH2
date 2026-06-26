@@ -1,0 +1,12 @@
+<rml>
+<head>
+    <title>Loading</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="loading-screen" class="screen">
+        <div class="title">Loading</div>
+        <div id="loading-status" class="status">Preparing the rink</div>
+    </div>
+</body>
+</rml>

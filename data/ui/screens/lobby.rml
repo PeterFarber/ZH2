@@ -1,0 +1,13 @@
+<rml>
+<head>
+    <title>Lobby</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="lobby-screen" class="screen">
+        <div class="title">Lobby</div>
+        <div id="lobby-status" class="status">Networking unavailable</div>
+        <button id="lobby-back">Back</button>
+    </div>
+</body>
+</rml>

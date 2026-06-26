@@ -1,0 +1,18 @@
+<rml>
+<head>
+    <title>ZH2</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="home-screen" class="screen">
+        <div class="title">ZH2</div>
+        <div class="stack">
+            <button id="play-offline">Play Offline</button>
+            <button id="open-lobby" disabled="disabled">Lobby</button>
+            <button id="open-settings">Settings</button>
+            <button id="quit-game">Quit</button>
+            <div id="network-status" class="status">Networking unavailable</div>
+        </div>
+    </div>
+</body>
+</rml>

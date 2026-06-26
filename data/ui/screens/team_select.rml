@@ -1,0 +1,15 @@
+<rml>
+<head>
+    <title>Team Select</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="team-select-screen" class="screen">
+        <div class="title">Team Select</div>
+        <button id="select-home-skater">Home Skater</button>
+        <button id="select-away-skater">Away Skater</button>
+        <button id="select-goalie">Goalie</button>
+        <button id="team-ready">Ready</button>
+    </div>
+</body>
+</rml>

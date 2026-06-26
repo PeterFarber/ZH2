@@ -1,0 +1,14 @@
+<rml>
+<head>
+    <title>Paused</title>
+    <link type="text/rcss" href="../themes/hockey.rcss"/>
+</head>
+<body>
+    <div id="pause-screen" class="screen">
+        <div class="title">Paused</div>
+        <button id="resume-game">Resume</button>
+        <button id="return-to-menu">Return to Menu</button>
+        <button id="pause-quit">Quit</button>
+    </div>
+</body>
+</rml>
