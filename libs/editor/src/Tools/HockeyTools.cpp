@@ -115,9 +115,18 @@ std::uint64_t ResolveAssetId(AssetManager* assets, const char* rawPath, AssetTyp
     return meta->id.Value();
 }
 
+std::uint64_t ResolveAssetIdWithFallback(AssetManager* assets, AssetType type, const char* preferredRawPath,
+                                         const char* fallbackRawPath) {
+    if (const std::uint64_t id = ResolveAssetId(assets, preferredRawPath, type); id != 0) {
+        return id;
+    }
+    return ResolveAssetId(assets, fallbackRawPath, type);
+}
+
 BasicMeshAssets ResolveBasicMeshAssets(AssetManager* assets) {
     BasicMeshAssets out;
-    out.cube = ResolveAssetId(assets, "data/raw/meshes/cube/cube_mesh.mesh.yaml", AssetType::Mesh);
+    out.cube = ResolveAssetIdWithFallback(
+        assets, AssetType::Mesh, "data/raw/meshes/cube/Cube.mesh.yaml", "data/raw/meshes/cube/cube_mesh.mesh.yaml");
     out.cylinder = ResolveAssetId(assets, "data/raw/meshes/cylinder/cylinder_mesh.mesh.yaml", AssetType::Mesh);
     out.plane = ResolveAssetId(assets, "data/raw/meshes/plane/plane_mesh.mesh.yaml", AssetType::Mesh);
     return out;
