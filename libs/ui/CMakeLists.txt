@@ -1,6 +1,7 @@
 find_package(RmlUi CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(Stb REQUIRED)
 
 add_library(hockey_ui STATIC)
 
@@ -22,6 +23,7 @@ target_sources(hockey_ui
 
 target_include_directories(hockey_ui
     PUBLIC include
+    PRIVATE ${Stb_INCLUDE_DIR}
 )
 
 target_link_libraries(hockey_ui

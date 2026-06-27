@@ -53,4 +53,19 @@ void RunClientFlowPanelContractTests() {
     HK_CHECK_MSG(Contains(panelSource, "Set As Client Startup"), "ClientFlowPanel can update client startup flow");
     HK_CHECK_MSG(Contains(panelSource, "Play Client"), "ClientFlowPanel can start Client Preview");
     HK_CHECK_MSG(Contains(panelSource, "ClientFlowSerializer"), "ClientFlowPanel uses ClientFlowSerializer");
+    HK_CHECK_MSG(Contains(panelSource, "Loading Screen") && Contains(panelSource, "Lobby Screen") &&
+                     Contains(panelSource, "Team Select") && Contains(panelSource, "Pause Menu") &&
+                     Contains(panelSource, "Settings Screen") && Contains(panelSource, "Scoreboard") &&
+                     Contains(panelSource, "End Match"),
+                 "ClientFlowPanel exposes all screen document paths");
+    HK_CHECK_MSG(Contains(panelSource, "Home Background") && Contains(panelSource, "Lobby Background") &&
+                     Contains(panelSource, "Settings Background") && Contains(panelSource, "End Match Background"),
+                 "ClientFlowPanel exposes optional background scene paths");
+    HK_CHECK_MSG(Contains(panelSource, "Use Current Editor Scene") &&
+                     Contains(panelSource, "useCurrentEditorSceneWhenPreviewing"),
+                 "ClientFlowPanel edits the current-editor-scene preview toggle");
+    HK_CHECK_MSG(Contains(panelSource, "ValidateClientFlow") && Contains(panelSource, "Missing file"),
+                 "ClientFlowPanel validates client-flow fields before save/play");
+    HK_CHECK_MSG(Contains(projectPanel, "Open Source") && Contains(projectPanel, "OpenSourceFile"),
+                 "Project panel can open RML/RCSS source files");
 }

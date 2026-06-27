@@ -1,6 +1,9 @@
 #include "Test.hpp"
 
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <system_error>
 
 #include <RmlUi/Core.h>
 
@@ -9,6 +12,20 @@
 #include "Hockey/UI/RmlUiFileInterface.hpp"
 #include "Hockey/UI/RmlUiRenderInterface.hpp"
 #include "Hockey/UI/RmlUiSystemInterface.hpp"
+
+namespace {
+
+void WriteTinyTga(const std::filesystem::path& path) {
+    std::filesystem::create_directories(path.parent_path());
+    unsigned char bytes[] = {
+        0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 32, 8,
+        255, 255, 255, 255, 255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255,
+    };
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out.write(reinterpret_cast<const char*>(bytes), sizeof(bytes));
+}
+
+} // namespace
 
 void RunRmlUiInterfaceTests() {
     HockeyTest::BeginSuite("RmlUiInterfaces");
@@ -39,6 +56,20 @@ void RunRmlUiInterfaceTests() {
     const Rml::TextureHandle texture =
         render.GenerateTexture(Rml::Span<const Rml::byte>(pixels, sizeof(pixels)), Rml::Vector2i{2, 2});
     HK_CHECK(texture == 0);
+
+    const std::filesystem::path texturePath = Hockey::Paths::Get().root / "data/ui/__ui_texture_test.tga";
+    WriteTinyTga(texturePath);
+    Rml::Vector2i loadedDimensions;
+    const Rml::TextureHandle loadedTexture = render.LoadTexture(loadedDimensions, "data/ui/__ui_texture_test.tga");
+    HK_CHECK_EQ(loadedDimensions.x, 2);
+    HK_CHECK_EQ(loadedDimensions.y, 2);
+    HK_CHECK(loadedTexture == 0);
+    Rml::Vector2i rejectedDimensions{9, 9};
+    HK_CHECK(render.LoadTexture(rejectedDimensions, "../outside.tga") == 0);
+    HK_CHECK_EQ(rejectedDimensions.x, 0);
+    HK_CHECK_EQ(rejectedDimensions.y, 0);
+    std::error_code removeError;
+    std::filesystem::remove(texturePath, removeError);
 
     render.EnableScissorRegion(true);
     render.SetScissorRegion(Rml::Rectanglei::FromPositionSize(Rml::Vector2i{1, 2}, Rml::Vector2i{33, 44}));

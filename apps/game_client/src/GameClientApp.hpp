@@ -35,6 +35,7 @@ private:
     bool LoadRuntimeUIScreen();
     void BindRuntimeUIActions();
     void QueueRuntimeUIAction(Hockey::UIAction action);
+    bool LoadOfflineGameplayScene(const std::string& scenePath);
 
     void StepSimulation(float deltaTime);
     Hockey::GameplayInputFrame BuildLocalInput(uint64_t simulationTick);

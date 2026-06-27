@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
             "  --max-frames <n>  Auto-quit after n rendered frames (testing)\n"
             "  --screenshot [p]  Save a screenshot from the first rendered frame\n"
             "  --screenshot-prefix <p>  Prefix for automated screenshot filenames\n"
+            "  --no-ui          Disable runtime RmlUi menus/HUD and use the direct scene smoke path\n"
             "  --vk-validation   Enable Vulkan validation layers\n"
             "  --physics-debug   Enable physics debug drawing\n"
             "  --help, -h        Print this message and exit\n");

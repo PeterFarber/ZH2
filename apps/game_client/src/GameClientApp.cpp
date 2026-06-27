@@ -33,6 +33,7 @@
 #include <cmath>
 #include <filesystem>
 #include <memory>
+#include <optional>
 
 #include <glm/geometric.hpp>
 #include <glm/mat4x4.hpp>
@@ -409,11 +410,72 @@ void GameClientApp::QueueRuntimeUIAction(Hockey::UIAction action) {
 
     m_ClientFlow.Dispatch(action);
     if (action == Hockey::UIAction::StartOffline) {
-        (void)m_ClientFlow.TakeRequestedGameplayScene();
+        const std::optional<std::string> requestedScene = m_ClientFlow.TakeRequestedGameplayScene();
+        if (requestedScene.has_value() && !requestedScene->empty() && !LoadOfflineGameplayScene(*requestedScene)) {
+            m_ClientFlow.Dispatch(Hockey::UIAction::ReturnToMenu);
+            m_UIReloadRequested = true;
+            return;
+        }
         m_ClientFlow.Dispatch(Hockey::UIAction::Resume);
     }
     m_UIReloadRequested = true;
 }
+
+bool GameClientApp::LoadOfflineGameplayScene(const std::string& scenePath) {
+    const std::filesystem::path resolved = Hockey::Paths::Resolve(scenePath);
+    if (!Hockey::FileSystem::Exists(resolved)) {
+        HK_CLIENT_INFO("Client flow offline scene '{}' not found", resolved.string());
+        return false;
+    }
+
+    m_GameplayWorld.Shutdown();
+    if (m_PhysicsReady) {
+        m_Scene.OnSimulationStop();
+        m_Scene.ClearSystems();
+        m_PhysicsSystem = nullptr;
+        m_PhysicsReady = false;
+    }
+
+    Hockey::SceneSerializer serializer(m_Scene);
+    if (!serializer.Deserialize(resolved)) {
+        HK_CLIENT_INFO("Client flow offline scene '{}' failed to load", resolved.string());
+        return false;
+    }
+    m_Scene.SetMode(Hockey::SceneMode::Play);
+    EnsureRenderables(m_Scene);
+
+    if (m_Config.GetBool("physics.enabled", true) && Hockey::Physics::IsInitialized()) {
+        Hockey::PhysicsSettings physicsSettings;
+        Hockey::LoadPhysicsSettings(m_Config, physicsSettings);
+        m_PhysicsDebug = physicsSettings.enableDebugDraw || GetCommandLine().Has("--physics-debug");
+        if (!m_LocalGameplayEnabled && physicsSettings.fixedDeltaSeconds > 0.0f) {
+            m_SimulationTimestep.SetTickRate(1.0 / static_cast<double>(physicsSettings.fixedDeltaSeconds));
+        }
+
+        auto physicsSystem = std::make_unique<Hockey::PhysicsSystem>(physicsSettings);
+        m_PhysicsSystem = physicsSystem.get();
+        m_Scene.AddSystem(std::move(physicsSystem));
+        m_Scene.OnSimulationStart();
+        m_PhysicsReady = true;
+    }
+
+    m_LocalGameplayEnabled = m_GameplaySettings.enabled && m_Config.GetBool("gameplay.local_play", true);
+    if (m_LocalGameplayEnabled) {
+        Hockey::PhysicsWorld* physicsWorld = m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr;
+        const Hockey::Status status =
+            m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings, m_GameplayTuning);
+        if (!status) {
+            m_LocalGameplayEnabled = false;
+            HK_CLIENT_INFO("Offline gameplay disabled for '{}': {}", resolved.string(), status.error);
+        }
+    }
+
+    m_SimulationTimestep.Reset();
+    m_LocalInputSequence = 0;
+    HK_CLIENT_INFO("Client flow loaded offline scene '{}'", resolved.string());
+    return true;
+}
+
 void GameClientApp::OnShutdown() {
     HK_CLIENT_INFO("Shutdown");
     if (m_UIContext.IsInitialized()) {
@@ -448,7 +510,9 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
-    if (m_UIEnabled && m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud) {
+    if (m_UIEnabled &&
+        (m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud || m_UIInput.WantsMouseCapture() ||
+         m_UIInput.WantsKeyboardCapture())) {
         return input;
     }
     const Hockey::Entity localPlayer = FindLocalGameplayPlayer(m_Scene, input.playerIndex);

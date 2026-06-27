@@ -334,4 +334,21 @@ void ProjectBrowser::Reveal(const std::filesystem::path& path) {
     }
 }
 
+void ProjectBrowser::OpenSourceFile(const std::filesystem::path& path) {
+    if (!std::filesystem::is_regular_file(path)) {
+        HK_EDITOR_WARN("Could not open source file {}", path.string());
+        return;
+    }
+#if defined(_WIN32)
+    const std::string command = "start \"\" \"" + path.string() + "\"";
+#elif defined(__APPLE__)
+    const std::string command = "open \"" + path.string() + "\"";
+#else
+    const std::string command = "xdg-open \"" + path.string() + "\" >/dev/null 2>&1 &";
+#endif
+    if (std::system(command.c_str()) != 0) {
+        HK_EDITOR_WARN("Could not open source file {}", path.string());
+    }
+}
+
 } // namespace Hockey

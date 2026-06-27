@@ -90,6 +90,8 @@ public:
 
     // Best-effort "show in file manager" for the containing directory.
     static void Reveal(const std::filesystem::path& path);
+    // Best-effort open with the operating system's default source-file handler.
+    static void OpenSourceFile(const std::filesystem::path& path);
 
 private:
     std::vector<Root> m_Roots;

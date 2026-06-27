@@ -3,10 +3,22 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Hockey/Core/Paths.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
+
+#if defined(_MSC_VER)
+#pragma warning(push, 0)
+#endif
+#define STB_IMAGE_STATIC
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 namespace Hockey {
 namespace {
@@ -21,6 +33,42 @@ uint32_t ToTextureHandleId(Rml::TextureHandle handle) {
 
 float ToFloatColor(Rml::byte value) {
     return static_cast<float>(value) / 255.0f;
+}
+
+bool HasParentTraversal(const std::filesystem::path& path) {
+    for (const auto& part : path) {
+        if (part == "..") {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::filesystem::path ResolveUiTexturePath(const Rml::String& source) {
+    std::filesystem::path requested(source);
+    if (requested.empty() || requested.is_absolute() || requested.has_root_name() || requested.has_root_directory() ||
+        HasParentTraversal(requested)) {
+        return {};
+    }
+
+    requested = requested.lexically_normal();
+    std::filesystem::path relativeToRoot;
+    auto it = requested.begin();
+    if (it != requested.end() && *it == "data") {
+        auto next = it;
+        ++next;
+        if (next == requested.end() || *next != "ui") {
+            return {};
+        }
+        relativeToRoot = requested;
+    } else {
+        relativeToRoot = std::filesystem::path("data") / "ui" / requested;
+    }
+
+    if (HasParentTraversal(relativeToRoot)) {
+        return {};
+    }
+    return (Paths::Get().root / relativeToRoot).lexically_normal();
 }
 
 } // namespace
@@ -87,9 +135,39 @@ void RmlUiRenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle geometry)
 }
 
 Rml::TextureHandle RmlUiRenderInterface::LoadTexture(Rml::Vector2i& textureDimensions, const Rml::String& source) {
-    (void)source;
     textureDimensions = {};
-    return {};
+    const std::filesystem::path path = ResolveUiTexturePath(source);
+    if (path.empty()) {
+        return {};
+    }
+
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    stbi_uc* pixels = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+    if (pixels == nullptr || width <= 0 || height <= 0) {
+        if (pixels != nullptr) {
+            stbi_image_free(pixels);
+        }
+        return {};
+    }
+
+    textureDimensions = Rml::Vector2i{width, height};
+    if (m_Renderer == nullptr) {
+        stbi_image_free(pixels);
+        return {};
+    }
+
+    UIOverlayTextureDesc desc;
+    desc.width = static_cast<uint32_t>(width);
+    desc.height = static_cast<uint32_t>(height);
+    desc.rgba8Pixels = pixels;
+    desc.rgba8ByteCount = static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u;
+    desc.debugName = "RmlUiTexture:" + path.filename().string();
+
+    const UIOverlayTextureHandle handle = m_Renderer->CreateUIOverlayTexture(desc);
+    stbi_image_free(pixels);
+    return handle.IsValid() ? static_cast<Rml::TextureHandle>(handle.id) : Rml::TextureHandle{};
 }
 
 Rml::TextureHandle RmlUiRenderInterface::GenerateTexture(Rml::Span<const Rml::byte> source,

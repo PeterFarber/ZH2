@@ -13,6 +13,7 @@ void RunRmlUiInterfaceTests();
 void RunRmlUiContextTests();
 void RunUIInputMapperTests();
 void RunHudViewModelTests();
+void RunGameClientUiContractTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -27,6 +28,7 @@ int main(int argc, char** argv) {
     RunRmlUiContextTests();
     RunUIInputMapperTests();
     RunHudViewModelTests();
+    RunGameClientUiContractTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     std::fprintf(stderr, "\n==== UI tests: %d passed, %d failed ====\n", stats.passed, stats.failed);

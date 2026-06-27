@@ -68,7 +68,7 @@ Source material:
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 - [x] Client Preview panel exists for hosted runtime UI/client-flow playback.
-- [x] Client Flow panel exists for first-pass runtime flow asset authoring.
+- [x] Client Flow panel exists for first-pass runtime flow asset authoring with path validation.
 
 ## Finished - Editing Workflows
 
@@ -124,7 +124,7 @@ Source material:
 - [x] Gameplay preview runs fixed gameplay ticks.
 - [x] Gameplay preview accepts local preview input.
 - [x] Gameplay preview restores authored scene on stop/reset.
-- [x] Project browser exposes `data/ui`, classifies RML/RCSS/client-flow assets, and opens client-flow assets into the authoring panel.
+- [x] Project browser exposes `data/ui`, classifies RML/RCSS/client-flow assets, opens RML/RCSS files through the OS default handler, and opens client-flow assets into the authoring panel.
 - [x] Toolbar separates direct scene simulation from Play Client runtime preview.
 
 ## Finished - Tests And Verification
@@ -141,7 +141,7 @@ Source material:
 - [x] Project browser tests exist.
 - [x] Hockey tool tests exist.
 - [x] Gameplay preview/editor logic tests exist.
-- [x] Client Preview and Client Flow contract tests exist.
+- [x] Client Preview and Client Flow contract tests exist, including source-open and path-validation contracts.
 - [x] Non-UI editor logic is covered better than panel rendering.
 
 ## Started / Partial

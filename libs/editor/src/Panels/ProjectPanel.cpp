@@ -796,8 +796,13 @@ void ProjectPanel::DrawRawEntryContextActions(EditorContext& context, const Proj
     if (entry.type.type == EditorFileType::ClientFlow && ImGui::MenuItem("Open Client Flow")) {
         OpenClientFlowFile(context, entry.path);
     }
+    if ((entry.type.type == EditorFileType::UIScreen || entry.type.type == EditorFileType::UITheme) &&
+        ImGui::MenuItem("Open Source")) {
+        ProjectBrowser::OpenSourceFile(entry.path);
+    }
     if (entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab ||
-        entry.type.type == EditorFileType::ClientFlow) {
+        entry.type.type == EditorFileType::ClientFlow || entry.type.type == EditorFileType::UIScreen ||
+        entry.type.type == EditorFileType::UITheme) {
         ImGui::Separator();
     }
     if (context.assetManager != nullptr && meta == nullptr && IsCookableRawType(entry.type.type) &&
@@ -910,6 +915,8 @@ void ProjectPanel::HandleRawActivation(EditorContext& context, const ProjectEntr
         InstantiatePrefabFile(context, entry.path);
     } else if (entry.type.type == EditorFileType::ClientFlow) {
         OpenClientFlowFile(context, entry.path);
+    } else if (entry.type.type == EditorFileType::UIScreen || entry.type.type == EditorFileType::UITheme) {
+        ProjectBrowser::OpenSourceFile(entry.path);
     }
 }
 
