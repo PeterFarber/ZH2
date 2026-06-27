@@ -1,0 +1,17 @@
+Asset:
+  ID: 11008184057249989742
+  Type: Prefab
+  Name: Away_Skater_Prefab.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/11008184057249989742.prefab.yaml
+  RawFileTimestamp: 134270562244429904
+  RawFileHash: 16554867779109160945
+  ImportedTimestamp: 1782582677
+  CookedTimestamp: 1782501705
+  Dependencies: [6674370949423982319, 12456872314640691628]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

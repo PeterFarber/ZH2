@@ -1,0 +1,101 @@
+Prefab:
+  Name: Home_Goalie_Prefab
+  Version: 1
+  AssetId: 17478380100763504281
+Root:
+  Entity: 14573699559702890569
+Entities:
+  - Entity: 14573699559702890569
+    NameComponent:
+      Name: Home_Goalie_Prefab
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-4, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [2.75, 2.75, 2.75]
+    ChildrenComponent:
+      Children:
+        []
+    PrefabComponent:
+      PrefabAssetId: 8470296154042606455
+      SourceEntityId: 1419327337283850568
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
+    TeamComponent:
+      Team: Home
+    PlayerRoleComponent:
+      Role: Goalie
+    StickAttachmentComponent:
+      StickPrefabPath: data/raw/prefabs/Stick_Prefab.prefab.yaml
+    MeshRendererComponent:
+      MeshAsset: 15362004082546635741
+      MaterialAsset: 10097402189565703214
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Dynamic
+      CollisionDetection: Continuous
+      Mass: 80
+      UseGravity: false
+      AllowSleeping: false
+      LockTranslationX: false
+      LockTranslationY: true
+      LockTranslationZ: false
+      LockRotationX: true
+      LockRotationY: false
+      LockRotationZ: true
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Goalie
+      Material: GoalieBody
+    CylinderColliderComponent:
+      Radius: 1.5
+      HalfHeight: 1
+      Offset: [0, 1, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PlayerComponent:
+      PlayerIndex: 3
+      Slot: HomeGoalie
+      Team: Home
+      Role: Goalie
+      ControlledByLocalInput: false
+      ControlledByAI: true
+      ActiveInMatch: true
+    GoalieComponent:
+      MaxSpeed: 6.5
+      Acceleration: 28
+      SaveReachRadius: 1.8
+      LockToCrease: true
+    PlayerRuntimeComponent:
+      Velocity: [0, 0, 0]
+      FacingDirection: [0, 0, 1]
+      MoveTarget: [0, 0, 0]
+      BoostCooldown: 0
+      GoalieBoostCharges: 2
+      GoalieBoostRechargeTimer: 0
+      ShieldTimer: 0
+      ShieldCooldown: 0
+      LastBrakePressedTime: -1000
+      StealCooldown: 0
+      HasMoveTarget: false
+      ShieldActive: false
+      InputEnabled: true
+      MovementEnabled: true
+    StickComponent:
+      OwnerPlayer: 12202628826625671414
+      Reach: 1.5
+      Width: 0.25
+      LocalOffset: [0, 0, 1]
+      CanControlPuck: true
+      CanShoot: true
+    ShotComponent:
+      Charge: 0
+      Charging: false

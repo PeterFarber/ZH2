@@ -1,0 +1,17 @@
+Asset:
+  ID: 13754134128618196032
+  Type: Prefab
+  Name: Home_Goalie_Prefab.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/13754134128618196032.prefab.yaml
+  RawFileTimestamp: 134270562244429904
+  RawFileHash: 2178250406003678819
+  ImportedTimestamp: 1782582680
+  CookedTimestamp: 1782501705
+  Dependencies: [15362004082546635741, 10097402189565703214]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

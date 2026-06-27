@@ -1,0 +1,102 @@
+Prefab:
+  Name: Away_Skater_Prefab
+  Version: 1
+  AssetId: 15392473300653576747
+Root:
+  Entity: 9614544951849594045
+Entities:
+  - Entity: 9614544951849594045
+    NameComponent:
+      Name: Away_Skater_Prefab
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-1.25, 0, -29.086634]
+      Rotation: [0, 0, 0]
+      Scale: [2.75, 2.75, 2.75]
+    ChildrenComponent:
+      Children:
+        []
+    PrefabComponent:
+      PrefabAssetId: 5766740224810003745
+      SourceEntityId: 640698472715006676
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
+    TeamComponent:
+      Team: Away
+    PlayerRoleComponent:
+      Role: Skater
+    StickAttachmentComponent:
+      StickPrefabPath: data/raw/prefabs/Stick_Prefab.prefab.yaml
+    MeshRendererComponent:
+      MeshAsset: 6674370949423982319
+      MaterialAsset: 12456872314640691628
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Dynamic
+      CollisionDetection: Continuous
+      Mass: 80
+      UseGravity: false
+      AllowSleeping: false
+      LockTranslationX: false
+      LockTranslationY: true
+      LockTranslationZ: false
+      LockRotationX: true
+      LockRotationY: false
+      LockRotationZ: true
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Player
+      Material: PlayerBody
+    CylinderColliderComponent:
+      Radius: 0.5
+      HalfHeight: 0.751
+      Offset: [0, 0.75, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PlayerComponent:
+      PlayerIndex: 0
+      Slot: AwaySkater0
+      Team: Away
+      Role: Skater
+      ControlledByLocalInput: true
+      ControlledByAI: false
+      ActiveInMatch: true
+    SkaterComponent:
+      MaxSpeed: 9
+      Acceleration: 32
+      Deceleration: 20
+      TurnSpeedDegrees: 720
+      HasPuck: false
+    PlayerRuntimeComponent:
+      Velocity: [0, 0, 0]
+      FacingDirection: [0, 0, 1]
+      MoveTarget: [0, 0, 0]
+      BoostCooldown: 0
+      GoalieBoostCharges: 2
+      GoalieBoostRechargeTimer: 0
+      ShieldTimer: 0
+      ShieldCooldown: 0
+      LastBrakePressedTime: -1000
+      StealCooldown: 0
+      HasMoveTarget: false
+      ShieldActive: false
+      InputEnabled: true
+      MovementEnabled: true
+    StickComponent:
+      OwnerPlayer: 379836843483610542
+      Reach: 1.5
+      Width: 0.25
+      LocalOffset: [0, 0, 1]
+      CanControlPuck: true
+      CanShoot: true
+    ShotComponent:
+      Charge: 0
+      Charging: false
