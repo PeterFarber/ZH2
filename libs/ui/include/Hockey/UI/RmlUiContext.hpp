@@ -48,11 +48,15 @@ public:
     void SetDimensions(uint32_t width, uint32_t height);
     bool LoadDocument(const std::string& documentPath);
     bool BindClickAction(const std::string& elementId, std::function<void()> action);
+    bool SetElementText(const std::string& elementId, const std::string& text);
     void UnloadAllDocuments();
     int LoadedDocumentCount() const;
 
     void Update();
     void Render();
+    bool ProcessMouseMove(int x, int y);
+    bool ProcessMouseButton(int button, bool pressed);
+    bool ProcessMouseWheel(float x, float y);
 
     Rml::Context* RawContext() const;
     RmlUiRenderInterface* RenderInterface();

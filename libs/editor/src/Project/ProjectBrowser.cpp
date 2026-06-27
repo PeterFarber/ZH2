@@ -92,6 +92,7 @@ void SortCookedEntries(std::vector<CookedProjectEntry>& entries) {
 ProjectBrowser::ProjectBrowser() {
     const EnginePaths& paths = Paths::Get();
     m_Roots.push_back({paths.rawAssets, "Raw Assets (data/raw)"});
+    m_Roots.push_back({paths.data / "ui", "Runtime UI (data/ui)"});
     m_Roots.push_back({paths.data / "editor", "Editor (data/editor)"});
     m_Roots.push_back({paths.data / "shaders", "Shaders (data/shaders)"});
 }

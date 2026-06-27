@@ -107,6 +107,9 @@ public:
     UIOverlayTextureHandle CreateUIOverlayTexture(const UIOverlayTextureDesc& desc);
     void ReleaseUIOverlayTexture(UIOverlayTextureHandle handle);
     void RenderUIOverlay(const std::vector<UIOverlayDrawCommand>& commands);
+    void RenderUIOverlayToTarget(TextureHandle target,
+                                 const std::vector<UIOverlayDrawCommand>& commands,
+                                 bool clearTarget = false);
 
     // ----- Content pipeline integration -----
     // Supplies the asset manager used to resolve MeshRendererComponent asset

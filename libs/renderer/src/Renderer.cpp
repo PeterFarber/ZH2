@@ -3085,6 +3085,60 @@ void Renderer::RenderUIOverlay(const std::vector<UIOverlayDrawCommand>& commands
     }
 }
 
+void Renderer::RenderUIOverlayToTarget(TextureHandle target,
+                                       const std::vector<UIOverlayDrawCommand>& commands,
+                                       bool clearTarget) {
+    Impl& r = *m_Impl;
+    if (!r.frameActive) {
+        return;
+    }
+    Impl::OffscreenTarget* t = r.ResolveRenderTarget(target);
+    if (t == nullptr || t->width == 0 || t->height == 0) {
+        return;
+    }
+
+    std::vector<UIOverlayDrawCommand> previousCommands = std::move(r.uiOverlayCommands);
+    r.uiOverlayCommands.clear();
+    r.uiOverlayCommands.reserve(commands.size());
+    for (const UIOverlayDrawCommand& command : commands) {
+        const bool geometryValid =
+            command.geometry.IsValid() && command.geometry.id <= r.uiOverlayGeometries.size() &&
+            r.uiOverlayGeometries[command.geometry.id - 1].valid;
+        const bool textureValid =
+            !command.texture.IsValid() ||
+            (command.texture.id <= r.uiOverlayTextures.size() && r.uiOverlayTextures[command.texture.id - 1].valid);
+        if (geometryValid && textureValid) {
+            r.uiOverlayCommands.push_back(command);
+        }
+    }
+
+    VulkanTexture& color = t->color[r.frameIndex];
+    if (!color.IsValid()) {
+        r.uiOverlayCommands = std::move(previousCommands);
+        return;
+    }
+
+    VkCommandBuffer cmd = r.frames.Frame(r.frameIndex).commandBuffer;
+    TransitionImage(cmd, color.image, color.currentLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+    color.currentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    if (clearTarget) {
+        BeginRenderingScope(cmd, {t->width, t->height}, color.view, VK_ATTACHMENT_LOAD_OP_CLEAR, r.clearColor,
+                            VK_NULL_HANDLE, false);
+        vkCmdEndRendering(cmd);
+    }
+
+    if (!r.uiOverlayCommands.empty()) {
+        r.RecordUIOverlay(cmd, color.view, {t->width, t->height});
+    }
+
+    TransitionImage(cmd, color.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT);
+    color.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    r.uiOverlayCommands = std::move(previousCommands);
+}
+
 void Renderer::SetAssetManager(AssetManager* assetManager) {
     m_Impl->assetManager = assetManager;
 }

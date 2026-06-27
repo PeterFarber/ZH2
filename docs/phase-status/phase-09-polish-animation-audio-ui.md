@@ -1,6 +1,6 @@
 # Phase 9 - Polish, Animation, Audio, UI
 
-Status: Started for runtime RmlUi UI foundation. Animation, audio, editor Client Preview, full HUD data binding, and packaging remain incomplete.
+Status: Started for runtime RmlUi UI foundation. Animation, audio, full UI polish, and packaging remain incomplete.
 
 Source material:
 
@@ -38,7 +38,7 @@ Source material:
 - [x] Create `libs/ui/`.
 - [ ] Add CMake targets for animation and audio.
 - [x] Add CMake target for UI.
-- [ ] Add app link updates for editor UI preview where appropriate.
+- [x] Add app link updates for editor UI preview where appropriate.
 - [x] Link the game client to `hockey_ui`.
 - [ ] Add package targets/scripts.
 - [ ] Add tests for animation/audio/polish systems.
@@ -89,9 +89,9 @@ Source material:
 
 - [x] Add UI settings.
 - [x] Add UI core primitives.
-- [ ] Add UI layout/widgets.
+- [ ] Add UI layout/widget abstraction beyond RmlUi documents and direct element binding.
 - [x] Add Vulkan-backed swapchain UI rendering path for runtime RmlUi overlay geometry/textures.
-- [ ] Add offscreen/editor Client Preview UI rendering path.
+- [x] Add offscreen/editor Client Preview UI rendering path.
 - [x] Add main menu RML document.
 - [x] Add loading screen RML document.
 - [x] Add lobby screen RML document with networking-unavailable state.
@@ -124,7 +124,7 @@ Source material:
 
 - [x] Add first-pass offline play flow through client-flow data and game-client UI actions.
 - [ ] Add online play flow after Phase 8.
-- [ ] Connect gameplay state to HUD.
+- [x] Connect first-pass gameplay snapshot state to HUD RmlUi elements.
 - [ ] Connect lobby/team/role data to UI after Phase 8.
 - [ ] Connect network stats to overlay after Phase 8.
 - [ ] Connect gameplay events to animation triggers.
@@ -160,12 +160,12 @@ Source material:
 
 - [ ] No animation library/system exists yet.
 - [ ] No audio library/system exists yet.
-- [ ] Runtime RmlUi foundation exists through `hockey_ui`, including guarded file/system/render interfaces, context lifetime, input mapping, click binding, UI settings, and client-flow YAML.
+- [ ] Runtime RmlUi foundation exists through `hockey_ui`, including guarded file/system/render interfaces, context lifetime, input mapping, click binding, UI settings, and client-flow YAML; richer widget abstractions remain future work.
 - [ ] First-pass RML/RCSS assets exist for home, loading, lobby, team select, match HUD, pause, settings, scoreboard, and end-match screens.
-- [ ] Game client can initialize RmlUi from `[ui]`, boot the startup flow home screen, route basic button actions, draw RmlUi-generated overlay commands through the renderer swapchain UI pass, and bypass UI with `--no-ui`.
-- [ ] Renderer UI overlay work uploads RmlUi geometry/textures to GPU resources and draws onto the swapchain with `ui.vert`/`ui.frag`, premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering; offscreen/editor Client Preview UI target rendering and broader visual validation still need implementation.
-- [ ] Match HUD RML exists, but gameplay snapshot data is not yet bound into live RmlUi elements.
-- [ ] Editor Client Preview and client-flow authoring panels are not implemented yet.
+- [ ] Game client can initialize RmlUi from `[ui]`, boot the startup flow home screen, route basic button actions, draw RmlUi-generated overlay commands through the renderer swapchain UI pass, bind live first-pass HUD text, and bypass UI with `--no-ui`.
+- [ ] Renderer UI overlay work uploads RmlUi geometry/textures to GPU resources and draws onto the swapchain or editor offscreen Client Preview target with `ui.vert`/`ui.frag`, premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering; broader visual validation still needs work.
+- [ ] Match HUD RML exists and first-pass gameplay snapshot data is bound into live RmlUi elements; final presentation/notifications/network data remain incomplete.
+- [ ] Editor Client Preview and client-flow authoring panels exist; manual UX polish and broader interaction validation remain.
 - [ ] No configurable bindings, controller presets, vibration, or input settings UI exists yet.
 - [ ] No production profiling, packaging, or long-running release QA harness exists yet.
 - [ ] Visual polish systems such as ice reflections, skate spray, puck trails, crowd work, and goal presentation are not implemented.

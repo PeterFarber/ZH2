@@ -16,6 +16,7 @@ target_sources(hockey_editor
     PRIVATE
         src/EditorApp.cpp
         src/EditorCamera.cpp
+        src/EditorClientPreview.cpp
         src/EditorGameplayPreview.cpp
         src/EditorPhysicsPreview.cpp
         src/EditorSettings.cpp
@@ -57,6 +58,8 @@ target_sources(hockey_editor
         src/Panels/InspectorPanel.cpp
         src/Panels/SceneViewportPanel.cpp
         src/Panels/GameViewportPanel.cpp
+        src/Panels/ClientPreviewPanel.cpp
+        src/Panels/ClientFlowPanel.cpp
         src/Panels/GameplayTuningPanel.cpp
         src/Panels/ProjectPanel.cpp
         src/Panels/ConsolePanel.cpp
@@ -99,6 +102,7 @@ target_link_libraries(hockey_editor
         hockey_core
         hockey_ecs
         hockey_renderer
+        hockey_ui
         hockey_assets
         hockey_physics
         hockey_gameplay

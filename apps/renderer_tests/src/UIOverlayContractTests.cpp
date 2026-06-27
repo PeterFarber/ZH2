@@ -56,6 +56,8 @@ void RunUIOverlayContractTests() {
     HK_CHECK_MSG(Contains(rendererHeader, "CreateUIOverlayTexture"), "Renderer exposes UI texture creation");
     HK_CHECK_MSG(Contains(rendererHeader, "ReleaseUIOverlayTexture"), "Renderer exposes UI texture release");
     HK_CHECK_MSG(Contains(rendererHeader, "RenderUIOverlay"), "Renderer exposes ordered UI overlay rendering");
+    HK_CHECK_MSG(Contains(rendererHeader, "RenderUIOverlayToTarget"),
+                 "Renderer exposes offscreen UI overlay rendering for editor Client Preview");
 
     const std::string rendererSource = ReadProjectFile("libs/renderer/src/Renderer.cpp");
     HK_CHECK_MSG(Contains(rendererSource, "BuildUIOverlayPipeline"), "Renderer builds a UI overlay pipeline");
@@ -65,6 +67,9 @@ void RunUIOverlayContractTests() {
     HK_CHECK_MSG(Contains(rendererSource, "VK_ATTACHMENT_LOAD_OP_LOAD"), "UI overlay loads existing scene output");
     HK_CHECK_MSG(Contains(rendererSource, "ClampUIOverlayScissor"), "UI overlay clamps top-left scissor rectangles");
     HK_CHECK_MSG(Contains(rendererSource, "uiOverlayCommands.clear()"), "UI overlay commands clear after each frame");
+    HK_CHECK_MSG(Contains(rendererSource, "RenderUIOverlayToTarget"), "Renderer implements offscreen UI overlay path");
+    HK_CHECK_MSG(Contains(rendererSource, "ResolveRenderTarget(target)"),
+                 "Offscreen UI overlay validates renderer-owned target handles");
 
     const std::string pipelineSource = ReadProjectFile("libs/renderer/src/Vulkan/VulkanPipeline.cpp");
     HK_CHECK_MSG(Contains(pipelineSource, "BlendMode::PremultipliedAlpha"),

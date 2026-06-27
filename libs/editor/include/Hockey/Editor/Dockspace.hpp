@@ -14,6 +14,7 @@ inline constexpr const char* kHierarchy = "Hierarchy";
 inline constexpr const char* kInspector = "Inspector";
 inline constexpr const char* kSceneViewport = "Scene";
 inline constexpr const char* kGameViewport = "Game";
+inline constexpr const char* kClientPreview = "Client Preview";
 inline constexpr const char* kProject = "Project";
 inline constexpr const char* kConsole = "Console";
 inline constexpr const char* kProperties = "Properties";
@@ -22,6 +23,7 @@ inline constexpr const char* kSceneValidation = "Scene Validation";
 inline constexpr const char* kPrefab = "Prefab";
 inline constexpr const char* kProjectSettings = "Project Settings";
 inline constexpr const char* kGameplayTuning = "Gameplay Tuning";
+inline constexpr const char* kClientFlow = "Client Flow";
 } // namespace EditorPanelNames
 
 // Owns the fullscreen host window and the central dock node that every panel

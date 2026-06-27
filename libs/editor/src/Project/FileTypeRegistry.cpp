@@ -31,8 +31,17 @@ FileTypeInfo FileTypeRegistry::Classify(const std::filesystem::path& path) {
     if (EndsWith(name, ".material.yaml")) {
         return {EditorFileType::Material, "Material", true};
     }
+    if (EndsWith(name, ".clientflow.yaml")) {
+        return {EditorFileType::ClientFlow, "Client Flow", true};
+    }
 
     const std::string ext = ToLower(path.extension().string());
+    if (ext == ".rml") {
+        return {EditorFileType::UIScreen, "UI Screen", true};
+    }
+    if (ext == ".rcss") {
+        return {EditorFileType::UITheme, "UI Theme", true};
+    }
     if (ext == ".toml") {
         return {EditorFileType::Toml, "Config", true};
     }

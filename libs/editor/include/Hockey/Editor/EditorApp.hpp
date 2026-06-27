@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 
 #include "Hockey/Core/Result.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
@@ -25,7 +26,7 @@ const char* EditorVersionString();
 // them in through EditorContextCreateInfo.
 class EditorApp {
 public:
-    EditorApp() = default;
+    EditorApp();
     ~EditorApp();
 
     EditorApp(const EditorApp&) = delete;
@@ -76,6 +77,8 @@ public:
     // Toggles the in-editor gameplay playtest. Play mode is live/editable and
     // restored from an authoring snapshot on stop.
     void TogglePlaytestMode();
+    // Toggles the real runtime client-flow preview hosted inside the editor.
+    void ToggleClientPreviewMode();
 
     // ----- Undo / clipboard actions (Edit menu + keyboard shortcuts) -----
     void Undo();
@@ -122,6 +125,8 @@ private:
     bool DoSaveSceneAs(); // native dialog + serialize
     void DoOpenScene(const std::filesystem::path& path);
     void StopPlaytestMode();
+    void StartClientPreviewMode();
+    void StopClientPreviewMode();
     void SyncPreviewState();
     // Copies 'source' into data/raw/<type> and runs import + cook on it.
     void DoImportAsset(const std::filesystem::path& source);
@@ -135,6 +140,7 @@ private:
     SceneWorkflow m_SceneWorkflow;
     EditorPhysicsPreview m_PhysicsPreview;
     EditorGameplayPreview m_GameplayPreview;
+    std::unique_ptr<EditorClientPreview> m_ClientPreview;
 
     PendingAction m_PendingAction = PendingAction::None;
     std::filesystem::path m_PendingScenePath;

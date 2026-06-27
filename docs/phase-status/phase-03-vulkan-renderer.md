@@ -80,6 +80,7 @@ Source material:
 - [x] Swapchain and render-target PNG readback exists.
 - [x] `RenderGraph` abstraction and tests exist.
 - [x] Runtime UI overlay geometry/textures can be uploaded to GPU resources and drawn over the swapchain with premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering.
+- [x] Runtime UI overlay commands can render into offscreen render targets for the editor Client Preview panel.
 
 ## Finished - Tests And Verification
 
@@ -103,7 +104,7 @@ Source material:
 - [ ] Decal components serialize, but decal projection rendering is not implemented.
 - [ ] Some renderer settings are persisted only and are not live-applied.
 - [ ] Hockey-specific polish visuals such as ice reflections, skate spray, and puck trails are material/settings names only.
-- [ ] Runtime UI overlay supports the game-client swapchain path, but offscreen editor Client Preview UI target rendering and broader display/GPU validation are not finished.
+- [ ] Runtime UI overlay supports game-client swapchain and editor offscreen target paths, but broader display/GPU validation is still limited.
 - [ ] `gpuFrameMs` is not populated.
 - [ ] Tracy or equivalent profiling integration is not implemented.
 - [ ] Pixel-correct rendering and minimize behavior still need broader display/GPU verification.
@@ -114,7 +115,7 @@ Source material:
 - [ ] Add TAA motion vectors/history buffers if TAA is requested.
 - [ ] Add MSAA render-pass/pipeline changes if MSAA is requested.
 - [ ] Implement reflection probes and decals when renderer polish resumes.
-- [ ] Add offscreen editor Client Preview UI target rendering and broader display/GPU validation when runtime UI/editor preview work resumes.
+- [ ] Add broader runtime UI display/GPU validation when renderer/UI preview work resumes.
 - [ ] Implement live sampler/descriptor recreation for relevant setting changes.
 - [ ] Add GPU timestamp queries and profiling integration.
 - [ ] Add Phase 9 visual polish systems for ice, skates, puck trails, crowd, and presentation.

@@ -31,6 +31,7 @@ class ImGuiRendererBridge;
 class AssetManager;
 class EditorPhysicsPreview;
 class EditorGameplayPreview;
+class EditorClientPreview;
 
 // Parameters used to wire the editor to the host application's subsystems.
 struct EditorContextCreateInfo {
@@ -76,6 +77,14 @@ struct GameplayPreviewState {
     bool gameInputActive = false;
 };
 
+struct ClientPreviewState {
+    bool previewEnabled = false;
+    bool previewRunning = false;
+    bool gameInputActive = false;
+    std::uint32_t viewportWidth = 0;
+    std::uint32_t viewportHeight = 0;
+};
+
 // Central editor state shared by every panel, tool, command and gizmo. The
 // context owns editor-side state only; the Scene still owns scene data and the
 // Renderer still owns GPU resources. Later Phase 4 steps add the EditorCamera
@@ -116,11 +125,13 @@ public:
     // Physics collider/trigger overlay + internal playtest backend state.
     PhysicsViewState physicsView;
     GameplayPreviewState gameplayView;
+    ClientPreviewState clientPreview;
 
     // Owned by EditorApp; null in headless tests without physics. Gameplay
     // playtest drives it and EditorApp ticks it each frame.
     EditorPhysicsPreview* physicsPreview = nullptr;
     EditorGameplayPreview* gameplayPreview = nullptr;
+    EditorClientPreview* clientPreviewHost = nullptr;
 
     // Set by panels (e.g. double-clicking a scene in the Project panel) to ask
     // the host to open a scene file. EditorApp drains this each frame, running
@@ -130,6 +141,8 @@ public:
     // Set by commands that need a docked panel to become active on the next UI
     // pass. PanelManager consumes and clears this after applying focus.
     std::string requestedPanelFocus;
+    std::filesystem::path clientFlowAssetPath;
+    bool requestClientPreviewStart = false;
 
     bool captureSceneViewport = false;
     bool captureGameViewport = false;

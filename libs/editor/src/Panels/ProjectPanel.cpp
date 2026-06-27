@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -28,6 +29,7 @@
 #include "Hockey/Editor/ImGui/ImGuiRendererBridge.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 #include "Hockey/Renderer/Renderer.hpp"
+#include "Hockey/UI/ClientFlowSerializer.hpp"
 
 namespace Hockey {
 
@@ -129,6 +131,12 @@ ImVec4 ColorForType(EditorFileType type, bool supported) {
         return ImVec4(0.70f, 0.85f, 0.55f, 1.0f);
     case EditorFileType::Material:
         return ImVec4(0.92f, 0.66f, 0.85f, 1.0f);
+    case EditorFileType::UIScreen:
+        return ImVec4(0.56f, 0.88f, 0.82f, 1.0f);
+    case EditorFileType::UITheme:
+        return ImVec4(0.86f, 0.72f, 0.54f, 1.0f);
+    case EditorFileType::ClientFlow:
+        return ImVec4(0.78f, 0.86f, 0.58f, 1.0f);
     case EditorFileType::Image:
         return ImVec4(0.66f, 0.78f, 0.96f, 1.0f);
     case EditorFileType::Model:
@@ -230,6 +238,20 @@ bool TypeMatches(EditorFileType filter, const ProjectEntry& entry) {
         return entry.type.type == EditorFileType::ShaderSource || entry.type.type == EditorFileType::ShaderBinary;
     }
     return entry.type.type == filter;
+}
+
+bool IsCookableRawType(EditorFileType type) {
+    switch (type) {
+    case EditorFileType::Scene:
+    case EditorFileType::Prefab:
+    case EditorFileType::Material:
+    case EditorFileType::ShaderSource:
+    case EditorFileType::Image:
+    case EditorFileType::Model:
+        return true;
+    default:
+        return false;
+    }
 }
 
 } // namespace
@@ -360,6 +382,18 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
         }
         EditorTooltip::ForLastItem("Create, import, and cook a new material source asset");
         ImGui::EndDisabled();
+        if (ImGui::MenuItem("New UI Screen")) {
+            CreateUIScreenAsset(context, SelectedSectionRawFolder(context, AssetType::Unknown));
+        }
+        EditorTooltip::ForLastItem("Create a new RmlUi screen document");
+        if (ImGui::MenuItem("New UI Theme")) {
+            CreateUIThemeAsset(context, SelectedSectionRawFolder(context, AssetType::Unknown));
+        }
+        EditorTooltip::ForLastItem("Create a new RmlUi stylesheet");
+        if (ImGui::MenuItem("New Client Flow")) {
+            CreateClientFlowAsset(context, SelectedSectionRawFolder(context, AssetType::Unknown));
+        }
+        EditorTooltip::ForLastItem("Create a new runtime client-flow asset");
         ImGui::EndPopup();
     }
 
@@ -405,6 +439,9 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
         {EditorFileType::Scene, "Scene"},
         {EditorFileType::Prefab, "Prefab"},
         {EditorFileType::Material, "Material"},
+        {EditorFileType::UIScreen, "UI Screen"},
+        {EditorFileType::UITheme, "UI Theme"},
+        {EditorFileType::ClientFlow, "Client Flow"},
         {EditorFileType::Image, "Texture/Image"},
         {EditorFileType::Model, "Model"},
         {EditorFileType::Model, "Mesh"},
@@ -703,6 +740,15 @@ void ProjectPanel::DrawFolderContextActions(EditorContext& context,
     if (context.assetManager != nullptr && ImGui::MenuItem("New Material")) {
         CreateMaterialAsset(context, folder);
     }
+    if (ImGui::MenuItem("New UI Screen")) {
+        CreateUIScreenAsset(context, folder);
+    }
+    if (ImGui::MenuItem("New UI Theme")) {
+        CreateUIThemeAsset(context, folder);
+    }
+    if (ImGui::MenuItem("New Client Flow")) {
+        CreateClientFlowAsset(context, folder);
+    }
 
     if (m_ContextTarget.kind == ContextTargetKind::EmptyArea) {
         ImGui::Separator();
@@ -747,10 +793,14 @@ void ProjectPanel::DrawRawEntryContextActions(EditorContext& context, const Proj
     if (entry.type.type == EditorFileType::Prefab && ImGui::MenuItem("Instantiate Prefab")) {
         InstantiatePrefabFile(context, entry.path);
     }
-    if (entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab) {
+    if (entry.type.type == EditorFileType::ClientFlow && ImGui::MenuItem("Open Client Flow")) {
+        OpenClientFlowFile(context, entry.path);
+    }
+    if (entry.type.type == EditorFileType::Scene || entry.type.type == EditorFileType::Prefab ||
+        entry.type.type == EditorFileType::ClientFlow) {
         ImGui::Separator();
     }
-    if (context.assetManager != nullptr && meta == nullptr && entry.type.supported &&
+    if (context.assetManager != nullptr && meta == nullptr && IsCookableRawType(entry.type.type) &&
         ImGui::MenuItem("Import & Cook")) {
         ImportAndCookRawAsset(context, entry.path);
     }
@@ -832,7 +882,7 @@ void ProjectPanel::BeginRawDragSource(EditorContext& context, const ProjectEntry
         return;
     }
     const AssetMetadata* meta = MetadataForRawEntry(context, entry);
-    if (meta == nullptr && entry.type.supported && context.assetManager != nullptr) {
+    if (meta == nullptr && IsCookableRawType(entry.type.type) && context.assetManager != nullptr) {
         ImportAndCookRawAsset(context, entry.path);
         meta = MetadataForRawEntry(context, entry);
     }
@@ -858,6 +908,8 @@ void ProjectPanel::HandleRawActivation(EditorContext& context, const ProjectEntr
         OpenSceneFile(context, entry.path);
     } else if (entry.type.type == EditorFileType::Prefab) {
         InstantiatePrefabFile(context, entry.path);
+    } else if (entry.type.type == EditorFileType::ClientFlow) {
+        OpenClientFlowFile(context, entry.path);
     }
 }
 
@@ -872,7 +924,7 @@ void ProjectPanel::SelectRawEntry(EditorContext& context, const ProjectEntry& en
 
     m_Browser.Select(entry.path);
     const AssetMetadata* meta = MetadataForRawEntry(context, entry);
-    if (meta == nullptr && entry.type.supported && context.assetManager != nullptr) {
+    if (meta == nullptr && IsCookableRawType(entry.type.type) && context.assetManager != nullptr) {
         ImportAndCookRawAsset(context, entry.path);
         return;
     }
@@ -1142,8 +1194,98 @@ void ProjectPanel::CreateMaterialAsset(EditorContext& context, const std::filesy
     }
 }
 
+void ProjectPanel::CreateUIScreenAsset(EditorContext& context, const std::filesystem::path& directory) {
+    std::error_code ec;
+    const std::filesystem::path target =
+        std::filesystem::is_directory(directory, ec) ? directory : directory.parent_path();
+    if (const Status status = FileSystem::CreateDirectories(target); !status) {
+        m_Status = status.error;
+        return;
+    }
+
+    const std::filesystem::path path = UniqueDestination(target, "NewUIScreen.rml");
+    std::ofstream stream(path, std::ios::trunc);
+    if (!stream.is_open()) {
+        m_Status = "Failed to create " + path.filename().string();
+        return;
+    }
+    stream << "<rml>\n"
+              "<head>\n"
+              "  <link type=\"text/rcss\" href=\"data/ui/themes/hockey.rcss\"/>\n"
+              "  <title>New UI Screen</title>\n"
+              "</head>\n"
+              "<body>\n"
+              "  <div id=\"screen-root\">New UI Screen</div>\n"
+              "</body>\n"
+              "</rml>\n";
+    if (!stream.good()) {
+        m_Status = "Failed to write " + path.filename().string();
+        return;
+    }
+
+    m_SelectedFolder = target;
+    m_SelectedAssetId = {};
+    context.ClearAssetSelection();
+    m_Browser.Select(path);
+    m_Status = "Created " + path.filename().string();
+}
+
+void ProjectPanel::CreateUIThemeAsset(EditorContext& context, const std::filesystem::path& directory) {
+    std::error_code ec;
+    const std::filesystem::path target =
+        std::filesystem::is_directory(directory, ec) ? directory : directory.parent_path();
+    if (const Status status = FileSystem::CreateDirectories(target); !status) {
+        m_Status = status.error;
+        return;
+    }
+
+    const std::filesystem::path path = UniqueDestination(target, "NewUITheme.rcss");
+    std::ofstream stream(path, std::ios::trunc);
+    if (!stream.is_open()) {
+        m_Status = "Failed to create " + path.filename().string();
+        return;
+    }
+    stream << "body {\n"
+              "  font-family: Inter;\n"
+              "  color: #f6f7f8;\n"
+              "}\n";
+    if (!stream.good()) {
+        m_Status = "Failed to write " + path.filename().string();
+        return;
+    }
+
+    m_SelectedFolder = target;
+    m_SelectedAssetId = {};
+    context.ClearAssetSelection();
+    m_Browser.Select(path);
+    m_Status = "Created " + path.filename().string();
+}
+
+void ProjectPanel::CreateClientFlowAsset(EditorContext& context, const std::filesystem::path& directory) {
+    std::error_code ec;
+    const std::filesystem::path target =
+        std::filesystem::is_directory(directory, ec) ? directory : directory.parent_path();
+    const std::filesystem::path path = UniqueDestination(target, "NewClientFlow.clientflow.yaml");
+    if (const Status status = ClientFlowSerializer::Save(MakeDefaultClientFlow(), path); !status) {
+        m_Status = status.error;
+        return;
+    }
+
+    m_SelectedFolder = target;
+    m_SelectedAssetId = {};
+    context.ClearAssetSelection();
+    m_Browser.Select(path);
+    OpenClientFlowFile(context, path);
+    m_Status = "Created " + path.filename().string();
+}
+
 void ProjectPanel::OpenSceneFile(EditorContext& context, const std::filesystem::path& path) {
     context.requestedOpenScene = path;
+}
+
+void ProjectPanel::OpenClientFlowFile(EditorContext& context, const std::filesystem::path& path) {
+    context.clientFlowAssetPath = path;
+    context.requestedPanelFocus = EditorPanelNames::kClientFlow;
 }
 
 void ProjectPanel::InstantiatePrefabFile(EditorContext& context, const std::filesystem::path& path) {

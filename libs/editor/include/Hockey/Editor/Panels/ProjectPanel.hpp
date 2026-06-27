@@ -107,7 +107,11 @@ private:
     const AssetMetadata* MetadataForRawEntry(EditorContext& context, const ProjectEntry& entry);
     // Creates a new default material asset under `directory` and imports it.
     void CreateMaterialAsset(EditorContext& context, const std::filesystem::path& directory);
+    void CreateUIScreenAsset(EditorContext& context, const std::filesystem::path& directory);
+    void CreateUIThemeAsset(EditorContext& context, const std::filesystem::path& directory);
+    void CreateClientFlowAsset(EditorContext& context, const std::filesystem::path& directory);
     void OpenSceneFile(EditorContext& context, const std::filesystem::path& path);
+    void OpenClientFlowFile(EditorContext& context, const std::filesystem::path& path);
     void InstantiatePrefabFile(EditorContext& context, const std::filesystem::path& path);
     AssetType SelectedSectionAssetType() const;
     std::filesystem::path SelectedSectionRawFolder(EditorContext& context, AssetType fallbackType) const;

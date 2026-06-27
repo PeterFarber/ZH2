@@ -7,6 +7,7 @@ add_executable(HockeyUITests
         src/RmlUiInterfaceTests.cpp
         src/RmlUiContextTests.cpp
         src/UIInputMapperTests.cpp
+        src/HudViewModelTests.cpp
 )
 
 target_link_libraries(HockeyUITests PRIVATE hockey_core hockey_renderer hockey_ui)

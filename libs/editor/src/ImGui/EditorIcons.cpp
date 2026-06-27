@@ -195,6 +195,11 @@ EditorIcon EditorIconForAssetType(EditorFileType type) {
         return EditorIcon::Prefab;
     case EditorFileType::Material:
         return EditorIcon::Material;
+    case EditorFileType::UIScreen:
+    case EditorFileType::ClientFlow:
+        return EditorIcon::File;
+    case EditorFileType::UITheme:
+        return EditorIcon::Material;
     case EditorFileType::ShaderSource:
     case EditorFileType::ShaderBinary:
         return EditorIcon::Shader;

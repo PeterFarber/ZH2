@@ -28,6 +28,7 @@
 #include "Hockey/Renderer/RendererSettings.hpp"
 #include "Hockey/UI/ClientFlowSerializer.hpp"
 #include "Hockey/UI/UISettings.hpp"
+#include "Hockey/UI/ViewModels.hpp"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -140,6 +141,62 @@ bool PlayerHasPuck(Hockey::Scene& scene, Hockey::Entity player) {
         }
     }
     return false;
+}
+
+std::string RuntimePhaseLabel(Hockey::MatchPhase phase) {
+    switch (phase) {
+    case Hockey::MatchPhase::NotStarted: return "Not started";
+    case Hockey::MatchPhase::Warmup: return "Warmup";
+    case Hockey::MatchPhase::FaceoffSetup: return "Faceoff setup";
+    case Hockey::MatchPhase::Faceoff: return "Faceoff";
+    case Hockey::MatchPhase::Playing: return "Playing";
+    case Hockey::MatchPhase::GoalScored: return "Goal";
+    case Hockey::MatchPhase::PeriodEnded: return "Period ended";
+    case Hockey::MatchPhase::MatchEnded: return "Final";
+    case Hockey::MatchPhase::Paused: return "Paused";
+    }
+    return "Not started";
+}
+
+Hockey::HudViewModel BuildRuntimeHudViewModel(const Hockey::GameplaySnapshot& snapshot, uint32_t localPlayerIndex) {
+    Hockey::HudViewModel hud;
+    hud.period = static_cast<int>(snapshot.match.period);
+    hud.homeScore = static_cast<int>(snapshot.match.homeScore);
+    hud.awayScore = static_cast<int>(snapshot.match.awayScore);
+    hud.clockText = Hockey::FormatClockText(snapshot.match.periodTimeRemaining);
+    hud.phaseLabel = RuntimePhaseLabel(snapshot.match.phase);
+    hud.shotChargeRatio = 0.0f;
+    hud.possessionLabel = snapshot.puck.possessingPlayer.IsValid() ? "Possessed" : "Loose puck";
+
+    for (const Hockey::PlayerGameplaySnapshot& player : snapshot.players) {
+        const std::string playerLabel = std::string(Hockey::GameplayTeamToString(player.team)) + " " +
+                                        Hockey::GameplayRoleToString(player.role) + " " +
+                                        std::to_string(player.playerIndex + 1);
+        if (player.playerIndex == localPlayerIndex) {
+            hud.localPlayerLabel = playerLabel;
+            hud.shotChargeRatio = player.shotChargeRatio;
+        }
+        if (snapshot.puck.possessingPlayer == player.entity || player.hasPuck) {
+            hud.possessionLabel = playerLabel;
+        }
+    }
+
+    if (hud.localPlayerLabel.empty()) {
+        hud.localPlayerLabel = "Player " + std::to_string(localPlayerIndex + 1);
+    }
+    return hud;
+}
+
+void ApplyHudViewModel(Hockey::RmlUiContext& ui, const Hockey::HudViewModel& hud) {
+    ui.SetElementText("home-score", std::to_string(hud.homeScore));
+    ui.SetElementText("away-score", std::to_string(hud.awayScore));
+    ui.SetElementText("match-clock", hud.clockText);
+    ui.SetElementText("period-label", "P" + std::to_string(hud.period));
+    ui.SetElementText("phase-label", hud.phaseLabel);
+    ui.SetElementText("local-player-label", hud.localPlayerLabel);
+    ui.SetElementText("possession-label", hud.possessionLabel);
+    ui.SetElementText("shot-charge", Hockey::FormatShotCharge(hud.shotChargeRatio));
+    ui.SetElementText("hud-notification", hud.notificationText);
 }
 
 } // namespace
@@ -603,6 +660,12 @@ void GameClientApp::OnUpdate(float deltaTime) {
                 m_UIEnabled = false;
             }
             m_UIReloadRequested = false;
+        }
+        if (m_ClientFlow.ActiveScreen() == Hockey::UIScreenId::MatchHud && m_LocalGameplayEnabled &&
+            m_GameplayWorld.IsInitialized()) {
+            const Hockey::GameplaySnapshot snapshot = Hockey::BuildGameplaySnapshot(
+                m_Scene, m_SimulationTimestep.GetTick(), m_GameplayWorld.GetTuning());
+            ApplyHudViewModel(m_UIContext, BuildRuntimeHudViewModel(snapshot, 0));
         }
         m_UIContext.Update();
         m_UIContext.Render();

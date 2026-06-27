@@ -64,11 +64,13 @@ void Dockspace::BuildDefaultLayout() {
     ImGui::DockBuilderDockWindow(kInspector, right);
     ImGui::DockBuilderDockWindow(kSceneViewport, center);
     ImGui::DockBuilderDockWindow(kGameViewport, center);
+    ImGui::DockBuilderDockWindow(kClientPreview, center);
     ImGui::DockBuilderDockWindow(kProject, bottom);
     ImGui::DockBuilderDockWindow(kConsole, bottom);
     ImGui::DockBuilderDockWindow(kStats, bottom);
     ImGui::DockBuilderDockWindow(kSceneValidation, bottom);
     ImGui::DockBuilderDockWindow(kGameplayTuning, bottom);
+    ImGui::DockBuilderDockWindow(kClientFlow, right);
 
     ImGui::DockBuilderFinish(m_DockspaceId);
 }

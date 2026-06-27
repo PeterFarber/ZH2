@@ -22,8 +22,11 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
+#include "Hockey/Editor/EditorClientPreview.hpp"
 #include "Hockey/Editor/FileDialog.hpp"
 #include "Hockey/Editor/Logging/EditorConsoleSink.hpp"
+#include "Hockey/Editor/Panels/ClientFlowPanel.hpp"
+#include "Hockey/Editor/Panels/ClientPreviewPanel.hpp"
 #include "Hockey/Editor/Panels/ConsolePanel.hpp"
 #include "Hockey/Editor/Panels/GameViewportPanel.hpp"
 #include "Hockey/Editor/Panels/GameplayTuningPanel.hpp"
@@ -77,6 +80,8 @@ std::filesystem::path UniqueDestination(const std::filesystem::path& dir, const 
 const char* EditorVersionString() {
     return "HockeyEditor 0.4.0";
 }
+
+EditorApp::EditorApp() : m_ClientPreview(std::make_unique<EditorClientPreview>()) {}
 
 EditorApp::~EditorApp() {
     Shutdown();
@@ -171,6 +176,7 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     }
     m_GameplayPreview.Configure(gameplaySettings, gameplayTuning);
     m_Context.gameplayPreview = &m_GameplayPreview;
+    m_Context.clientPreviewHost = m_ClientPreview.get();
 
     RegisterPanels();
     m_Context.panelManager.ApplyPanelOpenStates(m_Context.settings);
@@ -189,8 +195,10 @@ void EditorApp::RegisterPanels() {
     panels.AddPanel<InspectorPanel>();
     panels.AddPanel<SceneViewportPanel>();
     panels.AddPanel<GameViewportPanel>();
+    panels.AddPanel<ClientPreviewPanel>();
     panels.AddPanel<GameplayTuningPanel>();
     panels.AddPanel<ProjectPanel>();
+    panels.AddPanel<ClientFlowPanel>();
     panels.AddPanel<ConsolePanel>();
     panels.AddPanel<PropertiesPanel>();
     panels.AddPanel<StatsPanel>();
@@ -235,11 +243,13 @@ void EditorApp::Shutdown() {
     if (!m_Initialized) {
         return;
     }
+    StopClientPreviewMode();
     // Tear down any active physics preview, restoring the authored transforms.
     if (m_Context.activeScene != nullptr) {
         m_GameplayPreview.Stop(*m_Context.activeScene, m_PhysicsPreview);
         m_PhysicsPreview.Stop(*m_Context.activeScene);
     }
+    m_Context.clientPreviewHost = nullptr;
     m_Context.gameplayPreview = nullptr;
     m_Context.physicsPreview = nullptr;
     // Drop the mesh-collider provider so it can't outlive the AssetManager.
@@ -284,6 +294,10 @@ void EditorApp::Update(float deltaTime) {
         m_Context.requestedOpenScene.clear();
         OpenScene(requested);
     }
+    if (m_Context.requestClientPreviewStart) {
+        m_Context.requestClientPreviewStart = false;
+        StartClientPreviewMode();
+    }
 
     PollAssetHotReload();
 
@@ -303,6 +317,10 @@ void EditorApp::Update(float deltaTime) {
         if (m_Context.physicsView.showContacts && m_PhysicsPreview.IsActive()) {
             m_Context.physicsView.contactPoints = m_PhysicsPreview.ContactPoints();
         }
+    }
+    if (m_ClientPreview != nullptr && m_ClientPreview->IsActive()) {
+        m_ClientPreview->Update(m_Context, deltaTime);
+        SyncPreviewState();
     }
 
     m_Context.panelManager.OnUpdate(m_Context, deltaTime);
@@ -389,6 +407,7 @@ void EditorApp::TogglePlaytestMode() {
         StopPlaytestMode();
         return;
     }
+    StopClientPreviewMode();
 
     if (m_Context.activeScene == nullptr) {
         return;
@@ -410,6 +429,45 @@ void EditorApp::TogglePlaytestMode() {
     SyncPreviewState();
     m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kGameViewport);
     HK_EDITOR_INFO("Enter Play mode");
+}
+
+void EditorApp::ToggleClientPreviewMode() {
+    if (m_ClientPreview != nullptr && m_ClientPreview->IsActive()) {
+        StopClientPreviewMode();
+        return;
+    }
+    StartClientPreviewMode();
+}
+
+void EditorApp::StartClientPreviewMode() {
+    if (m_ClientPreview == nullptr) {
+        return;
+    }
+    if (m_ClientPreview->IsActive()) {
+        StopClientPreviewMode();
+    }
+    StopPlaytestMode();
+    if (m_Context.activeScene == nullptr) {
+        return;
+    }
+    if (const Status status = m_ClientPreview->Start(m_Context, m_Context.clientFlowAssetPath); !status) {
+        HK_EDITOR_ERROR("Client Preview failed: {}", status.error);
+        SyncPreviewState();
+        return;
+    }
+    SyncPreviewState();
+    m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kClientPreview);
+    HK_EDITOR_INFO("Start Client Preview");
+}
+
+void EditorApp::StopClientPreviewMode() {
+    if (m_ClientPreview == nullptr || !m_ClientPreview->IsActive()) {
+        SyncPreviewState();
+        return;
+    }
+    m_ClientPreview->Stop(m_Context);
+    SyncPreviewState();
+    HK_EDITOR_INFO("Stop Client Preview");
 }
 
 void EditorApp::StopPlaytestMode() {
@@ -441,6 +499,8 @@ void EditorApp::SyncPreviewState() {
     m_Context.gameplayView.previewRunning = m_GameplayPreview.IsRunning();
     m_Context.physicsView.previewEnabled = m_PhysicsPreview.IsActive();
     m_Context.physicsView.previewRunning = m_PhysicsPreview.IsRunning();
+    m_Context.clientPreview.previewEnabled = m_ClientPreview != nullptr && m_ClientPreview->IsActive();
+    m_Context.clientPreview.previewRunning = m_ClientPreview != nullptr && m_ClientPreview->IsRunning();
     if (!m_Context.playMode) {
         m_Context.gameplayView.gameInputActive = false;
     }
@@ -574,6 +634,7 @@ void EditorApp::PerformPendingAction() {
     // Any scene switch must end the preview first so its bodies/snapshot don't
     // outlive the scene they were built from.
     if (action != PendingAction::None && action != PendingAction::Quit && m_Context.activeScene != nullptr) {
+        StopClientPreviewMode();
         StopPlaytestMode();
     }
 
@@ -852,7 +913,9 @@ void EditorApp::ProcessShortcuts() {
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
         SelectAllEntities();
     }
-    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_P, false)) {
+    if (ctrl && shift && ImGui::IsKeyPressed(ImGuiKey_P, false)) {
+        ToggleClientPreviewMode();
+    } else if (ctrl && ImGui::IsKeyPressed(ImGuiKey_P, false)) {
         TogglePlaytestMode();
     }
     if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {

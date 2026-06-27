@@ -13,6 +13,9 @@ enum class EditorFileType {
     Scene,        // *.scene.yaml
     Prefab,       // *.prefab.yaml
     Material,     // *.material.yaml
+    UIScreen,     // *.rml
+    UITheme,      // *.rcss
+    ClientFlow,   // *.clientflow.yaml
     Toml,         // *.toml
     ShaderSource, // *.glsl/.vert/.frag/.comp
     ShaderBinary, // *.spv

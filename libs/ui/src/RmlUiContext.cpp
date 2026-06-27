@@ -1,6 +1,7 @@
 #include "Hockey/UI/RmlUiContext.hpp"
 
 #include <memory>
+#include <string_view>
 #include <utility>
 
 #include <RmlUi/Core.h>
@@ -20,6 +21,20 @@ bool g_RmlUiInitialized = false;
 std::unique_ptr<RmlUiSystemInterface> g_SystemInterface;
 std::unique_ptr<RmlUiFileInterface> g_FileInterface;
 std::unique_ptr<RmlUiRenderInterface> g_RenderInterface;
+
+std::string EscapeTextForRml(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (const char ch : text) {
+        switch (ch) {
+        case '&': out += "&amp;"; break;
+        case '<': out += "&lt;"; break;
+        case '>': out += "&gt;"; break;
+        default: out.push_back(ch); break;
+        }
+    }
+    return out;
+}
 
 } // namespace
 
@@ -165,6 +180,26 @@ bool RmlUiContext::BindClickAction(const std::string& elementId, std::function<v
     return false;
 }
 
+bool RmlUiContext::SetElementText(const std::string& elementId, const std::string& text) {
+    if (m_Context == nullptr || elementId.empty()) {
+        return false;
+    }
+
+    for (int i = 0; i < m_Context->GetNumDocuments(); ++i) {
+        Rml::ElementDocument* document = m_Context->GetDocument(i);
+        if (document == nullptr) {
+            continue;
+        }
+        Rml::Element* element = document->GetElementById(elementId);
+        if (element == nullptr) {
+            continue;
+        }
+        element->SetInnerRML(EscapeTextForRml(text));
+        return true;
+    }
+    return false;
+}
+
 void RmlUiContext::UnloadAllDocuments() {
     if (m_Context != nullptr) {
         m_Context->UnloadAllDocuments();
@@ -186,6 +221,21 @@ void RmlUiContext::Render() {
         m_RenderInterface->ClearDrawCommands();
         m_Context->Render();
     }
+}
+
+bool RmlUiContext::ProcessMouseMove(int x, int y) {
+    return m_Context != nullptr && m_Context->ProcessMouseMove(x, y, 0);
+}
+
+bool RmlUiContext::ProcessMouseButton(int button, bool pressed) {
+    if (m_Context == nullptr) {
+        return false;
+    }
+    return pressed ? m_Context->ProcessMouseButtonDown(button, 0) : m_Context->ProcessMouseButtonUp(button, 0);
+}
+
+bool RmlUiContext::ProcessMouseWheel(float x, float y) {
+    return m_Context != nullptr && m_Context->ProcessMouseWheel(Rml::Vector2f{x, y}, 0);
 }
 
 Rml::Context* RmlUiContext::RawContext() const {

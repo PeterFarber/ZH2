@@ -36,9 +36,17 @@ void Toolbar::Draw(EditorContext& ctx, EditorApp& app) {
 
     // Playtest controls. Scene/game view state remains live-editable while the
     // gameplay preview runs.
-    if (EditorIconToggleButton(EditorIcon::Play, "Play", ctx.playMode,
-                               ctx.playMode ? "Stop the live gameplay preview" : "Start a live gameplay preview")) {
+    if (EditorIconToggleButton(EditorIcon::Play, "Simulate Scene", ctx.playMode,
+                               ctx.playMode ? "Stop scene simulation" : "Simulate Scene in the Game viewport")) {
         app.TogglePlaytestMode();
+    }
+    ImGui::SameLine();
+    if (EditorIconToggleButton(EditorIcon::Play,
+                               "Play Client",
+                               ctx.clientPreview.previewEnabled,
+                               ctx.clientPreview.previewEnabled ? "Stop the runtime client preview"
+                                                                : "Play Client using the active client flow")) {
+        app.ToggleClientPreviewMode();
     }
 
     VerticalSeparator();
