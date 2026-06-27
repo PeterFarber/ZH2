@@ -27,6 +27,11 @@ struct EditorSettings {
     bool validateBeforeSave = true;
     bool validateAfterLoad = true;
 
+    static constexpr float kMinEditorScale = 0.75f;
+    static constexpr float kMaxEditorScale = 2.0f;
+
+    float editorScale = 1.0f;
+
     bool showGrid = true;
     float gridSpacing = 1.0f;
 
@@ -66,6 +71,8 @@ struct EditorSettings {
 
     // Writes the current settings to a TOML file (creating parent dirs).
     Status Save(const std::filesystem::path& path) const;
+
+    static float NormalizeEditorScale(float value);
 
     // Records a scene path as the most-recently-used, de-duplicating and
     // trimming to kMaxRecentScenes.

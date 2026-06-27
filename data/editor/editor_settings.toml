@@ -7,6 +7,9 @@ hot_reload = false
 enabled = true
 interval_seconds = 120
 
+[ui]
+editor_scale = 1.0
+
 [camera]
 fast_multiplier = 4.0
 mouse_sensitivity = 0.15000000596046448

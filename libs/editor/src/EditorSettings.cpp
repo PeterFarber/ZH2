@@ -14,6 +14,10 @@ std::filesystem::path EditorSettings::DefaultPath() {
     return Paths::DataFile("editor/editor_settings.toml");
 }
 
+float EditorSettings::NormalizeEditorScale(float value) {
+    return std::clamp(value, kMinEditorScale, kMaxEditorScale);
+}
+
 void EditorSettings::ApplyProjectConfig(const Config& projectConfig) {
     // editor.toml [scene]
     autosaveEnabled = projectConfig.GetBool("scene.autosave_enabled", autosaveEnabled);
@@ -38,6 +42,8 @@ Status EditorSettings::Load(const std::filesystem::path& path) {
 
     validateBeforeSave = config.GetBool("validation.before_save", validateBeforeSave);
     validateAfterLoad = config.GetBool("validation.after_load", validateAfterLoad);
+
+    editorScale = NormalizeEditorScale(static_cast<float>(config.GetDouble("ui.editor_scale", editorScale)));
 
     showGrid = config.GetBool("grid.show", showGrid);
     gridSpacing = static_cast<float>(config.GetDouble("grid.spacing", gridSpacing));
@@ -88,6 +94,8 @@ Status EditorSettings::Save(const std::filesystem::path& path) const {
 
     config.SetBool("validation.before_save", validateBeforeSave);
     config.SetBool("validation.after_load", validateAfterLoad);
+
+    config.SetDouble("ui.editor_scale", NormalizeEditorScale(editorScale));
 
     config.SetBool("grid.show", showGrid);
     config.SetDouble("grid.spacing", gridSpacing);

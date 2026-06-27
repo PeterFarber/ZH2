@@ -1,5 +1,6 @@
 #include "Test.hpp"
 
+#include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/EditorSettings.hpp"
 
@@ -22,6 +23,10 @@ void RunEditorSettingsTests() {
         HK_CHECK_MSG(!defaults.assetsAutoImport, "asset import disabled by default");
         HK_CHECK_MSG(!defaults.assetsAutoCookDirty, "asset cook disabled by default");
         HK_CHECK_MSG(!defaults.assetsHotReload, "asset hot reload disabled by default");
+        HK_CHECK_NEAR(defaults.editorScale, 1.0f, 1e-6);
+        HK_CHECK_NEAR(EditorSettings::NormalizeEditorScale(0.25f), EditorSettings::kMinEditorScale, 1e-6);
+        HK_CHECK_NEAR(EditorSettings::NormalizeEditorScale(3.5f), EditorSettings::kMaxEditorScale, 1e-6);
+        HK_CHECK_NEAR(EditorSettings::NormalizeEditorScale(1.25f), 1.25f, 1e-6);
     }
 
     // --- save then load round-trips every field -----------------------------
@@ -41,6 +46,7 @@ void RunEditorSettingsTests() {
         out.cameraFastMultiplier = 6.0f;
         out.cameraMouseSensitivity = 0.3f;
         out.restoreLastScene = false;
+        out.editorScale = 1.35f;
         out.AddRecentScene("data/raw/scenes/a.scene.yaml");
         out.AddRecentScene("data/raw/scenes/b.scene.yaml");
 
@@ -68,6 +74,7 @@ void RunEditorSettingsTests() {
         HK_CHECK_NEAR(in.cameraFastMultiplier, 6.0f, 1e-5);
         HK_CHECK_NEAR(in.cameraMouseSensitivity, 0.3f, 1e-5);
         HK_CHECK_EQ(in.restoreLastScene, false);
+        HK_CHECK_NEAR(in.editorScale, 1.35f, 1e-5);
 
         // --- recent scenes persist (most-recent first) ---
         HK_CHECK_EQ(in.recentScenes.size(), static_cast<std::size_t>(2));
@@ -75,6 +82,19 @@ void RunEditorSettingsTests() {
             HK_CHECK_EQ(in.recentScenes[0].generic_string(), std::string("data/raw/scenes/b.scene.yaml"));
             HK_CHECK_EQ(in.recentScenes[1].generic_string(), std::string("data/raw/scenes/a.scene.yaml"));
         }
+    }
+
+    // --- editor scale loads clamped values -------------------------------------
+    {
+        Config config;
+        config.SetDouble("ui.editor_scale", 9.0);
+
+        const auto path = Paths::TempFile("editor_scale_clamp_test.toml");
+        HK_CHECK_MSG(static_cast<bool>(config.Save(path)), "writes oversized editor scale");
+
+        EditorSettings in;
+        HK_CHECK_MSG(static_cast<bool>(in.Load(path)), "loads oversized editor scale");
+        HK_CHECK_NEAR(in.editorScale, EditorSettings::kMaxEditorScale, 1e-5);
     }
 
     // --- recent scene de-duplication + cap ----------------------------------
