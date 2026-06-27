@@ -76,6 +76,25 @@ void RunInspectorFieldTests() {
         }
     }
 
+    // --- path field edit (StickAttachment.stickPrefabPath) -------------------
+    {
+        StickAttachmentComponent attachment;
+        attachment.stickPrefabPath = "data/raw/prefabs/Stick_Prefab.prefab.yaml";
+        entity.AddOrReplaceComponent<StickAttachmentComponent>(attachment);
+
+        const ComponentMetadata* md = registry.FindByName("StickAttachmentComponent");
+        HK_CHECK_MSG(md != nullptr, "StickAttachment metadata registered");
+        const FieldMetadata* field = md != nullptr ? FindField(*md, "StickPrefabPath") : nullptr;
+        HK_CHECK_MSG(field != nullptr, "StickPrefabPath field present");
+        if (md != nullptr && field != nullptr) {
+            HK_CHECK(field->type == FieldType::Path);
+            auto* value = static_cast<std::filesystem::path*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
+            *value = "data/raw/prefabs/Alternate_Stick.prefab.yaml";
+            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
+                        std::string("data/raw/prefabs/Alternate_Stick.prefab.yaml"));
+        }
+    }
+
     // --- float field edit (Camera.fovDegrees) -------------------------------
     {
         entity.AddComponent<CameraComponent>();
