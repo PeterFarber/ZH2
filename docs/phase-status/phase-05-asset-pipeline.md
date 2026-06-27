@@ -73,6 +73,7 @@ Source material:
 - [x] Scene asset tracking exists.
 - [x] Prefab asset tracking exists.
 - [x] Default waypoint marker prefab is tracked as a raw/cooked prefab asset.
+- [x] Default stick prefab asset is tracked and cooked from raw mesh/material assets.
 - [x] Runtime loaders exist for textures, meshes, models, materials, shaders, scenes, and prefabs.
 
 ## Finished - Tooling And Editor Integration

@@ -68,6 +68,7 @@ Source material:
 - [x] Prefab instance links are tracked.
 - [x] Prefab override set is owned by the scene and serialized.
 - [x] Prefab diffing exists.
+- [x] Player prefab roots can reference reusable stick prefabs through `StickAttachmentComponent`.
 - [x] Apply instance-to-prefab support exists.
 - [x] Revert instance-to-prefab support exists.
 - [x] Prefab override persistence tests exist.
