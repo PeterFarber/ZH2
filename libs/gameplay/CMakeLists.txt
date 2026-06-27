@@ -23,6 +23,7 @@ target_sources(hockey_gameplay
         src/Simulation/GameplaySnapshot.cpp
         src/Simulation/GameplayWorld.cpp
         src/Stick/ShootingSystem.cpp
+        src/Stick/StickAttachment.cpp
         src/Stick/StealSystem.cpp
         src/Stick/StickHandling.cpp
         src/Teams/TeamTypes.cpp

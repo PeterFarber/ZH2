@@ -1,5 +1,6 @@
 #include "Test.hpp"
 
+#include <filesystem>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -86,10 +87,31 @@ Entity FindSpawn(Scene& scene, Team team, bool faceoffSpawn, std::size_t skip = 
     return {};
 }
 
-std::filesystem::path SavePlayerPrefab() {
+std::filesystem::path SaveStickPrefab() {
+    Scene prefabScene("StickPrefab");
+    Entity stick = prefabScene.CreateEntity("Authored Stick Prefab");
+    stick.GetComponent<TransformComponent>().localPosition = {0.0f, 0.75f, 0.95f};
+
+    StickComponent stickComponent;
+    stickComponent.reach = 2.25f;
+    stickComponent.width = 0.35f;
+    stickComponent.localOffset = {0.0f, 0.1f, 1.25f};
+    stick.AddComponent<StickComponent>(stickComponent);
+
+    const std::filesystem::path path = Paths::TempFile("authored_stick.prefab.yaml");
+    HK_CHECK(static_cast<bool>(PrefabSerializer::Save(prefabScene, stick, path)));
+    return path;
+}
+
+std::filesystem::path SavePlayerPrefab(const std::filesystem::path& stickPrefabPath = {}) {
     Scene prefabScene("PlayerPrefab");
     Entity root = prefabScene.CreateEntity("Authored Player Prefab");
     root.AddComponent<CameraRigMarkerComponent>().purpose = "PrefabSpawnMarker";
+    if (!stickPrefabPath.empty()) {
+        StickAttachmentComponent attachment;
+        attachment.stickPrefabPath = stickPrefabPath;
+        root.AddComponent<StickAttachmentComponent>(attachment);
+    }
     const std::filesystem::path path = Paths::TempFile("spawn_player.prefab.yaml");
     HK_CHECK(static_cast<bool>(PrefabSerializer::Save(prefabScene, root, path)));
     return path;
@@ -174,7 +196,8 @@ void RunMatchSetupTests() {
         BuildValidGameplayScene(prefabSpawnScene);
         Entity homeSpawn = FindSpawn(prefabSpawnScene, Team::Home, false);
         HK_CHECK(homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>());
-        const std::filesystem::path prefabPath = SavePlayerPrefab();
+        const std::filesystem::path stickPrefabPath = SaveStickPrefab();
+        const std::filesystem::path prefabPath = SavePlayerPrefab(stickPrefabPath);
         if (homeSpawn.IsValid() && homeSpawn.HasComponent<SpawnPointComponent>()) {
             homeSpawn.GetComponent<SpawnPointComponent>().playerPrefabPath = prefabPath;
         }
@@ -198,6 +221,28 @@ void RunMatchSetupTests() {
             HK_CHECK_NEAR(prefabPlayer.GetComponent<TransformComponent>().localPosition.z, -5.0f, 0.001f);
             HK_CHECK(prefabPlayer.HasComponent<PlayerRuntimeComponent>());
             HK_CHECK(prefabPlayer.HasComponent<StickComponent>());
+            HK_CHECK(prefabPlayer.HasComponent<StickAttachmentComponent>());
+            if (prefabPlayer.HasComponent<StickAttachmentComponent>()) {
+                HK_CHECK_EQ(prefabPlayer.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
+                            stickPrefabPath.generic_string());
+            }
+            HK_CHECK_NEAR(prefabPlayer.GetComponent<StickComponent>().reach, 2.25f, 0.001f);
+            HK_CHECK_NEAR(prefabPlayer.GetComponent<StickComponent>().width, 0.35f, 0.001f);
+            HK_CHECK_EQ(prefabPlayer.GetComponent<StickComponent>().ownerPlayer, prefabPlayer.GetUUID());
+
+            const std::vector<Entity> children = prefabSpawnScene.GetChildren(prefabPlayer);
+            HK_CHECK_EQ(children.size(), static_cast<std::size_t>(1));
+            if (!children.empty()) {
+                Entity stick = children.front();
+                HK_CHECK(stick.HasComponent<PrefabComponent>());
+                HK_CHECK(stick.HasComponent<StickComponent>());
+                if (stick.HasComponent<StickComponent>()) {
+                    HK_CHECK_EQ(stick.GetComponent<StickComponent>().ownerPlayer, prefabPlayer.GetUUID());
+                }
+                if (stick.HasComponent<PrefabComponent>()) {
+                    HK_CHECK_EQ(stick.GetComponent<PrefabComponent>().sourcePath, stickPrefabPath);
+                }
+            }
         }
     }
 

@@ -14,6 +14,7 @@
 #include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Gameplay/Stick/StickAttachment.hpp"
 #include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
 
 namespace Hockey {
@@ -93,7 +94,7 @@ template <typename T> void ShuffleDeterministic(std::vector<T>& values, uint32_t
     std::shuffle(values.begin(), values.end(), rng);
 }
 
-void ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const glm::vec3& position) {
+Status ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const glm::vec3& position) {
     const GameplayRole role = RoleForSlot(slot);
     player.GetComponent<TransformComponent>().localPosition = position;
 
@@ -121,8 +122,11 @@ void ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const gl
     }
 
     player.AddOrReplaceComponent<PlayerRuntimeComponent>();
-    player.AddOrReplaceComponent<StickComponent>().ownerPlayer = player.GetUUID();
+    if (const Status status = StickAttachment::EnsureStickAttached(*player.GetScene(), player); !status) {
+        return status;
+    }
     player.AddOrReplaceComponent<ShotComponent>();
+    return Status::Ok();
 }
 
 Status AssignTeamPlayers(Scene& scene,
@@ -148,7 +152,9 @@ Status AssignTeamPlayers(Scene& scene,
             }
             player = spawnedPlayer.value;
         }
-        ConfigurePlayer(player, slot, gameplayTeam, spawns[i].position);
+        if (const Status configured = ConfigurePlayer(player, slot, gameplayTeam, spawns[i].position); !configured) {
+            return configured;
+        }
     }
     return Status::Ok();
 }
