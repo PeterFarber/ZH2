@@ -42,6 +42,7 @@ Source material:
 - [x] Edit menu supports undo/redo and selection commands.
 - [x] GameObject/Component/Tools/View/Help menu coverage exists.
 - [x] Toolbar exists.
+- [x] Toolbar exposes a persistent editor UI scale preference on the right side of the main toolbar.
 - [x] Ctrl+P toggles play mode.
 
 ## Finished - Panels
@@ -130,6 +131,7 @@ Source material:
 ## Finished - Tests And Verification
 
 - [x] Editor settings tests exist.
+- [x] Editor settings tests cover editor UI scale defaults, clamping, and persistence.
 - [x] Selection tests exist.
 - [x] Undo/redo tests exist.
 - [x] Hierarchy reorder command and panel wiring tests exist.
