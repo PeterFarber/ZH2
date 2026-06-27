@@ -57,6 +57,7 @@ public:
     void RequestQuit();
     void SaveLayout();
     void ResetLayout();
+    void SetEditorScale(float scale);
 
     // ----- Scene lifecycle (menu bar / toolbar / shortcuts) -----
     // New/Open prompt to save when the scene is dirty before discarding it.

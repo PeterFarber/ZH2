@@ -81,6 +81,9 @@ void RunEditorTooltipContractTests() {
                                                   CountOccurrences(toolbar, "EditorIconToggleButton(");
     HK_CHECK_MSG(toolbarTooltipAffordances >= 4,
                  "Toolbar controls expose useful hover text");
+    HK_CHECK_MSG(Contains(toolbar, "Editor Scale"), "Toolbar exposes the editor scale popup");
+    HK_CHECK_MSG(Contains(toolbar, "Adjusts the size of editor text and controls"),
+                 "Toolbar editor scale control explains that it scales editor UI");
     HK_CHECK_MSG(Contains(projectSettings, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
                  "Project Settings includes tooltip helper");
     HK_CHECK_MSG(CountOccurrences(projectSettings, "EditorTooltip::ForLastItem") >= 5,

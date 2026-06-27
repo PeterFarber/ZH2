@@ -229,6 +229,19 @@ void EditorApp::SaveLayout() {
     HK_EDITOR_INFO("Saved editor layout ({})", m_ImGuiLayer.IniPath());
 }
 
+void EditorApp::SetEditorScale(float scale) {
+    const float normalizedScale = EditorSettings::NormalizeEditorScale(scale);
+    if (m_Context.settings.editorScale == normalizedScale) {
+        return;
+    }
+
+    m_Context.settings.editorScale = normalizedScale;
+    m_ImGuiLayer.ApplyEditorScale(normalizedScale);
+    if (const Status status = m_Context.settings.Save(EditorSettings::DefaultPath()); !status) {
+        HK_EDITOR_WARN("Saving editor scale failed: {}", status.error);
+    }
+}
+
 void EditorApp::ResetLayout() {
     m_Context.panelManager.ResetPanelOpenStates();
     CapturePanelLayoutState();
