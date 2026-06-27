@@ -161,8 +161,8 @@ Source material:
 
 - [ ] No animation library/system exists yet.
 - [ ] No audio library/system exists yet.
-- [ ] Runtime RmlUi foundation exists through `hockey_ui`, including guarded file/system/render interfaces, project-relative UI texture loading, context lifetime, input mapping, click binding, UI settings, and client-flow YAML; richer widget abstractions remain future work.
-- [ ] First-pass RML/RCSS assets exist for home, loading, lobby, team select, match HUD, pause, settings, scoreboard, and end-match screens.
+- [ ] Runtime RmlUi foundation exists through `hockey_ui`, including guarded file/system/render interfaces, project-relative UI texture loading, context lifetime, input mapping, click binding, shared polished RCSS with button hover/active/focus/disabled states, UI settings, and client-flow YAML; richer widget abstractions remain future work.
+- [ ] First-pass RML/RCSS assets exist for home, loading, lobby, team select, match HUD, pause, settings, scoreboard, and end-match screens with first-pass polished layout classes across current runtime screens.
 - [ ] Game client can initialize RmlUi from `[ui]`, boot the startup flow home screen, route basic button actions, load the flow's default offline gameplay scene on `StartOffline`, gate gameplay input when UI captures input or non-HUD screens are active, draw RmlUi-generated overlay commands through the renderer swapchain UI pass, bind live first-pass HUD text, and bypass UI with `--no-ui`.
 - [ ] Renderer UI overlay work uploads RmlUi geometry/textures to GPU resources and draws onto the swapchain or editor offscreen Client Preview target with `ui.vert`/`ui.frag`, premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering; broader visual validation still needs work.
 - [ ] Match HUD RML exists and first-pass gameplay snapshot data is bound into live RmlUi elements; final presentation/notifications/network data remain incomplete.

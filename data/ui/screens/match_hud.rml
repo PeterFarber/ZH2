@@ -6,15 +6,19 @@
 <body>
     <div id="match-hud" class="hud-root">
         <div class="score-strip">
-            <span id="home-score" class="score">0</span>
-            <span id="match-clock">20:00</span>
-            <span id="period-label">P1</span>
-            <span id="away-score" class="score">0</span>
+            <span class="score-team home-team">HOME <span id="home-score" class="score">0</span></span>
+            <span class="clock-block">
+                <span id="match-clock">20:00</span>
+                <span id="period-label">P1</span>
+            </span>
+            <span class="score-team away-team">AWAY <span id="away-score" class="score">0</span></span>
         </div>
         <div id="phase-label" class="notification">Faceoff</div>
-        <div id="local-player-label">Player 1</div>
-        <div id="possession-label">Loose puck</div>
-        <div id="shot-charge">0%</div>
+        <div class="hud-side">
+            <div id="local-player-label" class="hud-pill">Player 1</div>
+            <div id="possession-label" class="hud-pill">Loose puck</div>
+        </div>
+        <div id="shot-charge" class="shot-meter">0%</div>
         <div id="hud-notification" class="notification"></div>
     </div>
 </body>

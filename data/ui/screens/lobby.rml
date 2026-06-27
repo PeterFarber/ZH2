@@ -5,9 +5,15 @@
 </head>
 <body>
     <div id="lobby-screen" class="screen">
-        <div class="title">Lobby</div>
-        <div id="lobby-status" class="status">Networking unavailable</div>
-        <button id="lobby-back">Back</button>
+        <div class="menu-panel lobby-panel">
+            <div class="eyebrow">Online</div>
+            <div class="title">Lobby</div>
+            <div class="subtitle">Network lobby flow is reserved for Phase 8 integration.</div>
+            <div id="lobby-status" class="status status-warning">Networking unavailable</div>
+            <div class="button-stack">
+                <button id="lobby-back" class="button-secondary">Back</button>
+            </div>
+        </div>
     </div>
 </body>
 </rml>

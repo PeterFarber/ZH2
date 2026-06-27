@@ -5,10 +5,15 @@
 </head>
 <body>
     <div id="pause-screen" class="screen">
-        <div class="title">Paused</div>
-        <button id="resume-game">Resume</button>
-        <button id="return-to-menu">Return to Menu</button>
-        <button id="pause-quit">Quit</button>
+        <div class="menu-panel pause-panel">
+            <div class="eyebrow">Match</div>
+            <div class="title">Paused</div>
+            <div class="button-stack">
+                <button id="resume-game">Resume</button>
+                <button id="return-to-menu" class="button-secondary">Return to Menu</button>
+                <button id="pause-quit" class="button-danger">Quit</button>
+            </div>
+        </div>
     </div>
 </body>
 </rml>

@@ -5,8 +5,11 @@
 </head>
 <body>
     <div id="loading-screen" class="screen">
-        <div class="title">Loading</div>
-        <div id="loading-status" class="status">Preparing the rink</div>
+        <div class="menu-panel loading-panel">
+            <div class="eyebrow">Game Flow</div>
+            <div class="title">Loading</div>
+            <div id="loading-status" class="status">Preparing the rink</div>
+        </div>
     </div>
 </body>
 </rml>

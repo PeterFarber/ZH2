@@ -5,10 +5,18 @@
 </head>
 <body>
     <div id="settings-screen" class="screen">
-        <div class="title">Settings</div>
-        <label>UI Scale</label>
-        <input id="ui-scale" type="range" min="0.5" max="3.0" step="0.1"/>
-        <button id="settings-back">Back</button>
+        <div class="menu-panel settings-panel">
+            <div class="eyebrow">Preferences</div>
+            <div class="title">Settings</div>
+            <div class="field-group">
+                <label class="field-label">UI Scale</label>
+                <input id="ui-scale" type="range" min="0.5" max="3.0" step="0.1"/>
+                <div class="status">Adjusts runtime RmlUi scale.</div>
+            </div>
+            <div class="button-stack">
+                <button id="settings-back" class="button-secondary">Back</button>
+            </div>
+        </div>
     </div>
 </body>
 </rml>
