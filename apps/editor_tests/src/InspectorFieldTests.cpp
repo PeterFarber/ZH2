@@ -91,6 +91,10 @@ void RunInspectorFieldTests() {
             auto* value = static_cast<UUID*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
             *value = UUID(43ULL);
             HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickEntityId, UUID(43ULL));
+
+            Entity stick = scene.CreateEntity("Stick");
+            HK_CHECK(FieldDrawers::AssignEntityReference(*field, md->getData(entity), stick.GetUUID()));
+            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickEntityId, stick.GetUUID());
         }
     }
 

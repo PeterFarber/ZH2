@@ -44,6 +44,12 @@ FieldMetadata MakeColorField(std::string name, std::size_t offset, std::string d
     return field;
 }
 
+FieldMetadata MakeEntityReferenceField(std::string name, std::size_t offset, std::string displayName = {}) {
+    FieldMetadata field = MakeField(std::move(name), FieldType::UUID, offset, std::move(displayName));
+    field.hint = FieldHint::EntityReference;
+    return field;
+}
+
 FieldMetadata MakeLightTypeField(std::string name, std::size_t offset) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Enum, offset);
     field.enumNames = {"Directional", "Point", "Spot"};
@@ -228,7 +234,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.displayName = "Stick Attachment";
         md.category = "Hockey";
         md.fields.push_back(
-            MakeField("StickEntity", FieldType::UUID, offsetof(StickAttachmentComponent, stickEntityId)));
+            MakeEntityReferenceField("StickEntity", offsetof(StickAttachmentComponent, stickEntityId)));
         RegisterComponent<StickAttachmentComponent>(std::move(md));
     }
 

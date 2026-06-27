@@ -25,6 +25,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
 #include "Hockey/Editor/Dockspace.hpp"
+#include "Hockey/Editor/EntityDragDrop.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/ImGui/EditorIcons.hpp"
@@ -34,8 +35,6 @@
 namespace Hockey {
 
 namespace {
-
-constexpr const char* kEntityDragType = "HOCKEY_HIERARCHY_ENTITY";
 
 enum class EntityDropPlacement {
     Before,
@@ -539,7 +538,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             const std::uint64_t value = id.Value();
-            ImGui::SetDragDropPayload(kEntityDragType, &value, sizeof(value));
+            ImGui::SetDragDropPayload(kEntityDragDropType, &value, sizeof(value));
             const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, selection, id);
             if (moveTargets.size() > 1) {
                 ImGui::Text("%zu GameObjects", moveTargets.size());
@@ -550,7 +549,7 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
         }
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload =
-                    ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
+                    ImGui::AcceptDragDropPayload(kEntityDragDropType, ImGuiDragDropFlags_AcceptPeekOnly)) {
                 const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
                 const UUID movedId(value);
                 const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, selection, movedId);
@@ -735,7 +734,7 @@ void HierarchyPanel::DrawRootDropTarget(EditorContext& context, Scene& scene) {
     }
     if (ImGui::BeginDragDropTargetCustom(window->InnerRect, window->ID)) {
         if (const ImGuiPayload* payload =
-                ImGui::AcceptDragDropPayload(kEntityDragType, ImGuiDragDropFlags_AcceptPeekOnly)) {
+                ImGui::AcceptDragDropPayload(kEntityDragDropType, ImGuiDragDropFlags_AcceptPeekOnly)) {
             const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
             const UUID movedId(value);
             const std::vector<UUID> moveTargets = ResolveDragMoveTargets(scene, context.selection, movedId);

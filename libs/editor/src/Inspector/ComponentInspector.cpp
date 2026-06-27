@@ -94,7 +94,7 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
                     edit.changed = picked.changed;
                     edit.committed = picked.committed;
                 } else {
-                    edit = FieldDrawers::Draw(field, data, context.assetManager);
+                    edit = FieldDrawers::Draw(field, data, context.assetManager, scene);
                 }
                 if (edit.started) {
                     m_Editing = true;
