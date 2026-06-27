@@ -103,8 +103,8 @@ void RunComponentMetadataTests() {
     if (stickAttachment != nullptr) {
         HK_CHECK_EQ(stickAttachment->displayName, std::string("Stick Attachment"));
         HK_CHECK_EQ(stickAttachment->fields.size(), static_cast<std::size_t>(1));
-        HK_CHECK_EQ(stickAttachment->fields[0].name, std::string("StickPrefabPath"));
-        HK_CHECK(stickAttachment->fields[0].type == FieldType::Path);
+        HK_CHECK_EQ(stickAttachment->fields[0].name, std::string("StickEntity"));
+        HK_CHECK(stickAttachment->fields[0].type == FieldType::UUID);
     }
 
     const ComponentMetadata* light = registry.FindByName("LightComponent");

@@ -120,7 +120,9 @@ private:
     void NormalizeRootOrder();
     Entity MakeEntity(entt::entity handle);
     void ApplyActiveRecursive(entt::entity handle, bool parentActiveInHierarchy);
-    entt::entity DuplicateRecursive(entt::entity sourceHandle);
+    entt::entity DuplicateRecursive(entt::entity sourceHandle, std::unordered_map<UUID, UUID>& duplicateMap);
+    void RemapDuplicatedStickAttachmentReferences(entt::entity handle,
+                                                  const std::unordered_map<UUID, UUID>& duplicateMap);
 
     std::string m_Name;
     SceneMode m_Mode = SceneMode::Edit;

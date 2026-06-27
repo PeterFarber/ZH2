@@ -71,7 +71,7 @@ Source material:
 
 - [x] Match initialization exists.
 - [x] Player spawn/setup flow uses deterministic shuffled team spawn pools.
-- [x] Match setup attaches configured stick prefabs to spawned player prefabs while preserving root stick gameplay data.
+- [x] Match setup binds authored stick child entities from spawned player prefabs while preserving root stick gameplay data.
 - [x] 4v4 setup exists.
 - [x] Match clock exists.
 - [x] Period clock behavior exists.

@@ -187,15 +187,23 @@ Entities:
     {
         Scene source("StickAttachmentRoundTrip");
         Entity player = source.CreateEntity("Player With Stick Attachment");
+        Entity stick = source.CreateEntity("Stick Child");
+        source.SetParent(stick, player, false);
+
         StickAttachmentComponent attachment;
-        attachment.stickPrefabPath = "data/raw/prefabs/Stick_Prefab.prefab.yaml";
+        attachment.stickEntityId = stick.GetUUID();
         player.AddComponent<StickAttachmentComponent>(attachment);
 
         Entity duplicate = source.DuplicateEntity(player);
         HK_CHECK(duplicate.HasComponent<StickAttachmentComponent>());
         if (duplicate.HasComponent<StickAttachmentComponent>()) {
-            HK_CHECK_EQ(duplicate.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
-                        std::string("data/raw/prefabs/Stick_Prefab.prefab.yaml"));
+            const std::vector<Entity> duplicateChildren = source.GetChildren(duplicate);
+            HK_CHECK_EQ(duplicateChildren.size(), static_cast<std::size_t>(1));
+            if (!duplicateChildren.empty()) {
+                HK_CHECK_EQ(duplicate.GetComponent<StickAttachmentComponent>().stickEntityId,
+                            duplicateChildren.front().GetUUID());
+                HK_CHECK(duplicate.GetComponent<StickAttachmentComponent>().stickEntityId != stick.GetUUID());
+            }
         }
 
         const std::filesystem::path path = Paths::TempFile("stick_attachment_scene.scene.yaml");
@@ -207,8 +215,12 @@ Entities:
         HK_CHECK(loadedPlayer.IsValid());
         HK_CHECK(loadedPlayer.HasComponent<StickAttachmentComponent>());
         if (loadedPlayer.IsValid() && loadedPlayer.HasComponent<StickAttachmentComponent>()) {
-            HK_CHECK_EQ(loadedPlayer.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
-                        std::string("data/raw/prefabs/Stick_Prefab.prefab.yaml"));
+            const std::vector<Entity> loadedChildren = loaded.GetChildren(loadedPlayer);
+            HK_CHECK_EQ(loadedChildren.size(), static_cast<std::size_t>(1));
+            if (!loadedChildren.empty()) {
+                HK_CHECK_EQ(loadedPlayer.GetComponent<StickAttachmentComponent>().stickEntityId,
+                            loadedChildren.front().GetUUID());
+            }
         }
     }
 }

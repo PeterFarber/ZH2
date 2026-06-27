@@ -20,7 +20,7 @@ Entities:
       Scale: [2.75, 2.75, 2.75]
     ChildrenComponent:
       Children:
-        []
+        - 14573699559702890570
     PrefabComponent:
       PrefabAssetId: 8470296154042606455
       SourceEntityId: 1419327337283850568
@@ -30,7 +30,7 @@ Entities:
     PlayerRoleComponent:
       Role: Goalie
     StickAttachmentComponent:
-      StickPrefabPath: data/raw/prefabs/Stick_Prefab.prefab.yaml
+      StickEntity: 14573699559702890570
     MeshRendererComponent:
       MeshAsset: 15362004082546635741
       MaterialAsset: 10097402189565703214
@@ -89,13 +89,37 @@ Entities:
       ShieldActive: false
       InputEnabled: true
       MovementEnabled: true
+    ShotComponent:
+      Charge: 0
+      Charging: false
+  - Entity: 14573699559702890570
+    NameComponent:
+      Name: Stick
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.75, 0.95]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 14573699559702890569
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 7898892890495259085
+      MaterialAsset: 3963697089678307338
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
     StickComponent:
-      OwnerPlayer: 12202628826625671414
+      OwnerPlayer: 0
       Reach: 1.5
       Width: 0.25
       LocalOffset: [0, 0, 1]
       CanControlPuck: true
       CanShoot: true
-    ShotComponent:
-      Charge: 0
-      Charging: false

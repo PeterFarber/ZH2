@@ -76,22 +76,21 @@ void RunInspectorFieldTests() {
         }
     }
 
-    // --- path field edit (StickAttachment.stickPrefabPath) -------------------
+    // --- UUID field edit (StickAttachment.stickEntityId) --------------------
     {
         StickAttachmentComponent attachment;
-        attachment.stickPrefabPath = "data/raw/prefabs/Stick_Prefab.prefab.yaml";
+        attachment.stickEntityId = UUID(42ULL);
         entity.AddOrReplaceComponent<StickAttachmentComponent>(attachment);
 
         const ComponentMetadata* md = registry.FindByName("StickAttachmentComponent");
         HK_CHECK_MSG(md != nullptr, "StickAttachment metadata registered");
-        const FieldMetadata* field = md != nullptr ? FindField(*md, "StickPrefabPath") : nullptr;
-        HK_CHECK_MSG(field != nullptr, "StickPrefabPath field present");
+        const FieldMetadata* field = md != nullptr ? FindField(*md, "StickEntity") : nullptr;
+        HK_CHECK_MSG(field != nullptr, "StickEntity field present");
         if (md != nullptr && field != nullptr) {
-            HK_CHECK(field->type == FieldType::Path);
-            auto* value = static_cast<std::filesystem::path*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
-            *value = "data/raw/prefabs/Alternate_Stick.prefab.yaml";
-            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
-                        std::string("data/raw/prefabs/Alternate_Stick.prefab.yaml"));
+            HK_CHECK(field->type == FieldType::UUID);
+            auto* value = static_cast<UUID*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
+            *value = UUID(43ULL);
+            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickEntityId, UUID(43ULL));
         }
     }
 

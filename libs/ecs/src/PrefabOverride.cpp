@@ -200,8 +200,8 @@ Status ApplyOne(Scene& scene, const PrefabOverride& ov) {
         if (component == nullptr) {
             return Fail("missing StickAttachmentComponent");
         }
-        if (ov.fieldName == "StickPrefabPath") {
-            component->stickPrefabPath = ov.value.as<std::string>();
+        if (ov.fieldName == "StickEntity") {
+            component->stickEntityId = UUID(ov.value.as<std::uint64_t>());
         } else {
             return Fail("unknown StickAttachmentComponent field '" + ov.fieldName + "'");
         }

@@ -228,7 +228,7 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.displayName = "Stick Attachment";
         md.category = "Hockey";
         md.fields.push_back(
-            MakeField("StickPrefabPath", FieldType::Path, offsetof(StickAttachmentComponent, stickPrefabPath)));
+            MakeField("StickEntity", FieldType::UUID, offsetof(StickAttachmentComponent, stickEntityId)));
         RegisterComponent<StickAttachmentComponent>(std::move(md));
     }
 

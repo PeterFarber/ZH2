@@ -91,7 +91,7 @@ struct SpawnPointComponent {
 };
 
 struct StickAttachmentComponent {
-    std::filesystem::path stickPrefabPath;
+    UUID stickEntityId;
 };
 
 struct RinkComponent {

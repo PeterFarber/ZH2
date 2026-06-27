@@ -1,27 +1,44 @@
 #include "Hockey/Gameplay/Stick/StickAttachment.hpp"
 
-#include <filesystem>
-
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
-#include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 
 namespace Hockey {
 namespace {
 
-Entity FindExistingAttachedStick(Scene& scene, Entity player, const std::filesystem::path& prefabPath) {
+bool IsDirectChildOf(Entity child, Entity parent) {
+    if (!child.IsValid() || !child.HasComponent<ParentComponent>()) {
+        return false;
+    }
+    return child.GetComponent<ParentComponent>().parentId == parent.GetUUID();
+}
+
+Entity FindAttachedStickByPrefabSource(Scene& scene, Entity player, UUID sourceStickId) {
     for (Entity child : scene.GetChildren(player)) {
         if (!child.HasComponent<PrefabComponent>()) {
             continue;
         }
         const PrefabComponent& prefab = child.GetComponent<PrefabComponent>();
-        if (prefab.sourcePath == prefabPath) {
+        if (prefab.sourceEntityId == sourceStickId) {
             return child;
         }
     }
     return {};
+}
+
+Entity ResolveAttachedStick(Scene& scene, Entity player, UUID stickEntityId) {
+    if (!stickEntityId.IsValid()) {
+        return {};
+    }
+
+    Entity stick = scene.FindEntityByUUID(stickEntityId);
+    if (stick.IsValid() && IsDirectChildOf(stick, player)) {
+        return stick;
+    }
+
+    return FindAttachedStickByPrefabSource(scene, player, stickEntityId);
 }
 
 void ApplyStickGameplayData(Entity player, Entity stickEntity) {
@@ -50,22 +67,20 @@ Status StickAttachment::EnsureStickAttached(Scene& scene, Entity player) {
     }
 
     if (!player.HasComponent<StickAttachmentComponent>() ||
-        player.GetComponent<StickAttachmentComponent>().stickPrefabPath.empty()) {
+        !player.GetComponent<StickAttachmentComponent>().stickEntityId.IsValid()) {
         ApplyStickGameplayData(player, {});
         return Status::Ok();
     }
 
-    const std::filesystem::path prefabPath = player.GetComponent<StickAttachmentComponent>().stickPrefabPath;
-    Entity stickEntity = FindExistingAttachedStick(scene, player, prefabPath);
+    const UUID stickEntityId = player.GetComponent<StickAttachmentComponent>().stickEntityId;
+    Entity stickEntity = ResolveAttachedStick(scene, player, stickEntityId);
     if (!stickEntity.IsValid()) {
-        Result<Entity> instantiated = PrefabSerializer::Instantiate(scene, prefabPath);
-        if (!instantiated) {
-            return Status::Fail("failed to instantiate stick prefab '" + prefabPath.generic_string() +
-                                "': " + instantiated.error);
-        }
-        stickEntity = instantiated.value;
-        stickEntity.GetComponent<NameComponent>().name = "Stick";
-        scene.SetParent(stickEntity, player, false);
+        return Status::Fail("stick attachment reference '" + stickEntityId.ToString() +
+                            "' did not resolve to a child stick entity");
+    }
+    if (!stickEntity.HasComponent<StickComponent>()) {
+        return Status::Fail("stick attachment reference '" + stickEntityId.ToString() +
+                            "' resolved to a child without StickComponent");
     }
 
     ApplyStickGameplayData(player, stickEntity);

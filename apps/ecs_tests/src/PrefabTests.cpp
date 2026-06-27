@@ -1,6 +1,7 @@
 #include "Test.hpp"
 
 #include <filesystem>
+#include <string>
 
 #include <yaml-cpp/yaml.h>
 
@@ -18,8 +19,10 @@ void RunPrefabTests() {
 
     Scene source("Source");
     Entity net = source.CreateEntity("Goal Net");
+    Entity stick = source.CreateEntity("Goal Net Stick");
+    source.SetParent(stick, net, false);
     StickAttachmentComponent attachment;
-    attachment.stickPrefabPath = "data/raw/prefabs/Stick_Prefab.prefab.yaml";
+    attachment.stickEntityId = stick.GetUUID();
     net.AddComponent<StickAttachmentComponent>(attachment);
     Entity trigger = source.CreateEntity("Goal Trigger");
     trigger.AddComponent<GoalComponent>(GoalComponent{Team::Home});
@@ -41,16 +44,40 @@ void RunPrefabTests() {
     HK_CHECK(root.GetUUID() != net.GetUUID());
     HK_CHECK(root.HasComponent<PrefabComponent>());
     HK_CHECK(!root.HasComponent<ParentComponent>());
+    HK_CHECK(root.HasComponent<StickAttachmentComponent>());
+    if (root.HasComponent<StickAttachmentComponent>()) {
+        HK_CHECK_EQ(root.GetComponent<StickAttachmentComponent>().stickEntityId, stick.GetUUID());
+    }
 
-    HK_CHECK_EQ(target.GetChildren(root).size(), static_cast<std::size_t>(1));
-    Entity childInstance = target.GetChildren(root)[0];
-    HK_CHECK(childInstance.GetUUID() != trigger.GetUUID());
-    HK_CHECK(childInstance.HasComponent<GoalComponent>());
-    HK_CHECK(childInstance.HasComponent<PrefabComponent>());
-    HK_CHECK(childInstance.HasComponent<ParentComponent>());
-    HK_CHECK(childInstance.GetComponent<ParentComponent>().parentId == root.GetUUID());
+    HK_CHECK_EQ(target.GetChildren(root).size(), static_cast<std::size_t>(2));
+    Entity stickInstance;
+    Entity childInstance;
+    for (Entity child : target.GetChildren(root)) {
+        if (child.HasComponent<PrefabComponent>() &&
+            child.GetComponent<PrefabComponent>().sourceEntityId == stick.GetUUID()) {
+            stickInstance = child;
+        }
+        if (child.HasComponent<GoalComponent>()) {
+            childInstance = child;
+        }
+    }
+    HK_CHECK(stickInstance.IsValid());
+    HK_CHECK(childInstance.IsValid());
+    if (stickInstance.IsValid()) {
+        HK_CHECK(stickInstance.GetUUID() != stick.GetUUID());
+        HK_CHECK(stickInstance.HasComponent<PrefabComponent>());
+        HK_CHECK(stickInstance.HasComponent<ParentComponent>());
+        HK_CHECK(stickInstance.GetComponent<ParentComponent>().parentId == root.GetUUID());
+    }
+    if (childInstance.IsValid()) {
+        HK_CHECK(childInstance.GetUUID() != trigger.GetUUID());
+        HK_CHECK(childInstance.HasComponent<GoalComponent>());
+        HK_CHECK(childInstance.HasComponent<PrefabComponent>());
+        HK_CHECK(childInstance.HasComponent<ParentComponent>());
+        HK_CHECK(childInstance.GetComponent<ParentComponent>().parentId == root.GetUUID());
+    }
 
-    // Overrides: transform, name, active, hockey marker.
+    // Overrides: transform, name, active, hockey marker, and child stick reference.
     PrefabOverrideSet overrides;
 
     PrefabOverride positionOverride;
@@ -88,12 +115,13 @@ void RunPrefabTests() {
     markerOverride.value = YAML::Load("Away");
     overrides.AddOverride(markerOverride);
 
-    PrefabOverride stickPathOverride;
-    stickPathOverride.entityId = root.GetUUID();
-    stickPathOverride.componentName = "StickAttachmentComponent";
-    stickPathOverride.fieldName = "StickPrefabPath";
-    stickPathOverride.value = YAML::Load("data/raw/prefabs/Alternate_Stick.prefab.yaml");
-    overrides.AddOverride(stickPathOverride);
+    PrefabOverride stickEntityOverride;
+    stickEntityOverride.entityId = root.GetUUID();
+    stickEntityOverride.componentName = "StickAttachmentComponent";
+    stickEntityOverride.fieldName = "StickEntity";
+    const UUID overrideStickEntity = childInstance.IsValid() ? childInstance.GetUUID() : UUID();
+    stickEntityOverride.value = YAML::Load(std::to_string(overrideStickEntity.Value()));
+    overrides.AddOverride(stickEntityOverride);
 
     HK_CHECK(static_cast<bool>(overrides.Apply(target)));
     HK_CHECK_NEAR(root.GetComponent<TransformComponent>().localPosition.x, 9.0f, 1e-4);
@@ -101,10 +129,11 @@ void RunPrefabTests() {
     HK_CHECK_EQ(root.GetName(), std::string("Renamed Net"));
     HK_CHECK(!root.IsActive());
     HK_CHECK_EQ(root.GetComponent<ObjectSettingsComponent>().tag, std::string("Goal"));
-    HK_CHECK(childInstance.GetComponent<GoalComponent>().defendingTeam == Team::Away);
+    if (childInstance.IsValid()) {
+        HK_CHECK(childInstance.GetComponent<GoalComponent>().defendingTeam == Team::Away);
+    }
     HK_CHECK(root.HasComponent<StickAttachmentComponent>());
-    if (root.HasComponent<StickAttachmentComponent>()) {
-        HK_CHECK_EQ(root.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
-                    std::string("data/raw/prefabs/Alternate_Stick.prefab.yaml"));
+    if (root.HasComponent<StickAttachmentComponent>() && childInstance.IsValid()) {
+        HK_CHECK_EQ(root.GetComponent<StickAttachmentComponent>().stickEntityId, childInstance.GetUUID());
     }
 }

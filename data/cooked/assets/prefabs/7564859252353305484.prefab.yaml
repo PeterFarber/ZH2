@@ -20,7 +20,7 @@ Entities:
       Scale: [2.75, 2.75, 2.75]
     ChildrenComponent:
       Children:
-        []
+        - 17603803852224410853
     PrefabComponent:
       PrefabAssetId: 17093754176192469660
       SourceEntityId: 16839685739191931040
@@ -30,7 +30,7 @@ Entities:
     PlayerRoleComponent:
       Role: Skater
     StickAttachmentComponent:
-      StickPrefabPath: data/raw/prefabs/Stick_Prefab.prefab.yaml
+      StickEntity: 17603803852224410853
     MeshRendererComponent:
       MeshAsset: 6674370949423982319
       MaterialAsset: 10279919324660303988
@@ -90,13 +90,37 @@ Entities:
       ShieldActive: false
       InputEnabled: true
       MovementEnabled: true
+    ShotComponent:
+      Charge: 0
+      Charging: false
+  - Entity: 17603803852224410853
+    NameComponent:
+      Name: Stick
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0.75, 0.95]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 17603803852224410852
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 7898892890495259085
+      MaterialAsset: 3963697089678307338
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
     StickComponent:
-      OwnerPlayer: 379836843483610542
+      OwnerPlayer: 0
       Reach: 1.5
       Width: 0.25
       LocalOffset: [0, 0, 1]
       CanControlPuck: true
       CanShoot: true
-    ShotComponent:
-      Charge: 0
-      Charging: false

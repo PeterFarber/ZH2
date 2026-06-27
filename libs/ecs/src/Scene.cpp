@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <unordered_map>
 #include <utility>
 
 #include "Hockey/ECS/Components.hpp"
@@ -19,6 +20,15 @@ template <typename T> void CopyComponent(entt::registry& registry, entt::entity 
     if (const auto* component = registry.try_get<T>(from)) {
         registry.emplace_or_replace<T>(to, *component);
     }
+}
+
+UUID MappedDuplicateId(UUID sourceId, const std::unordered_map<UUID, UUID>& duplicateMap) {
+    for (const auto& [oldId, newId] : duplicateMap) {
+        if (oldId == sourceId) {
+            return newId;
+        }
+    }
+    return {};
 }
 
 } // namespace
@@ -131,8 +141,9 @@ Entity Scene::CreateEntityWithUUID(UUID id, const std::string& name) {
     return Entity(handle, this);
 }
 
-entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
+entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle, std::unordered_map<UUID, UUID>& duplicateMap) {
     const std::string name = m_Registry.get<NameComponent>(sourceHandle).name;
+    const UUID sourceId = m_Registry.get<IDComponent>(sourceHandle).id;
 
     UUID newId;
     while (m_EntityMap.find(newId) != m_EntityMap.end()) {
@@ -140,6 +151,7 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     }
     const Entity copy = CreateEntityWithUUID(newId, name);
     const entt::entity newHandle = copy.Handle();
+    duplicateMap[sourceId] = newId;
 
     CopyComponent<ActiveComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<ObjectSettingsComponent>(m_Registry, sourceHandle, newHandle);
@@ -168,7 +180,7 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
             if (childHandle == entt::null) {
                 continue;
             }
-            const entt::entity newChildHandle = DuplicateRecursive(childHandle);
+            const entt::entity newChildHandle = DuplicateRecursive(childHandle, duplicateMap);
             m_Registry.emplace_or_replace<ParentComponent>(newChildHandle, ParentComponent{newId});
             const UUID newChildId = m_Registry.get<IDComponent>(newChildHandle).id;
             RemoveFromRootOrder(newChildId);
@@ -179,11 +191,32 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     return newHandle;
 }
 
+void Scene::RemapDuplicatedStickAttachmentReferences(entt::entity handle,
+                                                      const std::unordered_map<UUID, UUID>& duplicateMap) {
+    if (auto* attachment = m_Registry.try_get<StickAttachmentComponent>(handle)) {
+        const UUID mappedId = MappedDuplicateId(attachment->stickEntityId, duplicateMap);
+        if (mappedId.IsValid()) {
+            attachment->stickEntityId = mappedId;
+        }
+    }
+
+    if (const auto* children = m_Registry.try_get<ChildrenComponent>(handle)) {
+        for (const UUID childId : children->children) {
+            const entt::entity childHandle = HandleFromUUID(childId);
+            if (childHandle != entt::null) {
+                RemapDuplicatedStickAttachmentReferences(childHandle, duplicateMap);
+            }
+        }
+    }
+}
+
 Entity Scene::DuplicateEntity(Entity source) {
     if (!IsValid(source)) {
         return Entity();
     }
-    const entt::entity newHandle = DuplicateRecursive(source.Handle());
+    std::unordered_map<UUID, UUID> duplicateMap;
+    const entt::entity newHandle = DuplicateRecursive(source.Handle(), duplicateMap);
+    RemapDuplicatedStickAttachmentReferences(newHandle, duplicateMap);
     Entity copy = MakeEntity(newHandle);
     RecalculateActiveInHierarchy(copy);
     return copy;
