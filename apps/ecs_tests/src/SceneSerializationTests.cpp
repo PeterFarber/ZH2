@@ -184,43 +184,30 @@ Entities:
         HK_CHECK(roots[1] == UUID(1002));
     }
 
+
     {
-        Scene source("StickAttachmentRoundTrip");
-        Entity player = source.CreateEntity("Player With Stick Attachment");
+        Scene source("StickChildRoundTrip");
+        Entity player = source.CreateEntity("Player With Stick Child");
         Entity stick = source.CreateEntity("Stick Child");
         source.SetParent(stick, player, false);
 
-        StickAttachmentComponent attachment;
-        attachment.stickEntityId = stick.GetUUID();
-        player.AddComponent<StickAttachmentComponent>(attachment);
-
         Entity duplicate = source.DuplicateEntity(player);
-        HK_CHECK(duplicate.HasComponent<StickAttachmentComponent>());
-        if (duplicate.HasComponent<StickAttachmentComponent>()) {
-            const std::vector<Entity> duplicateChildren = source.GetChildren(duplicate);
-            HK_CHECK_EQ(duplicateChildren.size(), static_cast<std::size_t>(1));
-            if (!duplicateChildren.empty()) {
-                HK_CHECK_EQ(duplicate.GetComponent<StickAttachmentComponent>().stickEntityId,
-                            duplicateChildren.front().GetUUID());
-                HK_CHECK(duplicate.GetComponent<StickAttachmentComponent>().stickEntityId != stick.GetUUID());
-            }
+        const std::vector<Entity> duplicateChildren = source.GetChildren(duplicate);
+        HK_CHECK_EQ(duplicateChildren.size(), static_cast<std::size_t>(1));
+        if (!duplicateChildren.empty()) {
+            HK_CHECK(duplicateChildren.front().GetUUID() != stick.GetUUID());
         }
 
-        const std::filesystem::path path = Paths::TempFile("stick_attachment_scene.scene.yaml");
+        const std::filesystem::path path = Paths::TempFile("stick_child_scene.scene.yaml");
         HK_CHECK(static_cast<bool>(SceneSerializer(source).Serialize(path)));
 
-        Scene loaded("LoadedStickAttachmentRoundTrip");
+        Scene loaded("LoadedStickChildRoundTrip");
         HK_CHECK(static_cast<bool>(SceneSerializer(loaded).Deserialize(path)));
-        Entity loadedPlayer = loaded.FindEntityByName("Player With Stick Attachment");
+        Entity loadedPlayer = loaded.FindEntityByName("Player With Stick Child");
         HK_CHECK(loadedPlayer.IsValid());
-        HK_CHECK(loadedPlayer.HasComponent<StickAttachmentComponent>());
-        if (loadedPlayer.IsValid() && loadedPlayer.HasComponent<StickAttachmentComponent>()) {
+        if (loadedPlayer.IsValid()) {
             const std::vector<Entity> loadedChildren = loaded.GetChildren(loadedPlayer);
             HK_CHECK_EQ(loadedChildren.size(), static_cast<std::size_t>(1));
-            if (!loadedChildren.empty()) {
-                HK_CHECK_EQ(loadedPlayer.GetComponent<StickAttachmentComponent>().stickEntityId,
-                            loadedChildren.front().GetUUID());
-            }
         }
     }
 }

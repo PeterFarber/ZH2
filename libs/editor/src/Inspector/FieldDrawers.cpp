@@ -15,10 +15,7 @@
 #include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/ComponentMetadata.hpp"
-#include "Hockey/ECS/Entity.hpp"
-#include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
-#include "Hockey/Editor/EntityDragDrop.hpp"
 #include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/PrefabDragDrop.hpp"
 
@@ -31,19 +28,6 @@ void* FieldPointer(void* componentData, const FieldMetadata& field) {
     return static_cast<char*>(componentData) + field.offset;
 }
 
-bool AssignEntityReference(const FieldMetadata& field, void* componentData, UUID entityId) {
-    if (componentData == nullptr || field.type != FieldType::UUID || field.hint != FieldHint::EntityReference ||
-        field.readOnly) {
-        return false;
-    }
-
-    auto* value = static_cast<UUID*>(FieldPointer(componentData, field));
-    if (value == nullptr || *value == entityId) {
-        return false;
-    }
-    *value = entityId;
-    return true;
-}
 
 namespace {
 
@@ -239,51 +223,10 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
     return changed;
 }
 
-std::string EntityReferenceLabel(UUID id, Scene* scene) {
-    if (!id.IsValid()) {
-        return "(none)";
-    }
-    if (scene != nullptr) {
-        Entity entity = scene->FindEntityByUUID(id);
-        if (entity.IsValid()) {
-            return entity.GetName();
-        }
-    }
-    return "(missing) " + id.ToString();
-}
-
-bool DrawEntityReference(const FieldMetadata& field, void* componentData, UUID* id, Scene* scene) {
-    bool changed = false;
-    ImGui::PushID(field.name.c_str());
-
-    const std::string label = EntityReferenceLabel(*id, scene);
-    const float clearWidth = ImGui::GetFrameHeight();
-    const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-    const float buttonWidth = ImGui::CalcItemWidth() - clearWidth - spacing;
-    ImGui::Button(label.c_str(), ImVec2(buttonWidth > 0.0f ? buttonWidth : 0.0f, 0.0f));
-
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kEntityDragDropType)) {
-            const std::uint64_t value = *static_cast<const std::uint64_t*>(payload->Data);
-            changed = AssignEntityReference(field, componentData, UUID(value));
-        }
-        ImGui::EndDragDropTarget();
-    }
-
-    ImGui::SameLine(0.0f, spacing);
-    if (EditorIconButton(EditorIcon::Clear, "Clear Entity", "Clear entity reference", ImVec2(clearWidth, 0.0f))) {
-        changed = AssignEntityReference(field, componentData, UUID(0));
-    }
-    ImGui::SameLine(0.0f, spacing);
-    ImGui::TextUnformatted(field.displayName.c_str());
-
-    ImGui::PopID();
-    return changed;
-}
 
 } // namespace
 
-FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* assetManager, Scene* scene) {
+FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* assetManager) {
     FieldEdit result;
     void* ptr = FieldPointer(componentData, field);
     if (ptr == nullptr) {
@@ -355,13 +298,9 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
         result.changed = DrawEnum(label, field, static_cast<int*>(ptr));
         break;
     case FieldType::UUID: {
-        if (field.hint == FieldHint::EntityReference) {
-            result.changed = DrawEntityReference(field, componentData, static_cast<UUID*>(ptr), scene);
-        } else {
-            char buffer[32];
-            std::snprintf(buffer, sizeof(buffer), "%s", static_cast<const UUID*>(ptr)->ToString().c_str());
-            ImGui::InputText(label, buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
-        }
+        char buffer[32];
+        std::snprintf(buffer, sizeof(buffer), "%s", static_cast<const UUID*>(ptr)->ToString().c_str());
+        ImGui::InputText(label, buffer, sizeof(buffer), ImGuiInputTextFlags_ReadOnly);
         break;
     }
     case FieldType::String: {
@@ -406,9 +345,8 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
     result.committed = result.committed || ImGui::IsItemDeactivatedAfterEdit();
     // Discrete widgets (checkbox / enum combo / asset drop) commit the moment
     // they change rather than relying on a deactivation edge.
-    const bool entityReference = field.type == FieldType::UUID && field.hint == FieldHint::EntityReference;
-    if (result.changed && (field.type == FieldType::Bool || field.type == FieldType::Enum ||
-                           field.type == FieldType::AssetRef || entityReference)) {
+    if (result.changed &&
+        (field.type == FieldType::Bool || field.type == FieldType::Enum || field.type == FieldType::AssetRef)) {
         result.started = true;
         result.committed = true;
     }

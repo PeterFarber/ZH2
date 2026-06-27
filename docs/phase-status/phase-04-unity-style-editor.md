@@ -81,7 +81,7 @@ Source material:
 - [x] Hierarchy drag sorting uses distinct custom previews for sibling insertion versus parent/inside drops.
 - [x] Focus selected behavior exists.
 - [x] Metadata-driven inspector field drawers exist.
-- [x] Metadata-driven inspector UUID entity-reference fields accept Hierarchy entity drag/drop.
+- [x] Metadata-driven inspector keeps UUID fields read-only; hierarchy-owned references are authored through parent/child structure.
 - [x] Rigid Body collision detection mode is exposed through metadata-driven Inspector enum fields.
 - [x] Component add/remove workflow exists.
 - [x] Undo/redo command stack exists.

@@ -44,11 +44,6 @@ FieldMetadata MakeColorField(std::string name, std::size_t offset, std::string d
     return field;
 }
 
-FieldMetadata MakeEntityReferenceField(std::string name, std::size_t offset, std::string displayName = {}) {
-    FieldMetadata field = MakeField(std::move(name), FieldType::UUID, offset, std::move(displayName));
-    field.hint = FieldHint::EntityReference;
-    return field;
-}
 
 FieldMetadata MakeLightTypeField(std::string name, std::size_t offset) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Enum, offset);
@@ -226,16 +221,6 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.fields.push_back(
             MakeField("PlayerPrefabPath", FieldType::Path, offsetof(SpawnPointComponent, playerPrefabPath)));
         RegisterComponent<SpawnPointComponent>(std::move(md));
-    }
-
-    {
-        ComponentMetadata md;
-        md.name = "StickAttachmentComponent";
-        md.displayName = "Stick Attachment";
-        md.category = "Hockey";
-        md.fields.push_back(
-            MakeEntityReferenceField("StickEntity", offsetof(StickAttachmentComponent, stickEntityId)));
-        RegisterComponent<StickAttachmentComponent>(std::move(md));
     }
 
     {

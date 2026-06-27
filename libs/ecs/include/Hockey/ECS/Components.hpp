@@ -90,10 +90,6 @@ struct SpawnPointComponent {
     std::filesystem::path playerPrefabPath;
 };
 
-struct StickAttachmentComponent {
-    UUID stickEntityId;
-};
-
 struct RinkComponent {
     std::string rinkName = "Default Rink";
 };
@@ -131,7 +127,6 @@ HK_DEFINE_COMPONENT_TRAITS(PlayerRoleComponent);
 HK_DEFINE_COMPONENT_TRAITS(PuckComponent);
 HK_DEFINE_COMPONENT_TRAITS(GoalComponent);
 HK_DEFINE_COMPONENT_TRAITS(SpawnPointComponent);
-HK_DEFINE_COMPONENT_TRAITS(StickAttachmentComponent);
 HK_DEFINE_COMPONENT_TRAITS(RinkComponent);
 HK_DEFINE_COMPONENT_TRAITS(PlayAreaComponent);
 HK_DEFINE_COMPONENT_TRAITS(CameraRigMarkerComponent);

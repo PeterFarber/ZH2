@@ -76,28 +76,6 @@ void RunInspectorFieldTests() {
         }
     }
 
-    // --- UUID field edit (StickAttachment.stickEntityId) --------------------
-    {
-        StickAttachmentComponent attachment;
-        attachment.stickEntityId = UUID(42ULL);
-        entity.AddOrReplaceComponent<StickAttachmentComponent>(attachment);
-
-        const ComponentMetadata* md = registry.FindByName("StickAttachmentComponent");
-        HK_CHECK_MSG(md != nullptr, "StickAttachment metadata registered");
-        const FieldMetadata* field = md != nullptr ? FindField(*md, "StickEntity") : nullptr;
-        HK_CHECK_MSG(field != nullptr, "StickEntity field present");
-        if (md != nullptr && field != nullptr) {
-            HK_CHECK(field->type == FieldType::UUID);
-            auto* value = static_cast<UUID*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
-            *value = UUID(43ULL);
-            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickEntityId, UUID(43ULL));
-
-            Entity stick = scene.CreateEntity("Stick");
-            HK_CHECK(FieldDrawers::AssignEntityReference(*field, md->getData(entity), stick.GetUUID()));
-            HK_CHECK_EQ(entity.GetComponent<StickAttachmentComponent>().stickEntityId, stick.GetUUID());
-        }
-    }
-
     // --- float field edit (Camera.fovDegrees) -------------------------------
     {
         entity.AddComponent<CameraComponent>();

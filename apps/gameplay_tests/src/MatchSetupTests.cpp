@@ -102,10 +102,6 @@ std::filesystem::path SavePlayerPrefab() {
     stick.AddComponent<StickComponent>(stickComponent);
     prefabScene.SetParent(stick, root, false);
 
-    StickAttachmentComponent attachment;
-    attachment.stickEntityId = stick.GetUUID();
-    root.AddComponent<StickAttachmentComponent>(attachment);
-
     const std::filesystem::path path = Paths::TempFile("spawn_player.prefab.yaml");
     HK_CHECK(static_cast<bool>(PrefabSerializer::Save(prefabScene, root, path)));
     return path;
@@ -214,10 +210,6 @@ void RunMatchSetupTests() {
             HK_CHECK_NEAR(prefabPlayer.GetComponent<TransformComponent>().localPosition.z, -5.0f, 0.001f);
             HK_CHECK(prefabPlayer.HasComponent<PlayerRuntimeComponent>());
             HK_CHECK(prefabPlayer.HasComponent<StickComponent>());
-            HK_CHECK(prefabPlayer.HasComponent<StickAttachmentComponent>());
-            if (prefabPlayer.HasComponent<StickAttachmentComponent>()) {
-                HK_CHECK(prefabPlayer.GetComponent<StickAttachmentComponent>().stickEntityId.IsValid());
-            }
             HK_CHECK_NEAR(prefabPlayer.GetComponent<StickComponent>().reach, 2.25f, 0.001f);
             HK_CHECK_NEAR(prefabPlayer.GetComponent<StickComponent>().width, 0.35f, 0.001f);
             HK_CHECK_EQ(prefabPlayer.GetComponent<StickComponent>().ownerPlayer, prefabPlayer.GetUUID());
@@ -233,12 +225,8 @@ void RunMatchSetupTests() {
                 }
                 if (stick.HasComponent<PrefabComponent>()) {
                     HK_CHECK_EQ(stick.GetComponent<PrefabComponent>().sourcePath, prefabPath);
-                    if (prefabPlayer.HasComponent<StickAttachmentComponent>()) {
-                        HK_CHECK_EQ(stick.GetComponent<PrefabComponent>().sourceEntityId,
-                                    prefabPlayer.GetComponent<StickAttachmentComponent>().stickEntityId);
-                        HK_CHECK(stick.GetUUID() !=
-                                 prefabPlayer.GetComponent<StickAttachmentComponent>().stickEntityId);
-                    }
+                    HK_CHECK(stick.GetComponent<PrefabComponent>().sourceEntityId.IsValid());
+                    HK_CHECK(stick.GetComponent<PrefabComponent>().sourceEntityId != stick.GetUUID());
                 }
             }
         }

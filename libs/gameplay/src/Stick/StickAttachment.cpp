@@ -1,5 +1,7 @@
 #include "Hockey/Gameplay/Stick/StickAttachment.hpp"
 
+#include <cstddef>
+
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
@@ -8,37 +10,45 @@
 namespace Hockey {
 namespace {
 
-bool IsDirectChildOf(Entity child, Entity parent) {
-    if (!child.IsValid() || !child.HasComponent<ParentComponent>()) {
-        return false;
-    }
-    return child.GetComponent<ParentComponent>().parentId == parent.GetUUID();
-}
+struct StickChildSearch {
+    Entity stick;
+    std::size_t candidateCount = 0;
+    bool ambiguous = false;
+};
 
-Entity FindAttachedStickByPrefabSource(Scene& scene, Entity player, UUID sourceStickId) {
+StickChildSearch FindDirectStickChild(Scene& scene, Entity player) {
+    StickChildSearch result;
+    Entity namedStick;
+    std::size_t namedStickCount = 0;
+
     for (Entity child : scene.GetChildren(player)) {
-        if (!child.HasComponent<PrefabComponent>()) {
+        if (!child.HasComponent<StickComponent>()) {
             continue;
         }
-        const PrefabComponent& prefab = child.GetComponent<PrefabComponent>();
-        if (prefab.sourceEntityId == sourceStickId) {
-            return child;
+
+        ++result.candidateCount;
+        if (!result.stick.IsValid()) {
+            result.stick = child;
+        }
+        if (child.GetName() == "Stick") {
+            ++namedStickCount;
+            if (!namedStick.IsValid()) {
+                namedStick = child;
+            }
         }
     }
-    return {};
-}
 
-Entity ResolveAttachedStick(Scene& scene, Entity player, UUID stickEntityId) {
-    if (!stickEntityId.IsValid()) {
-        return {};
+    if (namedStickCount == 1) {
+        result.stick = namedStick;
+        result.ambiguous = false;
+        return result;
     }
 
-    Entity stick = scene.FindEntityByUUID(stickEntityId);
-    if (stick.IsValid() && IsDirectChildOf(stick, player)) {
-        return stick;
+    result.ambiguous = result.candidateCount > 1;
+    if (namedStickCount > 1) {
+        result.ambiguous = true;
     }
-
-    return FindAttachedStickByPrefabSource(scene, player, stickEntityId);
+    return result;
 }
 
 void ApplyStickGameplayData(Entity player, Entity stickEntity) {
@@ -66,24 +76,18 @@ Status StickAttachment::EnsureStickAttached(Scene& scene, Entity player) {
         return Status::Fail("stick attachment requires a valid player entity");
     }
 
-    if (!player.HasComponent<StickAttachmentComponent>() ||
-        !player.GetComponent<StickAttachmentComponent>().stickEntityId.IsValid()) {
+    const StickChildSearch childStick = FindDirectStickChild(scene, player);
+    if (childStick.ambiguous) {
+        return Status::Fail("player '" + player.GetName() +
+                            "' has multiple direct stick children; keep one StickComponent child or name exactly one child 'Stick'");
+    }
+
+    if (!childStick.stick.IsValid()) {
         ApplyStickGameplayData(player, {});
         return Status::Ok();
     }
 
-    const UUID stickEntityId = player.GetComponent<StickAttachmentComponent>().stickEntityId;
-    Entity stickEntity = ResolveAttachedStick(scene, player, stickEntityId);
-    if (!stickEntity.IsValid()) {
-        return Status::Fail("stick attachment reference '" + stickEntityId.ToString() +
-                            "' did not resolve to a child stick entity");
-    }
-    if (!stickEntity.HasComponent<StickComponent>()) {
-        return Status::Fail("stick attachment reference '" + stickEntityId.ToString() +
-                            "' resolved to a child without StickComponent");
-    }
-
-    ApplyStickGameplayData(player, stickEntity);
+    ApplyStickGameplayData(player, childStick.stick);
     return Status::Ok();
 }
 

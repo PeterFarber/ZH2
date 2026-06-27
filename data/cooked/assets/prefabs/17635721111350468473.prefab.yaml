@@ -29,8 +29,6 @@ Entities:
       Team: Away
     PlayerRoleComponent:
       Role: Goalie
-    StickAttachmentComponent:
-      StickEntity: 2611392523411541574
     MeshRendererComponent:
       MeshAsset: 15362004082546635741
       MaterialAsset: 926561549203295801

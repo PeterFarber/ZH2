@@ -21,9 +21,6 @@ void RunPrefabTests() {
     Entity net = source.CreateEntity("Goal Net");
     Entity stick = source.CreateEntity("Goal Net Stick");
     source.SetParent(stick, net, false);
-    StickAttachmentComponent attachment;
-    attachment.stickEntityId = stick.GetUUID();
-    net.AddComponent<StickAttachmentComponent>(attachment);
     Entity trigger = source.CreateEntity("Goal Trigger");
     trigger.AddComponent<GoalComponent>(GoalComponent{Team::Home});
     source.SetParent(trigger, net, false);
@@ -44,11 +41,6 @@ void RunPrefabTests() {
     HK_CHECK(root.GetUUID() != net.GetUUID());
     HK_CHECK(root.HasComponent<PrefabComponent>());
     HK_CHECK(!root.HasComponent<ParentComponent>());
-    HK_CHECK(root.HasComponent<StickAttachmentComponent>());
-    if (root.HasComponent<StickAttachmentComponent>()) {
-        HK_CHECK_EQ(root.GetComponent<StickAttachmentComponent>().stickEntityId, stick.GetUUID());
-    }
-
     HK_CHECK_EQ(target.GetChildren(root).size(), static_cast<std::size_t>(2));
     Entity stickInstance;
     Entity childInstance;
@@ -77,7 +69,7 @@ void RunPrefabTests() {
         HK_CHECK(childInstance.GetComponent<ParentComponent>().parentId == root.GetUUID());
     }
 
-    // Overrides: transform, name, active, hockey marker, and child stick reference.
+    // Overrides: transform, name, active, and hockey marker.
     PrefabOverrideSet overrides;
 
     PrefabOverride positionOverride;
@@ -115,14 +107,6 @@ void RunPrefabTests() {
     markerOverride.value = YAML::Load("Away");
     overrides.AddOverride(markerOverride);
 
-    PrefabOverride stickEntityOverride;
-    stickEntityOverride.entityId = root.GetUUID();
-    stickEntityOverride.componentName = "StickAttachmentComponent";
-    stickEntityOverride.fieldName = "StickEntity";
-    const UUID overrideStickEntity = childInstance.IsValid() ? childInstance.GetUUID() : UUID();
-    stickEntityOverride.value = YAML::Load(std::to_string(overrideStickEntity.Value()));
-    overrides.AddOverride(stickEntityOverride);
-
     HK_CHECK(static_cast<bool>(overrides.Apply(target)));
     HK_CHECK_NEAR(root.GetComponent<TransformComponent>().localPosition.x, 9.0f, 1e-4);
     HK_CHECK_NEAR(root.GetComponent<TransformComponent>().localPosition.z, 7.0f, 1e-4);
@@ -131,9 +115,5 @@ void RunPrefabTests() {
     HK_CHECK_EQ(root.GetComponent<ObjectSettingsComponent>().tag, std::string("Goal"));
     if (childInstance.IsValid()) {
         HK_CHECK(childInstance.GetComponent<GoalComponent>().defendingTeam == Team::Away);
-    }
-    HK_CHECK(root.HasComponent<StickAttachmentComponent>());
-    if (root.HasComponent<StickAttachmentComponent>() && childInstance.IsValid()) {
-        HK_CHECK_EQ(root.GetComponent<StickAttachmentComponent>().stickEntityId, childInstance.GetUUID());
     }
 }

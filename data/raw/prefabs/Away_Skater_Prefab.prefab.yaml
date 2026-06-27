@@ -29,8 +29,6 @@ Entities:
       Team: Away
     PlayerRoleComponent:
       Role: Skater
-    StickAttachmentComponent:
-      StickEntity: 9614544951849594046
     MeshRendererComponent:
       MeshAsset: 6674370949423982319
       MaterialAsset: 12456872314640691628

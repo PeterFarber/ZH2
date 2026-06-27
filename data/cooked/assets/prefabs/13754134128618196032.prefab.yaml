@@ -29,8 +29,6 @@ Entities:
       Team: Home
     PlayerRoleComponent:
       Role: Goalie
-    StickAttachmentComponent:
-      StickEntity: 14573699559702890570
     MeshRendererComponent:
       MeshAsset: 15362004082546635741
       MaterialAsset: 10097402189565703214

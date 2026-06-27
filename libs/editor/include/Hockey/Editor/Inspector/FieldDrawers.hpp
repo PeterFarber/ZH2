@@ -1,12 +1,9 @@
 #pragma once
 
-#include "Hockey/Core/UUID.hpp"
-
 namespace Hockey {
 
 struct FieldMetadata;
 class AssetManager;
-class Scene;
 
 namespace FieldDrawers {
 
@@ -25,10 +22,6 @@ struct FieldEdit {
 // access independently of ImGui.
 void* FieldPointer(void* componentData, const FieldMetadata& field);
 
-// Assigns an entity-reference UUID field through metadata. Returns true only
-// when the field accepts entity references and the value actually changed.
-bool AssignEntityReference(const FieldMetadata& field, void* componentData, UUID entityId);
-
 // Draws an editable ImGui widget for a single field based on its metadata
 // (type, range/speed, enum names, read-only). Read-only fields never report a
 // change. `assetManager` (optional) is used by FieldType::AssetRef fields to
@@ -36,8 +29,7 @@ bool AssignEntityReference(const FieldMetadata& field, void* componentData, UUID
 // headless contexts (AssetRef then shows the raw id, read-only).
 FieldEdit Draw(const FieldMetadata& field,
                void* componentData,
-               AssetManager* assetManager = nullptr,
-               Scene* scene = nullptr);
+               AssetManager* assetManager = nullptr);
 
 } // namespace FieldDrawers
 
