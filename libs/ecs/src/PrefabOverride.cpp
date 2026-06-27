@@ -195,6 +195,19 @@ Status ApplyOne(Scene& scene, const PrefabOverride& ov) {
         return Status::Ok();
     }
 
+    if (ov.componentName == "StickAttachmentComponent") {
+        auto* component = registry.try_get<StickAttachmentComponent>(handle);
+        if (component == nullptr) {
+            return Fail("missing StickAttachmentComponent");
+        }
+        if (ov.fieldName == "StickPrefabPath") {
+            component->stickPrefabPath = ov.value.as<std::string>();
+        } else {
+            return Fail("unknown StickAttachmentComponent field '" + ov.fieldName + "'");
+        }
+        return Status::Ok();
+    }
+
     if (ov.componentName == "RinkComponent") {
         auto* component = registry.try_get<RinkComponent>(handle);
         if (component == nullptr) {

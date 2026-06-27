@@ -183,4 +183,32 @@ Entities:
         HK_CHECK(roots[0] == UUID(1001));
         HK_CHECK(roots[1] == UUID(1002));
     }
+
+    {
+        Scene source("StickAttachmentRoundTrip");
+        Entity player = source.CreateEntity("Player With Stick Attachment");
+        StickAttachmentComponent attachment;
+        attachment.stickPrefabPath = "data/raw/prefabs/Stick_Prefab.prefab.yaml";
+        player.AddComponent<StickAttachmentComponent>(attachment);
+
+        Entity duplicate = source.DuplicateEntity(player);
+        HK_CHECK(duplicate.HasComponent<StickAttachmentComponent>());
+        if (duplicate.HasComponent<StickAttachmentComponent>()) {
+            HK_CHECK_EQ(duplicate.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
+                        std::string("data/raw/prefabs/Stick_Prefab.prefab.yaml"));
+        }
+
+        const std::filesystem::path path = Paths::TempFile("stick_attachment_scene.scene.yaml");
+        HK_CHECK(static_cast<bool>(SceneSerializer(source).Serialize(path)));
+
+        Scene loaded("LoadedStickAttachmentRoundTrip");
+        HK_CHECK(static_cast<bool>(SceneSerializer(loaded).Deserialize(path)));
+        Entity loadedPlayer = loaded.FindEntityByName("Player With Stick Attachment");
+        HK_CHECK(loadedPlayer.IsValid());
+        HK_CHECK(loadedPlayer.HasComponent<StickAttachmentComponent>());
+        if (loadedPlayer.IsValid() && loadedPlayer.HasComponent<StickAttachmentComponent>()) {
+            HK_CHECK_EQ(loadedPlayer.GetComponent<StickAttachmentComponent>().stickPrefabPath.generic_string(),
+                        std::string("data/raw/prefabs/Stick_Prefab.prefab.yaml"));
+        }
+    }
 }

@@ -98,6 +98,15 @@ void RunComponentMetadataTests() {
     HK_CHECK(HasFaceoffSpawnField<SpawnPointComponent>::value);
     HK_CHECK(registry.FindByName("FaceoffSpotComponent") == nullptr);
 
+    const ComponentMetadata* stickAttachment = registry.FindByName("StickAttachmentComponent");
+    HK_CHECK(stickAttachment != nullptr);
+    if (stickAttachment != nullptr) {
+        HK_CHECK_EQ(stickAttachment->displayName, std::string("Stick Attachment"));
+        HK_CHECK_EQ(stickAttachment->fields.size(), static_cast<std::size_t>(1));
+        HK_CHECK_EQ(stickAttachment->fields[0].name, std::string("StickPrefabPath"));
+        HK_CHECK(stickAttachment->fields[0].type == FieldType::Path);
+    }
+
     const ComponentMetadata* light = registry.FindByName("LightComponent");
     HK_CHECK(light != nullptr);
     if (light != nullptr) {

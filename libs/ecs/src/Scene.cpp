@@ -149,6 +149,7 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     CopyComponent<PuckComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<GoalComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<SpawnPointComponent>(m_Registry, sourceHandle, newHandle);
+    CopyComponent<StickAttachmentComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<RinkComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<PlayAreaComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<CameraRigMarkerComponent>(m_Registry, sourceHandle, newHandle);

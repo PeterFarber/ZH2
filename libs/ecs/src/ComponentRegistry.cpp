@@ -224,6 +224,16 @@ void ComponentRegistry::RegisterPhase2Components() {
 
     {
         ComponentMetadata md;
+        md.name = "StickAttachmentComponent";
+        md.displayName = "Stick Attachment";
+        md.category = "Hockey";
+        md.fields.push_back(
+            MakeField("StickPrefabPath", FieldType::Path, offsetof(StickAttachmentComponent, stickPrefabPath)));
+        RegisterComponent<StickAttachmentComponent>(std::move(md));
+    }
+
+    {
+        ComponentMetadata md;
         md.name = "RinkComponent";
         md.displayName = "Rink";
         md.category = "Hockey";

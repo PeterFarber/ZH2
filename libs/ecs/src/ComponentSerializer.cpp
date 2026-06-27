@@ -60,6 +60,14 @@ void SerializeHockeyMarkers(YAML::Emitter& out, Entity entity) {
         }
         out << YAML::EndMap;
     }
+    if (entity.HasComponent<StickAttachmentComponent>()) {
+        const auto& attachment = entity.GetComponent<StickAttachmentComponent>();
+        out << YAML::Key << "StickAttachmentComponent" << YAML::Value << YAML::BeginMap;
+        if (!attachment.stickPrefabPath.empty()) {
+            out << YAML::Key << "StickPrefabPath" << YAML::Value << attachment.stickPrefabPath.generic_string();
+        }
+        out << YAML::EndMap;
+    }
     if (entity.HasComponent<RinkComponent>()) {
         out << YAML::Key << "RinkComponent" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "RinkName" << YAML::Value << entity.GetComponent<RinkComponent>().rinkName;
@@ -345,6 +353,14 @@ bool ComponentSerializer::DeserializeHockeyMarkerComponents(Entity entity, const
             component.playerPrefabPath = spawnNode["PlayerPrefabPath"].as<std::string>();
         }
         registry.emplace_or_replace<SpawnPointComponent>(handle, component);
+    }
+
+    if (const auto attachmentNode = node["StickAttachmentComponent"]) {
+        StickAttachmentComponent component;
+        if (attachmentNode["StickPrefabPath"]) {
+            component.stickPrefabPath = attachmentNode["StickPrefabPath"].as<std::string>();
+        }
+        registry.emplace_or_replace<StickAttachmentComponent>(handle, component);
     }
 
     if (const auto rinkNode = node["RinkComponent"]) {
