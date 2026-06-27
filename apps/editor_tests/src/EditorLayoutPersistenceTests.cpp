@@ -92,7 +92,10 @@ void RunEditorLayoutPersistenceTests() {
         const std::string appHeader = ReadProjectFile("libs/editor/include/Hockey/Editor/EditorApp.hpp");
         const std::string appSource = ReadProjectFile("libs/editor/src/EditorApp.cpp");
         const std::string menuSource = ReadProjectFile("libs/editor/src/MainMenuBar.cpp");
+        const std::string imguiHeader = ReadProjectFile("libs/editor/include/Hockey/Editor/ImGui/ImGuiLayer.hpp");
         const std::string imguiSource = ReadProjectFile("libs/editor/src/ImGui/ImGuiLayer.cpp");
+        const std::string themeHeader = ReadProjectFile("libs/editor/include/Hockey/Editor/ImGui/EditorTheme.hpp");
+        const std::string themeSource = ReadProjectFile("libs/editor/src/ImGui/EditorTheme.cpp");
 
         HK_CHECK_MSG(Contains(appHeader, "void SaveLayout();"), "EditorApp exposes SaveLayout");
         HK_CHECK_MSG(Contains(appHeader, "void ResetLayout();"), "EditorApp exposes ResetLayout");
@@ -104,5 +107,20 @@ void RunEditorLayoutPersistenceTests() {
         HK_CHECK_MSG(Contains(menuSource, "\"Reset Layout\""), "View menu still exposes Reset Layout");
         HK_CHECK_MSG(Contains(imguiSource, "ImGui::SaveIniSettingsToDisk"),
                      "ImGuiLayer explicitly saves layout.ini");
+        HK_CHECK_MSG(Contains(themeHeader, "void ApplyDark(float editorScale = 1.0f);"),
+                     "EditorTheme exposes a scaled dark theme API");
+        HK_CHECK_MSG(Contains(themeSource, "style = ImGuiStyle{}") &&
+                         Contains(themeSource, "ScaleAllSizes(normalizedScale)"),
+                     "EditorTheme resets base style before scaling sizes");
+        HK_CHECK_MSG(
+            Contains(imguiHeader, "Status Init(Window& window, Renderer& renderer, float editorScale = 1.0f);") &&
+                Contains(imguiHeader, "void ApplyEditorScale(float editorScale);"),
+            "ImGuiLayer exposes editor scale initialization and reapply hooks");
+        HK_CHECK_MSG(Contains(imguiSource, "FontGlobalScale") &&
+                         Contains(imguiSource, "EditorSettings::NormalizeEditorScale"),
+                     "ImGuiLayer applies normalized editor scale to fonts and style");
+        HK_CHECK_MSG(Contains(appSource, "m_ImGuiLayer.Init(*info.window, *info.renderer, "
+                                            "m_Context.settings.editorScale)"),
+                     "EditorApp initializes ImGui with the persisted editor scale");
     }
 }

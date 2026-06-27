@@ -22,9 +22,10 @@ public:
     ImGuiLayer(const ImGuiLayer&) = delete;
     ImGuiLayer& operator=(const ImGuiLayer&) = delete;
 
-    Status Init(Window& window, Renderer& renderer);
+    Status Init(Window& window, Renderer& renderer, float editorScale = 1.0f);
     void Shutdown();
     void SaveLayout() const;
+    void ApplyEditorScale(float editorScale);
 
     // Forwards a raw SDL_Event (passed as void* to keep SDL out of editor
     // headers) to the ImGui SDL3 backend. Returns true if ImGui consumed it.

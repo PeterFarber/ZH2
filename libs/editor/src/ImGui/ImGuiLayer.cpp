@@ -13,6 +13,7 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Window.hpp"
+#include "Hockey/Editor/EditorSettings.hpp"
 #include "Hockey/Editor/ImGui/EditorTheme.hpp"
 
 namespace Hockey {
@@ -26,7 +27,7 @@ ImGuiLayer::~ImGuiLayer() {
     Shutdown();
 }
 
-Status ImGuiLayer::Init(Window& window, Renderer& renderer) {
+Status ImGuiLayer::Init(Window& window, Renderer& renderer, float editorScale) {
     if (m_Initialized) {
         return Status::Ok();
     }
@@ -47,7 +48,7 @@ Status ImGuiLayer::Init(Window& window, Renderer& renderer) {
     m_IniPath = layoutPath.string();
     io.IniFilename = m_IniPath.c_str();
 
-    EditorTheme::ApplyDark();
+    ApplyEditorScale(editorScale);
 
     if (!ImGui_ImplSDL3_InitForVulkan(window.SDLHandle())) {
         ImGui::DestroyContext();
@@ -72,6 +73,16 @@ void ImGuiLayer::SaveLayout() const {
         return;
     }
     ImGui::SaveIniSettingsToDisk(m_IniPath.c_str());
+}
+
+void ImGuiLayer::ApplyEditorScale(float editorScale) {
+    if (ImGui::GetCurrentContext() == nullptr) {
+        return;
+    }
+
+    const float normalizedScale = EditorSettings::NormalizeEditorScale(editorScale);
+    ImGui::GetIO().FontGlobalScale = normalizedScale;
+    EditorTheme::ApplyDark(normalizedScale);
 }
 
 void ImGuiLayer::Shutdown() {

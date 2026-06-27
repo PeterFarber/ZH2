@@ -8,7 +8,7 @@ namespace EditorTheme {
 
 // Applies the default dark editor theme to the current ImGui context. Must be
 // called after ImGui::CreateContext().
-void ApplyDark();
+void ApplyDark(float editorScale = 1.0f);
 
 } // namespace EditorTheme
 

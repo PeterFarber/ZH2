@@ -2,12 +2,17 @@
 
 #include <imgui.h>
 
+#include "Hockey/Editor/EditorSettings.hpp"
+
 namespace Hockey::EditorTheme {
 
-void ApplyDark() {
+void ApplyDark(float editorScale) {
     ImGui::StyleColorsDark();
 
     ImGuiStyle& style = ImGui::GetStyle();
+    style = ImGuiStyle{};
+    ImGui::StyleColorsDark(&style);
+
     style.WindowRounding = 4.0f;
     style.FrameRounding = 3.0f;
     style.GrabRounding = 3.0f;
@@ -72,6 +77,9 @@ void ApplyDark() {
     colors[ImGuiCol_PlotHistogram] = accent;
     colors[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
     colors[ImGuiCol_NavCursor] = accent;
+
+    const float normalizedScale = EditorSettings::NormalizeEditorScale(editorScale);
+    style.ScaleAllSizes(normalizedScale);
 }
 
 } // namespace Hockey::EditorTheme

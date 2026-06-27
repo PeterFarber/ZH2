@@ -117,7 +117,7 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     // Mirror engine log output into the Console panel.
     InstallEditorConsoleSink();
 
-    if (Status s = m_ImGuiLayer.Init(*info.window, *info.renderer); !s) {
+    if (Status s = m_ImGuiLayer.Init(*info.window, *info.renderer, m_Context.settings.editorScale); !s) {
         return s;
     }
     m_Context.imguiBridge = &m_ImGuiLayer.Bridge();
