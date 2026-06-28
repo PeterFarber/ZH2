@@ -21,6 +21,7 @@
         "spirv-cross",
         "spirv-tools",
         "stb",
+        "lunasvg",
         "fastgltf",
         "meshoptimizer",
         "joltphysics",

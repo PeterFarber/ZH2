@@ -11,6 +11,7 @@ find_package(fastgltf CONFIG REQUIRED)
 find_package(meshoptimizer CONFIG REQUIRED)
 find_package(unofficial-shaderc CONFIG REQUIRED)
 find_package(Stb REQUIRED)
+find_package(lunasvg CONFIG REQUIRED)
 
 add_library(hockey_assets STATIC)
 
@@ -68,6 +69,7 @@ target_link_libraries(hockey_assets
         fastgltf::fastgltf
         meshoptimizer::meshoptimizer
         unofficial::shaderc::shaderc
+        lunasvg::lunasvg
 )
 
 if(MSVC)
