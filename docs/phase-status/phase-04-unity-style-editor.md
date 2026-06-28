@@ -58,7 +58,7 @@ Source material:
 - [x] Scene validation panel exists.
 - [x] Prefab panel exists.
 - [x] Project Settings panel exists.
-- [x] Project Settings exposes editor project/runtime settings from code-owned defaults overlaid by `data/config/editor.toml` while keeping server-specific headless settings visible without separate client config pages.
+- [x] Project Settings exposes editor project/runtime settings from high-quality code-owned defaults overlaid by `data/config/editor.toml` while keeping server-specific headless settings visible without separate client config pages.
 - [x] Project Settings exposes per-setting, page, all-project, and preference reset controls backed by built-in defaults.
 - [x] Project Settings navigation scopes repeated page labels to avoid Dear ImGui ID conflicts.
 - [x] Project Settings lighting/shadow controls scope repeated tuning labels to avoid Dear ImGui ID conflicts.

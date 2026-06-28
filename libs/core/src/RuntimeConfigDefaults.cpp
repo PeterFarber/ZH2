@@ -6,9 +6,9 @@ namespace Hockey {
 
 std::string_view DefaultRuntimeConfigToml() {
     return R"toml([app]
-name = 'Hockey Map Editor'
+name = 'Hockey'
 sleep_when_idle = true
-target_fps = 180
+target_fps = 144
 
 [assets]
 auto_cook_dirty = false
@@ -40,18 +40,18 @@ allow_out_of_play = true
 authoritative = true
 auto_faceoff_after_goal = true
 countdown_beep_start_seconds = 4.0
-debug_draw_gameplay = true
+debug_draw_gameplay = false
 enabled = true
 faceoff_delay_seconds = 1.0
 fixed_delta_seconds = 0.01666666753590107
 goal_detection_radius = 1.0
 goalies_per_team = 1
-log_gameplay_events = true
+log_gameplay_events = false
 local_play = true
 period_count = 3
 period_length_seconds = 180.0
 post_goal_delay_seconds = 3.0
-pregame_countdown_seconds = 0.0
+pregame_countdown_seconds = 3.0
 preview_enabled = true
 require_puck_for_goal = true
 skaters_per_team = 3
@@ -62,13 +62,13 @@ validate_on_load = true
 waypoint_prefab_path = 'data/raw/prefabs/Waypoint_Marker.prefab.yaml'
 
 [input]
-gamepad_enabled = false
+gamepad_enabled = true
 mouse_capture = true
 
 [physics]
 collision_steps = 1
 deterministic_mode = true
-enable_debug_draw = true
+enable_debug_draw = false
 enable_sleeping = true
 enabled = true
 fixed_delta_seconds = 0.01666666753590107
@@ -123,17 +123,17 @@ directional_shadow_normal_offset_scale = 0.75
 directional_shadow_pcf_radius = 1
 display_mode = 'Windowed'
 dynamic_resolution = false
-field_of_view = 50.0
+field_of_view = 70.0
 film_grain = false
 fps_limit = 0
 global_illumination_quality = 'Medium'
 goal_net_quality = 'High'
-hdr = false
+hdr = true
 ice_quality = 'High'
 ice_reflection_quality = 'High'
 ice_scratch_quality = 'High'
 jersey_quality = 'High'
-lens_flare = false
+lens_flare = true
 local_shadow_atlas_resolution = 0
 local_shadow_bias_max = 0.004000000189989805
 local_shadow_bias_min = 0.00019999999494757503
@@ -148,7 +148,7 @@ model_quality = 'High'
 monitor_index = 0
 motion_blur = false
 particle_quality = 'High'
-preset = 'Custom'
+preset = 'High'
 puck_trail_quality = 'Medium'
 reflection_quality = 'High'
 refresh_rate = 0
@@ -162,13 +162,13 @@ shadow_cascade_min_blend = 0.75
 shadow_cascade_min_overlap = 4.0
 shadow_cascade_overlap_scale = 1.0
 shadow_cascade_split_lambda = 0.949999988079071
-shadow_distance = 601.0
+shadow_distance = 100.0
 shadow_quality = 'High'
-sharpening = 1.0
-show_fps = true
-show_frame_time = true
-show_gpu_stats = true
-show_network_stats = true
+sharpening = 0.3
+show_fps = false
+show_frame_time = false
+show_gpu_stats = false
+show_network_stats = false
 skate_spray_quality = 'High'
 texture_quality = 'High'
 texture_streaming_budget_mb = 8000
@@ -204,7 +204,7 @@ height = 900
 maximized = true
 resizable = true
 start_centered = true
-title = 'Hockey Map Editor'
+title = 'Hockey'
 width = 1600
 )toml";
 }

@@ -23,8 +23,11 @@ void RunConfigTests() {
     Config builtInDefaults;
     HK_CHECK_MSG(builtInDefaults.LoadString(std::string(DefaultRuntimeConfigToml()), "built-in-runtime-defaults"),
                  "built-in runtime defaults parse as TOML");
-    HK_CHECK_EQ(builtInDefaults.GetString("app.name", ""), std::string("Hockey Map Editor"));
+    HK_CHECK_EQ(builtInDefaults.GetString("app.name", ""), std::string("Hockey"));
+    HK_CHECK_EQ(builtInDefaults.GetString("window.title", ""), std::string("Hockey"));
+    HK_CHECK_EQ(builtInDefaults.GetInt("app.target_fps", 0), 144);
     HK_CHECK_EQ(builtInDefaults.GetInt("window.width", -1), 1600);
+    HK_CHECK(builtInDefaults.GetBool("input.gamepad_enabled", false));
     HK_CHECK(builtInDefaults.Has("renderer.vsync"));
     HK_CHECK(builtInDefaults.Has("physics.fixed_delta_seconds"));
     HK_CHECK(builtInDefaults.Has("gameplay.local_play"));
@@ -34,6 +37,25 @@ void RunConfigTests() {
     HK_CHECK(builtInDefaults.Has("ui.start_flow"));
     HK_CHECK(builtInDefaults.Has("camera.follow_local_player"));
     HK_CHECK(builtInDefaults.Has("presentation.interpolate_gameplay"));
+    HK_CHECK_EQ(builtInDefaults.GetString("renderer.preset", ""), std::string("High"));
+    HK_CHECK_EQ(builtInDefaults.GetString("renderer.shadow_quality", ""), std::string("High"));
+    HK_CHECK_EQ(builtInDefaults.GetString("renderer.reflection_quality", ""), std::string("High"));
+    HK_CHECK(builtInDefaults.GetBool("renderer.hdr", false));
+    HK_CHECK(builtInDefaults.GetBool("renderer.bloom", false));
+    HK_CHECK(builtInDefaults.GetBool("renderer.contact_shadows", false));
+    HK_CHECK(builtInDefaults.GetBool("renderer.decals", false));
+    HK_CHECK_EQ(builtInDefaults.GetDouble("renderer.field_of_view", 0.0), 70.0);
+    HK_CHECK_EQ(builtInDefaults.GetDouble("renderer.shadow_distance", 0.0), 100.0);
+    HK_CHECK_EQ(builtInDefaults.GetDouble("renderer.sharpening", 0.0), 0.3);
+    HK_CHECK(builtInDefaults.GetBool("renderer.lens_flare", false));
+    HK_CHECK(!builtInDefaults.GetBool("renderer.show_fps", true));
+    HK_CHECK(!builtInDefaults.GetBool("renderer.show_frame_time", true));
+    HK_CHECK(!builtInDefaults.GetBool("renderer.show_gpu_stats", true));
+    HK_CHECK(!builtInDefaults.GetBool("renderer.show_network_stats", true));
+    HK_CHECK(!builtInDefaults.GetBool("physics.enable_debug_draw", true));
+    HK_CHECK(!builtInDefaults.GetBool("gameplay.debug_draw_gameplay", true));
+    HK_CHECK(!builtInDefaults.GetBool("gameplay.log_gameplay_events", true));
+    HK_CHECK_EQ(builtInDefaults.GetDouble("gameplay.pregame_countdown_seconds", 0.0), 3.0);
 
     Config madeDefaults = MakeDefaultRuntimeConfig();
     HK_CHECK_EQ(madeDefaults.GetString("scene.startup_scene", ""), builtInDefaults.GetString("scene.startup_scene", ""));

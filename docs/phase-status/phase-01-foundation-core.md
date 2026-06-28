@@ -35,7 +35,7 @@ Source material:
 - [x] Assertions are available for programmer errors.
 - [x] spdlog-backed logging exists with core/client/editor/server/test loggers.
 - [x] TOML config loading/saving exists.
-- [x] Shared built-in runtime config defaults exist in code for client, server, and editor reset baselines.
+- [x] Shared built-in runtime config defaults exist in code for client, server, and editor reset baselines, with a high-quality game-facing baseline and debug overlays disabled by default.
 - [x] Filesystem helpers use `std::filesystem`.
 - [x] Project path resolution supports root-relative runtime paths.
 - [x] Log, temp, data, and screenshot paths are centralized.

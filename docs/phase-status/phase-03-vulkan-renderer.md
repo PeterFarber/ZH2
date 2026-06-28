@@ -32,7 +32,7 @@ Source material:
 - [x] Renderer initialization info exists.
 - [x] Renderer pimpl API exists.
 - [x] Opaque handles exist for renderer resources.
-- [x] Renderer settings load/save from TOML.
+- [x] Renderer settings load/save from TOML, and code-owned runtime defaults reset renderer options to the High preset with HDR, bloom, contact shadows, decals, lens flare, ACES tone mapping, and debug overlays off.
 - [x] Advanced renderer lighting/shadow settings persist through TOML and drive directional/local shadow tuning.
 - [x] Renderer stats include CPU frame timing.
 - [x] Material preview support exists for editor UI.
