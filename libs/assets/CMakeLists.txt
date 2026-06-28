@@ -44,6 +44,7 @@ target_sources(hockey_assets
         src/Cookers/SceneCooker.cpp
         src/Runtime/AssetLoader.cpp
         src/Runtime/TextureLoader.cpp
+        src/Runtime/SvgRasterizer.cpp
         src/Runtime/MeshLoader.cpp
         src/Runtime/ModelLoader.cpp
         src/Runtime/MaterialLoader.cpp
