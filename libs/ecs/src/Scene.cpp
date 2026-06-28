@@ -21,7 +21,6 @@ template <typename T> void CopyComponent(entt::registry& registry, entt::entity 
     }
 }
 
-
 } // namespace
 
 Scene::Scene(std::string name)
@@ -134,6 +133,7 @@ Entity Scene::CreateEntityWithUUID(UUID id, const std::string& name) {
 
 entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     const std::string name = m_Registry.get<NameComponent>(sourceHandle).name;
+
     UUID newId;
     while (m_EntityMap.find(newId) != m_EntityMap.end()) {
         newId = UUID();

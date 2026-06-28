@@ -8,6 +8,19 @@
 
 using namespace Hockey;
 
+namespace {
+
+const FieldMetadata* FindField(const ComponentMetadata& md, const std::string& name) {
+    for (const FieldMetadata& field : md.fields) {
+        if (field.name == name) {
+            return &field;
+        }
+    }
+    return nullptr;
+}
+
+} // namespace
+
 void RunRenderComponentTests() {
     HockeyTest::BeginSuite("RenderComponentTests");
 
@@ -18,9 +31,15 @@ void RunRenderComponentTests() {
         CameraComponent cam;
         cam.fovDegrees = 60.0f;
         cam.primary = true;
+        cam.followPlayer = true;
+        cam.followOffset = {1.0f, 2.0f, 3.0f};
+        cam.followRotation = {-20.0f, 5.0f, 0.0f};
         camera.AddComponent<CameraComponent>(cam);
         HK_CHECK(camera.HasComponent<CameraComponent>());
         HK_CHECK(camera.GetComponent<CameraComponent>().primary);
+        HK_CHECK(camera.GetComponent<CameraComponent>().followPlayer);
+        HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().followOffset.y, 2.0f, 1e-5);
+        HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().followRotation.x, -20.0f, 1e-5);
         HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().fovDegrees, 60.0f, 1e-5);
     }
 
@@ -41,6 +60,9 @@ void RunRenderComponentTests() {
         cam.nearClip = 0.25f;
         cam.farClip = 500.0f;
         cam.primary = true;
+        cam.followPlayer = true;
+        cam.followOffset = {3.0f, 9.0f, -11.0f};
+        cam.followRotation = {-30.0f, 12.0f, 0.0f};
         cameraEntity.AddComponent<CameraComponent>(cam);
 
         Entity meshEntity = scene.CreateEntity("Rink");
@@ -96,6 +118,12 @@ void RunRenderComponentTests() {
             HK_CHECK_NEAR(c.nearClip, 0.25f, 1e-4);
             HK_CHECK_NEAR(c.farClip, 500.0f, 1e-3);
             HK_CHECK(c.primary);
+            HK_CHECK(c.followPlayer);
+            HK_CHECK_NEAR(c.followOffset.x, 3.0f, 1e-4);
+            HK_CHECK_NEAR(c.followOffset.y, 9.0f, 1e-4);
+            HK_CHECK_NEAR(c.followOffset.z, -11.0f, 1e-4);
+            HK_CHECK_NEAR(c.followRotation.x, -30.0f, 1e-4);
+            HK_CHECK_NEAR(c.followRotation.y, 12.0f, 1e-4);
         }
 
         Entity loadedMesh = loaded.FindEntityByUUID(meshEntity.GetUUID());
@@ -151,6 +179,17 @@ void RunRenderComponentTests() {
                 }
             }
             HK_CHECK(foundEnum);
+        }
+        const ComponentMetadata* cameraMeta = registry.FindByName("CameraComponent");
+        if (cameraMeta != nullptr) {
+            const FieldMetadata* followPlayer = FindField(*cameraMeta, "FollowPlayer");
+            HK_CHECK(followPlayer != nullptr && followPlayer->type == FieldType::Bool);
+            const FieldMetadata* followOffset = FindField(*cameraMeta, "FollowOffset");
+            HK_CHECK(followOffset != nullptr && followOffset->type == FieldType::Vec3);
+            HK_CHECK(followOffset != nullptr && followOffset->visibleWhenField == "FollowPlayer");
+            const FieldMetadata* followRotation = FindField(*cameraMeta, "FollowRotation");
+            HK_CHECK(followRotation != nullptr && followRotation->type == FieldType::Vec3);
+            HK_CHECK(followRotation != nullptr && followRotation->visibleWhenField == "FollowPlayer");
         }
     }
 }

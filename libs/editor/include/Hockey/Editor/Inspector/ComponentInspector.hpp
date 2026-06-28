@@ -9,6 +9,13 @@ namespace Hockey {
 class EditorContext;
 class Entity;
 
+namespace SpawnRoleInspector {
+
+bool IsGoalieSpawn(const Entity& entity);
+void SetGoalieSpawn(Entity& entity, bool goalie);
+
+} // namespace SpawnRoleInspector
+
 // Draws every present component on an entity (except the identity/name/active
 // components, which the inspector header handles) using the ECS component
 // metadata: a collapsing section per component with metadata-driven editable

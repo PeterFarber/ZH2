@@ -134,6 +134,7 @@ private:
     bool m_OpenModalRequested = false;
     std::filesystem::path m_ModalTarget;
     ContextTarget m_ContextTarget;
+    bool m_ContextMenuOpenRequested = false;
     char m_NameBuffer[256] = {};
     std::string m_Status;
 

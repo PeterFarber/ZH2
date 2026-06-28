@@ -12,6 +12,7 @@
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
+#include "Hockey/Editor/Inspector/ComponentInspector.hpp"
 #include "Hockey/Editor/Inspector/FieldDrawers.hpp"
 
 using namespace Hockey;
@@ -76,6 +77,23 @@ void RunInspectorFieldTests() {
         }
     }
 
+    // --- spawn goalie checkbox helper ---------------------------------------
+    {
+        Entity spawn = scene.CreateEntity("Role Toggle Spawn");
+        spawn.AddComponent<SpawnPointComponent>();
+
+        HK_CHECK(!SpawnRoleInspector::IsGoalieSpawn(spawn));
+        SpawnRoleInspector::SetGoalieSpawn(spawn, true);
+        HK_CHECK(SpawnRoleInspector::IsGoalieSpawn(spawn));
+        HK_CHECK(spawn.HasComponent<PlayerRoleComponent>());
+        HK_CHECK(spawn.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie);
+
+        SpawnRoleInspector::SetGoalieSpawn(spawn, false);
+        HK_CHECK(!SpawnRoleInspector::IsGoalieSpawn(spawn));
+        HK_CHECK(spawn.HasComponent<PlayerRoleComponent>());
+        HK_CHECK(spawn.GetComponent<PlayerRoleComponent>().role == PlayerRole::Skater);
+    }
+
     // --- float field edit (Camera.fovDegrees) -------------------------------
     {
         entity.AddComponent<CameraComponent>();
@@ -86,6 +104,37 @@ void RunInspectorFieldTests() {
             float* value = static_cast<float*>(FieldDrawers::FieldPointer(md->getData(entity), *field));
             *value = 75.0f;
             HK_CHECK_NEAR(entity.GetComponent<CameraComponent>().fovDegrees, 75.0f, 1e-5);
+        }
+
+        const FieldMetadata* followPlayerField = md != nullptr ? FindField(*md, "FollowPlayer") : nullptr;
+        HK_CHECK_MSG(followPlayerField != nullptr, "FollowPlayer field present");
+        if (md != nullptr && followPlayerField != nullptr) {
+            bool* value = static_cast<bool*>(FieldDrawers::FieldPointer(md->getData(entity), *followPlayerField));
+            *value = true;
+            HK_CHECK(entity.GetComponent<CameraComponent>().followPlayer);
+        }
+
+        const FieldMetadata* followOffsetField = md != nullptr ? FindField(*md, "FollowOffset") : nullptr;
+        const FieldMetadata* followRotationField = md != nullptr ? FindField(*md, "FollowRotation") : nullptr;
+        HK_CHECK_MSG(followOffsetField != nullptr, "FollowOffset field present");
+        HK_CHECK_MSG(followRotationField != nullptr, "FollowRotation field present");
+        if (md != nullptr && followOffsetField != nullptr && followRotationField != nullptr) {
+            auto& camera = entity.GetComponent<CameraComponent>();
+            camera.followPlayer = false;
+            HK_CHECK(!FieldDrawers::IsFieldVisible(*md, md->getData(entity), *followOffsetField));
+            HK_CHECK(!FieldDrawers::IsFieldVisible(*md, md->getData(entity), *followRotationField));
+
+            camera.followPlayer = true;
+            HK_CHECK(FieldDrawers::IsFieldVisible(*md, md->getData(entity), *followOffsetField));
+            HK_CHECK(FieldDrawers::IsFieldVisible(*md, md->getData(entity), *followRotationField));
+
+            auto* offset = static_cast<glm::vec3*>(FieldDrawers::FieldPointer(md->getData(entity), *followOffsetField));
+            *offset = glm::vec3(3.0f, 4.0f, 5.0f);
+            auto* rotation =
+                static_cast<glm::vec3*>(FieldDrawers::FieldPointer(md->getData(entity), *followRotationField));
+            *rotation = glm::vec3(-25.0f, 10.0f, 0.0f);
+            HK_CHECK_NEAR(camera.followOffset.z, 5.0f, 1e-5);
+            HK_CHECK_NEAR(camera.followRotation.x, -25.0f, 1e-5);
         }
     }
 

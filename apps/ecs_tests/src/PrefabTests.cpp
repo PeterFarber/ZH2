@@ -41,6 +41,7 @@ void RunPrefabTests() {
     HK_CHECK(root.GetUUID() != net.GetUUID());
     HK_CHECK(root.HasComponent<PrefabComponent>());
     HK_CHECK(!root.HasComponent<ParentComponent>());
+
     HK_CHECK_EQ(target.GetChildren(root).size(), static_cast<std::size_t>(2));
     Entity stickInstance;
     Entity childInstance;

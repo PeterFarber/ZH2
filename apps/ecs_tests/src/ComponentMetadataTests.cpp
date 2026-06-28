@@ -115,6 +115,14 @@ void RunComponentMetadataTests() {
     if (camera != nullptr) {
         const FieldMetadata* fov = FindField(*camera, "FovDegrees");
         HK_CHECK(fov != nullptr && fov->minFloat > 0.0f && fov->maxFloat > fov->minFloat);
+        const FieldMetadata* followPlayer = FindField(*camera, "FollowPlayer");
+        HK_CHECK(followPlayer != nullptr && followPlayer->type == FieldType::Bool);
+        const FieldMetadata* followOffset = FindField(*camera, "FollowOffset");
+        HK_CHECK(followOffset != nullptr && followOffset->type == FieldType::Vec3);
+        HK_CHECK(followOffset != nullptr && followOffset->visibleWhenField == "FollowPlayer");
+        const FieldMetadata* followRotation = FindField(*camera, "FollowRotation");
+        HK_CHECK(followRotation != nullptr && followRotation->type == FieldType::Vec3);
+        HK_CHECK(followRotation != nullptr && followRotation->visibleWhenField == "FollowPlayer");
     }
 
     // has/add/remove callbacks.

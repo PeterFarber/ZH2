@@ -68,7 +68,7 @@ Source material:
 - [x] Project Settings and Gameplay Tuning expose waypoint marker prefab selection with prefab drag/drop.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
-- [x] Client Preview panel exists for hosted runtime UI/client-flow playback.
+- [x] Client Preview panel exists for hosted runtime UI/client-flow playback with focused HUD gameplay input routed to the shared gameplay preview.
 - [x] Client Flow panel exists for first-pass runtime flow asset authoring with path validation.
 
 ## Finished - Editing Workflows
@@ -82,6 +82,7 @@ Source material:
 - [x] Focus selected behavior exists.
 - [x] Metadata-driven inspector field drawers exist.
 - [x] Metadata-driven inspector keeps UUID fields read-only; hierarchy-owned references are authored through parent/child structure.
+- [x] Spawn point Inspector exposes a Goalie checkbox backed by `PlayerRoleComponent` for normal and faceoff spawn authoring.
 - [x] Rigid Body collision detection mode is exposed through metadata-driven Inspector enum fields.
 - [x] Component add/remove workflow exists.
 - [x] Undo/redo command stack exists.
@@ -105,11 +106,11 @@ Source material:
 - [x] Full-window screenshot capture exists.
 - [x] Scene/Game viewport screenshot capture exists.
 - [x] Hockey rink tool exists.
-- [x] Hockey spawn tool creates team-owned normal `SpawnPointComponent` markers without role/index fields.
+- [x] Hockey spawn tool creates team-owned normal `SpawnPointComponent` markers with editable team and role metadata.
 - [x] Hockey goal tool exists.
 - [x] Hockey puck tool exists.
 - [x] Hockey puck tool authors dynamic puck bodies with continuous collision detection.
-- [x] Hockey faceoff tool creates neutral, Home-penalty, and Away-penalty `SpawnPointComponent` faceoff pools.
+- [x] Hockey faceoff tool creates neutral, Home-penalty, and Away-penalty `SpawnPointComponent` faceoff pools while keeping editable team and role slot metadata separate from pool selection.
 - [x] Hockey camera rig tool exists.
 - [x] Light tool exists.
 
@@ -144,7 +145,7 @@ Source material:
 - [x] Project browser tests exist.
 - [x] Hockey tool tests exist.
 - [x] Gameplay preview/editor logic tests exist.
-- [x] Client Preview and Client Flow contract tests exist, including source-open and path-validation contracts.
+- [x] Client Preview and Client Flow contract tests exist, including scaled preview input mapping, focused HUD input routing, source-open, and path-validation contracts.
 - [x] Non-UI editor logic is covered better than panel rendering.
 
 ## Started / Partial

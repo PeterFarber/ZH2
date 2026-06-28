@@ -23,6 +23,9 @@ struct CameraComponent {
     float nearClip = 0.1f;
     float farClip = 1000.0f;
     bool primary = false;
+    bool followPlayer = false;
+    glm::vec3 followOffset{0.0f, 7.5f, 10.0f};
+    glm::vec3 followRotation{-30.0f, 0.0f, 0.0f};
 };
 
 struct MeshRendererComponent {

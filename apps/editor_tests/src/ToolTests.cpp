@@ -133,7 +133,16 @@ void RunToolTests() {
             HK_CHECK_MSG(spawn.team == Team::Home, "home spawn data");
             HK_CHECK_MSG(!spawn.faceoffSpawn, "normal spawn is not faceoff spawn");
             HK_CHECK_MSG(homeSpawn.HasComponent<TeamComponent>(), "spawn has team component");
-            HK_CHECK_MSG(!homeSpawn.HasComponent<PlayerRoleComponent>(), "spawn has no role component");
+            HK_CHECK_MSG(homeSpawn.HasComponent<PlayerRoleComponent>(), "spawn exposes editable role");
+            HK_CHECK_MSG(homeSpawn.GetComponent<PlayerRoleComponent>().role == PlayerRole::Skater,
+                         "home spawn 0 defaults to skater role");
+            Entity homeGoalieSpawn = fix.scene.FindEntityByName("Home Spawn 3");
+            HK_CHECK_MSG(homeGoalieSpawn && homeGoalieSpawn.HasComponent<PlayerRoleComponent>(),
+                         "home spawn 3 exposes editable goalie role");
+            if (homeGoalieSpawn && homeGoalieSpawn.HasComponent<PlayerRoleComponent>()) {
+                HK_CHECK_MSG(homeGoalieSpawn.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie,
+                             "home spawn 3 defaults to goalie role");
+            }
         }
 
         ctx.undoRedo.Undo(ctx);
@@ -196,8 +205,9 @@ void RunToolTests() {
             HK_CHECK_MSG(!body.useGravity, "skater body ignores gravity");
             HK_CHECK_MSG(!body.allowSleeping, "skater body stays awake for gameplay velocity control");
             HK_CHECK_MSG(body.lockTranslationY, "skater body locks vertical translation");
-            HK_CHECK_MSG(body.lockRotationX, "skater body locks pitch");
-            HK_CHECK_MSG(body.lockRotationZ, "skater body locks roll");
+            HK_CHECK_MSG(body.lockRotationX, "skater body locks X rotation");
+            HK_CHECK_MSG(!body.lockRotationY, "skater body leaves Y rotation free for gameplay facing");
+            HK_CHECK_MSG(body.lockRotationZ, "skater body locks Z rotation");
             HK_CHECK_MSG(body.layer == PhysicsLayer::Player, "skater body uses Player collision layer");
             HK_CHECK_EQ(body.materialName, std::string("PlayerBody"));
             HK_CHECK_MSG(!capsule.isTrigger, "skater capsule is solid");
@@ -215,8 +225,9 @@ void RunToolTests() {
             HK_CHECK_MSG(!body.useGravity, "goalie body ignores gravity");
             HK_CHECK_MSG(!body.allowSleeping, "goalie body stays awake for gameplay velocity control");
             HK_CHECK_MSG(body.lockTranslationY, "goalie body locks vertical translation");
-            HK_CHECK_MSG(body.lockRotationX, "goalie body locks pitch");
-            HK_CHECK_MSG(body.lockRotationZ, "goalie body locks roll");
+            HK_CHECK_MSG(body.lockRotationX, "goalie body locks X rotation");
+            HK_CHECK_MSG(!body.lockRotationY, "goalie body leaves Y rotation free for gameplay facing");
+            HK_CHECK_MSG(body.lockRotationZ, "goalie body locks Z rotation");
             HK_CHECK_MSG(body.layer == PhysicsLayer::Goalie, "goalie body uses Goalie collision layer");
             HK_CHECK_EQ(body.materialName, std::string("GoalieBody"));
             HK_CHECK_MSG(!capsule.isTrigger, "goalie capsule is solid");
@@ -258,6 +269,9 @@ void RunToolTests() {
         HK_CHECK_EQ(fix.scene.EntityCount(), before + 25); // root + 8 neutral + 8 home penalty + 8 away penalty
 
         Entity neutral = fix.scene.FindEntityByName("Neutral Faceoff Spawn 0");
+        Entity neutralHomeGoalie = fix.scene.FindEntityByName("Neutral Faceoff Spawn 3");
+        Entity neutralAwaySkater = fix.scene.FindEntityByName("Neutral Faceoff Spawn 4");
+        Entity neutralAwayGoalie = fix.scene.FindEntityByName("Neutral Faceoff Spawn 7");
         Entity home = fix.scene.FindEntityByName("Home Penalty Faceoff Spawn 0");
         Entity away = fix.scene.FindEntityByName("Away Penalty Faceoff Spawn 0");
 
@@ -271,6 +285,26 @@ void RunToolTests() {
             HK_CHECK(neutral.GetComponent<SpawnPointComponent>().team == Team::None);
             HK_CHECK(home.GetComponent<SpawnPointComponent>().team == Team::Home);
             HK_CHECK(away.GetComponent<SpawnPointComponent>().team == Team::Away);
+            HK_CHECK_MSG(neutral.HasComponent<TeamComponent>(), "neutral faceoff spawn exposes editable team");
+            HK_CHECK_MSG(neutral.GetComponent<TeamComponent>().team == Team::Home,
+                         "neutral faceoff spawn uses TeamComponent for player team");
+            HK_CHECK_MSG(neutral.HasComponent<PlayerRoleComponent>(), "neutral faceoff spawn exposes editable role");
+            HK_CHECK_MSG(neutral.GetComponent<PlayerRoleComponent>().role == PlayerRole::Skater,
+                         "neutral faceoff spawn defaults to skater role");
+            HK_CHECK_MSG(neutralHomeGoalie && neutralHomeGoalie.GetComponent<SpawnPointComponent>().team == Team::None,
+                         "neutral goalie faceoff spawn stays in neutral pool");
+            HK_CHECK_MSG(neutralHomeGoalie && neutralHomeGoalie.GetComponent<TeamComponent>().team == Team::Home,
+                         "neutral goalie faceoff spawn can target home players");
+            HK_CHECK_MSG(neutralHomeGoalie &&
+                             neutralHomeGoalie.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie,
+                         "neutral faceoff spawn 3 defaults to home goalie");
+            HK_CHECK_MSG(neutralAwaySkater && neutralAwaySkater.GetComponent<SpawnPointComponent>().team == Team::None,
+                         "neutral away faceoff spawn stays in neutral pool");
+            HK_CHECK_MSG(neutralAwaySkater && neutralAwaySkater.GetComponent<TeamComponent>().team == Team::Away,
+                         "neutral faceoff spawn 4 can target away players");
+            HK_CHECK_MSG(neutralAwayGoalie &&
+                             neutralAwayGoalie.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie,
+                         "neutral faceoff spawn 7 defaults to away goalie");
         }
         HK_CHECK_MSG(!fix.scene.FindEntityByName("Center Faceoff Spot"), "old faceoff spot is not authored");
     }
@@ -282,6 +316,14 @@ void RunToolTests() {
         ctx.toolManager.Activate("Hockey Camera Rig", ctx);
         HK_CHECK_MSG(HasNamed<CameraRigMarkerComponent>(fix.scene, "Gameplay Camera Rig"), "rig has marker");
         HK_CHECK_MSG(HasNamed<CameraComponent>(fix.scene, "Gameplay Camera Rig"), "rig has CameraComponent");
+        Entity rig = fix.scene.FindEntityByName("Gameplay Camera Rig");
+        if (rig && rig.HasComponent<CameraComponent>()) {
+            const auto& camera = rig.GetComponent<CameraComponent>();
+            HK_CHECK_MSG(camera.followPlayer, "rig follows player by default");
+            HK_CHECK_NEAR(camera.followOffset.y, 7.5f, 0.0001f);
+            HK_CHECK_NEAR(camera.followOffset.z, 10.0f, 0.0001f);
+            HK_CHECK_NEAR(camera.followRotation.x, -30.0f, 0.0001f);
+        }
     }
 
     // --- Light tools ---------------------------------------------------------

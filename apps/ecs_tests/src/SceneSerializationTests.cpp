@@ -184,7 +184,6 @@ Entities:
         HK_CHECK(roots[1] == UUID(1002));
     }
 
-
     {
         Scene source("StickChildRoundTrip");
         Entity player = source.CreateEntity("Player With Stick Child");

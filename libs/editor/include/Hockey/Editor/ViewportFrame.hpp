@@ -54,6 +54,16 @@ inline Frame ComputeFrame(const ImVec2& basePos, const ImVec2& available, const 
     return frame;
 }
 
+inline ImVec2 ImagePointToRenderPixels(const Frame& frame, const ImVec2& imagePoint) {
+    const float imageWidth = std::max(1.0f, frame.imageSize.x);
+    const float imageHeight = std::max(1.0f, frame.imageSize.y);
+    const float clampedX = std::clamp(imagePoint.x, 0.0f, imageWidth);
+    const float clampedY = std::clamp(imagePoint.y, 0.0f, imageHeight);
+    const float scaleX = static_cast<float>(std::max(1u, frame.width)) / imageWidth;
+    const float scaleY = static_cast<float>(std::max(1u, frame.height)) / imageHeight;
+    return ImVec2(clampedX * scaleX, clampedY * scaleY);
+}
+
 inline bool Contains(const ImVec2& min, const ImVec2& size, const ImVec2& point) {
     return point.x >= min.x && point.x < min.x + size.x && point.y >= min.y && point.y < min.y + size.y;
 }

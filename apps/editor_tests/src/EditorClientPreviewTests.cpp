@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Hockey/Core/Paths.hpp"
+#include "Hockey/Editor/ViewportFrame.hpp"
 
 namespace {
 
@@ -29,6 +30,24 @@ void RunEditorClientPreviewTests() {
     HK_CHECK_MSG(Contains(cmake, "src/EditorClientPreview.cpp"), "EditorClientPreview source is part of hockey_editor");
     HK_CHECK_MSG(Contains(cmake, "src/Panels/ClientPreviewPanel.cpp"), "Client Preview panel is built");
 
+    const std::string viewportFrame = ReadProjectFile("libs/editor/include/Hockey/Editor/ViewportFrame.hpp");
+    const std::string clientPreviewPanel = ReadProjectFile("libs/editor/src/Panels/ClientPreviewPanel.cpp");
+    HK_CHECK_MSG(Contains(viewportFrame, "ImagePointToRenderPixels") &&
+                     Contains(clientPreviewPanel, "ImagePointToRenderPixels"),
+                 "Client Preview maps displayed image coordinates into render-target pixels before RmlUi input");
+
+    Hockey::RendererSettings scaledSettings;
+    scaledSettings.resolutionWidth = 2560;
+    scaledSettings.resolutionHeight = 1440;
+    const Hockey::EditorViewport::Frame scaledFrame =
+        Hockey::EditorViewport::ComputeFrame(ImVec2(0.0f, 0.0f), ImVec2(1280.0f, 720.0f), scaledSettings);
+    const ImVec2 centerRenderPoint =
+        Hockey::EditorViewport::ImagePointToRenderPixels(scaledFrame, ImVec2(640.0f, 360.0f));
+    HK_CHECK_EQ(scaledFrame.width, 2560u);
+    HK_CHECK_EQ(scaledFrame.height, 1440u);
+    HK_CHECK_NEAR(centerRenderPoint.x, 1280.0f, 0.01);
+    HK_CHECK_NEAR(centerRenderPoint.y, 720.0f, 0.01);
+
     const std::string dockspace = ReadProjectFile("libs/editor/include/Hockey/Editor/Dockspace.hpp");
     HK_CHECK_MSG(Contains(dockspace, "kClientPreview"), "Dockspace exposes Client Preview panel name");
 
@@ -40,6 +59,9 @@ void RunEditorClientPreviewTests() {
     HK_CHECK_MSG(Contains(appSource, "AddPanel<ClientPreviewPanel>"), "EditorApp registers Client Preview panel");
     HK_CHECK_MSG(Contains(appSource, "EditorPanelNames::kClientPreview"), "Play Client focuses Client Preview panel");
     HK_CHECK_MSG(Contains(appSource, "TogglePlaytestMode"), "Direct scene simulation path remains present");
+    HK_CHECK_MSG(Contains(appSource, "m_Context.clientPreview.gameInputActive") &&
+                     Contains(appSource, "m_ClientPreview->IsRunning()"),
+                 "EditorApp enables gameplay input while the focused Client Preview is running the match HUD");
 
     const std::string toolbar = ReadProjectFile("libs/editor/src/Toolbar.cpp");
     HK_CHECK_MSG(Contains(toolbar, "Play Client"), "Toolbar exposes Play Client");

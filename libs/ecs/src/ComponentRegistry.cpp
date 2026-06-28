@@ -36,6 +36,12 @@ FieldMetadata MakeVecRangeField(std::string name, FieldType type, std::size_t of
     return field;
 }
 
+FieldMetadata VisibleWhenBool(FieldMetadata field, std::string boolFieldName, bool expectedValue = true) {
+    field.visibleWhenField = std::move(boolFieldName);
+    field.visibleWhenBoolValue = expectedValue;
+    return field;
+}
+
 FieldMetadata MakeColorField(std::string name, std::size_t offset, std::string displayName = {}) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Vec3, offset, std::move(displayName));
     field.hint = FieldHint::Color;
@@ -43,7 +49,6 @@ FieldMetadata MakeColorField(std::string name, std::size_t offset, std::string d
     field.maxFloat = 1.0f;
     return field;
 }
-
 
 FieldMetadata MakeLightTypeField(std::string name, std::size_t offset) {
     FieldMetadata field = MakeField(std::move(name), FieldType::Enum, offset);
@@ -262,6 +267,16 @@ void ComponentRegistry::RegisterPhase2Components() {
         md.fields.push_back(
             MakeFloatRangeField("FarClip", offsetof(CameraComponent, farClip), 1.0f, 10000.0f, 1.0f));
         md.fields.push_back(MakeField("Primary", FieldType::Bool, offsetof(CameraComponent, primary)));
+        md.fields.push_back(MakeField("FollowPlayer", FieldType::Bool, offsetof(CameraComponent, followPlayer),
+                                      "Follow Player"));
+        md.fields.push_back(VisibleWhenBool(MakeVecRangeField("FollowOffset", FieldType::Vec3,
+                                                              offsetof(CameraComponent, followOffset), -1000.0f,
+                                                              1000.0f, 0.1f, "Follow Offset"),
+                                            "FollowPlayer"));
+        md.fields.push_back(VisibleWhenBool(MakeVecRangeField("FollowRotation", FieldType::Vec3,
+                                                              offsetof(CameraComponent, followRotation), -360.0f,
+                                                              360.0f, 0.1f, "Follow Rotation"),
+                                            "FollowPlayer"));
         RegisterComponent<CameraComponent>(std::move(md));
     }
 

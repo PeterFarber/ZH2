@@ -319,7 +319,10 @@ void EditorApp::Update(float deltaTime) {
 
     // Advance the physics preview (no-op unless the user enabled + is playing).
     if (m_Context.activeScene != nullptr) {
-        m_GameplayPreview.SetInputEnabled(m_Context.playMode && m_Context.gameplayView.gameInputActive);
+        const bool playtestInputActive = m_Context.playMode && m_Context.gameplayView.gameInputActive;
+        const bool clientPreviewInputActive = m_ClientPreview != nullptr && m_ClientPreview->IsRunning() &&
+                                              m_Context.clientPreview.gameInputActive;
+        m_GameplayPreview.SetInputEnabled(playtestInputActive || clientPreviewInputActive);
         if (m_GameplayPreview.IsActive()) {
             m_GameplayPreview.Update(*m_Context.activeScene, m_PhysicsPreview, deltaTime);
         } else {

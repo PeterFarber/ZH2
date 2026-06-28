@@ -61,8 +61,10 @@ void ClientPreviewPanel::OnImGui(EditorContext& context) {
     context.clientPreview.gameInputActive = imageHovered && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
     if (imageHovered) {
         const ImGuiIO& io = ImGui::GetIO();
-        const int localX = static_cast<int>(std::clamp(io.MousePos.x - frame.imagePos.x, 0.0f, frame.imageSize.x));
-        const int localY = static_cast<int>(std::clamp(io.MousePos.y - frame.imagePos.y, 0.0f, frame.imageSize.y));
+        const ImVec2 renderPoint = EditorViewport::ImagePointToRenderPixels(
+            frame, ImVec2(io.MousePos.x - frame.imagePos.x, io.MousePos.y - frame.imagePos.y));
+        const int localX = static_cast<int>(renderPoint.x);
+        const int localY = static_cast<int>(renderPoint.y);
         context.clientPreviewHost->HandlePointerInput(localX,
                                                       localY,
                                                       ImGui::IsMouseClicked(ImGuiMouseButton_Left),

@@ -19,6 +19,18 @@ bool Contains(const std::string& text, const char* needle) {
     return text.find(needle) != std::string::npos;
 }
 
+std::string FunctionBody(const std::string& text, const char* signature) {
+    const std::size_t start = text.find(signature);
+    if (start == std::string::npos) {
+        return {};
+    }
+    const std::size_t nextFunction = text.find("\nvoid ProjectPanel::", start + 1);
+    if (nextFunction == std::string::npos) {
+        return text.substr(start);
+    }
+    return text.substr(start, nextFunction - start);
+}
+
 std::size_t CountOccurrences(const std::string& text, const char* needle) {
     std::size_t count = 0;
     std::size_t cursor = 0;
@@ -97,6 +109,26 @@ void RunProjectPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "ImGui::IsMouseHoveringRect(min, max)") &&
                      Contains(source, "ImGui::IsMouseClicked(ImGuiMouseButton_Right)"),
                  "Project entries open context menus from full visual bounds");
+    HK_CHECK_MSG(source.find("ImGui::PopID();\n    OpenContextMenuForEntry(context, entry, groupMin, groupMax);") !=
+                     std::string::npos,
+                 "Project entry context popups open outside per-entry ID scope");
+    HK_CHECK_MSG(Contains(header, "m_ContextMenuOpenRequested"),
+                 "Project panel defers context popup opening into the shared popup scope");
+    const std::size_t deferredOpen = source.find("if (m_ContextMenuOpenRequested)");
+    const std::size_t beginPopup = source.find("ImGui::BeginPopup(\"##project-context-menu\")");
+    HK_CHECK_MSG(deferredOpen != std::string::npos && beginPopup != std::string::npos && deferredOpen < beginPopup,
+                 "Project context popup is opened from the same scope that begins the popup");
+    HK_CHECK_MSG(Contains(source, "!m_ContextMenuOpenRequested && ImGui::IsWindowHovered"),
+                 "Project background context menu cannot overwrite an item context request");
+    const std::string selectContextTarget = FunctionBody(source, "void ProjectPanel::SelectContextTarget");
+    HK_CHECK_MSG(!Contains(selectContextTarget, "context.SelectAsset"),
+                 "Right-click context target selection does not switch Inspector asset selection");
+    HK_CHECK_MSG(!Contains(selectContextTarget, "requestedPanelFocus"),
+                 "Right-click context target selection does not focus Inspector before the popup opens");
+    HK_CHECK_MSG(!Contains(source, "m_SelectedFolder = m_ContextTarget.entry.path"),
+                 "Right-clicking a folder targets it without navigating into it");
+    HK_CHECK_MSG(Contains(source, "entry.isDirectory ? SamePath(entry.path, m_Browser.Selected())"),
+                 "Right-clicked folder entries can be highlighted without changing current folder");
     HK_CHECK_MSG(!Contains(source, "BeginPopupContextItem(\"##project-entry-context\")"),
                  "Project panel no longer relies on item-local context popups");
     HK_CHECK_MSG(Contains(source, "DrawContentBackgroundContextMenu"), "Project panel handles empty-pane right clicks");

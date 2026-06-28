@@ -3,6 +3,7 @@
 #include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorGameplayPreview.hpp"
@@ -10,6 +11,7 @@
 #include "Hockey/Editor/Tools/EditorTools.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Match/MatchState.hpp"
+#include "Hockey/Gameplay/Player/PlayerComponents.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
@@ -33,6 +35,17 @@ struct PreviewFixture {
         context.toolManager.Activate("Hockey Players", context);
     }
 };
+
+Entity FindPlayerByIndex(Scene& scene, std::uint32_t playerIndex) {
+    auto view = scene.Registry().view<PlayerComponent>();
+    for (const entt::entity handle : view) {
+        Entity player(handle, &scene);
+        if (player.GetComponent<PlayerComponent>().playerIndex == playerIndex) {
+            return player;
+        }
+    }
+    return {};
+}
 
 } // namespace
 
@@ -91,6 +104,46 @@ void RunEditorGameplayPreviewTests() {
             HK_CHECK_NEAR(restoredPosition.z, authoredPosition.z, 0.0001f);
         }
         HK_CHECK_MSG(!fix.scene.FindEntityByName("Match State"), "preview runtime match state was removed");
+    }
+
+    {
+        PreviewFixture fix;
+        Entity camera = fix.scene.CreateEntity("Follow Camera");
+        camera.GetComponent<TransformComponent>().localPosition = {100.0f, 20.0f, 100.0f};
+        CameraComponent cameraComponent;
+        cameraComponent.primary = true;
+        cameraComponent.followPlayer = true;
+        cameraComponent.followOffset = {2.0f, 6.0f, -8.0f};
+        cameraComponent.followRotation = {-20.0f, 15.0f, 0.0f};
+        camera.AddComponent<CameraComponent>(cameraComponent);
+
+        EditorPhysicsPreview physicsPreview;
+        physicsPreview.Configure(MakeDefaultPhysicsSettings());
+
+        EditorGameplayPreview gameplayPreview;
+        GameplaySettings settings;
+        settings.fixedDeltaSeconds = 1.0f / 60.0f;
+        gameplayPreview.Configure(settings);
+
+        const Status started = gameplayPreview.Start(fix.scene, physicsPreview);
+        HK_CHECK_MSG(static_cast<bool>(started), "gameplay preview starts for follow camera");
+        gameplayPreview.Play();
+        gameplayPreview.Update(fix.scene, physicsPreview, 1.0f / 60.0f);
+
+        Entity player = FindPlayerByIndex(fix.scene, 0);
+        HK_CHECK_MSG(static_cast<bool>(player), "preview has player index 0");
+        if (player) {
+            const glm::vec3 targetPosition = glm::vec3(fix.scene.GetWorldTransform(player)[3]);
+            const glm::vec3 cameraPosition = glm::vec3(fix.scene.GetWorldTransform(camera)[3]);
+            HK_CHECK_NEAR(cameraPosition.x, targetPosition.x + 2.0f, 0.0001f);
+            HK_CHECK_NEAR(cameraPosition.y, targetPosition.y + 6.0f, 0.0001f);
+            HK_CHECK_NEAR(cameraPosition.z, targetPosition.z - 8.0f, 0.0001f);
+            const glm::vec3 cameraRotation = camera.GetComponent<TransformComponent>().localRotation;
+            HK_CHECK_NEAR(cameraRotation.x, -20.0f, 0.001f);
+            HK_CHECK_NEAR(cameraRotation.y, 15.0f, 0.001f);
+        }
+
+        gameplayPreview.Stop(fix.scene, physicsPreview);
     }
 
     Physics::Shutdown();

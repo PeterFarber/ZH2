@@ -33,6 +33,12 @@ struct FieldMetadata {
     std::vector<std::string> enumNames;
     std::vector<int> enumValues;
 
+    // Optional inspector visibility condition. When set to the name of another
+    // bool field on the same component, editors should only show this field
+    // when that bool matches visibleWhenBoolValue.
+    std::string visibleWhenField;
+    bool visibleWhenBoolValue = true;
+
     // For FieldType::AssetRef: the asset category this field accepts (e.g.
     // "Mesh", "Material", "Texture"). Editors map this to AssetType. Kept as a
     // string so the ECS stays independent of hockey_assets.

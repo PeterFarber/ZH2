@@ -25,7 +25,31 @@ bool IsHeaderComponent(const std::string& name) {
            name == "ActiveComponent";
 }
 
+bool IsHiddenForEntity(const ComponentMetadata& metadata, const Entity& entity) {
+    return metadata.name == "PlayerRoleComponent" && entity.HasComponent<SpawnPointComponent>();
+}
+
 } // namespace
+
+namespace SpawnRoleInspector {
+
+bool IsGoalieSpawn(const Entity& entity) {
+    if (!entity.IsValid() || !entity.HasComponent<SpawnPointComponent>() ||
+        !entity.HasComponent<PlayerRoleComponent>()) {
+        return false;
+    }
+    return entity.GetComponent<PlayerRoleComponent>().role == PlayerRole::Goalie;
+}
+
+void SetGoalieSpawn(Entity& entity, bool goalie) {
+    if (!entity.IsValid() || !entity.HasComponent<SpawnPointComponent>()) {
+        return;
+    }
+    entity.AddOrReplaceComponent<PlayerRoleComponent>(
+        PlayerRoleComponent{goalie ? PlayerRole::Goalie : PlayerRole::Skater});
+}
+
+} // namespace SpawnRoleInspector
 
 void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
     Scene* scene = entity.GetScene();
@@ -48,6 +72,9 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
 
     for (const ComponentMetadata& metadata : ComponentRegistry::Get().All()) {
         if (IsHeaderComponent(metadata.name)) {
+            continue;
+        }
+        if (IsHiddenForEntity(metadata, entity)) {
             continue;
         }
         if (!metadata.has || !metadata.has(entity)) {
@@ -85,6 +112,10 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
                 metadata.name == "MeshRendererComponent" || metadata.name == "DecalComponent";
 
             for (const FieldMetadata& field : metadata.fields) {
+                if (!FieldDrawers::IsFieldVisible(metadata, data, field)) {
+                    continue;
+                }
+
                 ImGui::PushID(field.name.c_str());
                 FieldDrawers::FieldEdit edit;
                 if (renderMaterial && field.name == "MaterialAsset" && data != nullptr) {
@@ -107,6 +138,18 @@ void ComponentInspector::Draw(EditorContext& context, Entity& entity) {
                     committedLabel = metadata.displayName;
                 }
                 ImGui::PopID();
+            }
+            if (metadata.name == "SpawnPointComponent") {
+                bool goalie = SpawnRoleInspector::IsGoalieSpawn(entity);
+                if (ImGui::Checkbox("Goalie", &goalie)) {
+                    const std::string before = EntitySnapshot::CaptureEntity(*scene, uuid);
+                    SpawnRoleInspector::SetGoalieSpawn(entity, goalie);
+                    const std::string after = EntitySnapshot::CaptureEntity(*scene, uuid);
+                    if (!before.empty() && after != before) {
+                        context.undoRedo.Execute(
+                            EditorCommands::EditComponentField(uuid, "Spawn Goalie", before, after), context);
+                    }
+                }
             }
             if (metadata.fields.empty()) {
                 ImGui::TextDisabled("(no editable fields)");

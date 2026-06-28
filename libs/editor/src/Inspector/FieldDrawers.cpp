@@ -28,6 +28,26 @@ void* FieldPointer(void* componentData, const FieldMetadata& field) {
     return static_cast<char*>(componentData) + field.offset;
 }
 
+bool IsFieldVisible(const ComponentMetadata& component, void* componentData, const FieldMetadata& field) {
+    if (field.visibleWhenField.empty()) {
+        return true;
+    }
+    if (componentData == nullptr) {
+        return false;
+    }
+
+    for (const FieldMetadata& other : component.fields) {
+        if (other.name != field.visibleWhenField) {
+            continue;
+        }
+        if (other.type != FieldType::Bool) {
+            return false;
+        }
+        const auto* value = static_cast<const bool*>(FieldPointer(componentData, other));
+        return value != nullptr && *value == field.visibleWhenBoolValue;
+    }
+    return false;
+}
 
 namespace {
 
@@ -222,7 +242,6 @@ bool DrawAssetRef(const FieldMetadata& field, std::uint64_t* id, AssetManager* a
     ImGui::PopID();
     return changed;
 }
-
 
 } // namespace
 

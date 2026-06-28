@@ -1,5 +1,7 @@
 #include "Hockey/Editor/EditorGameplayPreview.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 #include <entt/entt.hpp>
@@ -8,12 +10,15 @@
 #include "Hockey/Core/Keyboard.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/RenderComponents.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
+#include "Hockey/ECS/Transform.hpp"
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 
 #include <glm/geometric.hpp>
+#include <glm/mat4x4.hpp>
 #include <imgui.h>
 
 namespace Hockey {
@@ -46,6 +51,65 @@ bool PlayerHasPuck(Scene& scene, Entity player) {
         }
     }
     return false;
+}
+
+Entity FindActiveFollowCamera(Scene& scene) {
+    auto view = scene.Registry().view<TransformComponent, CameraComponent>();
+    entt::entity chosen = entt::null;
+    for (const entt::entity handle : view) {
+        Entity camera(handle, &scene);
+        if (!camera.IsActiveInHierarchy()) {
+            continue;
+        }
+        if (chosen == entt::null) {
+            chosen = handle;
+        }
+        if (view.get<CameraComponent>(handle).primary) {
+            chosen = handle;
+            break;
+        }
+    }
+    if (chosen == entt::null || !view.get<CameraComponent>(chosen).followPlayer) {
+        return {};
+    }
+    return Entity(chosen, &scene);
+}
+
+float ResponseAlpha(float response, float deltaSeconds) {
+    return 1.0f - std::exp(-std::max(response, 0.0f) * std::max(deltaSeconds, 0.0f));
+}
+
+glm::vec3 SmoothVector(const glm::vec3& current, const glm::vec3& desired, float response, float deltaSeconds) {
+    const float alpha = ResponseAlpha(response, deltaSeconds);
+    return current + (desired - current) * alpha;
+}
+
+void UpdateFollowCamera(Scene& scene,
+                        float deltaSeconds,
+                        bool& initialized,
+                        glm::vec3& cameraPosition) {
+    constexpr uint32_t kLocalPlayerIndex = 0;
+    constexpr float kPositionResponse = 9.0f;
+
+    const Entity player = FindPreviewPlayer(scene, kLocalPlayerIndex);
+    const Entity camera = FindActiveFollowCamera(scene);
+    if (!player || !camera || !player.HasComponent<TransformComponent>()) {
+        return;
+    }
+
+    const CameraComponent& cameraComponent = camera.GetComponent<CameraComponent>();
+    const glm::vec3 targetPosition = glm::vec3(scene.GetWorldTransform(player)[3]);
+    const glm::vec3 desiredPosition = targetPosition + cameraComponent.followOffset;
+
+    if (!initialized) {
+        cameraPosition = desiredPosition;
+        initialized = true;
+    } else {
+        cameraPosition = SmoothVector(cameraPosition, desiredPosition, kPositionResponse, deltaSeconds);
+    }
+
+    const glm::vec3 scale = camera.GetComponent<TransformComponent>().localScale;
+    scene.SetWorldTransform(camera, ComposeTransform(cameraPosition, cameraComponent.followRotation, scale));
 }
 
 } // namespace
@@ -100,6 +164,7 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
     m_LocalInputSequence = 0;
     m_Tick = 0;
     m_HasMoveTarget = false;
+    m_FollowCameraInitialized = false;
     m_Active = true;
     m_Running = false;
     m_InputEnabled = false;
@@ -142,6 +207,7 @@ void EditorGameplayPreview::StepOnce(Scene& scene, EditorPhysicsPreview& physics
     }
     m_Running = false;
     StepFixed(scene, physicsPreview, m_Settings.fixedDeltaSeconds);
+    UpdateFollowCamera(scene, m_Settings.fixedDeltaSeconds, m_FollowCameraInitialized, m_FollowCameraPosition);
 }
 
 void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPreview) {
@@ -158,6 +224,7 @@ void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPre
     m_LocalInputSequence = 0;
     m_Tick = 0;
     m_HasMoveTarget = false;
+    m_FollowCameraInitialized = false;
     if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings, m_Tuning); !initialized) {
         m_Active = false;
         ClearSnapshot();
@@ -175,6 +242,7 @@ void EditorGameplayPreview::Update(Scene& scene, EditorPhysicsPreview& physicsPr
         StepFixed(scene, physicsPreview, fixedDelta);
         m_Timestep.AdvanceTick();
     }
+    UpdateFollowCamera(scene, deltaTime, m_FollowCameraInitialized, m_FollowCameraPosition);
 }
 
 void EditorGameplayPreview::SetMoveTarget(const glm::vec3& target) {

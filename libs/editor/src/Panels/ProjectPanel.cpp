@@ -553,7 +553,7 @@ void ProjectPanel::DrawRawEntry(EditorContext& context, const ProjectEntry& entr
     ImGui::PushID(entry.path.string().c_str());
     const AssetMetadata* meta = MetadataForRawEntry(context, entry);
     const bool selected =
-        entry.isDirectory ? SamePath(entry.path, m_SelectedFolder)
+        entry.isDirectory ? SamePath(entry.path, m_Browser.Selected())
                           : ((meta != nullptr && meta->id == m_SelectedAssetId) ||
                              SamePath(entry.path, m_Browser.Selected()));
     const ImVec4 color = ColorForType(entry.type.type, entry.type.supported);
@@ -586,15 +586,17 @@ void ProjectPanel::DrawRawEntry(EditorContext& context, const ProjectEntry& entr
     ImGui::EndGroup();
     const ImVec2 groupMin = ImGui::GetItemRectMin();
     const ImVec2 groupMax = ImGui::GetItemRectMax();
-    OpenContextMenuForEntry(context, entry, groupMin, groupMax);
     ImGui::PopID();
+    OpenContextMenuForEntry(context, entry, groupMin, groupMax);
 }
 
 void ProjectPanel::OpenContextMenuForEntry(EditorContext& context,
                                            const ProjectEntry& entry,
                                            const ImVec2& min,
                                            const ImVec2& max) {
-    if (!ImGui::IsMouseHoveringRect(min, max) || !ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+    const bool hovered = ImGui::IsMouseHoveringRect(min, max);
+    const bool rightClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+    if (!hovered || !rightClicked) {
         return;
     }
 
@@ -603,7 +605,7 @@ void ProjectPanel::OpenContextMenuForEntry(EditorContext& context,
     m_ContextTarget.entry = entry;
     m_ContextTarget.folder = entry.isDirectory ? entry.path : entry.path.parent_path();
     SelectContextTarget(context);
-    ImGui::OpenPopup("##project-context-menu");
+    m_ContextMenuOpenRequested = true;
 }
 
 void ProjectPanel::OpenContextMenuForFolder(EditorContext& context,
@@ -612,7 +614,7 @@ void ProjectPanel::OpenContextMenuForFolder(EditorContext& context,
     m_ContextTarget.kind = ContextTargetKind::EmptyArea;
     m_ContextTarget.folder = folder;
     SelectContextTarget(context);
-    ImGui::OpenPopup("##project-context-menu");
+    m_ContextMenuOpenRequested = true;
 }
 
 bool ProjectPanel::CanRenameDeletePath(const std::filesystem::path& path) const {
@@ -627,7 +629,6 @@ bool ProjectPanel::CanRenameDeletePath(const std::filesystem::path& path) const 
 
 void ProjectPanel::SelectContextTarget(EditorContext& context) {
     if (m_ContextTarget.kind == ContextTargetKind::Folder) {
-        m_SelectedFolder = m_ContextTarget.entry.path;
         m_SelectedAssetId = {};
         m_Browser.Select(m_ContextTarget.entry.path);
         context.ClearAssetSelection();
@@ -639,8 +640,6 @@ void ProjectPanel::SelectContextTarget(EditorContext& context) {
         m_Browser.Select(entry.path);
         if (const AssetMetadata* meta = MetadataForRawEntry(context, entry)) {
             m_SelectedAssetId = meta->id;
-            context.SelectAsset(meta->id);
-            context.requestedPanelFocus = EditorPanelNames::kInspector;
         } else {
             m_SelectedAssetId = {};
             context.ClearAssetSelection();
@@ -702,13 +701,17 @@ void ProjectPanel::DrawContentBackgroundContextMenu(EditorContext& context) {
         m_SelectedFolder.empty() ? SelectedSectionRawFolder(context, SelectedSectionAssetType())
                                  : m_SelectedFolder;
 
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && !ImGui::IsAnyItemHovered() &&
-        ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+    if (!m_ContextMenuOpenRequested && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
+        !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         OpenContextMenuForFolder(context, folder);
     }
 }
 
 void ProjectPanel::DrawProjectContextMenu(EditorContext& context) {
+    if (m_ContextMenuOpenRequested) {
+        ImGui::OpenPopup("##project-context-menu");
+        m_ContextMenuOpenRequested = false;
+    }
     if (!ImGui::BeginPopup("##project-context-menu")) {
         return;
     }

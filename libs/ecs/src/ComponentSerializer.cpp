@@ -85,6 +85,9 @@ void SerializeRenderComponents(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "NearClip" << YAML::Value << camera.nearClip;
         out << YAML::Key << "FarClip" << YAML::Value << camera.farClip;
         out << YAML::Key << "Primary" << YAML::Value << camera.primary;
+        out << YAML::Key << "FollowPlayer" << YAML::Value << camera.followPlayer;
+        out << YAML::Key << "FollowOffset" << YAML::Value << camera.followOffset;
+        out << YAML::Key << "FollowRotation" << YAML::Value << camera.followRotation;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<MeshRendererComponent>()) {
@@ -390,6 +393,11 @@ bool ComponentSerializer::DeserializeRenderComponents(Entity entity, const YAML:
         if (cameraNode["Primary"]) {
             component.primary = cameraNode["Primary"].as<bool>();
         }
+        if (cameraNode["FollowPlayer"]) {
+            component.followPlayer = cameraNode["FollowPlayer"].as<bool>();
+        }
+        ReadVec3(cameraNode["FollowOffset"], component.followOffset);
+        ReadVec3(cameraNode["FollowRotation"], component.followRotation);
         registry.emplace_or_replace<CameraComponent>(handle, component);
     }
 

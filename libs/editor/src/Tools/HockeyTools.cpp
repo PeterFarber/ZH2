@@ -1,6 +1,5 @@
 #include "Hockey/Editor/Tools/HockeyTools.hpp"
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -177,6 +176,7 @@ RigidBodyComponent& AddGameplayActorRigidBody(Entity entity, PhysicsLayer layer,
     rb.allowSleeping = false;
     rb.lockTranslationY = true;
     rb.lockRotationX = true;
+    rb.lockRotationY = false;
     rb.lockRotationZ = true;
     return entity.AddComponent<RigidBodyComponent>(rb);
 }
@@ -266,17 +266,18 @@ void HockeySpawnTool::OnSelected(EditorContext& context) {
                 struct SpawnDef {
                     const char* name;
                     Team team;
+                    PlayerRole role;
                     glm::vec3 position;
                 };
                 const SpawnDef defs[] = {
-                    {"Home Spawn 0", Team::Home, {-9.0f, 0.0f, -22.0f}},
-                    {"Home Spawn 1", Team::Home, {-3.0f, 0.0f, -22.0f}},
-                    {"Home Spawn 2", Team::Home, {3.0f, 0.0f, -22.0f}},
-                    {"Home Spawn 3", Team::Home, {9.0f, 0.0f, -22.0f}},
-                    {"Away Spawn 0", Team::Away, {-9.0f, 0.0f, 22.0f}},
-                    {"Away Spawn 1", Team::Away, {-3.0f, 0.0f, 22.0f}},
-                    {"Away Spawn 2", Team::Away, {3.0f, 0.0f, 22.0f}},
-                    {"Away Spawn 3", Team::Away, {9.0f, 0.0f, 22.0f}},
+                    {"Home Spawn 0", Team::Home, PlayerRole::Skater, {-9.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 1", Team::Home, PlayerRole::Skater, {-3.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 2", Team::Home, PlayerRole::Skater, {3.0f, 0.0f, -22.0f}},
+                    {"Home Spawn 3", Team::Home, PlayerRole::Goalie, {9.0f, 0.0f, -22.0f}},
+                    {"Away Spawn 0", Team::Away, PlayerRole::Skater, {-9.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 1", Team::Away, PlayerRole::Skater, {-3.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 2", Team::Away, PlayerRole::Skater, {3.0f, 0.0f, 22.0f}},
+                    {"Away Spawn 3", Team::Away, PlayerRole::Goalie, {9.0f, 0.0f, 22.0f}},
                 };
 
                 for (const SpawnDef& def : defs) {
@@ -286,6 +287,7 @@ void HockeySpawnTool::OnSelected(EditorContext& context) {
                     marker.faceoffSpawn = false;
                     spawn.AddComponent<SpawnPointComponent>(marker);
                     spawn.AddComponent<TeamComponent>(TeamComponent{def.team});
+                    spawn.AddComponent<PlayerRoleComponent>(PlayerRoleComponent{def.role});
                     Reparent(scene, spawn, root);
                 }
                 return {root.GetUUID()};
@@ -449,6 +451,13 @@ void HockeyFaceoffTool::OnSelected(EditorContext& context) {
                                               {"Away Penalty Faceoff Spawn", Team::Away, 24.0f, 32.0f},
                                           };
                                           constexpr float xs[] = {-9.0f, -3.0f, 3.0f, 9.0f};
+                                          const auto slotTeam = [](int index) {
+                                              return index < 4 ? Team::Home : Team::Away;
+                                          };
+                                          const auto slotRole = [](int index) {
+                                              return (index == 3 || index == 7) ? PlayerRole::Goalie
+                                                                                : PlayerRole::Skater;
+                                          };
 
                                           for (const FaceoffSpawnDef& def : defs) {
                                               int index = 0;
@@ -461,6 +470,9 @@ void HockeyFaceoffTool::OnSelected(EditorContext& context) {
                                                       marker.team = def.team;
                                                       marker.faceoffSpawn = true;
                                                       spawn.AddComponent<SpawnPointComponent>(marker);
+                                                      spawn.AddComponent<TeamComponent>(TeamComponent{slotTeam(index)});
+                                                      spawn.AddComponent<PlayerRoleComponent>(
+                                                          PlayerRoleComponent{slotRole(index)});
                                                       Reparent(scene, spawn, root);
                                                       ++index;
                                                   }
@@ -482,7 +494,11 @@ void HockeyCameraRigTool::OnSelected(EditorContext& context) {
                                           Entity rig = MakeEntity(scene, "Gameplay Camera Rig", {0.0f, 20.0f, -75.0f});
                                           rig.GetComponent<TransformComponent>().localRotation = {15.0f, 0.0f, 0.0f};
                                           rig.AddComponent<CameraRigMarkerComponent>();
-                                          rig.AddComponent<CameraComponent>(); // not primary
+                                          CameraComponent camera;
+                                          camera.followPlayer = true;
+                                          camera.followOffset = {0.0f, 7.5f, 10.0f};
+                                          camera.followRotation = {-30.0f, 0.0f, 0.0f};
+                                          rig.AddComponent<CameraComponent>(camera); // not primary
                                           return {rig.GetUUID()};
                                       }),
         context);
