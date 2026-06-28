@@ -17,6 +17,7 @@ public:
     // normal map, *_basecolor -> sRGB). Shared with the cooker so import and
     // cook stay consistent without persisting settings separately.
     static TextureImportSettings InferSettings(const std::filesystem::path& rawPath);
+    static bool IsSvg(const std::filesystem::path& rawPath);
 };
 
 } // namespace Hockey

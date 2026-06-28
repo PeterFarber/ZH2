@@ -100,7 +100,7 @@ AssetType AssetManager::ClassifyExtension(const fs::path& rawPath) {
 
     const std::string ext = LowerExtension(rawPath);
     if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp" || ext == ".hdr" ||
-        ext == ".ktx" || ext == ".ktx2")
+        ext == ".ktx" || ext == ".ktx2" || ext == ".svg")
         return AssetType::Texture;
     if (ext == ".gltf" || ext == ".glb")
         return AssetType::Model;

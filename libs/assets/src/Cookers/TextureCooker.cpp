@@ -3,6 +3,7 @@
 #include "Hockey/Assets/AssetHash.hpp"
 #include "Hockey/Assets/AssetPath.hpp"
 #include "Hockey/Assets/Importers/TextureImporter.hpp"
+#include "Hockey/Assets/Runtime/SvgRasterizer.hpp"
 #include "Hockey/Assets/Runtime/TextureLoader.hpp"
 
 #include <fstream>
@@ -17,7 +18,9 @@ CookResult TextureCooker::Cook(const CookContext& context) {
     const fs::path rawAbsolute = context.projectRoot / metadata.rawPath;
     const TextureImportSettings settings = TextureImporter::InferSettings(metadata.rawPath);
 
-    Result<TextureAsset> loaded = TextureLoader::LoadRaw(rawAbsolute, settings);
+    Result<TextureAsset> loaded = TextureImporter::IsSvg(metadata.rawPath)
+                                      ? SvgRasterizer::Rasterize(rawAbsolute, settings)
+                                      : TextureLoader::LoadRaw(rawAbsolute, settings);
     if (!loaded) {
         result.success = false;
         result.error = loaded.error;

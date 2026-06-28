@@ -1,8 +1,10 @@
 #include "Hockey/Assets/Importers/TextureImporter.hpp"
 
+#include "Hockey/Assets/Runtime/SvgRasterizer.hpp"
 #include "Hockey/Assets/Runtime/TextureLoader.hpp"
 
 #include <algorithm>
+#include <cctype>
 
 namespace Hockey {
 namespace fs = std::filesystem;
@@ -18,7 +20,14 @@ bool TextureImporter::SupportsExtension(const std::string& extension) const {
     std::transform(ext.begin(), ext.end(), ext.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp" ||
-           ext == ".hdr" || ext == ".ktx" || ext == ".ktx2";
+           ext == ".hdr" || ext == ".ktx" || ext == ".ktx2" || ext == ".svg";
+}
+
+bool TextureImporter::IsSvg(const fs::path& rawPath) {
+    std::string ext = rawPath.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return ext == ".svg";
 }
 
 TextureImportSettings TextureImporter::InferSettings(const fs::path& rawPath) {
@@ -27,6 +36,16 @@ TextureImportSettings TextureImporter::InferSettings(const fs::path& rawPath) {
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     TextureImportSettings settings;
+    if (IsSvg(rawPath)) {
+        settings.semantic = TextureSemantic::BaseColor;
+        settings.colorSpace = TextureColorSpace::SRGB;
+        settings.normalMap = false;
+        settings.generateMipmaps = true;
+        settings.compress = true;
+        settings.maxSize = SvgRasterizer::kDefaultMaxSize;
+        return settings;
+    }
+
     if (Contains(stem, "normal") || Contains(stem, "_n") || Contains(stem, "nrm")) {
         settings.semantic = TextureSemantic::Normal;
         settings.colorSpace = TextureColorSpace::Linear;
@@ -59,7 +78,17 @@ ImportResult TextureImporter::Import(const ImportContext& context) {
     ImportResult result;
 
     uint32_t width = 0, height = 0, channels = 0;
-    if (!TextureLoader::ReadDimensions(context.rawPath, width, height, channels)) {
+    if (IsSvg(context.rawPath)) {
+        Result<SvgInfo> info = SvgRasterizer::Inspect(context.rawPath);
+        if (!info) {
+            result.success = false;
+            result.error = info.error;
+            return result;
+        }
+        width = info.value.width;
+        height = info.value.height;
+        channels = 4;
+    } else if (!TextureLoader::ReadDimensions(context.rawPath, width, height, channels)) {
         result.success = false;
         result.error = "not a readable image: " + context.rawPath.string();
         return result;
