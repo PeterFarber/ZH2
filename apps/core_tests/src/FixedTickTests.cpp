@@ -21,4 +21,12 @@ void RunFixedTickTests() {
     timestep.Reset();
     HK_CHECK_EQ(timestep.GetTick(), static_cast<uint64_t>(0));
     HK_CHECK_EQ(timestep.Accumulate(0.0), 0);
+
+    FixedTimestep interpolation(60.0);
+    HK_CHECK_EQ(interpolation.Accumulate(1.0 / 120.0), 0);
+    HK_CHECK(std::abs(interpolation.GetInterpolationAlpha() - 0.5) < 1e-9);
+    HK_CHECK_EQ(interpolation.Accumulate(1.0 / 120.0), 1);
+    HK_CHECK(std::abs(interpolation.GetInterpolationAlpha()) < 1e-9);
+    interpolation.Reset();
+    HK_CHECK(std::abs(interpolation.GetInterpolationAlpha()) < 1e-9);
 }

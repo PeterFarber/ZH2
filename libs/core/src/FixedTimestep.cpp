@@ -12,6 +12,19 @@ void FixedTimestep::SetTickRate(double tickRate) {
 }
 double FixedTimestep::GetTickRate() const { return m_TickRate; }
 double FixedTimestep::GetFixedDeltaSeconds() const { return m_FixedDelta; }
+double FixedTimestep::GetInterpolationAlpha() const {
+    if (m_FixedDelta <= 0.0) {
+        return 0.0;
+    }
+    const double alpha = m_Accumulator / m_FixedDelta;
+    if (alpha <= 0.0) {
+        return 0.0;
+    }
+    if (alpha >= 1.0) {
+        return 1.0;
+    }
+    return alpha;
+}
 uint64_t FixedTimestep::GetTick() const { return m_Tick; }
 int FixedTimestep::Accumulate(double deltaSeconds) {
     if (deltaSeconds > 0.0) {

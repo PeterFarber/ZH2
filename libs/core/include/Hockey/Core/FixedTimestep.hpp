@@ -9,6 +9,7 @@ public:
     double GetTickRate() const;
 
     double GetFixedDeltaSeconds() const;
+    double GetInterpolationAlpha() const;
     uint64_t GetTick() const;
 
     int Accumulate(double deltaSeconds);
