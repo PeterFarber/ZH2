@@ -64,6 +64,7 @@ Source material:
 - [x] Material cook path exists.
 - [x] Canonical reusable visual materials are authored as raw PBR material assets under `data/raw/materials`.
 - [x] PBR texture slot handling exists for base color, normal, metallic/roughness, occlusion, and emissive.
+- [x] SVG source textures can be rasterized during cooking and used by material-backed decal assets for rink markings, logos, and ads.
 - [x] glTF/GLB import exists through fastgltf.
 - [x] Mesh optimization/cooking exists through meshoptimizer.
 - [x] Canonical basic shape mesh assets exist for cube, sphere, cylinder, capsule, torus, and plane.
