@@ -5,6 +5,7 @@ add_executable(HockeyAssetTests
     src/AssetPathTests.cpp
     src/AssetDatabaseTests.cpp
     src/TextureImportTests.cpp
+    src/SvgTextureImportTests.cpp
     src/RuntimePackageTests.cpp
     src/GltfImportTests.cpp
     src/MaterialTests.cpp
