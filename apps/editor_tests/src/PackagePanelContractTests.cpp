@@ -31,6 +31,10 @@ void RunPackagePanelContractTests() {
     const std::string menu = ReadProjectFile("libs/editor/src/MainMenuBar.cpp");
     const std::string dockspace = ReadProjectFile("libs/editor/include/Hockey/Editor/Dockspace.hpp");
     const std::string cmake = ReadProjectFile("libs/editor/CMakeLists.txt");
+    const std::string windowsClientScript = ReadProjectFile("scripts/windows/package_client.ps1");
+    const std::string windowsServerScript = ReadProjectFile("scripts/windows/package_server.ps1");
+    const std::string linuxClientScript = ReadProjectFile("scripts/linux/package_client.sh");
+    const std::string linuxServerScript = ReadProjectFile("scripts/linux/package_server.sh");
 
     HK_CHECK_MSG(Contains(profile, "editor/package_profiles.toml"),
                  "package profiles are editor-owned data");
@@ -53,4 +57,12 @@ void RunPackagePanelContractTests() {
     HK_CHECK_MSG(Contains(dockspace, "kPackage"), "Package panel has a canonical dockspace name");
     HK_CHECK_MSG(Contains(cmake, "src/Packaging/PackageProfile.cpp"), "package profile source is built");
     HK_CHECK_MSG(Contains(cmake, "src/Panels/PackagePanel.cpp"), "package panel source is built");
+    HK_CHECK_MSG(Contains(windowsClientScript, "*.dll") && Contains(windowsClientScript, "Copy-Item"),
+                 "Windows client package stages runtime DLL dependencies");
+    HK_CHECK_MSG(Contains(windowsServerScript, "*.dll") && Contains(windowsServerScript, "Copy-Item"),
+                 "Windows server package stages runtime DLL dependencies");
+    HK_CHECK_MSG(Contains(linuxClientScript, "*.so*") && Contains(linuxClientScript, "cp -P"),
+                 "Linux client package stages app-local shared library dependencies");
+    HK_CHECK_MSG(Contains(linuxServerScript, "*.so*") && Contains(linuxServerScript, "cp -P"),
+                 "Linux server package stages app-local shared library dependencies");
 }

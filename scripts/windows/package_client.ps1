@@ -16,6 +16,18 @@ if ($Preset -ne "windows-release") {
 }
 $outputPath = if ([System.IO.Path]::IsPathRooted($OutputDir)) { $OutputDir } else { Join-Path $root $OutputDir }
 $packagePath = Join-Path $buildDir "packages/client_runtime.hkpack"
+$appDir = Join-Path $buildDir "apps/game_client"
+
+function Copy-AppRuntimeDlls {
+    param(
+        [string]$SourceDir,
+        [string]$DestinationDir
+    )
+
+    Get-ChildItem -LiteralPath $SourceDir -Filter "*.dll" -File | ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $DestinationDir $_.Name)
+    }
+}
 
 if (-not (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
     cmake --preset $Preset
@@ -35,7 +47,8 @@ if (Test-Path $outputPath) {
     New-Item -ItemType Directory -Path $outputPath | Out-Null
 }
 
-Copy-Item -LiteralPath (Join-Path $buildDir "apps/game_client/HockeyGameClient.exe") -Destination (Join-Path $outputPath "HockeyGameClient.exe")
+Copy-Item -LiteralPath (Join-Path $appDir "HockeyGameClient.exe") -Destination (Join-Path $outputPath "HockeyGameClient.exe")
+Copy-AppRuntimeDlls -SourceDir $appDir -DestinationDir $outputPath
 Copy-Item -LiteralPath (Join-Path $root "data/config/client.toml") -Destination (Join-Path $outputPath "HockeyGameClient.toml")
 
 if ($IncludeDebugSymbols) {

@@ -26,6 +26,7 @@ if [[ "${output_dir}" != /* ]]; then
     output_dir="${root}/${output_dir}"
 fi
 package_path="${build_dir}/packages/server_runtime.hkpack"
+app_dir="${build_dir}/apps/dedicated_server"
 
 if [[ ! -f "${build_dir}/CMakeCache.txt" ]]; then
     cmake --preset "${preset}"
@@ -38,6 +39,7 @@ cmake --build --preset "${build_preset}" --target HockeyDedicatedServer
 mkdir -p "${output_dir}"
 find "${output_dir}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp "${build_dir}/apps/dedicated_server/HockeyDedicatedServer" "${output_dir}/HockeyDedicatedServer"
+find "${app_dir}" -maxdepth 1 -type f -name '*.so*' -exec cp -P {} "${output_dir}/" \;
 cp "${root}/data/config/server.toml" "${output_dir}/HockeyDedicatedServer.toml"
 
 if [[ "${include_debug_symbols}" -eq 1 && -f "${build_dir}/apps/dedicated_server/HockeyDedicatedServer.debug" ]]; then
