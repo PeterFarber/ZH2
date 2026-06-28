@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "common.glsl"
+#include "decals.glsl"
 
 layout(location = 0) in vec3 vWorldPos;
 layout(location = 1) in vec3 vNormal;
@@ -56,6 +57,7 @@ void main() {
     float ao = mix(1.0, texture(uOcclusionTex, uv).r, uMaterial.mrno.w);
 
     vec3 N = ComputeNormal(uv);
+    ApplyDecals(albedo, N, vWorldPos);
     vec3 V = normalize(uCamera.position.xyz - vWorldPos);
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
     bool receivesShadows = uPush.flags.x > 0.5;

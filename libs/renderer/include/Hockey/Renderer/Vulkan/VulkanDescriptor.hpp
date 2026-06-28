@@ -15,10 +15,11 @@ VkShaderStageFlags ToVkShaderStages(uint32_t mask);
 VkDescriptorSetLayout CreateDescriptorSetLayout(const RenderDevice& device, const DescriptorSetLayoutDesc& desc);
 void DestroyDescriptorSetLayout(const RenderDevice& device, VkDescriptorSetLayout layout);
 
-// The three standard layouts (global / material / per-pass).
+// The standard layouts (global / material / decal / per-pass).
 struct VulkanDescriptorLayouts {
     VkDescriptorSetLayout global = VK_NULL_HANDLE;
     VkDescriptorSetLayout material = VK_NULL_HANDLE;
+    VkDescriptorSetLayout decal = VK_NULL_HANDLE;
     VkDescriptorSetLayout perPass = VK_NULL_HANDLE;
 
     Status Create(const RenderDevice& device);
@@ -53,6 +54,8 @@ public:
                                   DescriptorType type);
     DescriptorWriter& WriteImage(uint32_t binding, VkImageView view, VkSampler sampler, VkImageLayout layout,
                                  DescriptorType type);
+    DescriptorWriter& WriteImageArray(uint32_t binding, const std::vector<VkDescriptorImageInfo>& images,
+                                      DescriptorType type);
     void Update(const RenderDevice& device, VkDescriptorSet set);
     void Clear();
 
@@ -62,6 +65,7 @@ private:
         VkDescriptorType type;
         bool isImage;
         size_t infoIndex;
+        uint32_t descriptorCount;
     };
     // Stable storage: pointers into these are resolved at Update() time, after
     // all writes have been recorded, so reallocation during recording is safe.

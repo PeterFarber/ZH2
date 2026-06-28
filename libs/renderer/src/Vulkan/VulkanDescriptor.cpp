@@ -70,10 +70,13 @@ void DestroyDescriptorSetLayout(const RenderDevice& device, VkDescriptorSetLayou
 // ---------------------------------------------------------------------------
 
 Status VulkanDescriptorLayouts::Create(const RenderDevice& device) {
-    global = CreateDescriptorSetLayout(device, GlobalSetLayoutDesc());
-    material = CreateDescriptorSetLayout(device, MaterialSetLayoutDesc());
-    perPass = CreateDescriptorSetLayout(device, PerPassSetLayoutDesc());
-    if (global == VK_NULL_HANDLE || material == VK_NULL_HANDLE || perPass == VK_NULL_HANDLE) {
+    VulkanDescriptorLayouts& descriptorLayouts = *this;
+    descriptorLayouts.global = CreateDescriptorSetLayout(device, GlobalSetLayoutDesc());
+    descriptorLayouts.material = CreateDescriptorSetLayout(device, MaterialSetLayoutDesc());
+    descriptorLayouts.decal = CreateDescriptorSetLayout(device, DecalSetLayoutDesc());
+    descriptorLayouts.perPass = CreateDescriptorSetLayout(device, PerPassSetLayoutDesc());
+    if (descriptorLayouts.global == VK_NULL_HANDLE || descriptorLayouts.material == VK_NULL_HANDLE ||
+        descriptorLayouts.decal == VK_NULL_HANDLE || descriptorLayouts.perPass == VK_NULL_HANDLE) {
         return Status::Fail("Failed to create standard descriptor set layouts");
     }
     return Status::Ok();
@@ -82,8 +85,9 @@ Status VulkanDescriptorLayouts::Create(const RenderDevice& device) {
 void VulkanDescriptorLayouts::Destroy(const RenderDevice& device) {
     DestroyDescriptorSetLayout(device, global);
     DestroyDescriptorSetLayout(device, material);
+    DestroyDescriptorSetLayout(device, decal);
     DestroyDescriptorSetLayout(device, perPass);
-    global = material = perPass = VK_NULL_HANDLE;
+    global = material = decal = perPass = VK_NULL_HANDLE;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +107,7 @@ Status VulkanDescriptorAllocator::Create(const RenderDevice& device, uint32_t se
 VkDescriptorPool VulkanDescriptorAllocator::CreatePool() const {
     const std::array<VkDescriptorPoolSize, 4> sizes = {{
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_SetsPerPool * 2},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SetsPerPool * 6},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SetsPerPool * 10},
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, m_SetsPerPool},
         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, m_SetsPerPool},
     }};
@@ -199,7 +203,7 @@ DescriptorWriter& DescriptorWriter::WriteBuffer(uint32_t binding, VkBuffer buffe
     info.offset = offset;
     info.range = size;
     m_BufferInfos.push_back(info);
-    m_Records.push_back({binding, ToVkDescriptorType(type), false, m_BufferInfos.size() - 1});
+    m_Records.push_back({binding, ToVkDescriptorType(type), false, m_BufferInfos.size() - 1, 1});
     return *this;
 }
 
@@ -210,7 +214,16 @@ DescriptorWriter& DescriptorWriter::WriteImage(uint32_t binding, VkImageView vie
     info.sampler = sampler;
     info.imageLayout = layout;
     m_ImageInfos.push_back(info);
-    m_Records.push_back({binding, ToVkDescriptorType(type), true, m_ImageInfos.size() - 1});
+    m_Records.push_back({binding, ToVkDescriptorType(type), true, m_ImageInfos.size() - 1, 1});
+    return *this;
+}
+
+DescriptorWriter& DescriptorWriter::WriteImageArray(uint32_t binding, const std::vector<VkDescriptorImageInfo>& images,
+                                                    DescriptorType type) {
+    const size_t first = m_ImageInfos.size();
+    m_ImageInfos.insert(m_ImageInfos.end(), images.begin(), images.end());
+    m_Records.push_back(
+        {binding, ToVkDescriptorType(type), true, first, static_cast<uint32_t>(images.size())});
     return *this;
 }
 
@@ -222,7 +235,7 @@ void DescriptorWriter::Update(const RenderDevice& device, VkDescriptorSet set) {
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.dstSet = set;
         write.dstBinding = rec.binding;
-        write.descriptorCount = 1;
+        write.descriptorCount = rec.descriptorCount;
         write.descriptorType = rec.type;
         if (rec.isImage) {
             write.pImageInfo = &m_ImageInfos[rec.infoIndex];

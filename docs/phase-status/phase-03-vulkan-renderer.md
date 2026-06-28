@@ -64,6 +64,7 @@ Source material:
 - [x] Asset-backed mesh/material/texture upload and caching exist.
 - [x] ECS camera, mesh renderer, light, and environment data are consumed at render time.
 - [x] Forward PBR scene rendering exists.
+- [x] ECS `DecalComponent` projection rendering exists for asset-backed PBR base-color and normal decals on mesh surfaces.
 - [x] Directional cascaded shadow rendering exists.
 - [x] Directional shadow receiver bias scales per cascade to reduce contact detachment and split artifacts.
 - [x] Spot/point local-light shadow atlas exists.
@@ -101,7 +102,6 @@ Source material:
 - [ ] Production frame sequence is still hard-coded in `Renderer.cpp`; `RenderGraph` is not the production execution path.
 - [ ] TAA/MSAA settings exist, but only FXAA is implemented.
 - [ ] Reflection probe components serialize, but renderer probe capture/sampling is not implemented.
-- [ ] Decal components serialize, but decal projection rendering is not implemented.
 - [ ] Some renderer settings are persisted only and are not live-applied.
 - [ ] Hockey-specific polish visuals such as ice reflections, skate spray, and puck trails are material/settings names only.
 - [ ] Runtime UI overlay supports game-client swapchain and editor offscreen target paths, but broader display/GPU validation is still limited.
@@ -114,7 +114,7 @@ Source material:
 - [ ] Route production rendering through `RenderGraph` if a renderer refactor is requested.
 - [ ] Add TAA motion vectors/history buffers if TAA is requested.
 - [ ] Add MSAA render-pass/pipeline changes if MSAA is requested.
-- [ ] Implement reflection probes and decals when renderer polish resumes.
+- [ ] Implement reflection probes when renderer polish resumes.
 - [ ] Add broader runtime UI display/GPU validation when renderer/UI preview work resumes.
 - [ ] Implement live sampler/descriptor recreation for relevant setting changes.
 - [ ] Add GPU timestamp queries and profiling integration.

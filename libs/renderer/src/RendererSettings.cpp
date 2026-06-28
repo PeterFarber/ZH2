@@ -221,6 +221,8 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.contactShadows = false;
         base.maxRenderedLights = 8;
         base.maxLocalShadowTiles = 6;
+        base.decals = true;
+        base.maxRenderedDecals = 8;
         base.directionalShadowAtlasResolution = 0;
         base.localShadowAtlasResolution = 0;
         base.shadowCascadeCount = 0;
@@ -258,6 +260,8 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.contactShadows = false;
         base.maxRenderedLights = 12;
         base.maxLocalShadowTiles = 10;
+        base.decals = true;
+        base.maxRenderedDecals = 16;
         base.directionalShadowAtlasResolution = 0;
         base.localShadowAtlasResolution = 0;
         base.shadowCascadeCount = 0;
@@ -295,6 +299,8 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.contactShadows = true;
         base.maxRenderedLights = 16;
         base.maxLocalShadowTiles = 16;
+        base.decals = true;
+        base.maxRenderedDecals = kRendererMaxDecals;
         base.directionalShadowAtlasResolution = 0;
         base.localShadowAtlasResolution = 0;
         base.shadowCascadeCount = 0;
@@ -332,6 +338,8 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.contactShadows = true;
         base.maxRenderedLights = 16;
         base.maxLocalShadowTiles = 16;
+        base.decals = true;
+        base.maxRenderedDecals = kRendererMaxDecals;
         base.directionalShadowAtlasResolution = 0;
         base.localShadowAtlasResolution = 0;
         base.shadowCascadeCount = 0;
@@ -450,6 +458,7 @@ uint32_t QualityCascadeCount(ShadowQuality quality) {
 RendererSettings ClampRendererSettings(RendererSettings s) {
     s.maxRenderedLights = std::clamp(s.maxRenderedLights, 0u, kRendererMaxLights);
     s.maxLocalShadowTiles = std::clamp(s.maxLocalShadowTiles, 0u, kRendererMaxLocalShadowTiles);
+    s.maxRenderedDecals = std::clamp(s.maxRenderedDecals, 0u, kRendererMaxDecals);
     s.directionalShadowAtlasResolution = std::clamp(s.directionalShadowAtlasResolution, 0u, 16384u);
     s.localShadowAtlasResolution = std::clamp(s.localShadowAtlasResolution, 0u, 16384u);
     s.shadowCascadeCount = std::clamp(s.shadowCascadeCount, 0u, kRendererMaxCascades);
@@ -613,6 +622,9 @@ Status LoadRendererSettings(const Config& config, RendererSettings& s) {
         LoadFloatClamped(config, "renderer.local_shadow_bias_min", s.localShadowBiasMin, 0.0f, 0.02f);
     s.localShadowBiasMax =
         LoadFloatClamped(config, "renderer.local_shadow_bias_max", s.localShadowBiasMax, 0.0f, 0.05f);
+    s.decals = config.GetBool("renderer.decals", s.decals);
+    s.maxRenderedDecals =
+        LoadU32Clamped(config, "renderer.max_rendered_decals", s.maxRenderedDecals, 0, kRendererMaxDecals);
 
     LoadEnum(config, "renderer.model_quality", s.modelQuality);
     s.lodDistanceMultiplier =
@@ -715,6 +727,8 @@ void SaveRendererSettings(Config& config, const RendererSettings& s) {
     config.SetDouble("renderer.local_shadow_bias_scale", s.localShadowBiasScale);
     config.SetDouble("renderer.local_shadow_bias_min", s.localShadowBiasMin);
     config.SetDouble("renderer.local_shadow_bias_max", s.localShadowBiasMax);
+    config.SetBool("renderer.decals", s.decals);
+    config.SetInt("renderer.max_rendered_decals", static_cast<int>(s.maxRenderedDecals));
 
     config.SetString("renderer.model_quality", ToString(s.modelQuality));
     config.SetDouble("renderer.lod_distance_multiplier", s.lodDistanceMultiplier);

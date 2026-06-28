@@ -25,13 +25,13 @@ enum ShaderStageMask : uint32_t {
 };
 
 // Update frequency / set index convention used across the renderer:
-//   set 0 = Global (camera, scene/lights, shadow map)
-//   set 1 = Material (material UBO + PBR textures)
-//   set 2 = PerPass (post-process inputs)
+//   mesh/PBR: set 0 Global, set 1 Material, set 2 Decal
+//   post-process: set 0 PerPass in each post-process pipeline layout
 enum class DescriptorFrequency : uint32_t {
     Global = 0,
     Material = 1,
-    PerPass = 2,
+    Decal = 2,
+    PerPass = 3,
 };
 
 struct DescriptorBinding {
@@ -49,6 +49,7 @@ struct DescriptorSetLayoutDesc {
 // The standard layouts the renderer's shaders expect.
 DescriptorSetLayoutDesc GlobalSetLayoutDesc();
 DescriptorSetLayoutDesc MaterialSetLayoutDesc();
+DescriptorSetLayoutDesc DecalSetLayoutDesc();
 DescriptorSetLayoutDesc PerPassSetLayoutDesc();
 
 } // namespace Hockey

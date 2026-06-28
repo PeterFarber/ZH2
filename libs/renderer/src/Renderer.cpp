@@ -191,6 +191,20 @@ struct MaterialGPU {
     glm::vec4 uvXform{1.0f, 1.0f, 0.0f, 0.0f}; // xy tiling, zw offset
 };
 
+struct DecalGPU {
+    glm::mat4 worldToDecal{1.0f};
+    glm::mat4 decalToWorld{1.0f};
+    glm::vec4 baseColor{1.0f};
+    glm::vec4 uvXform{1.0f, 1.0f, 0.0f, 0.0f};
+    glm::vec4 flags{1.0f, 1.0f, 0.0f, 0.5f};
+    glm::vec4 params{1.0f, 0.0f, 0.0f, 0.0f};
+};
+
+struct DecalSceneGPU {
+    glm::vec4 params{0.0f}; // x = decal count
+    DecalGPU decals[kRendererMaxDecals]{};
+};
+
 struct MeshPush {
     glm::mat4 model{1.0f};
     glm::vec4 flags{1.0f, 0.0f, 0.0f, 0.0f}; // x receives shadows, y contact shadows
@@ -571,6 +585,15 @@ struct Renderer::Impl {
         bool receivesShadows = true;
     };
 
+    struct DecalItem {
+        const GpuMaterial* material = nullptr;
+        glm::mat4 world{1.0f};
+        glm::mat4 worldToDecal{1.0f};
+        UUID entityId{};
+        bool affectsBaseColor = true;
+        bool affectsNormals = true;
+    };
+
     // Descriptor system (Step 7). Standard layouts + a growable allocator. A
     // 1x1 default texture stands in for any texture a material omits. White is
     // the identity for the multiplicative slots (base/MR/occlusion/emissive); the
@@ -584,6 +607,8 @@ struct Renderer::Impl {
     std::array<VulkanBuffer, kFramesInFlight> cameraUBOs;
     std::array<VulkanBuffer, kFramesInFlight> sceneUBOs;
     std::array<VkDescriptorSet, kFramesInFlight> globalSets{};
+    std::array<VulkanBuffer, kFramesInFlight> decalUBOs;
+    std::array<VkDescriptorSet, kFramesInFlight> decalSets{};
 
     // Resource pools. Handle id == index + 1 (0 == invalid).
     // meshes/materials use std::deque because DrawItem caches raw pointers into
@@ -633,7 +658,9 @@ struct Renderer::Impl {
     // shadow + main passes within the same frame).
     std::vector<DrawItem> frameOpaque;
     std::vector<DrawItem> frameTransparent;
+    std::vector<DecalItem> frameDecals;
     SceneGPU frameScene;
+    DecalSceneGPU frameDecalScene;
     // Number of local-shadow atlas tiles in use this frame (spot=1, point=6).
     uint32_t frameLocalShadowTiles = 0;
     glm::mat4 frameViewProj{1.0f};
@@ -748,8 +775,11 @@ struct Renderer::Impl {
     void DestroyGlobalUniforms(std::array<VulkanBuffer, kFramesInFlight>& cameras,
                                std::array<VulkanBuffer, kFramesInFlight>& scenes);
     Status AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInFlight>& sets,
-                              std::array<VulkanBuffer, kFramesInFlight>& cameras,
-                              std::array<VulkanBuffer, kFramesInFlight>& scenes);
+                               std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                               std::array<VulkanBuffer, kFramesInFlight>& scenes);
+    Status CreateDecalUniforms();
+    void DestroyDecalUniforms();
+    void UpdateDecalSet(uint32_t frame);
     uint32_t CreateMaterialInternal(const MaterialDesc& desc);
     VkImageView ResolveTextureView(TextureHandle handle) const;
     MeshHandle ResolveAssetMesh(uint64_t assetId);
@@ -1050,8 +1080,8 @@ void Renderer::Impl::DestroyGlobalUniforms(std::array<VulkanBuffer, kFramesInFli
 }
 
 Status Renderer::Impl::AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInFlight>& sets,
-                                          std::array<VulkanBuffer, kFramesInFlight>& cameras,
-                                          std::array<VulkanBuffer, kFramesInFlight>& scenes) {
+                                           std::array<VulkanBuffer, kFramesInFlight>& cameras,
+                                           std::array<VulkanBuffer, kFramesInFlight>& scenes) {
     for (uint32_t f = 0; f < kFramesInFlight; ++f) {
         sets[f] = descriptorAllocator.Allocate(descriptorLayouts.global);
         if (sets[f] == VK_NULL_HANDLE) {
@@ -1064,6 +1094,62 @@ Status Renderer::Impl::AllocateGlobalSets(std::array<VkDescriptorSet, kFramesInF
         writer.Update(device, sets[f]);
     }
     return Status::Ok();
+}
+
+Status Renderer::Impl::CreateDecalUniforms() {
+    for (uint32_t f = 0; f < kFramesInFlight; ++f) {
+        BufferDesc decalDesc;
+        decalDesc.size = sizeof(DecalSceneGPU);
+        decalDesc.usage = BufferUsage::Uniform;
+        decalDesc.cpuVisible = true;
+        decalDesc.debugName = "Global.DecalUBO";
+        decalUBOs[f] = CreateBuffer(device, decalDesc);
+        if (!decalUBOs[f].IsValid()) {
+            DestroyDecalUniforms();
+            return Status::Fail("Failed to create decal uniform buffers");
+        }
+
+        decalSets[f] = descriptorAllocator.Allocate(descriptorLayouts.decal);
+        if (decalSets[f] == VK_NULL_HANDLE) {
+            DestroyDecalUniforms();
+            return Status::Fail("Failed to allocate decal descriptor set");
+        }
+    }
+    return Status::Ok();
+}
+
+void Renderer::Impl::DestroyDecalUniforms() {
+    for (VulkanBuffer& buffer : decalUBOs) {
+        DestroyBuffer(device, buffer);
+    }
+    decalSets.fill(VK_NULL_HANDLE);
+}
+
+void Renderer::Impl::UpdateDecalSet(uint32_t frame) {
+    UploadBuffer(device, command, decalUBOs[frame], &frameDecalScene, sizeof(frameDecalScene));
+
+    std::vector<VkDescriptorImageInfo> baseColorInfos(kRendererMaxDecals);
+    std::vector<VkDescriptorImageInfo> normalInfos(kRendererMaxDecals);
+    const VkSampler sampler = samplers.Linear();
+
+    for (uint32_t i = 0; i < kRendererMaxDecals; ++i) {
+        VkImageView baseView = defaultTexture.view;
+        VkImageView normalView = defaultNormalTexture.view;
+        if (i < frameDecals.size() && frameDecals[i].material != nullptr) {
+            baseView = ResolveTextureView(frameDecals[i].material->desc.baseColorTexture);
+            normalView = frameDecals[i].material->desc.normalTexture.IsValid()
+                             ? ResolveTextureView(frameDecals[i].material->desc.normalTexture)
+                             : defaultNormalTexture.view;
+        }
+        baseColorInfos[i] = {sampler, baseView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        normalInfos[i] = {sampler, normalView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    }
+
+    DescriptorWriter writer;
+    writer.WriteBuffer(0, decalUBOs[frame].buffer, decalUBOs[frame].size, 0, DescriptorType::UniformBuffer)
+        .WriteImageArray(1, baseColorInfos, DescriptorType::CombinedImageSampler)
+        .WriteImageArray(2, normalInfos, DescriptorType::CombinedImageSampler);
+    writer.Update(device, decalSets[frame]);
 }
 
 Status Renderer::Impl::SetupDescriptors() {
@@ -1115,6 +1201,9 @@ Status Renderer::Impl::SetupDescriptors() {
         return s;
     }
     if (Status s = AllocateGlobalSets(globalSets, cameraUBOs, sceneUBOs); !s) {
+        return s;
+    }
+    if (Status s = CreateDecalUniforms(); !s) {
         return s;
     }
     UpdateGlobalImageBindings();
@@ -1374,8 +1463,8 @@ Status Renderer::Impl::BuildMeshPipelines() {
     pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstant.offset = 0;
     pushConstant.size = sizeof(MeshPush); // model matrix + per-draw shading flags
-    meshPipelineLayout =
-        CreatePipelineLayout(device, {descriptorLayouts.global, descriptorLayouts.material}, {pushConstant});
+    meshPipelineLayout = CreatePipelineLayout(
+        device, {descriptorLayouts.global, descriptorLayouts.material, descriptorLayouts.decal}, {pushConstant});
     if (meshPipelineLayout == VK_NULL_HANDLE) {
         DestroyShaderModule(device, vs.value.module);
         DestroyShaderModule(device, fs.value.module);
@@ -1637,6 +1726,7 @@ void Renderer::Shutdown() {
         DestroyBuffer(r.device, r.sceneUBOs[f]);
         DestroyBuffer(r.device, r.debugVertexBuffers[f]);
     }
+    r.DestroyDecalUniforms();
     for (VulkanTexture& depth : r.depthTargets) {
         DestroyTexture(r.device, depth);
     }
@@ -1897,6 +1987,67 @@ void Renderer::Impl::GatherScene(Scene& scene, const CameraRenderData& camera, c
     std::sort(frameTransparent.begin(), frameTransparent.end(),
               [](const DrawItem& a, const DrawItem& b) { return a.viewDepth > b.viewDepth; });
 
+    frameDecals.clear();
+    frameDecalScene = DecalSceneGPU{};
+    const uint32_t maxRenderedDecals = clampedSettings.decals ? clampedSettings.maxRenderedDecals : 0u;
+    const auto decalView = scene.Registry().view<TransformComponent, DecalComponent>();
+    for (const entt::entity handle : decalView) {
+        if (frameDecals.size() >= maxRenderedDecals) {
+            break;
+        }
+        const Entity entity{handle, &scene};
+        if (!AllowsEntity(filter, entity.GetUUID())) {
+            continue;
+        }
+        if (!entity.IsActiveInHierarchy()) {
+            continue;
+        }
+        const auto& decal = decalView.get<DecalComponent>(handle);
+        if (!decal.affectsBaseColor && !decal.affectsNormals) {
+            continue;
+        }
+        if (decal.size.x <= 0.0f || decal.size.y <= 0.0f || decal.size.z <= 0.0f) {
+            continue;
+        }
+
+        const MaterialHandle materialHandle = ResolveAssetMaterial(decal.materialAsset);
+        if (!materialHandle.IsValid() || materialHandle.id > materials.size()) {
+            continue;
+        }
+
+        const glm::mat4 world = scene.GetWorldTransform(entity) * glm::scale(glm::mat4(1.0f), decal.size);
+        DecalItem item;
+        item.material = &materials[materialHandle.id - 1];
+        item.world = world;
+        item.worldToDecal = glm::inverse(world);
+        item.entityId = entity.GetUUID();
+        item.affectsBaseColor = decal.affectsBaseColor;
+        item.affectsNormals = decal.affectsNormals;
+        frameDecals.push_back(item);
+    }
+
+    std::sort(frameDecals.begin(), frameDecals.end(), [](const DecalItem& a, const DecalItem& b) {
+        return a.entityId.Value() < b.entityId.Value();
+    });
+
+    frameDecalScene.params.x = static_cast<float>(frameDecals.size());
+    for (uint32_t i = 0; i < frameDecals.size(); ++i) {
+        const DecalItem& item = frameDecals[i];
+        const MaterialDesc& mat = item.material->desc;
+        DecalGPU& gpu = frameDecalScene.decals[i];
+        gpu.worldToDecal = item.worldToDecal;
+        gpu.decalToWorld = item.world;
+        gpu.baseColor = mat.baseColor;
+        gpu.uvXform = {mat.tiling.x, mat.tiling.y, mat.offset.x, mat.offset.y};
+        const float mode = mat.alphaMode == AlphaMode::Opaque ? 0.0f : (mat.alphaMode == AlphaMode::Mask ? 1.0f : 2.0f);
+        gpu.flags = {item.affectsBaseColor ? 1.0f : 0.0f,
+                     item.affectsNormals ? 1.0f : 0.0f,
+                     mode,
+                     mat.alphaCutoff};
+        gpu.params = {mat.normalStrength, 0.0f, 0.0f, 0.0f};
+    }
+    stats.decalCount = static_cast<uint32_t>(frameDecals.size());
+
     // --- Directional cascaded shadows ---------------------------------------
     const uint32_t cascadeCount = ResolveShadowCascadeCount(clampedSettings);
     if (clampedSettings.shadowQuality != ShadowQuality::Off && cascadeCount > 0 && hasSun && curTargets->IsValid()) {
@@ -1955,11 +2106,14 @@ void Renderer::Impl::RecordSceneDrawsInPass(VkCommandBuffer cmd) {
             return;
         }
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 0, 1,
-                                &(*curGlobalSets)[frameIndex], 0, nullptr);
         for (const DrawItem& item : items) {
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 1, 1, &item.material->set,
-                                    0, nullptr);
+            std::array<VkDescriptorSet, 3> sets = {
+                (*curGlobalSets)[frameIndex],
+                item.material->set,
+                decalSets[frameIndex],
+            };
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPipelineLayout, 0,
+                                    static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
             MeshPush push;
             push.model = item.model;
             push.flags = glm::vec4(item.receivesShadows ? 1.0f : 0.0f, settings.contactShadows ? 1.0f : 0.0f, 0.0f,
@@ -2500,6 +2654,7 @@ void Renderer::Impl::RenderSceneInternal(Scene& scene, const CameraRenderData& c
     if (curSceneUBOs != nullptr) {
         UploadBuffer(device, command, (*curSceneUBOs)[frameIndex], &frameScene, sizeof(frameScene));
     }
+    UpdateDecalSet(frameIndex);
 
     // --- Shadow pass: render cascades into the depth atlas ------------------
     RecordShadowPass(cmd);

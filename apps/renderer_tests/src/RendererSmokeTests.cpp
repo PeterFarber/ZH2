@@ -77,6 +77,15 @@ void PopulateScene(Scene& scene, AssetManager& assets) {
     floorMesh.materialAsset = MaterialId(assets, "data/raw/materials/Ice.material.yaml");
     floor.GetComponent<TransformComponent>().localScale = {60.96f, 1.0f, 25.91f};
 
+    const uint64_t decalMaterial = MaterialId(assets, "data/raw/materials/DebugCollider.material.yaml");
+    Entity iceMarking = scene.CreateEntity("IceDecal");
+    iceMarking.GetComponent<TransformComponent>().localPosition = {0.0f, 0.02f, 0.0f};
+    auto& decal = iceMarking.AddComponent<DecalComponent>();
+    decal.materialAsset = decalMaterial;
+    decal.size = {6.0f, 0.25f, 6.0f};
+    decal.affectsBaseColor = true;
+    decal.affectsNormals = false;
+
     Entity cube = scene.CreateEntity("Cube");
     cube.GetComponent<TransformComponent>().localPosition = {-1.5f, 0.5f, 0.0f};
     auto& cubeMesh = cube.AddComponent<MeshRendererComponent>();
@@ -211,6 +220,7 @@ void RunRendererSmokeTests() {
         // cube, sphere, and transparent glass.
         HK_CHECK(renderer.GetStats().drawCalls >= 4);
         HK_CHECK(renderer.GetStats().triangleCount > 0);
+        HK_CHECK(renderer.GetStats().decalCount >= 1);
         // Default settings (High shadows) render 4 cascades of opaque geometry,
         // plus the HDR -> bloom -> tonemap -> FXAA post chain.
         HK_CHECK(renderer.GetStats().shadowDrawCalls > 0);
@@ -282,6 +292,7 @@ void RunRendererSmokeTests() {
             renderer.EndFrame();
         }
         HK_CHECK(renderer.GetStats().drawCalls >= 4);
+        HK_CHECK(renderer.GetStats().decalCount >= 1);
 
         renderer.ResizeRenderTarget(viewport, 1024, 576);
         for (int i = 0; i < 4; ++i) {
@@ -292,6 +303,7 @@ void RunRendererSmokeTests() {
             renderer.EndFrame();
         }
         HK_CHECK(renderer.GetStats().triangleCount > 0);
+        HK_CHECK(renderer.GetStats().decalCount >= 1);
     }
 
     // Stats should be populated (VRAM budget known on a real device).

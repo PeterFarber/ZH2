@@ -22,6 +22,8 @@ void RunRendererSettingsTests() {
     HK_CHECK(def.preset == GraphicsPreset::High);
     HK_CHECK(def.toneMapper == ToneMapper::ACES);
     HK_CHECK(def.antiAliasing == AntiAliasing::FXAA);
+    HK_CHECK(def.decals == true);
+    HK_CHECK_EQ(def.maxRenderedDecals, kRendererMaxDecals);
 
     // Presets change expected fields.
     const RendererSettings low = ApplyGraphicsPreset(GraphicsPreset::Low);
@@ -29,20 +31,28 @@ void RunRendererSettingsTests() {
     HK_CHECK(low.shadowQuality == ShadowQuality::Low);
     HK_CHECK(low.aoQuality == AmbientOcclusionQuality::Off);
     HK_CHECK(low.bloom == false);
+    HK_CHECK(low.decals == true);
+    HK_CHECK_EQ(low.maxRenderedDecals, 8u);
 
     const RendererSettings medium = ApplyGraphicsPreset(GraphicsPreset::Medium);
     HK_CHECK(medium.preset == GraphicsPreset::Medium);
     HK_CHECK(medium.shadowQuality == ShadowQuality::Medium);
     HK_CHECK(medium.textureQuality == TextureQuality::Medium);
+    HK_CHECK(medium.decals == true);
+    HK_CHECK_EQ(medium.maxRenderedDecals, 16u);
 
     const RendererSettings high = ApplyGraphicsPreset(GraphicsPreset::High);
     HK_CHECK(high.shadowQuality == ShadowQuality::High);
     HK_CHECK(high.anisotropy == 16);
+    HK_CHECK(high.decals == true);
+    HK_CHECK_EQ(high.maxRenderedDecals, kRendererMaxDecals);
 
     const RendererSettings ultra = ApplyGraphicsPreset(GraphicsPreset::Ultra);
     HK_CHECK(ultra.shadowQuality == ShadowQuality::Ultra);
     HK_CHECK(ultra.textureQuality == TextureQuality::Ultra);
     HK_CHECK(ultra.antiAliasing == AntiAliasing::TAA);
+    HK_CHECK(ultra.decals == true);
+    HK_CHECK_EQ(ultra.maxRenderedDecals, kRendererMaxDecals);
 
     // Enum <-> string round-trips.
     HK_CHECK(std::string(ToString(ToneMapper::ACES)) == "ACES");
@@ -84,6 +94,8 @@ void RunRendererSettingsTests() {
     advanced.maxLocalShadowTiles = 10;
     advanced.directionalShadowAtlasResolution = 6144;
     advanced.localShadowAtlasResolution = 3072;
+    advanced.decals = false;
+    advanced.maxRenderedDecals = 12;
     advanced.shadowCascadeCount = 3;
     advanced.shadowCascadeSplitLambda = 0.92f;
     advanced.shadowCascadeOverlapScale = 0.30f;
@@ -121,6 +133,8 @@ void RunRendererSettingsTests() {
     HK_CHECK_EQ(advancedLoaded.maxLocalShadowTiles, 10u);
     HK_CHECK_EQ(advancedLoaded.directionalShadowAtlasResolution, 6144u);
     HK_CHECK_EQ(advancedLoaded.localShadowAtlasResolution, 3072u);
+    HK_CHECK(advancedLoaded.decals == false);
+    HK_CHECK_EQ(advancedLoaded.maxRenderedDecals, 12u);
     HK_CHECK_EQ(advancedLoaded.shadowCascadeCount, 3u);
     HK_CHECK_NEAR(advancedLoaded.shadowCascadeSplitLambda, 0.92f, 0.0001f);
     HK_CHECK_NEAR(advancedLoaded.shadowCascadeOverlapScale, 0.30f, 0.0001f);
@@ -137,6 +151,7 @@ void RunRendererSettingsTests() {
     Config unsafeConfig;
     unsafeConfig.SetInt("renderer.max_rendered_lights", 1000);
     unsafeConfig.SetInt("renderer.max_local_shadow_tiles", 1000);
+    unsafeConfig.SetInt("renderer.max_rendered_decals", 9999);
     unsafeConfig.SetInt("renderer.directional_shadow_atlas_resolution", -4);
     unsafeConfig.SetInt("renderer.local_shadow_atlas_resolution", -8);
     unsafeConfig.SetInt("renderer.shadow_cascade_count", 20);
@@ -147,6 +162,7 @@ void RunRendererSettingsTests() {
     HK_CHECK(static_cast<bool>(LoadRendererSettings(unsafeConfig, clamped)));
     HK_CHECK_EQ(clamped.maxRenderedLights, 16u);
     HK_CHECK_EQ(clamped.maxLocalShadowTiles, 16u);
+    HK_CHECK_EQ(clamped.maxRenderedDecals, kRendererMaxDecals);
     HK_CHECK_EQ(clamped.directionalShadowAtlasResolution, 0u);
     HK_CHECK_EQ(clamped.localShadowAtlasResolution, 0u);
     HK_CHECK_EQ(clamped.shadowCascadeCount, 4u);

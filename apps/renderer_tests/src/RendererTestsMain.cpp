@@ -13,6 +13,7 @@ void RunHeadlessServerLinkTests();
 void RunShaderCompileTests();
 void RunRenderGraphTests();
 void RunRendererShadowContractTests();
+void RunRendererDecalContractTests();
 void RunMaterialAssetContractTests();
 void RunUIOverlayContractTests();
 
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
     RunShaderCompileTests();
     RunRenderGraphTests();
     RunRendererShadowContractTests();
+    RunRendererDecalContractTests();
     RunMaterialAssetContractTests();
     RunUIOverlayContractTests();
 

@@ -29,6 +29,7 @@ enum class ToneMapper { Linear, Reinhard, ACES };
 inline constexpr uint32_t kRendererMaxLights = 16;
 inline constexpr uint32_t kRendererMaxCascades = 4;
 inline constexpr uint32_t kRendererMaxLocalShadowTiles = 16;
+inline constexpr uint32_t kRendererMaxDecals = 32;
 
 // ---------------------------------------------------------------------------
 // Complete renderer settings model. Fields cover display, upscaling, quality,
@@ -119,6 +120,10 @@ struct RendererSettings {
     float localShadowBiasScale = 0.0012f;
     float localShadowBiasMin = 0.0002f;
     float localShadowBiasMax = 0.004f;
+
+    // Forward PBR decals
+    bool decals = true;
+    uint32_t maxRenderedDecals = kRendererMaxDecals;
 
     // Geometry
     DetailQuality modelQuality = DetailQuality::High;

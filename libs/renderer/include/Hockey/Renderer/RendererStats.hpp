@@ -21,6 +21,7 @@ struct RendererStats {
 
     uint32_t shadowDrawCalls = 0;
     uint32_t postProcessPasses = 0;
+    uint32_t decalCount = 0;
 
     // Reset per-frame counters; persistent totals (mesh/material/texture/VRAM)
     // are refreshed by the renderer separately.
@@ -29,6 +30,7 @@ struct RendererStats {
         triangleCount = 0;
         shadowDrawCalls = 0;
         postProcessPasses = 0;
+        decalCount = 0;
     }
 };
 

@@ -148,6 +148,7 @@ Result<CompiledShaderData> CompileShaderFile(const ShaderDesc& desc, const std::
 const std::vector<RequiredShaderFile>& RequiredShaderFiles() {
     static const std::vector<RequiredShaderFile> kFiles = {
         {"common.glsl", false, ShaderStage::Vertex},
+        {"decals.glsl", false, ShaderStage::Fragment},
         {"mesh.vert", true, ShaderStage::Vertex},
         {"pbr.frag", true, ShaderStage::Fragment},
         {"depth_only.vert", true, ShaderStage::Vertex},

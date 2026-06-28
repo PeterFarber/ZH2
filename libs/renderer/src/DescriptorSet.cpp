@@ -1,5 +1,7 @@
 #include "Hockey/Renderer/DescriptorSet.hpp"
 
+#include "Hockey/Renderer/RendererSettings.hpp"
+
 namespace Hockey {
 
 DescriptorSetLayoutDesc GlobalSetLayoutDesc() {
@@ -25,6 +27,17 @@ DescriptorSetLayoutDesc MaterialSetLayoutDesc() {
         {3, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // metallic-roughness
         {4, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // occlusion
         {5, DescriptorType::CombinedImageSampler, Stage_Fragment, 1}, // emissive
+    };
+    return desc;
+}
+
+DescriptorSetLayoutDesc DecalSetLayoutDesc() {
+    DescriptorSetLayoutDesc desc;
+    desc.frequency = DescriptorFrequency::Decal;
+    desc.bindings = {
+        {0, DescriptorType::UniformBuffer, Stage_Fragment, 1},
+        {1, DescriptorType::CombinedImageSampler, Stage_Fragment, kRendererMaxDecals},
+        {2, DescriptorType::CombinedImageSampler, Stage_Fragment, kRendererMaxDecals},
     };
     return desc;
 }
