@@ -36,7 +36,7 @@ if (-not (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
 
 cmake --build --preset $buildPreset --target HockeyAssetTool
 if ($LASTEXITCODE -ne 0) { throw "HockeyAssetTool build failed" }
-& (Join-Path $buildDir "apps/asset_tool/HockeyAssetTool.exe") --root $root package-runtime --target server --config data/config/server.toml --output $packagePath
+& (Join-Path $buildDir "apps/asset_tool/HockeyAssetTool.exe") --root $root package-runtime --target server --config data/config/editor.toml --output $packagePath
 if ($LASTEXITCODE -ne 0) { throw "server runtime package generation failed" }
 cmake --build --preset $buildPreset --target HockeyDedicatedServer
 if ($LASTEXITCODE -ne 0) { throw "HockeyDedicatedServer build failed" }
@@ -49,7 +49,7 @@ if (Test-Path $outputPath) {
 
 Copy-Item -LiteralPath (Join-Path $appDir "HockeyDedicatedServer.exe") -Destination (Join-Path $outputPath "HockeyDedicatedServer.exe")
 Copy-AppRuntimeDlls -SourceDir $appDir -DestinationDir $outputPath
-Copy-Item -LiteralPath (Join-Path $root "data/config/server.toml") -Destination (Join-Path $outputPath "HockeyDedicatedServer.toml")
+Copy-Item -LiteralPath (Join-Path $root "data/config/editor.toml") -Destination (Join-Path $outputPath "HockeyDedicatedServer.toml")
 
 if ($IncludeDebugSymbols) {
     $pdb = Join-Path $buildDir "apps/dedicated_server/HockeyDedicatedServer.pdb"

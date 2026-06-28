@@ -18,10 +18,7 @@ bool HasPath(const std::vector<Hockey::ResourcePackageEntry>& entries, const std
 }
 
 void WritePackageFixture(const std::filesystem::path& root) {
-    Hockey::FileSystem::WriteTextFile(root / "data" / "config" / "client.toml",
-                                      "[scene]\nstartup_scene = \"data/raw/scenes/Main.scene.yaml\"\n"
-                                      "[gameplay]\nwaypoint_prefab_path = \"data/raw/prefabs/Waypoint.prefab.yaml\"\n");
-    Hockey::FileSystem::WriteTextFile(root / "data" / "config" / "server.toml",
+    Hockey::FileSystem::WriteTextFile(root / "data" / "config" / "editor.toml",
                                       "[scene]\nstartup_scene = \"data/raw/scenes/Main.scene.yaml\"\n"
                                       "[gameplay]\nwaypoint_prefab_path = \"data/raw/prefabs/Waypoint.prefab.yaml\"\n");
     Hockey::FileSystem::WriteTextFile(root / "data" / "gameplay" / "tuning.default.yaml", "GameplayTuning: {}\n");
@@ -47,12 +44,12 @@ void RunRuntimePackageTests() {
     const Hockey::RuntimePackageBuildInfo clientInfo{
         .target = Hockey::RuntimePackageTarget::Client,
         .projectRoot = workspace,
-        .configPath = "data/config/client.toml",
+        .configPath = "data/config/editor.toml",
     };
     const Hockey::Result<std::vector<Hockey::ResourcePackageEntry>> clientEntries =
         Hockey::BuildRuntimePackageEntries(clientInfo);
     HK_CHECK(clientEntries);
-    HK_CHECK(clientEntries && HasPath(clientEntries.value, "data/config/client.toml"));
+    HK_CHECK(clientEntries && HasPath(clientEntries.value, "data/config/editor.toml"));
     HK_CHECK(clientEntries && HasPath(clientEntries.value, "data/ui/screens/menu.rml"));
     HK_CHECK(clientEntries && HasPath(clientEntries.value, "data/shaders/bin/mesh.vert.spv"));
     HK_CHECK(clientEntries && HasPath(clientEntries.value, "data/gameplay/tuning.default.yaml"));
@@ -62,12 +59,12 @@ void RunRuntimePackageTests() {
     const Hockey::RuntimePackageBuildInfo serverInfo{
         .target = Hockey::RuntimePackageTarget::Server,
         .projectRoot = workspace,
-        .configPath = "data/config/server.toml",
+        .configPath = "data/config/editor.toml",
     };
     const Hockey::Result<std::vector<Hockey::ResourcePackageEntry>> serverEntries =
         Hockey::BuildRuntimePackageEntries(serverInfo);
     HK_CHECK(serverEntries);
-    HK_CHECK(serverEntries && HasPath(serverEntries.value, "data/config/server.toml"));
+    HK_CHECK(serverEntries && HasPath(serverEntries.value, "data/config/editor.toml"));
     HK_CHECK(serverEntries && HasPath(serverEntries.value, "data/gameplay/tuning.default.yaml"));
     HK_CHECK(serverEntries && HasPath(serverEntries.value, "data/raw/scenes/Main.scene.yaml"));
     HK_CHECK(serverEntries && !HasPath(serverEntries.value, "data/ui/screens/menu.rml"));

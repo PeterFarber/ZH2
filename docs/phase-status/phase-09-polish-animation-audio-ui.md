@@ -1,6 +1,6 @@
 # Phase 9 - Polish, Animation, Audio, UI
 
-Status: Started for runtime RmlUi UI foundation and package scripting/profile UI. Animation, audio, full UI polish, embedded package runtime loading, and packaged app smoke coverage remain incomplete.
+Status: Started for runtime RmlUi UI foundation, package scripting/profile UI, and editor-owned runtime config packaging. Animation, audio, full UI polish, embedded package runtime loading, and packaged app smoke coverage remain incomplete.
 
 Source material:
 
@@ -167,7 +167,7 @@ Source material:
 - [ ] Renderer UI overlay work uploads RmlUi geometry/textures to GPU resources and draws onto the swapchain or editor offscreen Client Preview target with `ui.vert`/`ui.frag`, premultiplied alpha, top-left scissor rectangles, transforms, and screenshot-visible ordering; broader visual validation still needs work.
 - [ ] Match HUD RML exists and first-pass gameplay snapshot data is bound into live RmlUi elements; final presentation/notifications/network data remain incomplete.
 - [ ] Editor Client Preview and client-flow authoring panels exist; Client Preview maps scaled preview clicks into RmlUi render-target coordinates and routes focused match-HUD gameplay input; Client Flow authoring validates screen/background/offline scene paths and Project panel opens RML/RCSS source files; manual UX polish and broader interaction validation remain.
-- [ ] Package profiles, package command construction, `File > Package...`, Windows/Linux package scripts, and `just package-client` / `just package-server` exist. Current packages stage the app executable, generated sibling TOML, and app-local dynamic library dependencies, and generate `.hkpack` resource bundles, but the app targets do not embed those bundles yet and runtime UI/scene/tuning/asset/shader reads still use filesystem paths.
+- [ ] Package profiles, package command construction, `File > Package...`, Windows/Linux package scripts, and `just package-client` / `just package-server` exist. Current packages stage the app executable, sibling TOML copied from `data/config/editor.toml`, and app-local dynamic library dependencies, and generate `.hkpack` resource bundles, but the app targets do not embed those bundles yet and runtime UI/scene/tuning/asset/shader reads still use filesystem paths.
 - [ ] No configurable bindings, controller presets, vibration, or input settings UI exists yet.
 - [ ] No production profiling, embedded packaged-runtime loading, or long-running release QA harness exists yet.
 - [ ] Visual polish systems such as ice reflections, skate spray, puck trails, crowd work, and goal presentation are not implemented.

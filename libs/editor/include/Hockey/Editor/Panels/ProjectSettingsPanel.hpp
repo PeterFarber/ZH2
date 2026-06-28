@@ -28,13 +28,6 @@ private:
         EditorAssets,
         EditorPhysicsPreview,
         EditorGameplayPreview,
-        ClientApplication,
-        ClientWindowInput,
-        ClientGraphics,
-        ClientLightingShadows,
-        ClientPhysics,
-        ClientGameplay,
-        ClientStartupScene,
         ServerApplication,
         ServerSimulation,
         ServerPhysics,
@@ -56,48 +49,33 @@ private:
     void DrawEditorAssets(EditorContext& context);
     void DrawEditorPhysicsPreview(EditorContext& context);
     void DrawEditorGameplayPreview(EditorContext& context);
-    void DrawClientApplication();
-    void DrawClientWindowInput();
-    void DrawClientGraphics();
-    void DrawClientLightingShadows();
-    void DrawClientPhysics();
-    void DrawClientGameplay();
-    void DrawClientStartupScene();
-    void DrawServerApplication();
-    void DrawServerSimulation();
-    void DrawServerPhysics();
-    void DrawServerGameplay();
-    void DrawServerStartupScene();
+    void DrawServerApplication(EditorContext& context);
+    void DrawServerSimulation(EditorContext& context);
+    void DrawServerPhysics(EditorContext& context);
+    void DrawServerGameplay(EditorContext& context);
+    void DrawServerStartupScene(EditorContext& context);
     void DrawPreferences(EditorContext& context);
 
     void SaveEditorConfig(EditorContext& context);
-    void SaveClientBuildDefaults();
-    void SaveServerBuildDefaults();
+    void SaveServerBuildDefaults(EditorContext& context);
     void SaveUserPreferences(EditorContext& context);
 
     Config m_EditorConfig;
-    Config m_ClientConfig;
     Config m_ServerConfig;
 
     RendererSettings m_EditorRenderer;
-    RendererSettings m_ClientRenderer;
     PhysicsSettings m_EditorPhysics;
-    PhysicsSettings m_ClientPhysics;
     PhysicsSettings m_ServerPhysics;
     GameplaySettings m_EditorGameplay;
-    GameplaySettings m_ClientGameplay;
     GameplaySettings m_ServerGameplay;
 
     std::filesystem::path m_EditorPath;
-    std::filesystem::path m_ClientPath;
-    std::filesystem::path m_ServerPath;
     std::filesystem::path m_UserPreferencesPath;
     std::string m_Status;
 
     Section m_Section = Section::EditorApplication;
     bool m_Loaded = false;
     bool m_EditorRestartRequired = false;
-    bool m_ClientRestartRequired = false;
     bool m_ServerRestartRequired = false;
 };
 

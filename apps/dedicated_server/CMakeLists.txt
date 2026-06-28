@@ -13,7 +13,7 @@ set_target_properties(HockeyDedicatedServer PROPERTIES OUTPUT_NAME "HockeyDedica
 
 hockey_embed_text_resource(
     HockeyDedicatedServer
-    "${CMAKE_SOURCE_DIR}/data/config/server.toml"
+    "${CMAKE_SOURCE_DIR}/data/config/editor.toml"
     "EmbeddedServerDefaults.hpp"
     "HockeyServer::Embedded"
     "DefaultServerConfigToml"

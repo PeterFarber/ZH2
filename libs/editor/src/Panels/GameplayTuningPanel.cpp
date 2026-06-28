@@ -106,16 +106,12 @@ void GameplayTuningPanel::EnsureLoaded(EditorContext& context) {
 void GameplayTuningPanel::LoadAll(EditorContext& context) {
     m_TuningPath = Paths::DataFile("gameplay/tuning.default.yaml");
     m_EditorPath = context.configPath.empty() ? Paths::ConfigFile("editor.toml") : context.configPath;
-    m_ClientPath = Paths::ConfigFile("client.toml");
-    m_ServerPath = Paths::ConfigFile("server.toml");
 
     m_Status.clear();
     LoadConfigOrDefault(m_EditorPath, m_EditorConfig, m_Status);
-    LoadConfigOrDefault(m_ClientPath, m_ClientConfig, m_Status);
-    LoadConfigOrDefault(m_ServerPath, m_ServerConfig, m_Status);
+    m_ServerConfig = m_EditorConfig;
 
     m_EditorSettings = LoadGameplaySettings(m_EditorConfig);
-    m_ClientSettings = LoadGameplaySettings(m_ClientConfig);
     m_ServerSettings = LoadGameplaySettings(m_ServerConfig);
 
     if (const Result<GameplayTuning> loaded = TuningSerializer::Load(m_TuningPath)) {
@@ -127,7 +123,6 @@ void GameplayTuningPanel::LoadAll(EditorContext& context) {
 
     m_TuningDirty = false;
     m_EditorDirty = false;
-    m_ClientDirty = false;
     m_ServerDirty = false;
     m_Loaded = true;
 }
@@ -140,7 +135,6 @@ void GameplayTuningPanel::DrawNavigation() {
     };
     item("Tuning YAML", Section::Tuning);
     item("Editor Preview", Section::EditorSettings);
-    item("Client Build Defaults", Section::ClientSettings);
     item("Server Build Defaults", Section::ServerSettings);
 }
 
@@ -239,34 +233,22 @@ void GameplayTuningPanel::DrawSettings(EditorContext& context, GameplaySettings&
     if (changed) {
         if (std::string(scope) == "Editor") {
             m_EditorDirty = true;
-        } else if (std::string(scope) == "Client") {
-            m_ClientDirty = true;
         } else {
             m_ServerDirty = true;
         }
     }
 
     const bool editorScope = std::string(scope) == "Editor";
-    const bool clientScope = std::string(scope) == "Client";
-    const bool dirty = editorScope ? m_EditorDirty : (clientScope ? m_ClientDirty : m_ServerDirty);
-    std::string saveLabel;
-    if (editorScope) {
-        saveLabel = "Save Editor Preview";
-    } else if (clientScope) {
-        saveLabel = "Save Client Build Defaults";
-    } else {
-        saveLabel = "Save Server Build Defaults";
-    }
+    const bool dirty = editorScope ? m_EditorDirty : m_ServerDirty;
+    std::string saveLabel = editorScope ? "Save Editor Preview" : "Save Server Build Defaults";
     if (dirty) {
         saveLabel += " *";
     }
     if (ImGui::Button(saveLabel.c_str())) {
         if (editorScope) {
             SaveEditorConfig(context);
-        } else if (clientScope) {
-            SaveClientConfig();
         } else {
-            SaveServerConfig();
+            SaveServerConfig(context);
         }
     }
     ImGui::PopID();
@@ -291,29 +273,27 @@ void GameplayTuningPanel::SaveEditorConfig(EditorContext& context) {
     if (context.config != nullptr) {
         *context.config = m_EditorConfig;
     }
+    m_ServerConfig = m_EditorConfig;
+    m_ServerSettings = m_EditorSettings;
     m_EditorDirty = false;
     m_Status = "Saved " + m_EditorPath.filename().string();
     ApplyToPreview(context);
 }
 
-void GameplayTuningPanel::SaveClientConfig() {
-    SaveGameplaySettings(m_ClientConfig, m_ClientSettings);
-    if (const Status status = m_ClientConfig.Save(m_ClientPath); !status) {
-        m_Status = status.error;
-        return;
-    }
-    m_ClientDirty = false;
-    m_Status = "Saved " + m_ClientPath.filename().string();
-}
-
-void GameplayTuningPanel::SaveServerConfig() {
+void GameplayTuningPanel::SaveServerConfig(EditorContext& context) {
     SaveGameplaySettings(m_ServerConfig, m_ServerSettings);
-    if (const Status status = m_ServerConfig.Save(m_ServerPath); !status) {
+    m_EditorConfig = m_ServerConfig;
+    if (const Status status = m_EditorConfig.Save(m_EditorPath); !status) {
         m_Status = status.error;
         return;
     }
+    if (context.config != nullptr) {
+        *context.config = m_EditorConfig;
+    }
+    m_EditorSettings = m_ServerSettings;
     m_ServerDirty = false;
-    m_Status = "Saved " + m_ServerPath.filename().string();
+    m_Status = "Saved " + m_EditorPath.filename().string();
+    ApplyToPreview(context);
 }
 
 void GameplayTuningPanel::ApplyToPreview(EditorContext& context) {
@@ -362,9 +342,6 @@ void GameplayTuningPanel::OnImGui(EditorContext& context) {
         break;
     case Section::EditorSettings:
         DrawSettings(context, m_EditorSettings, "Editor");
-        break;
-    case Section::ClientSettings:
-        DrawSettings(context, m_ClientSettings, "Client");
         break;
     case Section::ServerSettings:
         DrawSettings(context, m_ServerSettings, "Server");

@@ -1,5 +1,6 @@
 [app]
 name = 'Hockey Map Editor'
+sleep_when_idle = true
 target_fps = 180
 
 [assets]
@@ -8,9 +9,26 @@ auto_discover = false
 auto_import = false
 hot_reload = false
 
+[camera]
+follow_local_player = true
+follow_player_index = 0
+follow_look_at_offset_x = 0.0
+follow_look_at_offset_y = 1.2
+follow_look_at_offset_z = 0.0
+follow_look_at_response = 12.0
+follow_offset_x = 0.0
+follow_offset_y = 7.5
+follow_offset_z = 10.0
+follow_position_response = 9.0
+
+[diagnostics]
+movement_smoothness_trace = false
+movement_smoothness_trace_player_index = 0
+
 [gameplay]
 allow_manual_goalie = true
 allow_out_of_play = true
+authoritative = true
 auto_faceoff_after_goal = true
 countdown_beep_start_seconds = 4.0
 debug_draw_gameplay = true
@@ -20,6 +38,7 @@ fixed_delta_seconds = 0.01666666753590107
 goal_detection_radius = 1.0
 goalies_per_team = 1
 log_gameplay_events = true
+local_play = true
 period_count = 3
 period_length_seconds = 180.0
 post_goal_delay_seconds = 3.0
@@ -55,6 +74,11 @@ max_contact_constraints = 20000
 preview_simulation = false
 temp_allocator_size_mb = 64
 world_min_y = -1000.0
+
+[presentation]
+interpolate_gameplay = true
+interpolate_players = true
+interpolate_puck = true
 
 [renderer]
 anisotropy = 16
@@ -146,9 +170,23 @@ vsync = true
 [scene]
 autosave_enabled = true
 autosave_interval_seconds = 120
+startup_scene = 'data/raw/scenes/Main.scene.yaml'
+validate_on_load = true
+
+[server]
+max_players = 8
+name = 'Local Hockey Server'
+port = 27020
+tick_rate = 120.0
 
 [ui]
+debugger_enabled = false
+default_font = 'data/ui/fonts/Inter-Regular.ttf'
+enabled = true
+reload_documents = false
 start_flow = 'data/ui/flows/default.clientflow.yaml'
+theme_document = 'data/ui/themes/hockey.rcss'
+ui_scale = 1.0
 
 [window]
 height = 900

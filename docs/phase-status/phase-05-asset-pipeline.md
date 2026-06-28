@@ -82,7 +82,7 @@ Source material:
 - [x] `HockeyAssetTool import` / `import-all` workflows exist.
 - [x] `HockeyAssetTool cook` / `cook-all-dirty` / `recook-all` workflows exist.
 - [x] `HockeyAssetTool validate` workflow exists.
-- [x] `HockeyAssetTool package-runtime` writes deterministic client/server runtime package bundles for package scripts.
+- [x] `HockeyAssetTool package-runtime` writes deterministic client/server runtime package bundles from the editor-owned config source for package scripts.
 - [x] Editor host honors raw/cooked asset path config.
 - [x] Editor auto-discover, auto-import, and auto-cook-dirty config exists.
 - [x] Project browser integrates asset database and asset actions.
@@ -115,7 +115,7 @@ Source material:
 - [ ] No LOD pipeline exists.
 - [ ] No shader variant system exists.
 - [ ] Asset tool CLI and editor browser workflows would benefit from more cross-platform end-to-end testing.
-- [ ] Runtime package generation exists, but generated bundles are not embedded into app targets yet and packaged runtime resource-provider loading is not wired through the client/server.
+- [ ] Runtime package generation exists from the editor-owned config source, but generated bundles are not embedded into app targets yet and packaged runtime resource-provider loading is not wired through the client/server.
 - [ ] KTX/HDR cook behavior is not fully tested.
 
 ## Left To Do

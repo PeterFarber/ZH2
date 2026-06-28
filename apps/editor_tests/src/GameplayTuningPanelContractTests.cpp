@@ -43,12 +43,16 @@ void RunGameplayTuningPanelContractTests() {
                  "editor gameplay preview accepts tuning");
     HK_CHECK_MSG(Contains(source, "tuning.default.yaml"), "panel edits gameplay tuning YAML");
     HK_CHECK_MSG(Contains(source, "Editor Preview"), "Gameplay Tuning labels editor preview settings");
-    HK_CHECK_MSG(Contains(source, "Client Build Defaults"), "Gameplay Tuning labels client build defaults");
+    HK_CHECK_MSG(!Contains(source, "Client Build Defaults"), "Gameplay Tuning omits separate client defaults");
     HK_CHECK_MSG(Contains(source, "Server Build Defaults"), "Gameplay Tuning labels server build defaults");
-    HK_CHECK_MSG(Contains(source, "Save Client Build Defaults"),
-                 "Gameplay Tuning saves client build defaults");
+    HK_CHECK_MSG(!Contains(source, "Save Client Build Defaults"),
+                 "Gameplay Tuning does not save client build defaults");
     HK_CHECK_MSG(Contains(source, "Save Server Build Defaults"),
                  "Gameplay Tuning saves server build defaults");
+    HK_CHECK_MSG(!Contains(source, "Paths::ConfigFile(\"client.toml\")"),
+                 "Gameplay Tuning does not load client.toml");
+    HK_CHECK_MSG(!Contains(source, "Paths::ConfigFile(\"server.toml\")"),
+                 "Gameplay Tuning stores server defaults in editor.toml");
 
     const char* requiredFields[] = {
         "Max speed", "Acceleration", "Deceleration", "Turn speed degrees", "Boost impulse",

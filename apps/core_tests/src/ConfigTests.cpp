@@ -9,12 +9,15 @@ using namespace Hockey;
 void RunConfigTests() {
     HockeyTest::BeginSuite("ConfigTests");
 
-    Config client;
-    HK_CHECK_MSG(static_cast<bool>(client.Load(Paths::ConfigFile("client.toml"))),
-                 "loads client.toml");
-    HK_CHECK_EQ(client.GetInt("window.width", -1), 1920);
-    HK_CHECK_EQ(client.GetInt("window.height", -1), 1080);
-    HK_CHECK_EQ(client.GetInt("does.not.exist", 42), 42);
+    Config editor;
+    HK_CHECK_MSG(static_cast<bool>(editor.Load(Paths::ConfigFile("editor.toml"))),
+                 "loads editor.toml");
+    HK_CHECK_EQ(editor.GetString("app.name", ""), std::string("Hockey Map Editor"));
+    HK_CHECK_EQ(editor.GetInt("window.width", -1), 1600);
+    HK_CHECK_EQ(editor.GetInt("window.height", -1), 900);
+    HK_CHECK_EQ(editor.GetInt("does.not.exist", 42), 42);
+    HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("client.toml")));
+    HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("server.toml")));
 
     Config out;
     out.SetString("app.name", "Temp");

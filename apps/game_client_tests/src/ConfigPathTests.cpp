@@ -24,15 +24,10 @@ bool Contains(const std::string& text, const char* needle) {
 void TestConfiguredStartupScenesExist() {
     const std::filesystem::path root = Hockey::Paths::Get().root;
 
-    Hockey::Config clientConfig;
-    HK_CHECK(clientConfig.Load(root / "data/config/client.toml"));
-    const std::filesystem::path clientScene = root / clientConfig.GetString("scene.startup_scene", "");
-    HK_CHECK_MSG(std::filesystem::exists(clientScene), "client startup scene exists");
-
-    Hockey::Config serverConfig;
-    HK_CHECK(serverConfig.Load(root / "data/config/server.toml"));
-    const std::filesystem::path serverScene = root / serverConfig.GetString("scene.startup_scene", "");
-    HK_CHECK_MSG(std::filesystem::exists(serverScene), "server startup scene exists");
+    Hockey::Config editorConfig;
+    HK_CHECK(editorConfig.Load(root / "data/config/editor.toml"));
+    const std::filesystem::path startupScene = root / editorConfig.GetString("scene.startup_scene", "");
+    HK_CHECK_MSG(std::filesystem::exists(startupScene), "editor-authored runtime startup scene exists");
 }
 
 void TestRuntimeConfigEmbeddingContracts() {
@@ -43,12 +38,20 @@ void TestRuntimeConfigEmbeddingContracts() {
     const std::string serverSource = ReadProjectFile("apps/dedicated_server/src/DedicatedServerApp.cpp");
 
     HK_CHECK_MSG(Contains(gameClientCMake, "hockey_embed_text_resource"),
-                 "game client embeds client.toml defaults from editor-authored data");
+                 "game client embeds editor.toml defaults from editor-authored data");
+    HK_CHECK_MSG(Contains(gameClientCMake, "data/config/editor.toml"),
+                 "game client default config source is editor.toml");
+    HK_CHECK_MSG(!Contains(gameClientCMake, "data/config/client.toml"),
+                 "game client build does not reference client.toml");
     HK_CHECK_MSG(!Contains(gameClientCMake, "copy_if_different") ||
                      !Contains(gameClientCMake, "data/config/client.toml"),
                  "game client build does not copy client.toml as runtime data");
     HK_CHECK_MSG(Contains(serverCMake, "hockey_embed_text_resource"),
-                 "dedicated server embeds server.toml defaults from editor-authored data");
+                 "dedicated server embeds editor.toml defaults from editor-authored data");
+    HK_CHECK_MSG(Contains(serverCMake, "data/config/editor.toml"),
+                 "dedicated server default config source is editor.toml");
+    HK_CHECK_MSG(!Contains(serverCMake, "data/config/server.toml"),
+                 "dedicated server build does not reference server.toml");
     HK_CHECK_MSG(!Contains(serverCMake, "copy_if_different") ||
                      !Contains(serverCMake, "data/config/server.toml"),
                  "dedicated server build does not copy server.toml as runtime data");

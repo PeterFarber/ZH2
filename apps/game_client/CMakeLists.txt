@@ -17,7 +17,7 @@ set_target_properties(HockeyGameClient PROPERTIES OUTPUT_NAME "HockeyGameClient"
 
 hockey_embed_text_resource(
     HockeyGameClient
-    "${CMAKE_SOURCE_DIR}/data/config/client.toml"
+    "${CMAKE_SOURCE_DIR}/data/config/editor.toml"
     "EmbeddedClientDefaults.hpp"
     "HockeyClient::Embedded"
     "DefaultClientConfigToml"

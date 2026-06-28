@@ -12,11 +12,5 @@ add_custom_command(TARGET HockeyMapEditor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/data/config/editor.toml"
         "$<TARGET_FILE_DIR:HockeyMapEditor>/../../data/config/editor.toml"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/data/config/client.toml"
-        "$<TARGET_FILE_DIR:HockeyMapEditor>/../../data/config/client.toml"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/data/config/server.toml"
-        "$<TARGET_FILE_DIR:HockeyMapEditor>/../../data/config/server.toml"
-    COMMENT "Copying editor-managed configs to build-local data/config"
+    COMMENT "Copying editor-managed config to build-local data/config"
 )

@@ -36,7 +36,7 @@ if (-not (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
 
 cmake --build --preset $buildPreset --target HockeyAssetTool
 if ($LASTEXITCODE -ne 0) { throw "HockeyAssetTool build failed" }
-& (Join-Path $buildDir "apps/asset_tool/HockeyAssetTool.exe") --root $root package-runtime --target client --config data/config/client.toml --output $packagePath
+& (Join-Path $buildDir "apps/asset_tool/HockeyAssetTool.exe") --root $root package-runtime --target client --config data/config/editor.toml --output $packagePath
 if ($LASTEXITCODE -ne 0) { throw "client runtime package generation failed" }
 cmake --build --preset $buildPreset --target HockeyGameClient
 if ($LASTEXITCODE -ne 0) { throw "HockeyGameClient build failed" }
@@ -49,7 +49,7 @@ if (Test-Path $outputPath) {
 
 Copy-Item -LiteralPath (Join-Path $appDir "HockeyGameClient.exe") -Destination (Join-Path $outputPath "HockeyGameClient.exe")
 Copy-AppRuntimeDlls -SourceDir $appDir -DestinationDir $outputPath
-Copy-Item -LiteralPath (Join-Path $root "data/config/client.toml") -Destination (Join-Path $outputPath "HockeyGameClient.toml")
+Copy-Item -LiteralPath (Join-Path $root "data/config/editor.toml") -Destination (Join-Path $outputPath "HockeyGameClient.toml")
 
 if ($IncludeDebugSymbols) {
     $pdb = Join-Path $buildDir "apps/game_client/HockeyGameClient.pdb"

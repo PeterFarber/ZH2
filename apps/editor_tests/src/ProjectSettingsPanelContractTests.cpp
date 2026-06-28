@@ -31,19 +31,19 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(header, "EditorWindowInput"), "Project Settings has a distinct editor window/input page");
     HK_CHECK_MSG(Contains(header, "EditorLightingShadows"),
                  "Project Settings has a distinct editor lighting/shadows page");
-    HK_CHECK_MSG(Contains(header, "ClientLightingShadows"),
-                 "Project Settings has a distinct client lighting/shadows page");
+    HK_CHECK_MSG(!Contains(header, "ClientLightingShadows"),
+                 "Project Settings does not expose separate client settings pages");
     HK_CHECK_MSG(Contains(header, "ServerSimulation"), "Project Settings keeps server simulation separate");
-    HK_CHECK_MSG(Contains(header, "ClientStartupScene"), "Project Settings keeps client startup scene separate");
     HK_CHECK_MSG(Contains(header, "ServerStartupScene"), "Project Settings keeps server startup scene separate");
+    HK_CHECK_MSG(!Contains(header, "m_ClientConfig"), "Project Settings does not keep a separate client config");
 
     HK_CHECK_MSG(Contains(source, "Window / Input"), "navigation exposes window/input pages");
     HK_CHECK_MSG(Contains(source, "Lighting & Shadows"), "navigation exposes lighting/shadows pages");
     HK_CHECK_MSG(Contains(source, "Startup Scene"), "navigation exposes startup scene pages");
     HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Editor\")"),
                  "editor navigation labels are scoped to avoid ImGui ID conflicts");
-    HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Client\")"),
-                 "client navigation labels are scoped to avoid ImGui ID conflicts");
+    HK_CHECK_MSG(!Contains(source, "ImGui::PushID(\"Client\")"),
+                 "Project Settings navigation omits separate client scope");
     HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Server\")"),
                  "server navigation labels are scoped to avoid ImGui ID conflicts");
     HK_CHECK_MSG(Contains(source, "ImGui::PushID(\"Directional Filter & Bias\")"),
@@ -68,13 +68,15 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "waypointPrefabPath"),
                  "Project Settings edits GameplaySettings waypoint prefab path");
     HK_CHECK_MSG(Contains(source, "kPrefabDragDropType"), "Project Settings accepts prefab drag/drop payloads");
-    HK_CHECK_MSG(Contains(source, "SaveClientBuildDefaults"),
-                 "Project Settings writes editor-authored client build defaults");
     HK_CHECK_MSG(Contains(source, "SaveServerBuildDefaults"),
                  "Project Settings writes editor-authored server build defaults");
-    HK_CHECK_MSG(Contains(source, "Client Build Defaults"),
-                 "Project Settings labels client settings as build defaults");
+    HK_CHECK_MSG(!Contains(source, "Client Build Defaults"),
+                 "Project Settings does not label separate client defaults");
     HK_CHECK_MSG(Contains(source, "Server Build Defaults"),
                  "Project Settings labels server settings as build defaults");
+    HK_CHECK_MSG(!Contains(source, "Paths::ConfigFile(\"client.toml\")"),
+                 "Project Settings does not load client.toml");
+    HK_CHECK_MSG(!Contains(source, "Paths::ConfigFile(\"server.toml\")"),
+                 "Project Settings stores server defaults in editor.toml");
     HK_CHECK_MSG(!Contains(source, "Allow body checking"), "Project Settings omits removed body-checking setting");
 }

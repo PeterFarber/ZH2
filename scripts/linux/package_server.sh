@@ -33,14 +33,14 @@ if [[ ! -f "${build_dir}/CMakeCache.txt" ]]; then
 fi
 
 cmake --build --preset "${build_preset}" --target HockeyAssetTool
-"${build_dir}/apps/asset_tool/HockeyAssetTool" --root "${root}" package-runtime --target server --config data/config/server.toml --output "${package_path}"
+"${build_dir}/apps/asset_tool/HockeyAssetTool" --root "${root}" package-runtime --target server --config data/config/editor.toml --output "${package_path}"
 cmake --build --preset "${build_preset}" --target HockeyDedicatedServer
 
 mkdir -p "${output_dir}"
 find "${output_dir}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 cp "${build_dir}/apps/dedicated_server/HockeyDedicatedServer" "${output_dir}/HockeyDedicatedServer"
 find "${app_dir}" -maxdepth 1 -type f -name '*.so*' -exec cp -P {} "${output_dir}/" \;
-cp "${root}/data/config/server.toml" "${output_dir}/HockeyDedicatedServer.toml"
+cp "${root}/data/config/editor.toml" "${output_dir}/HockeyDedicatedServer.toml"
 
 if [[ "${include_debug_symbols}" -eq 1 && -f "${build_dir}/apps/dedicated_server/HockeyDedicatedServer.debug" ]]; then
     cp "${build_dir}/apps/dedicated_server/HockeyDedicatedServer.debug" "${output_dir}/HockeyDedicatedServer.debug"

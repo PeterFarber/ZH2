@@ -638,41 +638,20 @@ void ProjectSettingsPanel::OnImGui(EditorContext& context) {
     case Section::EditorGameplayPreview:
         DrawEditorGameplayPreview(context);
         break;
-    case Section::ClientApplication:
-        DrawClientApplication();
-        break;
-    case Section::ClientWindowInput:
-        DrawClientWindowInput();
-        break;
-    case Section::ClientGraphics:
-        DrawClientGraphics();
-        break;
-    case Section::ClientLightingShadows:
-        DrawClientLightingShadows();
-        break;
-    case Section::ClientPhysics:
-        DrawClientPhysics();
-        break;
-    case Section::ClientGameplay:
-        DrawClientGameplay();
-        break;
-    case Section::ClientStartupScene:
-        DrawClientStartupScene();
-        break;
     case Section::ServerApplication:
-        DrawServerApplication();
+        DrawServerApplication(context);
         break;
     case Section::ServerSimulation:
-        DrawServerSimulation();
+        DrawServerSimulation(context);
         break;
     case Section::ServerPhysics:
-        DrawServerPhysics();
+        DrawServerPhysics(context);
         break;
     case Section::ServerGameplay:
-        DrawServerGameplay();
+        DrawServerGameplay(context);
         break;
     case Section::ServerStartupScene:
-        DrawServerStartupScene();
+        DrawServerStartupScene(context);
         break;
     case Section::Preferences:
         DrawPreferences(context);
@@ -690,8 +669,6 @@ void ProjectSettingsPanel::EnsureLoaded(EditorContext& context) {
         return;
     }
     m_EditorPath = editorPath;
-    m_ClientPath = Paths::ConfigFile("client.toml");
-    m_ServerPath = Paths::ConfigFile("server.toml");
     m_UserPreferencesPath = EditorSettings::DefaultPath();
     LoadAll(context);
 }
@@ -708,8 +685,7 @@ void ProjectSettingsPanel::LoadAll(EditorContext& context) {
     };
     m_Status.clear();
     load(m_EditorConfig, m_EditorPath);
-    load(m_ClientConfig, m_ClientPath);
-    load(m_ServerConfig, m_ServerPath);
+    m_ServerConfig = m_EditorConfig;
     if (context.config != nullptr) {
         *context.config = m_EditorConfig;
     }
@@ -720,18 +696,13 @@ void ProjectSettingsPanel::LoadAll(EditorContext& context) {
 void ProjectSettingsPanel::RefreshDerivedSettings() {
     m_EditorRenderer = MakeDefaultRendererSettings();
     LoadRendererSettings(m_EditorConfig, m_EditorRenderer);
-    m_ClientRenderer = MakeDefaultRendererSettings();
-    LoadRendererSettings(m_ClientConfig, m_ClientRenderer);
 
     m_EditorPhysics = MakeDefaultPhysicsSettings();
     LoadPhysicsSettings(m_EditorConfig, m_EditorPhysics);
-    m_ClientPhysics = MakeDefaultPhysicsSettings();
-    LoadPhysicsSettings(m_ClientConfig, m_ClientPhysics);
     m_ServerPhysics = MakeDefaultPhysicsSettings();
     LoadPhysicsSettings(m_ServerConfig, m_ServerPhysics);
 
     m_EditorGameplay = LoadGameplaySettings(m_EditorConfig);
-    m_ClientGameplay = LoadGameplaySettings(m_ClientConfig);
     m_ServerGameplay = LoadGameplaySettings(m_ServerConfig);
 }
 
@@ -752,17 +723,6 @@ void ProjectSettingsPanel::DrawNavigation() {
     item("Assets", Section::EditorAssets);
     item("Physics Preview", Section::EditorPhysicsPreview);
     item("Gameplay Preview", Section::EditorGameplayPreview);
-    ImGui::PopID();
-    ImGui::Separator();
-    ImGui::TextUnformatted("Client Build Defaults");
-    ImGui::PushID("Client");
-    item("Application Defaults", Section::ClientApplication);
-    item("Window / Input Defaults", Section::ClientWindowInput);
-    item("Graphics Defaults", Section::ClientGraphics);
-    item("Lighting & Shadows", Section::ClientLightingShadows);
-    item("Physics", Section::ClientPhysics);
-    item("Gameplay", Section::ClientGameplay);
-    item("Startup Scene", Section::ClientStartupScene);
     ImGui::PopID();
     ImGui::Separator();
     ImGui::TextUnformatted("Server Build Defaults");
@@ -963,112 +923,7 @@ void ProjectSettingsPanel::DrawEditorGameplayPreview(EditorContext& context) {
     }
 }
 
-void ProjectSettingsPanel::DrawClientApplication() {
-    ImGui::TextUnformatted("Client Build Defaults");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    bool changed = false;
-    changed |= DrawConfigString(m_ClientConfig, "app.name", "Application name", "Hockey Game Client",
-                                "Name used by the playable client build that loads game scenes.");
-    changed |= DrawConfigInt(m_ClientConfig, "app.target_fps", "Target FPS", 0, 0, 1000,
-                             "Caps the playable scene frame rate; 0 leaves it uncapped.");
-    if (changed) {
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientWindowInput() {
-    ImGui::TextUnformatted("Client Window / Input Defaults");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    bool changed = false;
-    changed |= DrawConfigString(m_ClientConfig, "window.title", "Window title", "Hockey Game",
-                                "Title shown on the playable client window while rendering the scene.");
-    changed |= DrawConfigInt(m_ClientConfig, "window.width", "Window width", 1920, 320, 7680,
-                             "Initial client scene width in pixels.");
-    changed |= DrawConfigInt(m_ClientConfig, "window.height", "Window height", 1080, 240, 4320,
-                             "Initial client scene height in pixels.");
-    changed |= DrawConfigBool(m_ClientConfig, "window.resizable", "Resizable", true,
-                              "Allows players to resize the game window and change the visible scene area.");
-    changed |= DrawConfigBool(m_ClientConfig, "window.maximized", "Maximized", false,
-                              "Starts the playable client maximized for a larger scene view.");
-    changed |= DrawConfigBool(m_ClientConfig, "window.start_centered", "Start centered", true,
-                              "Centers the playable client window before the startup scene appears.");
-    changed |= DrawConfigBool(m_ClientConfig, "input.gamepad_enabled", "Gamepad enabled", true,
-                              "Allows gamepad input to control players in the scene.");
-    changed |= DrawConfigBool(m_ClientConfig, "input.mouse_capture", "Mouse capture", false,
-                              "Captures the mouse for gameplay or camera controls that need relative input.");
-    if (changed) {
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientGraphics() {
-    ImGui::TextUnformatted("Client Graphics Defaults");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    if (DrawRendererSettings(m_ClientRenderer)) {
-        SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientLightingShadows() {
-    ImGui::TextUnformatted("Client Lighting & Shadows");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    if (DrawLightingShadowSettings(m_ClientRenderer)) {
-        SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientPhysics() {
-    ImGui::TextUnformatted("Client Physics");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    bool changed = false;
-    changed |= DrawConfigBool(m_ClientConfig, "physics.enabled", "Physics enabled", true,
-                              "Enables client-side physics simulation for scene prediction and local preview.");
-    changed |= DrawPhysicsSettings(m_ClientPhysics, false);
-    if (changed) {
-        SavePhysicsSettings(m_ClientConfig, m_ClientPhysics);
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientStartupScene() {
-    ImGui::TextUnformatted("Client Startup Scene");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    if (DrawConfigString(m_ClientConfig, "scene.startup_scene", "Startup scene", "",
-                         "Startup scene is the scene loaded when players launch the build.")) {
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawClientGameplay() {
-    ImGui::TextUnformatted("Client Gameplay");
-    DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
-    ImGui::Separator();
-    bool changed = false;
-    changed |= DrawConfigBool(m_ClientConfig, "gameplay.local_play", "Local play", true,
-                              "Runs gameplay locally in the client scene for offline testing.");
-    changed |= DrawGameplaySettings(m_ClientGameplay);
-    if (changed) {
-        SaveGameplaySettings(m_ClientConfig, m_ClientGameplay);
-        m_ClientRestartRequired = true;
-        SaveClientBuildDefaults();
-    }
-}
-
-void ProjectSettingsPanel::DrawServerApplication() {
+void ProjectSettingsPanel::DrawServerApplication(EditorContext& context) {
     ImGui::TextUnformatted("Server Build Defaults");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
@@ -1083,11 +938,11 @@ void ProjectSettingsPanel::DrawServerApplication() {
                              "Network port clients use to connect to the authoritative scene server.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerBuildDefaults();
+        SaveServerBuildDefaults(context);
     }
 }
 
-void ProjectSettingsPanel::DrawServerSimulation() {
+void ProjectSettingsPanel::DrawServerSimulation(EditorContext& context) {
     ImGui::TextUnformatted("Server Simulation Defaults");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
@@ -1097,26 +952,27 @@ void ProjectSettingsPanel::DrawServerSimulation() {
                                "and cost more CPU/network budget.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerBuildDefaults();
+        SaveServerBuildDefaults(context);
     }
 }
 
-void ProjectSettingsPanel::DrawServerStartupScene() {
+void ProjectSettingsPanel::DrawServerStartupScene(EditorContext& context) {
     ImGui::TextUnformatted("Server Startup Scene");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
     bool changed = false;
     changed |= DrawConfigString(m_ServerConfig, "scene.startup_scene", "Startup scene", "",
-                                "Scene loaded by the headless server when it starts authoritative simulation.");
+                                "Startup scene is the scene loaded when players launch the build and when the "
+                                "headless server starts authoritative simulation.");
     changed |= DrawConfigBool(m_ServerConfig, "scene.validate_on_load", "Validate on load", true,
                               "Checks the startup scene for required hockey gameplay objects before the server runs.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerBuildDefaults();
+        SaveServerBuildDefaults(context);
     }
 }
 
-void ProjectSettingsPanel::DrawServerPhysics() {
+void ProjectSettingsPanel::DrawServerPhysics(EditorContext& context) {
     ImGui::TextUnformatted("Server Physics");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
@@ -1127,11 +983,11 @@ void ProjectSettingsPanel::DrawServerPhysics() {
     if (changed) {
         SavePhysicsSettings(m_ServerConfig, m_ServerPhysics);
         m_ServerRestartRequired = true;
-        SaveServerBuildDefaults();
+        SaveServerBuildDefaults(context);
     }
 }
 
-void ProjectSettingsPanel::DrawServerGameplay() {
+void ProjectSettingsPanel::DrawServerGameplay(EditorContext& context) {
     ImGui::TextUnformatted("Server Gameplay");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
@@ -1143,7 +999,7 @@ void ProjectSettingsPanel::DrawServerGameplay() {
     if (changed) {
         SaveGameplaySettings(m_ServerConfig, m_ServerGameplay);
         m_ServerRestartRequired = true;
-        SaveServerBuildDefaults();
+        SaveServerBuildDefaults(context);
     }
 }
 
@@ -1233,23 +1089,24 @@ void ProjectSettingsPanel::SaveEditorConfig(EditorContext& context) {
     if (context.config != nullptr) {
         *context.config = m_EditorConfig;
     }
+    m_ServerConfig = m_EditorConfig;
+    m_ServerPhysics = m_EditorPhysics;
+    m_ServerGameplay = m_EditorGameplay;
     m_Status = "Saved " + m_EditorPath.filename().string();
 }
 
-void ProjectSettingsPanel::SaveClientBuildDefaults() {
-    if (const Status status = m_ClientConfig.Save(m_ClientPath); !status) {
+void ProjectSettingsPanel::SaveServerBuildDefaults(EditorContext& context) {
+    m_EditorConfig = m_ServerConfig;
+    if (const Status status = m_EditorConfig.Save(m_EditorPath); !status) {
         m_Status = status.error;
         return;
     }
-    m_Status = "Saved " + m_ClientPath.filename().string();
-}
-
-void ProjectSettingsPanel::SaveServerBuildDefaults() {
-    if (const Status status = m_ServerConfig.Save(m_ServerPath); !status) {
-        m_Status = status.error;
-        return;
+    if (context.config != nullptr) {
+        *context.config = m_EditorConfig;
     }
-    m_Status = "Saved " + m_ServerPath.filename().string();
+    m_EditorPhysics = m_ServerPhysics;
+    m_EditorGameplay = m_ServerGameplay;
+    m_Status = "Saved " + m_EditorPath.filename().string();
 }
 
 void ProjectSettingsPanel::SaveUserPreferences(EditorContext& context) {
