@@ -25,6 +25,8 @@ target_sources(hockey_editor
         src/FileDialog.cpp
         src/Dockspace.cpp
         src/MainMenuBar.cpp
+        src/Packaging/PackageProfile.cpp
+        src/Packaging/PackageCommand.cpp
         src/Toolbar.cpp
         src/Panel.cpp
         src/PanelManager.cpp
@@ -68,6 +70,7 @@ target_sources(hockey_editor
         src/Panels/SceneValidationPanel.cpp
         src/Panels/PrefabPanel.cpp
         src/Panels/ProjectSettingsPanel.cpp
+        src/Panels/PackagePanel.cpp
         src/ImGui/EditorTooltip.cpp
         src/ImGui/EditorTheme.cpp
         src/ImGui/EditorIcons.cpp

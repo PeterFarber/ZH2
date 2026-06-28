@@ -94,6 +94,7 @@ public:
 
     // Opens (and focuses) the Project Settings panel from the Edit menu.
     void OpenProjectSettings();
+    void OpenPackageWindow();
 
     // Backward-compatible alias for older call sites.
     void OpenPreferences();

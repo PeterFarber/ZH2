@@ -85,6 +85,14 @@ run-editor:
 run-server:
     @./scripts/{{platform}}/run_server{{script_ext}}
 
+# Package the release game client for this host.
+package-client:
+    @./scripts/{{platform}}/package_client{{script_ext}}
+
+# Package the release dedicated server for this host.
+package-server:
+    @./scripts/{{platform}}/package_server{{script_ext}}
+
 # Completion contract for most changes.
 verify: build-debug test smoke-text
 

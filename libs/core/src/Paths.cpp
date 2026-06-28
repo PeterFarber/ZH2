@@ -28,6 +28,7 @@ fs::path ResolveRoot(const fs::path& executablePath, const fs::path& rootOverrid
 bool Paths::Init(const fs::path& executablePath, const fs::path& rootOverride) {
     const fs::path root = ResolveRoot(executablePath, rootOverride);
 
+    g_Paths.executableDirectory = executablePath.parent_path().lexically_normal();
     g_Paths.root = root;
     g_Paths.data = root / "data";
     g_Paths.config = g_Paths.data / "config";
@@ -49,6 +50,10 @@ fs::path Paths::DataFile(const std::string& relative) { return g_Paths.data / re
 fs::path Paths::RawAsset(const std::string& relative) { return g_Paths.rawAssets / relative; }
 fs::path Paths::CookedAsset(const std::string& relative) { return g_Paths.cookedAssets / relative; }
 fs::path Paths::TempFile(const std::string& filename) { return g_Paths.temp / filename; }
+fs::path Paths::ExecutableDirectory() { return g_Paths.executableDirectory; }
+fs::path Paths::ExecutableSiblingFile(const std::string& filename) {
+    return g_Paths.executableDirectory / filename;
+}
 fs::path Paths::Resolve(const fs::path& pathOrRelative) {
     if (pathOrRelative.is_absolute()) {
         return pathOrRelative.lexically_normal();

@@ -45,6 +45,9 @@ void RunPathTests() {
     std::filesystem::create_directories(fakeExe.parent_path());
     HK_CHECK(Paths::Init(fakeExe, {}));
     HK_CHECK_EQ(Paths::Get().root, fakeBuildRoot.lexically_normal());
+    HK_CHECK_EQ(Paths::ExecutableDirectory(), fakeExe.parent_path());
+    HK_CHECK_EQ(Paths::ExecutableSiblingFile("HockeyGameClient.toml"),
+                fakeExe.parent_path() / "HockeyGameClient.toml");
     HK_CHECK_EQ(Paths::ConfigFile("client.toml"), fakeBuildRoot / "data" / "config" / "client.toml");
     HK_CHECK(Paths::Init(originalRoot / "build" / "windows-debug" / "apps" / "core_tests" / "HockeyCoreTests.exe",
                          originalRoot));

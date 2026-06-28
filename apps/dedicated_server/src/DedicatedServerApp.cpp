@@ -1,3 +1,4 @@
+#include "EmbeddedServerDefaults.hpp"
 #include "DedicatedServerApp.hpp"
 #include "Hockey/Core/CrashHandler.hpp"
 #include "Hockey/Core/FileSystem.hpp"
@@ -5,6 +6,7 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/RuntimeConfig.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/Gameplay.hpp"
@@ -29,9 +31,19 @@ bool DedicatedServerApp::OnInit() {
     Hockey::Log::Init(logPath);
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
-    const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
-                                                : Hockey::Paths::ConfigFile("server.toml");
-    m_Config.Load(configPath);
+    const Hockey::RuntimeConfigLoadInfo configInfo{
+        .embeddedToml = HockeyServer::Embedded::DefaultServerConfigToml(),
+        .embeddedSourceName = "embedded-server-defaults",
+        .siblingFilename = "HockeyDedicatedServer.toml",
+        .commandLineOverride = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config", ""))
+                                                   : std::filesystem::path{},
+    };
+    Hockey::Result<Hockey::RuntimeConfigLoadResult> runtimeConfig = Hockey::LoadRuntimeConfig(configInfo);
+    if (!runtimeConfig) {
+        HK_SERVER_INFO("Server config load failed: {}", runtimeConfig.error);
+        return false;
+    }
+    m_Config = runtimeConfig.value.config;
     SetSleepWhenIdle(m_Config.GetBool("app.sleep_when_idle", true));
 
     double tickRate = m_Config.GetDouble("server.tick_rate", 60.0);

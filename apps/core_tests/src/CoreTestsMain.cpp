@@ -7,6 +7,7 @@
 void RunUUIDTests();
 void RunConfigTests();
 void RunPathTests();
+void RunResourceProviderTests();
 void RunFileSystemTests();
 void RunJobSystemTests();
 void RunFixedTickTests();
@@ -26,6 +27,7 @@ int main(int argc, char** argv) {
     RunUUIDTests();
     RunConfigTests();
     RunPathTests();
+    RunResourceProviderTests();
     RunFileSystemTests();
     RunJobSystemTests();
     RunFixedTickTests();

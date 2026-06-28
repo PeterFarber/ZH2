@@ -1,3 +1,4 @@
+#include "EmbeddedClientDefaults.hpp"
 #include "GameClientApp.hpp"
 #include "Hockey/Core/CrashHandler.hpp"
 #include "Hockey/Core/FileSystem.hpp"
@@ -7,6 +8,7 @@
 #include "Hockey/Core/Log.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
+#include "Hockey/Core/RuntimeConfig.hpp"
 #include "Hockey/Core/Screenshot.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -417,9 +419,20 @@ bool GameClientApp::OnInit() {
     Hockey::Log::Init(logPath);
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
-    const auto configPath = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config"))
-                                                : Hockey::Paths::ConfigFile("client.toml");
-    m_Config.Load(configPath);
+    const Hockey::RuntimeConfigLoadInfo configInfo{
+        .embeddedToml = HockeyClient::Embedded::DefaultClientConfigToml(),
+        .embeddedSourceName = "embedded-client-defaults",
+        .siblingFilename = "HockeyGameClient.toml",
+        .commandLineOverride = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config", ""))
+                                                   : std::filesystem::path{},
+    };
+    Hockey::Result<Hockey::RuntimeConfigLoadResult> runtimeConfig = Hockey::LoadRuntimeConfig(configInfo);
+    if (!runtimeConfig) {
+        HK_CLIENT_INFO("Client config load failed: {}", runtimeConfig.error);
+        return false;
+    }
+    m_Config = runtimeConfig.value.config;
+    m_UserConfigPath = runtimeConfig.value.userConfigPath;
     m_UISettings = Hockey::LoadUISettings(m_Config);
     m_UIEnabled = m_UISettings.enabled && !cmd.Has("--no-ui");
     m_PresentationSettings.enabled = m_Config.GetBool("presentation.interpolate_gameplay", true);
@@ -599,6 +612,10 @@ bool GameClientApp::OnInit() {
     m_LastWidth = GetWindow().Width();
     m_LastHeight = GetWindow().Height();
     return true;
+}
+
+Hockey::Status GameClientApp::SaveUserSettings() {
+    return Hockey::SaveRuntimeUserConfig(m_Config, m_UserConfigPath);
 }
 
 bool GameClientApp::LoadRuntimeUIScreen() {

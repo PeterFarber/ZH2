@@ -8,6 +8,7 @@
 #include "Hockey/Assets/AssetDatabase.hpp"
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Assets/AssetType.hpp"
+#include "Hockey/Assets/RuntimePackage.hpp"
 
 namespace Hockey {
 
@@ -67,6 +68,28 @@ int ReportStatus(const Status& status) {
     return 0;
 }
 
+bool ReadOption(const std::vector<std::string>& args, const std::string& option, std::string& out) {
+    for (std::size_t i = 0; i + 1 < args.size(); ++i) {
+        if (args[i] == option) {
+            out = args[i + 1];
+            return true;
+        }
+    }
+    return false;
+}
+
+bool TryParsePackageTarget(const std::string& text, RuntimePackageTarget& out) {
+    if (text == "client") {
+        out = RuntimePackageTarget::Client;
+        return true;
+    }
+    if (text == "server") {
+        out = RuntimePackageTarget::Server;
+        return true;
+    }
+    return false;
+}
+
 } // namespace
 
 void PrintAssetToolUsage() {
@@ -81,6 +104,7 @@ void PrintAssetToolUsage() {
     std::printf("  validate                 check files/cooked outputs/dependencies\n");
     std::printf("  list                     print asset id, type, status, path\n");
     std::printf("  print <asset-id>         print metadata for one asset\n");
+    std::printf("  package-runtime --target <client|server> --config <path> --output <path>\n");
 }
 
 int RunAssetToolCommand(const std::filesystem::path& root, const std::string& command,
@@ -178,6 +202,36 @@ int RunAssetToolCommand(const std::filesystem::path& root, const std::string& co
         }
         PrintMetadata(*meta);
         return 0;
+    }
+
+    if (command == "package-runtime") {
+        std::string targetText;
+        std::string configPath;
+        std::string outputPath;
+        if (!ReadOption(args, "--target", targetText) || !ReadOption(args, "--config", configPath) ||
+            !ReadOption(args, "--output", outputPath)) {
+            std::fprintf(stderr, "package-runtime requires --target, --config, and --output\n");
+            return 1;
+        }
+
+        RuntimePackageTarget target = RuntimePackageTarget::Client;
+        if (!TryParsePackageTarget(targetText, target)) {
+            std::fprintf(stderr, "invalid package target: %s\n", targetText.c_str());
+            return 1;
+        }
+
+        const RuntimePackageBuildInfo info{
+            .target = target,
+            .projectRoot = root,
+            .configPath = configPath,
+        };
+        const std::filesystem::path resolvedOutput =
+            std::filesystem::path(outputPath).is_absolute() ? std::filesystem::path(outputPath) : (root / outputPath);
+        const Status status = WriteRuntimePackage(info, resolvedOutput);
+        if (status) {
+            std::printf("wrote %s runtime package: %s\n", targetText.c_str(), resolvedOutput.string().c_str());
+        }
+        return ReportStatus(status);
     }
 
     std::fprintf(stderr, "unknown command: %s\n", command.c_str());

@@ -18,6 +18,7 @@
 #include "Hockey/UI/UISettings.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 
 namespace Hockey {
@@ -44,6 +45,7 @@ private:
     void BindRuntimeUIActions();
     void QueueRuntimeUIAction(Hockey::UIAction action);
     bool LoadOfflineGameplayScene(const std::string& scenePath);
+    Hockey::Status SaveUserSettings();
 
     void MarkMovementSmoothnessPresentationReset();
     void StepSimulation(float deltaTime);
@@ -52,6 +54,7 @@ private:
     void SubmitGameplayDebugDraw();
 
     Hockey::Config m_Config;
+    std::filesystem::path m_UserConfigPath;
     Hockey::Scene m_Scene{"Game Scene"};
     Hockey::GameplayWorld m_GameplayWorld;
     Hockey::GameplaySettings m_GameplaySettings;

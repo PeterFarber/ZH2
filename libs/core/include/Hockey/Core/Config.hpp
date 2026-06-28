@@ -8,7 +8,10 @@ namespace Hockey {
 class Config {
 public:
     Status Load(const std::filesystem::path& path);
+    Status LoadString(std::string_view tomlText, std::string_view sourceName);
     Status Save(const std::filesystem::path& path) const;
+    std::string ToTomlString() const;
+    void MergeFrom(const Config& overlay);
 
     bool Has(std::string_view key) const;
 

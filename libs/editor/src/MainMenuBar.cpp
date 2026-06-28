@@ -102,6 +102,10 @@ void MainMenuBar::DrawFileMenu(EditorContext& ctx, EditorApp& app) {
         app.ImportAsset();
     }
     ImGui::Separator();
+    if (ImGui::MenuItem("Package...")) {
+        app.OpenPackageWindow();
+    }
+    ImGui::Separator();
     if (ImGui::MenuItem("Open Autosave Folder")) {
         app.OpenAutosaveFolder();
     }

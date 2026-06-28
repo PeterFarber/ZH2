@@ -754,21 +754,21 @@ void ProjectSettingsPanel::DrawNavigation() {
     item("Gameplay Preview", Section::EditorGameplayPreview);
     ImGui::PopID();
     ImGui::Separator();
-    ImGui::TextUnformatted("Client");
+    ImGui::TextUnformatted("Client Build Defaults");
     ImGui::PushID("Client");
-    item("Application", Section::ClientApplication);
-    item("Window / Input", Section::ClientWindowInput);
-    item("Graphics", Section::ClientGraphics);
+    item("Application Defaults", Section::ClientApplication);
+    item("Window / Input Defaults", Section::ClientWindowInput);
+    item("Graphics Defaults", Section::ClientGraphics);
     item("Lighting & Shadows", Section::ClientLightingShadows);
     item("Physics", Section::ClientPhysics);
     item("Gameplay", Section::ClientGameplay);
     item("Startup Scene", Section::ClientStartupScene);
     ImGui::PopID();
     ImGui::Separator();
-    ImGui::TextUnformatted("Server");
+    ImGui::TextUnformatted("Server Build Defaults");
     ImGui::PushID("Server");
-    item("Application", Section::ServerApplication);
-    item("Simulation", Section::ServerSimulation);
+    item("Application Defaults", Section::ServerApplication);
+    item("Simulation Defaults", Section::ServerSimulation);
     item("Physics", Section::ServerPhysics);
     item("Gameplay", Section::ServerGameplay);
     item("Startup Scene", Section::ServerStartupScene);
@@ -964,7 +964,7 @@ void ProjectSettingsPanel::DrawEditorGameplayPreview(EditorContext& context) {
 }
 
 void ProjectSettingsPanel::DrawClientApplication() {
-    ImGui::TextUnformatted("Client Application");
+    ImGui::TextUnformatted("Client Build Defaults");
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
     ImGui::Separator();
     bool changed = false;
@@ -974,12 +974,12 @@ void ProjectSettingsPanel::DrawClientApplication() {
                              "Caps the playable scene frame rate; 0 leaves it uncapped.");
     if (changed) {
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
 void ProjectSettingsPanel::DrawClientWindowInput() {
-    ImGui::TextUnformatted("Client Window / Input");
+    ImGui::TextUnformatted("Client Window / Input Defaults");
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
     ImGui::Separator();
     bool changed = false;
@@ -1001,18 +1001,18 @@ void ProjectSettingsPanel::DrawClientWindowInput() {
                               "Captures the mouse for gameplay or camera controls that need relative input.");
     if (changed) {
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
 void ProjectSettingsPanel::DrawClientGraphics() {
-    ImGui::TextUnformatted("Client Graphics");
+    ImGui::TextUnformatted("Client Graphics Defaults");
     DrawRestartBadge(m_ClientRestartRequired, "Client relaunch required");
     ImGui::Separator();
     if (DrawRendererSettings(m_ClientRenderer)) {
         SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
@@ -1023,7 +1023,7 @@ void ProjectSettingsPanel::DrawClientLightingShadows() {
     if (DrawLightingShadowSettings(m_ClientRenderer)) {
         SaveRendererSettings(m_ClientConfig, m_ClientRenderer);
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
@@ -1038,7 +1038,7 @@ void ProjectSettingsPanel::DrawClientPhysics() {
     if (changed) {
         SavePhysicsSettings(m_ClientConfig, m_ClientPhysics);
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
@@ -1049,7 +1049,7 @@ void ProjectSettingsPanel::DrawClientStartupScene() {
     if (DrawConfigString(m_ClientConfig, "scene.startup_scene", "Startup scene", "",
                          "Startup scene is the scene loaded when players launch the build.")) {
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
@@ -1064,12 +1064,12 @@ void ProjectSettingsPanel::DrawClientGameplay() {
     if (changed) {
         SaveGameplaySettings(m_ClientConfig, m_ClientGameplay);
         m_ClientRestartRequired = true;
-        SaveClientConfig();
+        SaveClientBuildDefaults();
     }
 }
 
 void ProjectSettingsPanel::DrawServerApplication() {
-    ImGui::TextUnformatted("Server Application");
+    ImGui::TextUnformatted("Server Build Defaults");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
     bool changed = false;
@@ -1083,12 +1083,12 @@ void ProjectSettingsPanel::DrawServerApplication() {
                              "Network port clients use to connect to the authoritative scene server.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerConfig();
+        SaveServerBuildDefaults();
     }
 }
 
 void ProjectSettingsPanel::DrawServerSimulation() {
-    ImGui::TextUnformatted("Server Simulation");
+    ImGui::TextUnformatted("Server Simulation Defaults");
     DrawRestartBadge(m_ServerRestartRequired, "Server relaunch required");
     ImGui::Separator();
     bool changed = false;
@@ -1097,7 +1097,7 @@ void ProjectSettingsPanel::DrawServerSimulation() {
                                "and cost more CPU/network budget.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerConfig();
+        SaveServerBuildDefaults();
     }
 }
 
@@ -1112,7 +1112,7 @@ void ProjectSettingsPanel::DrawServerStartupScene() {
                               "Checks the startup scene for required hockey gameplay objects before the server runs.");
     if (changed) {
         m_ServerRestartRequired = true;
-        SaveServerConfig();
+        SaveServerBuildDefaults();
     }
 }
 
@@ -1127,7 +1127,7 @@ void ProjectSettingsPanel::DrawServerPhysics() {
     if (changed) {
         SavePhysicsSettings(m_ServerConfig, m_ServerPhysics);
         m_ServerRestartRequired = true;
-        SaveServerConfig();
+        SaveServerBuildDefaults();
     }
 }
 
@@ -1143,7 +1143,7 @@ void ProjectSettingsPanel::DrawServerGameplay() {
     if (changed) {
         SaveGameplaySettings(m_ServerConfig, m_ServerGameplay);
         m_ServerRestartRequired = true;
-        SaveServerConfig();
+        SaveServerBuildDefaults();
     }
 }
 
@@ -1236,7 +1236,7 @@ void ProjectSettingsPanel::SaveEditorConfig(EditorContext& context) {
     m_Status = "Saved " + m_EditorPath.filename().string();
 }
 
-void ProjectSettingsPanel::SaveClientConfig() {
+void ProjectSettingsPanel::SaveClientBuildDefaults() {
     if (const Status status = m_ClientConfig.Save(m_ClientPath); !status) {
         m_Status = status.error;
         return;
@@ -1244,7 +1244,7 @@ void ProjectSettingsPanel::SaveClientConfig() {
     m_Status = "Saved " + m_ClientPath.filename().string();
 }
 
-void ProjectSettingsPanel::SaveServerConfig() {
+void ProjectSettingsPanel::SaveServerBuildDefaults() {
     if (const Status status = m_ServerConfig.Save(m_ServerPath); !status) {
         m_Status = status.error;
         return;

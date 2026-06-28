@@ -14,17 +14,14 @@ int main(int argc, char** argv) {
     Hockey::Paths::Init(Hockey::Platform::ExecutablePath(), root);
     Hockey::Log::Init(Hockey::Paths::LogFile("asset_tool.log"));
 
-    // Collect positional (non-flag, non-flag-value) arguments. The only flag the
-    // tool understands is --root <value>.
+    // Collect command arguments while consuming only the global --root <value>.
+    // Command-specific flags are passed through to the command implementation.
     std::vector<std::string> positionals;
     const std::vector<std::string>& args = commandLine.Args();
     for (size_t i = 0; i < args.size(); ++i) {
         const std::string& arg = args[i];
         if (arg == "--root") {
             ++i; // skip its value
-            continue;
-        }
-        if (arg.rfind("--", 0) == 0) {
             continue;
         }
         positionals.push_back(arg);

@@ -1,5 +1,6 @@
 #include "Hockey/Core/Config.hpp"
 #include <fstream>
+#include <sstream>
 #include <system_error>
 #include <utility>
 #include <vector>
@@ -34,6 +35,43 @@ void SetValue(toml::table& root, std::string_view key, T&& value) {
     }
     current->insert_or_assign(parts.back(), std::forward<T>(value));
 }
+
+void AssignNode(toml::table& table, const toml::key& key, const toml::node& node) {
+    const std::string keyName{key.str()};
+
+    if (const auto* tableValue = node.as_table()) {
+        table.insert_or_assign(keyName, *tableValue);
+    } else if (const auto* arrayValue = node.as_array()) {
+        table.insert_or_assign(keyName, *arrayValue);
+    } else if (const auto stringValue = node.value<std::string>()) {
+        table.insert_or_assign(keyName, *stringValue);
+    } else if (const auto integerValue = node.value<int64_t>()) {
+        table.insert_or_assign(keyName, *integerValue);
+    } else if (const auto doubleValue = node.value<double>()) {
+        table.insert_or_assign(keyName, *doubleValue);
+    } else if (const auto boolValue = node.value<bool>()) {
+        table.insert_or_assign(keyName, *boolValue);
+    } else if (const auto dateValue = node.value<toml::date>()) {
+        table.insert_or_assign(keyName, *dateValue);
+    } else if (const auto timeValue = node.value<toml::time>()) {
+        table.insert_or_assign(keyName, *timeValue);
+    } else if (const auto dateTimeValue = node.value<toml::date_time>()) {
+        table.insert_or_assign(keyName, *dateTimeValue);
+    }
+}
+
+void MergeTables(toml::table& base, const toml::table& overlay) {
+    for (const auto& [key, overlayNode] : overlay) {
+        if (const auto* overlayTable = overlayNode.as_table()) {
+            if (toml::node* baseNode = base.get(key); baseNode != nullptr && baseNode->is_table()) {
+                MergeTables(*baseNode->as_table(), *overlayTable);
+                continue;
+            }
+        }
+
+        AssignNode(base, key, overlayNode);
+    }
+}
 }
 Status Config::Load(const std::filesystem::path& path) {
     try {
@@ -41,6 +79,15 @@ Status Config::Load(const std::filesystem::path& path) {
         return Status::Ok();
     } catch (const toml::parse_error& error) {
         return Status::Fail("failed to parse '" + path.string() + "': " +
+                            std::string(error.description()));
+    }
+}
+Status Config::LoadString(std::string_view tomlText, std::string_view sourceName) {
+    try {
+        m_Table = toml::parse(tomlText, std::string(sourceName));
+        return Status::Ok();
+    } catch (const toml::parse_error& error) {
+        return Status::Fail("failed to parse '" + std::string(sourceName) + "': " +
                             std::string(error.description()));
     }
 }
@@ -58,6 +105,14 @@ Status Config::Save(const std::filesystem::path& path) const {
         return Status::Fail("failed while writing config: " + path.string());
     }
     return Status::Ok();
+}
+std::string Config::ToTomlString() const {
+    std::ostringstream stream;
+    stream << m_Table;
+    return stream.str();
+}
+void Config::MergeFrom(const Config& overlay) {
+    MergeTables(m_Table, overlay.m_Table);
 }
 bool Config::Has(std::string_view key) const {
     return m_Table.at_path(key).node() != nullptr;

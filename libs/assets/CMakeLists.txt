@@ -23,6 +23,7 @@ target_sources(hockey_assets
         src/AssetDatabase.cpp
         src/AssetEvent.cpp
         src/AssetWatcher.cpp
+        src/RuntimePackage.cpp
         src/AssetManager.cpp
         src/CookedFormat.cpp
         src/StbImpl.cpp

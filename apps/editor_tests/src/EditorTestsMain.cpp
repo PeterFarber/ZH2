@@ -24,6 +24,8 @@ void RunSceneWorkflowTests();
 void RunProjectBrowserTests();
 void RunProjectPanelContractTests();
 void RunProjectSettingsPanelContractTests();
+void RunPackageProfileTests();
+void RunPackagePanelContractTests();
 void RunEditorIconContractTests();
 void RunEditorTooltipContractTests();
 void RunHierarchyPanelContractTests();
@@ -53,6 +55,8 @@ int main(int argc, char** argv) {
     RunProjectBrowserTests();
     RunProjectPanelContractTests();
     RunProjectSettingsPanelContractTests();
+    RunPackageProfileTests();
+    RunPackagePanelContractTests();
     RunEditorIconContractTests();
     RunEditorTooltipContractTests();
     RunHierarchyPanelContractTests();

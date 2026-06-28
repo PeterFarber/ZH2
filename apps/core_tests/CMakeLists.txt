@@ -3,6 +3,7 @@ add_executable(HockeyCoreTests
     src/UUIDTests.cpp
     src/ConfigTests.cpp
     src/PathTests.cpp
+    src/ResourceProviderTests.cpp
     src/FileSystemTests.cpp
     src/JobSystemTests.cpp
     src/FixedTickTests.cpp

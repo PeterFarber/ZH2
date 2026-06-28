@@ -3,6 +3,7 @@
 #include <string>
 namespace Hockey {
 struct EnginePaths {
+    std::filesystem::path executableDirectory;
     std::filesystem::path root;
     std::filesystem::path data;
     std::filesystem::path config;
@@ -24,6 +25,8 @@ public:
     static std::filesystem::path RawAsset(const std::string& relative);
     static std::filesystem::path CookedAsset(const std::string& relative);
     static std::filesystem::path TempFile(const std::string& filename);
+    static std::filesystem::path ExecutableDirectory();
+    static std::filesystem::path ExecutableSiblingFile(const std::string& filename);
 
     // Resolve a path that may be absolute or relative. Absolute paths are
     // returned unchanged; relative paths are anchored at the project root. Used

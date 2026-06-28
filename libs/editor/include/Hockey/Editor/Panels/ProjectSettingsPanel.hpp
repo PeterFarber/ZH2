@@ -71,8 +71,8 @@ private:
     void DrawPreferences(EditorContext& context);
 
     void SaveEditorConfig(EditorContext& context);
-    void SaveClientConfig();
-    void SaveServerConfig();
+    void SaveClientBuildDefaults();
+    void SaveServerBuildDefaults();
     void SaveUserPreferences(EditorContext& context);
 
     Config m_EditorConfig;

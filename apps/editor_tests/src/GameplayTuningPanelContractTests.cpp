@@ -42,6 +42,13 @@ void RunGameplayTuningPanelContractTests() {
     HK_CHECK_MSG(Contains(preview, "void Configure(const GameplaySettings& settings, const GameplayTuning& tuning)"),
                  "editor gameplay preview accepts tuning");
     HK_CHECK_MSG(Contains(source, "tuning.default.yaml"), "panel edits gameplay tuning YAML");
+    HK_CHECK_MSG(Contains(source, "Editor Preview"), "Gameplay Tuning labels editor preview settings");
+    HK_CHECK_MSG(Contains(source, "Client Build Defaults"), "Gameplay Tuning labels client build defaults");
+    HK_CHECK_MSG(Contains(source, "Server Build Defaults"), "Gameplay Tuning labels server build defaults");
+    HK_CHECK_MSG(Contains(source, "Save Client Build Defaults"),
+                 "Gameplay Tuning saves client build defaults");
+    HK_CHECK_MSG(Contains(source, "Save Server Build Defaults"),
+                 "Gameplay Tuning saves server build defaults");
 
     const char* requiredFields[] = {
         "Max speed", "Acceleration", "Deceleration", "Turn speed degrees", "Boost impulse",

@@ -140,8 +140,8 @@ void GameplayTuningPanel::DrawNavigation() {
     };
     item("Tuning YAML", Section::Tuning);
     item("Editor Preview", Section::EditorSettings);
-    item("Client", Section::ClientSettings);
-    item("Server", Section::ServerSettings);
+    item("Client Build Defaults", Section::ClientSettings);
+    item("Server Build Defaults", Section::ServerSettings);
 }
 
 void GameplayTuningPanel::DrawTuning(EditorContext& context) {
@@ -249,7 +249,17 @@ void GameplayTuningPanel::DrawSettings(EditorContext& context, GameplaySettings&
     const bool editorScope = std::string(scope) == "Editor";
     const bool clientScope = std::string(scope) == "Client";
     const bool dirty = editorScope ? m_EditorDirty : (clientScope ? m_ClientDirty : m_ServerDirty);
-    const std::string saveLabel = std::string("Save ") + scope + " Settings" + (dirty ? " *" : "");
+    std::string saveLabel;
+    if (editorScope) {
+        saveLabel = "Save Editor Preview";
+    } else if (clientScope) {
+        saveLabel = "Save Client Build Defaults";
+    } else {
+        saveLabel = "Save Server Build Defaults";
+    }
+    if (dirty) {
+        saveLabel += " *";
+    }
     if (ImGui::Button(saveLabel.c_str())) {
         if (editorScope) {
             SaveEditorConfig(context);

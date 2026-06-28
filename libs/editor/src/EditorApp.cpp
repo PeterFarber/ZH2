@@ -32,6 +32,7 @@
 #include "Hockey/Editor/Panels/GameplayTuningPanel.hpp"
 #include "Hockey/Editor/Panels/HierarchyPanel.hpp"
 #include "Hockey/Editor/Panels/InspectorPanel.hpp"
+#include "Hockey/Editor/Panels/PackagePanel.hpp"
 #include "Hockey/Editor/Panels/PrefabPanel.hpp"
 #include "Hockey/Editor/Panels/ProjectPanel.hpp"
 #include "Hockey/Editor/Panels/ProjectSettingsPanel.hpp"
@@ -205,6 +206,7 @@ void EditorApp::RegisterPanels() {
     panels.AddPanel<SceneValidationPanel>();
     panels.AddPanel<PrefabPanel>();
     panels.AddPanel<ProjectSettingsPanel>();
+    panels.AddPanel<PackagePanel>();
 }
 
 void EditorApp::RegisterTools() {
@@ -617,6 +619,10 @@ void EditorApp::DeselectAll() {
 
 void EditorApp::OpenProjectSettings() {
     m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kProjectSettings);
+}
+
+void EditorApp::OpenPackageWindow() {
+    m_Context.panelManager.RequestPanelFocus(m_Context, EditorPanelNames::kPackage);
 }
 
 void EditorApp::OpenPreferences() {

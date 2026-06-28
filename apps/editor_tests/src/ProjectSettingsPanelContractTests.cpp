@@ -68,7 +68,13 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "waypointPrefabPath"),
                  "Project Settings edits GameplaySettings waypoint prefab path");
     HK_CHECK_MSG(Contains(source, "kPrefabDragDropType"), "Project Settings accepts prefab drag/drop payloads");
-    HK_CHECK_MSG(Contains(source, "SaveClientConfig()"), "Project Settings still writes client config");
-    HK_CHECK_MSG(Contains(source, "SaveServerConfig()"), "Project Settings still writes server config");
+    HK_CHECK_MSG(Contains(source, "SaveClientBuildDefaults"),
+                 "Project Settings writes editor-authored client build defaults");
+    HK_CHECK_MSG(Contains(source, "SaveServerBuildDefaults"),
+                 "Project Settings writes editor-authored server build defaults");
+    HK_CHECK_MSG(Contains(source, "Client Build Defaults"),
+                 "Project Settings labels client settings as build defaults");
+    HK_CHECK_MSG(Contains(source, "Server Build Defaults"),
+                 "Project Settings labels server settings as build defaults");
     HK_CHECK_MSG(!Contains(source, "Allow body checking"), "Project Settings omits removed body-checking setting");
 }

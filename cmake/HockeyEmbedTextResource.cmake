@@ -1,0 +1,16 @@
+function(hockey_embed_text_resource TARGET INPUT_PATH HEADER_NAME NAMESPACE FUNCTION_NAME OUTPUT_BASENAME)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${INPUT_PATH}")
+    file(READ "${INPUT_PATH}" HOCKEY_EMBED_RESOURCE_TEXT)
+    if(HOCKEY_EMBED_RESOURCE_TEXT MATCHES "\\)HKRESOURCE\"")
+        message(FATAL_ERROR "Embedded resource delimiter appears in ${INPUT_PATH}")
+    endif()
+
+    set(HOCKEY_EMBED_RESOURCE_HEADER "${HEADER_NAME}")
+    set(HOCKEY_EMBED_RESOURCE_NAMESPACE "${NAMESPACE}")
+    set(HOCKEY_EMBED_RESOURCE_FUNCTION "${FUNCTION_NAME}")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/EmbeddedTextResource.cpp.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_BASENAME}.cpp"
+        @ONLY)
+    target_sources(${TARGET} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_BASENAME}.cpp")
+endfunction()

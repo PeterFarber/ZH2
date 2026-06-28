@@ -10,6 +10,7 @@ void RunAssetMetadataTests();
 void RunAssetPathTests();
 void RunAssetDatabaseTests();
 void RunTextureImportTests();
+void RunRuntimePackageTests();
 void RunGltfImportTests();
 void RunMaterialTests();
 void RunShaderCookTests();
@@ -30,6 +31,7 @@ int main(int argc, char** argv) {
     RunAssetPathTests();
     RunAssetDatabaseTests();
     RunTextureImportTests();
+    RunRuntimePackageTests();
     RunGltfImportTests();
     RunMaterialTests();
     RunShaderCookTests();
