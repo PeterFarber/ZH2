@@ -10,10 +10,10 @@
             <div class="title">Team Select</div>
             <div class="subtitle">Choose a side and role before readying up.</div>
             <div class="button-stack">
-                <button id="select-home-skater">Home Skater</button>
-                <button id="select-away-skater" class="button-secondary">Away Skater</button>
-                <button id="select-goalie" class="button-secondary">Goalie</button>
-                <button id="team-ready">Ready</button>
+                <button id="select-home-skater"><span>Home Skater</span></button>
+                <button id="select-away-skater" class="button-secondary"><span>Away Skater</span></button>
+                <button id="select-goalie" class="button-secondary"><span>Goalie</span></button>
+                <button id="team-ready"><span>Ready</span></button>
             </div>
         </div>
     </div>

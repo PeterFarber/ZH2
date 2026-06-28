@@ -8,7 +8,8 @@ $tests = @(
     "apps\renderer_tests\HockeyRendererTests.exe",
     "apps\editor_tests\HockeyEditorTests.exe",
     "apps\physics_tests\HockeyPhysicsTests.exe",
-    "apps\gameplay_tests\HockeyGameplayTests.exe"
+    "apps\gameplay_tests\HockeyGameplayTests.exe",
+    "apps\game_client_tests\HockeyGameClientTests.exe"
 )
 
 $buildDir = Join-Path $script:HockeyRoot "build\windows-debug"

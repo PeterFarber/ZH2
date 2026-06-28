@@ -1,4 +1,7 @@
 #pragma once
+#include "GameplayCamera.hpp"
+#include "GameplayPresentation.hpp"
+
 #include "Hockey/Assets/AssetManager.hpp"
 #include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/FixedTimestep.hpp"
@@ -32,11 +35,17 @@ protected:
     void OnEvent(const Hockey::Event& event) override;
 
 private:
+    struct MovementSmoothnessTraceSettings {
+        bool enabled = false;
+        uint32_t playerIndex = 0;
+    };
+
     bool LoadRuntimeUIScreen();
     void BindRuntimeUIActions();
     void QueueRuntimeUIAction(Hockey::UIAction action);
     bool LoadOfflineGameplayScene(const std::string& scenePath);
 
+    void MarkMovementSmoothnessPresentationReset();
     void StepSimulation(float deltaTime);
     Hockey::GameplayInputFrame BuildLocalInput(uint64_t simulationTick);
     void SubmitPhysicsDebugDraw();
@@ -47,6 +56,11 @@ private:
     Hockey::GameplayWorld m_GameplayWorld;
     Hockey::GameplaySettings m_GameplaySettings;
     Hockey::GameplayTuning m_GameplayTuning;
+    HockeyClient::GameplayFollowCameraSettings m_FollowCameraSettings;
+    HockeyClient::GameplayFollowCameraState m_FollowCameraState;
+    HockeyClient::GameplayPresentationSettings m_PresentationSettings;
+    HockeyClient::GameplayPresentationState m_PresentationState;
+    MovementSmoothnessTraceSettings m_MovementSmoothnessTraceSettings;
     Hockey::Renderer m_Renderer;
     Hockey::AssetManager m_AssetManager;
     Hockey::UISettings m_UISettings;
@@ -64,6 +78,9 @@ private:
     bool m_LocalGameplayEnabled = false;
     bool m_PhysicsReady = false;
     bool m_PhysicsDebug = false;
+    uint64_t m_MovementSmoothnessTraceFrameIndex = 0;
+    int m_MovementSmoothnessFixedStepsThisFrame = 0;
+    bool m_MovementSmoothnessPresentationResetThisFrame = false;
     bool m_AutoScreenshotPending = false;
     std::string m_ScreenshotPrefix = "game";
 

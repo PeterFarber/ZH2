@@ -9,9 +9,9 @@
             <div class="eyebrow">Match</div>
             <div class="title">Paused</div>
             <div class="button-stack">
-                <button id="resume-game">Resume</button>
-                <button id="return-to-menu" class="button-secondary">Return to Menu</button>
-                <button id="pause-quit" class="button-danger">Quit</button>
+                <button id="resume-game"><span>Resume</span></button>
+                <button id="return-to-menu" class="button-secondary"><span>Return to Menu</span></button>
+                <button id="pause-quit" class="button-danger"><span>Quit</span></button>
             </div>
         </div>
     </div>

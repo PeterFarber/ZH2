@@ -38,7 +38,13 @@ void RunGameClientUiContractTests() {
                  "GameClientApp has an explicit offline scene load path for client-flow requests");
     HK_CHECK_MSG(!Contains(source, "(void)m_ClientFlow.TakeRequestedGameplayScene();"),
                  "GameClientApp must not discard client-flow gameplay scene requests");
-    HK_CHECK_MSG(Contains(source, "m_UIInput.WantsMouseCapture()") &&
-                     Contains(source, "m_UIInput.WantsKeyboardCapture()"),
-                 "GameClientApp gates gameplay input when RmlUi captures controls");
+    HK_CHECK_MSG(Contains(source, "m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud"),
+                 "GameClientApp gates gameplay input while non-HUD UI screens are active");
+    HK_CHECK_MSG(!Contains(source,
+                           "m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud || "
+                           "m_UIInput.WantsMouseCapture()") &&
+                     !Contains(source,
+                               "m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud || "
+                               "m_UIInput.WantsKeyboardCapture()"),
+                 "GameClientApp keeps HUD gameplay input live even when RmlUi reports capture");
 }

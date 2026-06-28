@@ -1,28 +1,21 @@
 body {
     font-family: "Inter Variable";
     color: #f4f8fb;
-    background-color: rgba(5, 11, 18, 184);
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
 }
 
 .screen {
     width: 100%;
     height: 100%;
-    padding: 48px;
+    background-color:#0f0f0f;
+    display: flex;
+    justify-content: center;
 }
 
-.menu-panel {
-    width: 456px;
-    padding: 28px;
-    background-color: rgba(8, 18, 29, 224);
-    border-width: 1px;
-    border-color: #6fb8d8;
-    border-radius: 8px;
-}
-
-.home-panel {
-    margin-top: 44px;
-}
-
+.menu-panel,
 .loading-panel,
 .lobby-panel,
 .team-panel,
@@ -30,7 +23,12 @@ body {
 .pause-panel,
 .scoreboard-panel,
 .final-panel {
-    margin-top: 64px;
+    width: 920px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .eyebrow {
@@ -42,15 +40,15 @@ body {
 
 .title {
     color: #ffffff;
-    font-size: 44px;
+    font-size: 64px;
     margin-bottom: 12px;
+    font-weight: bold;
 }
 
 .subtitle {
-    width: 360px;
     margin-bottom: 24px;
     color: #b8c7d9;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .button-stack {
@@ -66,10 +64,14 @@ button {
     padding: 12px 18px;
     color: #f8fbff;
     background-color: #166596;
-    border-width: 1px;
+    border-width: 4px;
     border-color: #8edcff;
-    border-radius: 6px;
-    font-size: 16px;
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 button:hover {

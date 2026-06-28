@@ -126,6 +126,205 @@ Hockey::Entity FindLocalGameplayPlayer(Hockey::Scene& scene, uint32_t playerInde
     return {};
 }
 
+struct MovementTraceEntityState {
+    bool valid = false;
+    Hockey::UUID entityId;
+    glm::vec3 localPosition{0.0f};
+    bool hasPhysicsBodyPosition = false;
+    glm::vec3 physicsBodyPosition{0.0f};
+    bool hasRigidBody = false;
+    const char* rigidBodyType = "None";
+    bool useGravity = false;
+    bool allowSleeping = false;
+    bool lockTranslationY = false;
+    bool lockRotationX = false;
+    bool lockRotationZ = false;
+};
+
+const char* RigidBodyTypeLabel(Hockey::RigidBodyType type) {
+    switch (type) {
+    case Hockey::RigidBodyType::Static: return "Static";
+    case Hockey::RigidBodyType::Kinematic: return "Kinematic";
+    case Hockey::RigidBodyType::Dynamic: return "Dynamic";
+    }
+    return "Unknown";
+}
+
+MovementTraceEntityState CaptureMovementTraceEntityState(Hockey::Scene& scene,
+                                                         Hockey::PhysicsWorld* physicsWorld,
+                                                         uint32_t playerIndex) {
+    MovementTraceEntityState state;
+    const Hockey::Entity player = FindLocalGameplayPlayer(scene, playerIndex);
+    if (!player || !player.HasComponent<Hockey::TransformComponent>()) {
+        return state;
+    }
+
+    state.valid = true;
+    state.entityId = player.GetUUID();
+    state.localPosition = player.GetComponent<Hockey::TransformComponent>().localPosition;
+    if (physicsWorld != nullptr) {
+        state.hasPhysicsBodyPosition = physicsWorld->GetBodyPosition(player, state.physicsBodyPosition);
+    }
+    if (player.HasComponent<Hockey::RigidBodyComponent>()) {
+        const Hockey::RigidBodyComponent& body = player.GetComponent<Hockey::RigidBodyComponent>();
+        state.hasRigidBody = true;
+        state.rigidBodyType = RigidBodyTypeLabel(body.type);
+        state.useGravity = body.useGravity;
+        state.allowSleeping = body.allowSleeping;
+        state.lockTranslationY = body.lockTranslationY;
+        state.lockRotationX = body.lockRotationX;
+        state.lockRotationZ = body.lockRotationZ;
+    }
+    return state;
+}
+
+bool FindActiveCameraPosition(Hockey::Scene& scene, glm::vec3& outPosition) {
+    auto cameras = scene.Registry().view<Hockey::CameraComponent, Hockey::TransformComponent>();
+    Hockey::Entity fallback;
+    for (const entt::entity handle : cameras) {
+        Hockey::Entity camera(handle, &scene);
+        if (!fallback) {
+            fallback = camera;
+        }
+        if (camera.GetComponent<Hockey::CameraComponent>().primary) {
+            outPosition = glm::vec3(scene.GetWorldTransform(camera)[3]);
+            return true;
+        }
+    }
+    if (fallback) {
+        outPosition = glm::vec3(scene.GetWorldTransform(fallback)[3]);
+        return true;
+    }
+    return false;
+}
+
+bool GetPresentationSampleTrace(const HockeyClient::GameplayPresentationState& state,
+                                Hockey::UUID entityId,
+                                HockeyClient::GameplayPresentationState::Sample& outSample,
+                                float& outDelta) {
+    if (!state.GetSample(entityId, outSample) || !outSample.initialized) {
+        outDelta = 0.0f;
+        return false;
+    }
+    outDelta = glm::length(outSample.currentPosition - outSample.previousPosition);
+    return true;
+}
+
+void LogMovementSmoothnessTick(uint64_t tick,
+                               uint32_t playerIndex,
+                               bool presentationSampleReset,
+                               const MovementTraceEntityState& beforeGameplay,
+                               const MovementTraceEntityState& afterGameplay,
+                               const MovementTraceEntityState& afterPhysicsStep,
+                               const MovementTraceEntityState& afterPhysicsSync,
+                               float presentationSampleDelta) {
+    if (!beforeGameplay.valid) {
+        HK_CLIENT_INFO("movement_smoothness_tick tick={} playerIndex={} playerFound=false "
+                       "presentationSampleReset={}",
+                       tick,
+                       playerIndex,
+                       presentationSampleReset);
+        return;
+    }
+
+    HK_CLIENT_INFO("movement_smoothness_tick tick={} playerIndex={} player={} "
+                   "positionBeforeGameplay=({},{},{}) positionAfterGameplay=({},{},{}) "
+                   "physicsBodyBeforeStepValid={} physicsBodyBeforeStep=({},{},{}) "
+                   "positionAfterPhysicsStep=({},{},{}) physicsBodyAfterStepValid={} physicsBodyAfterStep=({},{},{}) "
+                   "positionAfterPhysicsSync=({},{},{}) physicsBodyPositionValid={} physicsBodyPosition=({},{},{}) "
+                   "playerRigidBodyType={} playerUseGravity={} playerAllowSleeping={} playerLockTranslationY={} "
+                   "playerLockRotationX={} playerLockRotationZ={} presentationSampleReset={} presentationSampleDelta={}",
+                   tick,
+                   playerIndex,
+                   beforeGameplay.entityId.Value(),
+                   beforeGameplay.localPosition.x,
+                   beforeGameplay.localPosition.y,
+                   beforeGameplay.localPosition.z,
+                   afterGameplay.localPosition.x,
+                   afterGameplay.localPosition.y,
+                   afterGameplay.localPosition.z,
+                   afterGameplay.hasPhysicsBodyPosition,
+                   afterGameplay.physicsBodyPosition.x,
+                   afterGameplay.physicsBodyPosition.y,
+                   afterGameplay.physicsBodyPosition.z,
+                   afterPhysicsStep.localPosition.x,
+                   afterPhysicsStep.localPosition.y,
+                   afterPhysicsStep.localPosition.z,
+                   afterPhysicsStep.hasPhysicsBodyPosition,
+                   afterPhysicsStep.physicsBodyPosition.x,
+                   afterPhysicsStep.physicsBodyPosition.y,
+                   afterPhysicsStep.physicsBodyPosition.z,
+                   afterPhysicsSync.localPosition.x,
+                   afterPhysicsSync.localPosition.y,
+                   afterPhysicsSync.localPosition.z,
+                   afterPhysicsSync.hasPhysicsBodyPosition,
+                   afterPhysicsSync.physicsBodyPosition.x,
+                   afterPhysicsSync.physicsBodyPosition.y,
+                   afterPhysicsSync.physicsBodyPosition.z,
+                   afterPhysicsSync.rigidBodyType,
+                   afterPhysicsSync.useGravity,
+                   afterPhysicsSync.allowSleeping,
+                   afterPhysicsSync.lockTranslationY,
+                   afterPhysicsSync.lockRotationX,
+                   afterPhysicsSync.lockRotationZ,
+                   presentationSampleReset,
+                   presentationSampleDelta);
+}
+
+void LogMovementSmoothnessFrame(uint64_t frameIndex,
+                                float renderDeltaSeconds,
+                                int fixedStepsThisFrame,
+                                uint64_t tick,
+                                float interpolationAlpha,
+                                uint32_t playerIndex,
+                                bool presentationSampleReset,
+                                const MovementTraceEntityState& presentedState,
+                                const HockeyClient::GameplayPresentationState::Sample& presentationSample,
+                                bool hasPresentationSample,
+                                float presentationSampleDelta,
+                                const glm::vec3& cameraPosition,
+                                bool hasCameraPosition) {
+    if (!presentedState.valid) {
+        HK_CLIENT_INFO("movement_smoothness_frame frameIndex={} renderDeltaSeconds={} fixedStepsThisFrame={} "
+                       "tick={} interpolationAlpha={} playerIndex={} playerFound=false presentationSampleReset={}",
+                       frameIndex,
+                       renderDeltaSeconds,
+                       fixedStepsThisFrame,
+                       tick,
+                       interpolationAlpha,
+                       playerIndex,
+                       presentationSampleReset);
+        return;
+    }
+
+    const glm::vec3 rawPlayerPosition =
+        hasPresentationSample ? presentationSample.currentPosition : presentedState.localPosition;
+    HK_CLIENT_INFO("movement_smoothness_frame frameIndex={} renderDeltaSeconds={} fixedStepsThisFrame={} "
+                   "tick={} interpolationAlpha={} playerIndex={} player={} rawPlayerPosition=({},{},{}) "
+                   "presentedPlayerPosition=({},{},{}) cameraPositionValid={} cameraPosition=({},{},{}) "
+                   "presentationSampleValid={} presentationSampleReset={} presentationSampleDelta={}",
+                   frameIndex,
+                   renderDeltaSeconds,
+                   fixedStepsThisFrame,
+                   tick,
+                   interpolationAlpha,
+                   playerIndex,
+                   presentedState.entityId.Value(),
+                   rawPlayerPosition.x,
+                   rawPlayerPosition.y,
+                   rawPlayerPosition.z,
+                   presentedState.localPosition.x,
+                   presentedState.localPosition.y,
+                   presentedState.localPosition.z,
+                   hasCameraPosition,
+                   cameraPosition.x,
+                   cameraPosition.y,
+                   cameraPosition.z,
+                   hasPresentationSample,
+                   presentationSampleReset,
+                   presentationSampleDelta);
+}
+
 bool PlayerHasPuck(Hockey::Scene& scene, Hockey::Entity player) {
     if (!player.IsValid()) {
         return false;
@@ -223,6 +422,31 @@ bool GameClientApp::OnInit() {
     m_Config.Load(configPath);
     m_UISettings = Hockey::LoadUISettings(m_Config);
     m_UIEnabled = m_UISettings.enabled && !cmd.Has("--no-ui");
+    m_PresentationSettings.enabled = m_Config.GetBool("presentation.interpolate_gameplay", true);
+    m_PresentationSettings.interpolatePlayers = m_Config.GetBool("presentation.interpolate_players", true);
+    m_PresentationSettings.interpolatePuck = m_Config.GetBool("presentation.interpolate_puck", true);
+    m_MovementSmoothnessTraceSettings.enabled =
+        m_Config.GetBool("diagnostics.movement_smoothness_trace", false) || cmd.Has("--movement-smoothness-trace");
+    m_MovementSmoothnessTraceSettings.playerIndex =
+        static_cast<uint32_t>(std::max(0, cmd.GetInt("--movement-smoothness-trace-player",
+                                                     m_Config.GetInt("diagnostics.movement_smoothness_trace_player_index",
+                                                                     0))));
+    m_FollowCameraSettings.enabled = m_Config.GetBool("camera.follow_local_player", true);
+    m_FollowCameraSettings.playerIndex =
+        static_cast<uint32_t>(std::max(0, m_Config.GetInt("camera.follow_player_index", 0)));
+    m_FollowCameraSettings.offset.x = static_cast<float>(m_Config.GetDouble("camera.follow_offset_x", 0.0));
+    m_FollowCameraSettings.offset.y = static_cast<float>(m_Config.GetDouble("camera.follow_offset_y", 7.5));
+    m_FollowCameraSettings.offset.z = static_cast<float>(m_Config.GetDouble("camera.follow_offset_z", 10.0));
+    m_FollowCameraSettings.lookAtOffset.x =
+        static_cast<float>(m_Config.GetDouble("camera.follow_look_at_offset_x", 0.0));
+    m_FollowCameraSettings.lookAtOffset.y =
+        static_cast<float>(m_Config.GetDouble("camera.follow_look_at_offset_y", 1.2));
+    m_FollowCameraSettings.lookAtOffset.z =
+        static_cast<float>(m_Config.GetDouble("camera.follow_look_at_offset_z", 0.0));
+    m_FollowCameraSettings.positionResponse =
+        static_cast<float>(m_Config.GetDouble("camera.follow_position_response", 9.0));
+    m_FollowCameraSettings.lookAtResponse =
+        static_cast<float>(m_Config.GetDouble("camera.follow_look_at_response", 12.0));
     // Honor the input.gamepad_enabled config key (closes pads opened at init).
     Hockey::Input::SetGamepadEnabled(m_Config.GetBool("input.gamepad_enabled", true));
     if (!CreateAppWindowFromConfig(m_Config)) {
@@ -304,6 +528,9 @@ bool GameClientApp::OnInit() {
         const Hockey::Status status =
             m_GameplayWorld.Init(m_Scene, physicsWorld, m_GameplaySettings, m_GameplayTuning);
         if (status) {
+            m_PresentationState.Reset();
+            MarkMovementSmoothnessPresentationReset();
+            m_PresentationState.CaptureFixedStep(m_Scene);
             HK_CLIENT_INFO("Local gameplay enabled");
         } else {
             m_LocalGameplayEnabled = false;
@@ -472,6 +699,10 @@ bool GameClientApp::LoadOfflineGameplayScene(const std::string& scenePath) {
 
     m_SimulationTimestep.Reset();
     m_LocalInputSequence = 0;
+    m_PresentationState.Reset();
+    MarkMovementSmoothnessPresentationReset();
+    m_PresentationState.CaptureFixedStep(m_Scene);
+    m_FollowCameraState = {};
     HK_CLIENT_INFO("Client flow loaded offline scene '{}'", resolved.string());
     return true;
 }
@@ -510,9 +741,7 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
     input.simulationTick = simulationTick;
-    if (m_UIEnabled &&
-        (m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud || m_UIInput.WantsMouseCapture() ||
-         m_UIInput.WantsKeyboardCapture())) {
+    if (m_UIEnabled && m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud) {
         return input;
     }
     const Hockey::Entity localPlayer = FindLocalGameplayPlayer(m_Scene, input.playerIndex);
@@ -576,18 +805,35 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     return input;
 }
 
+void GameClientApp::MarkMovementSmoothnessPresentationReset() {
+    if (m_MovementSmoothnessTraceSettings.enabled) {
+        m_MovementSmoothnessPresentationResetThisFrame = true;
+    }
+}
+
 void GameClientApp::StepSimulation(float deltaTime) {
+    m_MovementSmoothnessFixedStepsThisFrame = 0;
     if (!m_PhysicsReady && !m_LocalGameplayEnabled) {
         return;
     }
     const int steps = m_SimulationTimestep.Accumulate(static_cast<double>(deltaTime));
+    m_MovementSmoothnessFixedStepsThisFrame = steps;
     const float fixedDelta = static_cast<float>(m_SimulationTimestep.GetFixedDeltaSeconds());
     for (int i = 0; i < steps; ++i) {
         const uint64_t tick = m_SimulationTimestep.GetTick() + 1;
+        MovementTraceEntityState beforeGameplay;
+        if (m_MovementSmoothnessTraceSettings.enabled) {
+            beforeGameplay = CaptureMovementTraceEntityState(
+                m_Scene, m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr,
+                m_MovementSmoothnessTraceSettings.playerIndex);
+        }
 
         if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
             if (Hockey::Input::WasKeyPressed(Hockey::KeyCode::R)) {
                 m_GameplayWorld.ResetMatch(m_Scene);
+                m_PresentationState.Reset();
+                MarkMovementSmoothnessPresentationReset();
+                m_PresentationState.CaptureFixedStep(m_Scene);
             }
             m_GameplayWorld.PushInput(BuildLocalInput(tick));
             m_GameplayWorld.FixedUpdate(m_Scene, fixedDelta, tick);
@@ -598,12 +844,44 @@ void GameClientApp::StepSimulation(float deltaTime) {
                 }
             }
         }
+        MovementTraceEntityState afterGameplay;
+        if (m_MovementSmoothnessTraceSettings.enabled) {
+            afterGameplay = CaptureMovementTraceEntityState(
+                m_Scene, m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr,
+                m_MovementSmoothnessTraceSettings.playerIndex);
+        }
 
         if (m_PhysicsReady) {
             m_Scene.OnFixedUpdate(fixedDelta);
         }
+        MovementTraceEntityState afterPhysicsStep;
+        if (m_MovementSmoothnessTraceSettings.enabled) {
+            afterPhysicsStep = CaptureMovementTraceEntityState(
+                m_Scene, m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr,
+                m_MovementSmoothnessTraceSettings.playerIndex);
+        }
         if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
             m_GameplayWorld.SyncPhysicsState(m_Scene);
+            m_PresentationState.CaptureFixedStep(m_Scene);
+        }
+        if (m_MovementSmoothnessTraceSettings.enabled) {
+            const MovementTraceEntityState afterPhysicsSync = CaptureMovementTraceEntityState(
+                m_Scene, m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr,
+                m_MovementSmoothnessTraceSettings.playerIndex);
+            HockeyClient::GameplayPresentationState::Sample presentationSample;
+            float presentationSampleDelta = 0.0f;
+            if (afterPhysicsSync.valid) {
+                GetPresentationSampleTrace(
+                    m_PresentationState, afterPhysicsSync.entityId, presentationSample, presentationSampleDelta);
+            }
+            LogMovementSmoothnessTick(tick,
+                                      m_MovementSmoothnessTraceSettings.playerIndex,
+                                      m_MovementSmoothnessPresentationResetThisFrame,
+                                      beforeGameplay,
+                                      afterGameplay,
+                                      afterPhysicsStep,
+                                      afterPhysicsSync,
+                                      presentationSampleDelta);
         }
         m_SimulationTimestep.AdvanceTick();
     }
@@ -676,7 +954,6 @@ void GameClientApp::OnUpdate(float deltaTime) {
     if (!m_RendererReady) {
         return;
     }
-
     const uint32_t width = GetWindow().Width();
     const uint32_t height = GetWindow().Height();
     if (width != m_LastWidth || height != m_LastHeight) {
@@ -705,36 +982,78 @@ void GameClientApp::OnUpdate(float deltaTime) {
         queueScreenshot("game");
     }
 
-    m_Renderer.BeginFrame();
-    // Debug lines must be submitted BEFORE RenderScene: the scene pass records
-    // the overlay from the accumulated line buffer, and EndFrame clears it.
-    SubmitPhysicsDebugDraw();
-    SubmitGameplayDebugDraw();
-    const float aspect = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
-    Hockey::CameraRenderData camera;
-    if (Hockey::FindActiveCamera(m_Scene, aspect, camera)) {
-        m_Renderer.RenderScene(m_Scene, camera);
-    }
-    if (m_UIEnabled && m_UIContext.IsInitialized()) {
-        if (m_UIReloadRequested) {
-            if (!LoadRuntimeUIScreen()) {
-                HK_CLIENT_INFO("Runtime UI screen reload failed for '{}'",
-                               m_ClientFlow.Flow().ScreenDocument(m_ClientFlow.ActiveScreen()));
-                m_UIContext.Shutdown();
-                m_UIEnabled = false;
+    {
+        HockeyClient::ScopedGameplayPresentationTransforms presentationScope(
+            m_Scene,
+            m_PresentationState,
+            static_cast<float>(m_SimulationTimestep.GetInterpolationAlpha()),
+            m_PresentationSettings);
+
+        if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
+            HockeyClient::UpdateGameplayFollowCamera(m_Scene, deltaTime, m_FollowCameraSettings, m_FollowCameraState);
+        }
+
+        if (m_MovementSmoothnessTraceSettings.enabled) {
+            const MovementTraceEntityState presentedState = CaptureMovementTraceEntityState(
+                m_Scene, m_PhysicsSystem != nullptr ? &m_PhysicsSystem->World() : nullptr,
+                m_MovementSmoothnessTraceSettings.playerIndex);
+            HockeyClient::GameplayPresentationState::Sample presentationSample;
+            float presentationSampleDelta = 0.0f;
+            const bool hasPresentationSample =
+                presentedState.valid && GetPresentationSampleTrace(m_PresentationState,
+                                                                    presentedState.entityId,
+                                                                    presentationSample,
+                                                                    presentationSampleDelta);
+            glm::vec3 cameraPosition{0.0f};
+            const bool hasCameraPosition = FindActiveCameraPosition(m_Scene, cameraPosition);
+            LogMovementSmoothnessFrame(m_MovementSmoothnessTraceFrameIndex,
+                                       deltaTime,
+                                       m_MovementSmoothnessFixedStepsThisFrame,
+                                       m_SimulationTimestep.GetTick(),
+                                       static_cast<float>(m_SimulationTimestep.GetInterpolationAlpha()),
+                                       m_MovementSmoothnessTraceSettings.playerIndex,
+                                       m_MovementSmoothnessPresentationResetThisFrame,
+                                       presentedState,
+                                       presentationSample,
+                                       hasPresentationSample,
+                                       presentationSampleDelta,
+                                       cameraPosition,
+                                       hasCameraPosition);
+            ++m_MovementSmoothnessTraceFrameIndex;
+            m_MovementSmoothnessPresentationResetThisFrame = false;
+        }
+
+        m_Renderer.BeginFrame();
+        // Debug lines must be submitted BEFORE RenderScene: the scene pass records
+        // the overlay from the accumulated line buffer, and EndFrame clears it.
+        SubmitPhysicsDebugDraw();
+        SubmitGameplayDebugDraw();
+        const float aspect = height > 0 ? static_cast<float>(width) / static_cast<float>(height) : 1.0f;
+        Hockey::CameraRenderData camera;
+        if (Hockey::FindActiveCamera(m_Scene, aspect, camera)) {
+            m_Renderer.RenderScene(m_Scene, camera);
+        }
+        if (m_UIEnabled && m_UIContext.IsInitialized()) {
+            if (m_UIReloadRequested) {
+                if (!LoadRuntimeUIScreen()) {
+                    HK_CLIENT_INFO("Runtime UI screen reload failed for '{}'",
+                                   m_ClientFlow.Flow().ScreenDocument(m_ClientFlow.ActiveScreen()));
+                    m_UIContext.Shutdown();
+                    m_UIEnabled = false;
+                }
+                m_UIReloadRequested = false;
             }
-            m_UIReloadRequested = false;
+            if (m_ClientFlow.ActiveScreen() == Hockey::UIScreenId::MatchHud && m_LocalGameplayEnabled &&
+                m_GameplayWorld.IsInitialized()) {
+                const Hockey::GameplaySnapshot snapshot = Hockey::BuildGameplaySnapshot(
+                    m_Scene, m_SimulationTimestep.GetTick(), m_GameplayWorld.GetTuning());
+                ApplyHudViewModel(m_UIContext, BuildRuntimeHudViewModel(snapshot, 0));
+            }
+            m_UIContext.Update();
+            m_UIContext.Render();
         }
-        if (m_ClientFlow.ActiveScreen() == Hockey::UIScreenId::MatchHud && m_LocalGameplayEnabled &&
-            m_GameplayWorld.IsInitialized()) {
-            const Hockey::GameplaySnapshot snapshot = Hockey::BuildGameplaySnapshot(
-                m_Scene, m_SimulationTimestep.GetTick(), m_GameplayWorld.GetTuning());
-            ApplyHudViewModel(m_UIContext, BuildRuntimeHudViewModel(snapshot, 0));
-        }
-        m_UIContext.Update();
-        m_UIContext.Render();
+        m_Renderer.EndFrame();
     }
-    m_Renderer.EndFrame();
 }
 
 void GameClientApp::OnEvent(const Hockey::Event& event) {

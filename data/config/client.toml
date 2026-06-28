@@ -14,6 +14,27 @@ start_centered = true
 gamepad_enabled = true
 mouse_capture = false
 
+[camera]
+follow_local_player = true
+follow_player_index = 0
+follow_offset_x = 0.0
+follow_offset_y = 7.5
+follow_offset_z = 10.0
+follow_look_at_offset_x = 0.0
+follow_look_at_offset_y = 1.2
+follow_look_at_offset_z = 0.0
+follow_position_response = 9.0
+follow_look_at_response = 12.0
+
+[presentation]
+interpolate_gameplay = true
+interpolate_players = true
+interpolate_puck = true
+
+[diagnostics]
+movement_smoothness_trace = false
+movement_smoothness_trace_player_index = 0
+
 [ui]
 enabled = true
 ui_scale = 1.0
@@ -69,7 +90,7 @@ brightness = 1.0
 anisotropy = 16
 
 [scene]
-startup_scene = "data/raw/scenes/render_shadows.scene.yaml"
+startup_scene = "data/raw/scenes/Main.scene.yaml"
 
 [physics]
 fixed_delta_seconds = 0.0166666667

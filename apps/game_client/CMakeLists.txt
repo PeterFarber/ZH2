@@ -2,6 +2,10 @@ add_executable(HockeyGameClient
     src/GameClientMain.cpp
     src/GameClientApp.cpp
     src/GameClientApp.hpp
+    src/GameplayCamera.cpp
+    src/GameplayCamera.hpp
+    src/GameplayPresentation.cpp
+    src/GameplayPresentation.hpp
 )
 
 target_link_libraries(HockeyGameClient PRIVATE hockey_core hockey_ecs hockey_renderer hockey_assets hockey_physics hockey_gameplay hockey_ui)

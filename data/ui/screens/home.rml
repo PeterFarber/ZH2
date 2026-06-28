@@ -6,14 +6,13 @@
 <body>
     <div id="home-screen" class="screen">
         <div class="menu-panel home-panel">
-            <div class="eyebrow">Runtime Preview</div>
             <div class="title">ZH2</div>
             <div class="subtitle">Fast four-on-four hockey with a dedicated simulation core.</div>
             <div class="button-stack">
-                <button id="play-offline">Play Offline</button>
-                <button id="open-lobby" class="button-secondary" disabled="disabled">Lobby</button>
-                <button id="open-settings" class="button-secondary">Settings</button>
-                <button id="quit-game" class="button-danger">Quit</button>
+                <button id="play-offline"><span>Play Offline</span></button>
+                <button id="open-lobby" class="button-secondary" disabled="disabled"><span>Lobby</span></button>
+                <button id="open-settings" class="button-secondary"><span>Settings</span></button>
+                <button id="quit-game" class="button-danger"><span>Quit</span></button>
             </div>
             <div id="network-status" class="status status-warning">Networking unavailable</div>
         </div>

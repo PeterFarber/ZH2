@@ -50,6 +50,7 @@ if(HOCKEY_BUILD_TESTS)
     add_subdirectory(apps/asset_tests)
     add_subdirectory(apps/physics_tests)
     add_subdirectory(apps/gameplay_tests)
+    add_subdirectory(apps/game_client_tests)
 endif()
 
 # Phase 3/4 architectural guard: the dedicated server must remain headless and

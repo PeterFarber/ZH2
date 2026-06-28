@@ -13,6 +13,7 @@ tests=(
     "apps/editor_tests/HockeyEditorTests"
     "apps/physics_tests/HockeyPhysicsTests"
     "apps/gameplay_tests/HockeyGameplayTests"
+    "apps/game_client_tests/HockeyGameClientTests"
 )
 
 for relative_path in "${tests[@]}"; do

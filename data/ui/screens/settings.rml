@@ -14,7 +14,7 @@
                 <div class="status">Adjusts runtime RmlUi scale.</div>
             </div>
             <div class="button-stack">
-                <button id="settings-back" class="button-secondary">Back</button>
+                <button id="settings-back" class="button-secondary"><span>Back</span></button>
             </div>
         </div>
     </div>

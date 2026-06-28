@@ -11,7 +11,7 @@
             <div id="scoreboard-home" class="scoreboard-row home-team">Home 0</div>
             <div id="scoreboard-away" class="scoreboard-row away-team">Away 0</div>
             <div class="button-stack">
-                <button id="scoreboard-close" class="button-secondary">Close</button>
+                <button id="scoreboard-close" class="button-secondary"><span>Close</span></button>
             </div>
         </div>
     </div>
