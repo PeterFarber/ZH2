@@ -2,12 +2,12 @@ Material:
   Name: Ice_GameExport_Baked_PBR
   Type: PBR
   BaseColor: [1, 1, 1, 1]
-  Metallic: 0.709
+  Metallic: 0
   Roughness: 1
   NormalStrength: 0.08
   OcclusionStrength: 1
   EmissiveColor: [0, 0, 0]
-  EmissiveStrength: 11.443
+  EmissiveStrength: 1
   AlphaMode: Opaque
   AlphaCutoff: 0.5
   Tiling: [1, 1]

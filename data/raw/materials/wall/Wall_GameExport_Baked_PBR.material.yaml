@@ -2,9 +2,9 @@ Material:
   Name: Wall_GameExport_Baked_PBR
   Type: PBR
   BaseColor: [1, 1, 1, 1]
-  Metallic: 0.785
-  Roughness: 0.503
-  NormalStrength: 1.025
+  Metallic: 0
+  Roughness: 1
+  NormalStrength: 0.12
   OcclusionStrength: 1
   EmissiveColor: [0, 0, 0]
   EmissiveStrength: 1

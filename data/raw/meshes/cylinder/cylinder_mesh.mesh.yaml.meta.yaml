@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/meshes/cylinder/cylinder_mesh.mesh.yaml
   CookedPath: data/cooked/assets/meshes/11795346347216253737.mesh.bin
-  RawFileTimestamp: 134269681230433831
+  RawFileTimestamp: 134270677388405988
   RawFileHash: 7442531126423507222
-  ImportedTimestamp: 1782494523
-  CookedTimestamp: 1782494534
+  ImportedTimestamp: 1782594139
+  CookedTimestamp: 1782594560
   Dependencies: []
-  Dependents: [2018126858195272879, 3465686706665373809, 13754134128618196032, 15706789347486569996, 17635721111350468473]
-  Dirty: true
+  Dependents: [3465686706665373809, 15706789347486569996]
+  Dirty: false
   Missing: false
   Cooked: true

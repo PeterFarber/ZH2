@@ -1,0 +1,17 @@
+Asset:
+  ID: 3851845498635662592
+  Type: Texture
+  Name: Glass_Frosted_001_ambientOcclusion
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/Glass_Frosted_001_SD/Glass_Frosted_001_ambientOcclusion.jpg
+  CookedPath: data/cooked/assets/textures/3851845498635662592.tex.bin
+  RawFileTimestamp: 134269634829855248
+  RawFileHash: 11856061909013769616
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594152
+  Dependencies: []
+  Dependents: [10521881175517512760]
+  Dirty: false
+  Missing: false
+  Cooked: true

@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 15049427735966158672
 Root:
-  Entity: 2611392523411541573
+  Entity: 16978032343671243344
 Entities:
-  - Entity: 2611392523411541573
+  - Entity: 16978032343671243344
     NameComponent:
       Name: Away_Goalie_Prefab
     ObjectSettingsComponent:
@@ -16,22 +16,22 @@ Entities:
       Active: true
     TransformComponent:
       Position: [3.688598, 0, 0]
-      Rotation: [0, -180, 0]
-      Scale: [2.75, 2.75, 2.75]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 2611392523411541574
+        - 8468059423843913643
     PrefabComponent:
-      PrefabAssetId: 693226995277772323
-      SourceEntityId: 14645880357972467945
+      PrefabAssetId: 15049427735966158672
+      SourceEntityId: 5069139552260657421
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
     TeamComponent:
       Team: Away
     PlayerRoleComponent:
       Role: Goalie
     MeshRendererComponent:
-      MeshAsset: 15362004082546635741
-      MaterialAsset: 926561549203295801
+      MeshAsset: 15742120718558245390
+      MaterialAsset: 13188400377850077421
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -90,7 +90,7 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 2611392523411541574
+  - Entity: 8468059423843913643
     NameComponent:
       Name: Stick
     ObjectSettingsComponent:
@@ -100,17 +100,21 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.75, 0.95]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Position: [0, 0, 0.1]
+      Rotation: [0, -0, 0]
+      Scale: [0.6700001, 0.6700001, 0.6700001]
     ParentComponent:
-      Parent: 2611392523411541573
+      Parent: 16978032343671243344
     ChildrenComponent:
       Children:
         []
+    PrefabComponent:
+      PrefabAssetId: 15049427735966158672
+      SourceEntityId: 12885448719522830458
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
     MeshRendererComponent:
-      MeshAsset: 7898892890495259085
-      MaterialAsset: 3963697089678307338
+      MeshAsset: 2566647934480036238
+      MaterialAsset: 11219802514363683653
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -118,6 +122,6 @@ Entities:
       OwnerPlayer: 0
       Reach: 1.5
       Width: 0.25
-      LocalOffset: [0, 0, 1]
+      LocalOffset: [0, 0, 1.3]
       CanControlPuck: true
       CanShoot: true

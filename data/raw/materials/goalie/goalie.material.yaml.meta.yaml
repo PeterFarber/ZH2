@@ -1,0 +1,17 @@
+Asset:
+  ID: 13188400377850077421
+  Type: Material
+  Name: goalie
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/goalie/goalie.material.yaml
+  CookedPath: data/cooked/assets/materials/13188400377850077421.material.yaml
+  RawFileTimestamp: 134270682682623803
+  RawFileHash: 2908714211049530351
+  ImportedTimestamp: 1782594668
+  CookedTimestamp: 1782594668
+  Dependencies: [203869266260794646, 598577032280755530]
+  Dependents: [14589946910832969302, 15742120718558245390, 13754134128618196032, 17635721111350468473]
+  Dirty: false
+  Missing: false
+  Cooked: true

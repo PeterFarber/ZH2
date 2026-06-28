@@ -1,37 +1,37 @@
 [app]
 sleep_when_idle = true
 
-[server]
-name = "Local Hockey Server"
-tick_rate = 60
-max_players = 8
-port = 27020
-
-[scene]
-startup_scene = "data/raw/scenes/main_rink.scene.yaml"
-validate_on_load = true
+[gameplay]
+authoritative = true
+countdown_beep_start_seconds = 4.0
+enabled = true
+faceoff_delay_seconds = 1.0
+goal_detection_radius = 1.0
+goalies_per_team = 1
+log_gameplay_events = true
+period_count = 3
+period_length_seconds = 180.0
+pregame_countdown_seconds = 10.0
+require_puck_for_goal = true
+skaters_per_team = 3
+target_player_count = 8
+waypoint_prefab_path = "data/raw/prefabs/Waypoint_Marker.prefab.yaml"
 
 [physics]
+deterministic_mode = true
+enable_debug_draw = false
+enable_sleeping = true
 fixed_delta_seconds = 0.0166666667
 gravity_x = 0.0
 gravity_y = -9.81
 gravity_z = 0.0
-enable_debug_draw = false
-enable_sleeping = true
-deterministic_mode = true
 
-[gameplay]
-enabled = true
-authoritative = true
-target_player_count = 8
-skaters_per_team = 3
-goalies_per_team = 1
-period_length_seconds = 180.0
-period_count = 3
-pregame_countdown_seconds = 10.0
-countdown_beep_start_seconds = 4.0
-faceoff_delay_seconds = 1.0
-goal_detection_radius = 1.0
-require_puck_for_goal = true
-log_gameplay_events = true
-waypoint_prefab_path = "data/raw/prefabs/Waypoint_Marker.prefab.yaml"
+[scene]
+startup_scene = 'data/raw/scenes/Main.scene.yaml'
+validate_on_load = true
+
+[server]
+max_players = 8
+name = 'Local Hockey Server'
+port = 27020
+tick_rate = 120.0

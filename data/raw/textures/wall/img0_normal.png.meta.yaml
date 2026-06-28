@@ -2,16 +2,16 @@ Asset:
   ID: 15702033425252339247
   Type: Texture
   Name: img0_normal
-  ImporterVersion: 1.0.0
-  CookerVersion: ""
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
   RawPath: data/raw/textures/wall/img0_normal.png
-  CookedPath: ""
-  RawFileTimestamp: 0
-  RawFileHash: 0
-  ImportedTimestamp: 1782330354
-  CookedTimestamp: 0
+  CookedPath: data/cooked/assets/textures/15702033425252339247.tex.bin
+  RawFileTimestamp: 134268067823094065
+  RawFileHash: 5417714054491958733
+  ImportedTimestamp: 1782594144
+  CookedTimestamp: 1782594562
   Dependencies: []
-  Dependents: []
-  Dirty: true
+  Dependents: [616265134277951580]
+  Dirty: false
   Missing: false
-  Cooked: false
+  Cooked: true

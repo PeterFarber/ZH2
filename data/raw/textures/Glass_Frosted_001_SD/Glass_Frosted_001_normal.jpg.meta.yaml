@@ -1,0 +1,17 @@
+Asset:
+  ID: 8459536251869193738
+  Type: Texture
+  Name: Glass_Frosted_001_normal
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/Glass_Frosted_001_SD/Glass_Frosted_001_normal.jpg
+  CookedPath: data/cooked/assets/textures/8459536251869193738.tex.bin
+  RawFileTimestamp: 134269634829773924
+  RawFileHash: 14605580124808795731
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594146
+  Dependencies: []
+  Dependents: [10521881175517512760]
+  Dirty: false
+  Missing: false
+  Cooked: true

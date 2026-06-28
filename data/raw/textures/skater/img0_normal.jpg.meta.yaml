@@ -1,0 +1,17 @@
+Asset:
+  ID: 12719071700555448510
+  Type: Texture
+  Name: img0_normal
+  ImporterVersion: 1.0.0
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/skater/img0_normal.jpg
+  CookedPath: data/cooked/assets/textures/12719071700555448510.tex.bin
+  RawFileTimestamp: 134269676244331258
+  RawFileHash: 17161644305613129297
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594553
+  Dependencies: []
+  Dependents: [10279919324660303988, 12456872314640691628]
+  Dirty: false
+  Missing: false
+  Cooked: true

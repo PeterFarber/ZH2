@@ -1,0 +1,17 @@
+Asset:
+  ID: 9362800432065433071
+  Type: Texture
+  Name: img2_metallicroughness
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/stick/img2_metallicroughness.png
+  CookedPath: data/cooked/assets/textures/9362800432065433071.tex.bin
+  RawFileTimestamp: 134270647755807055
+  RawFileHash: 8887464359198097464
+  ImportedTimestamp: 1782594143
+  CookedTimestamp: 1782594554
+  Dependencies: []
+  Dependents: [11219802514363683653]
+  Dirty: false
+  Missing: false
+  Cooked: true

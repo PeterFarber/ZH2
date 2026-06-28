@@ -1,0 +1,17 @@
+Asset:
+  ID: 15742120718558245390
+  Type: Mesh
+  Name: goalie
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/meshes/goalie/goalie.mesh.yaml
+  CookedPath: data/cooked/assets/meshes/15742120718558245390.mesh.bin
+  RawFileTimestamp: 134270681463585345
+  RawFileHash: 11040415904487414771
+  ImportedTimestamp: 1782594546
+  CookedTimestamp: 1782594668
+  Dependencies: [13188400377850077421]
+  Dependents: [14589946910832969302, 13754134128618196032, 17635721111350468473]
+  Dirty: false
+  Missing: false
+  Cooked: true

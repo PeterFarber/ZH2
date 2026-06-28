@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 15392473300653576747
 Root:
-  Entity: 9614544951849594045
+  Entity: 14423394206572389208
 Entities:
-  - Entity: 9614544951849594045
+  - Entity: 14423394206572389208
     NameComponent:
       Name: Away_Skater_Prefab
     ObjectSettingsComponent:
@@ -20,10 +20,10 @@ Entities:
       Scale: [2.75, 2.75, 2.75]
     ChildrenComponent:
       Children:
-        - 9614544951849594046
+        - 17060297348995837681
     PrefabComponent:
-      PrefabAssetId: 5766740224810003745
-      SourceEntityId: 640698472715006676
+      PrefabAssetId: 15392473300653576747
+      SourceEntityId: 12704451576472485329
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
     TeamComponent:
       Team: Away
@@ -91,7 +91,7 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 9614544951849594046
+  - Entity: 17060297348995837681
     NameComponent:
       Name: Stick
     ObjectSettingsComponent:
@@ -101,17 +101,21 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.75, 0.95]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Position: [0, 0, 0.1]
+      Rotation: [0, -0, 0]
+      Scale: [0.67, 0.67, 0.67]
     ParentComponent:
-      Parent: 9614544951849594045
+      Parent: 14423394206572389208
     ChildrenComponent:
       Children:
         []
+    PrefabComponent:
+      PrefabAssetId: 15392473300653576747
+      SourceEntityId: 904258629936027389
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
     MeshRendererComponent:
-      MeshAsset: 7898892890495259085
-      MaterialAsset: 3963697089678307338
+      MeshAsset: 2566647934480036238
+      MaterialAsset: 11219802514363683653
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -119,6 +123,6 @@ Entities:
       OwnerPlayer: 0
       Reach: 1.5
       Width: 0.25
-      LocalOffset: [0, 0, 1]
+      LocalOffset: [0, 0, 2]
       CanControlPuck: true
       CanShoot: true

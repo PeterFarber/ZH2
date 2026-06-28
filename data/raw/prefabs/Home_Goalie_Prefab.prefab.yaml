@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 17478380100763504281
 Root:
-  Entity: 14573699559702890569
+  Entity: 470073066900106810
 Entities:
-  - Entity: 14573699559702890569
+  - Entity: 470073066900106810
     NameComponent:
       Name: Home_Goalie_Prefab
     ObjectSettingsComponent:
@@ -17,21 +17,21 @@ Entities:
     TransformComponent:
       Position: [-4, 0, 0]
       Rotation: [0, -0, 0]
-      Scale: [2.75, 2.75, 2.75]
+      Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 14573699559702890570
+        - 2422751588853228867
     PrefabComponent:
-      PrefabAssetId: 8470296154042606455
-      SourceEntityId: 1419327337283850568
+      PrefabAssetId: 17478380100763504281
+      SourceEntityId: 13083135416411077829
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
     TeamComponent:
       Team: Home
     PlayerRoleComponent:
       Role: Goalie
     MeshRendererComponent:
-      MeshAsset: 15362004082546635741
-      MaterialAsset: 10097402189565703214
+      MeshAsset: 15742120718558245390
+      MaterialAsset: 13188400377850077421
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -90,7 +90,7 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 14573699559702890570
+  - Entity: 2422751588853228867
     NameComponent:
       Name: Stick
     ObjectSettingsComponent:
@@ -100,17 +100,21 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0.75, 0.95]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Position: [0, 0, 0.110635065]
+      Rotation: [0, -0, 0]
+      Scale: [0.6700001, 0.6700001, 0.6700001]
     ParentComponent:
-      Parent: 14573699559702890569
+      Parent: 470073066900106810
     ChildrenComponent:
       Children:
         []
+    PrefabComponent:
+      PrefabAssetId: 17478380100763504281
+      SourceEntityId: 13713651052834390454
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
     MeshRendererComponent:
-      MeshAsset: 7898892890495259085
-      MaterialAsset: 3963697089678307338
+      MeshAsset: 2566647934480036238
+      MaterialAsset: 11219802514363683653
       Visible: true
       CastsShadows: true
       ReceivesShadows: true
@@ -118,6 +122,6 @@ Entities:
       OwnerPlayer: 0
       Reach: 1.5
       Width: 0.25
-      LocalOffset: [0, 0, 1]
+      LocalOffset: [0, 0, 1.3]
       CanControlPuck: true
       CanShoot: true

@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/goalie.glb
+  MeshIndex: 0
+  Name: goalie
+  Materials:
+    - data/raw/materials/goalie/goalie.material.yaml

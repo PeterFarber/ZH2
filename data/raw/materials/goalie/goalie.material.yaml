@@ -1,0 +1,17 @@
+Material:
+  Name: goalie
+  Type: PBR
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 0.306
+  Roughness: 0.414
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: data/raw/textures/goalie/img2_basecolor.png
+    Normal: data/raw/textures/goalie/img1_normal.png

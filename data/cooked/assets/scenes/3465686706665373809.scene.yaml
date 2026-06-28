@@ -3,15 +3,21 @@ Scene:
   Mode: Edit
   Version: 1
   RootOrder:
-    - 11893923224105565907
     - 1018384515503876314
     - 6097499891596942872
-    - 4145744024904508047
-    - 10266258035893822130
+    - 15261194553434392209
+    - 11135175642709873218
+    - 2578604999404376562
+    - 4889032326641418298
+    - 10291132853185531657
+    - 956092642842137730
+    - 2152108974092994668
+    - 5534319458377150736
+    - 615434210026521737
 Entities:
-  - Entity: 1018384515503876314
+  - Entity: 13834129436059877179
     NameComponent:
-      Name: Camera
+      Name: Home Spawn 0
     ObjectSettingsComponent:
       Tag: Untagged
       Layer: Default
@@ -19,20 +25,23 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 20, 14.5]
-      Rotation: [-63.6, 0, 0]
+      Position: [-5, 0, 0]
+      Rotation: [0, 90, 0]
       Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
     ChildrenComponent:
       Children:
         []
-    CameraComponent:
-      FovDegrees: 70
-      NearClip: 0.1
-      FarClip: 1000
-      Primary: true
-  - Entity: 10266258035893822130
+    TeamComponent:
+      Team: Home
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
+  - Entity: 10671912287347989761
     NameComponent:
-      Name: Rink_Ice
+      Name: Home Spawn 1
     ObjectSettingsComponent:
       Tag: Untagged
       Layer: Default
@@ -40,21 +49,23 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Position: [-20, 0, 0]
+      Rotation: [0, 90, 0]
       Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
     ChildrenComponent:
       Children:
         []
-    MeshRendererComponent:
-      MeshAsset: 15640204396032829137
-      MaterialAsset: 11304597749339719697
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 4145744024904508047
+    TeamComponent:
+      Team: Home
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
+  - Entity: 1008347190258484961
     NameComponent:
-      Name: Rink_Boards
+      Name: Point Light Blue
     ObjectSettingsComponent:
       Tag: Untagged
       Layer: Default
@@ -62,39 +73,19 @@ Entities:
     ActiveComponent:
       Active: true
     TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Position: [-20, 10, 0]
+      Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-    ChildrenComponent:
-      Children:
-        []
-    MeshRendererComponent:
-      MeshAsset: 12715888057807001399
-      MaterialAsset: 8730987331800323447
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-  - Entity: 11893923224105565907
-    NameComponent:
-      Name: Directional Light
-    ObjectSettingsComponent:
-      Tag: Untagged
-      Layer: Default
-      Static: false
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [224.3, -91.5, 0]
-      Scale: [0.99999994, 1.0000002, 1.0000002]
+    ParentComponent:
+      Parent: 15261194553434392209
     ChildrenComponent:
       Children:
         []
     LightComponent:
-      Type: Directional
-      Color: [1, 1, 1]
-      Intensity: 1.5
-      Range: 2.5
+      Type: Point
+      Color: [0, 0.12614322, 1]
+      Intensity: 14.633
+      Range: 30.063
       InnerConeDegrees: 15
       OuterConeDegrees: 30
       CastsShadows: true
@@ -106,7 +97,7 @@ Entities:
       Layer: Default
       Static: false
     ActiveComponent:
-      Active: false
+      Active: true
     TransformComponent:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -115,5 +106,1243 @@ Entities:
       Children:
         []
     EnvironmentComponent:
-      AmbientColor: [0.03, 0.03, 0.03]
-      AmbientIntensity: 2
+      AmbientColor: [0.04440087, 0.04439643, 0.04439643]
+      AmbientIntensity: 5.974
+  - Entity: 10248690052845677441
+    NameComponent:
+      Name: Point Light Oragne
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [20, 10, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 15261194553434392209
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Point
+      Color: [1, 0.37108612, 0]
+      Intensity: 14.633
+      Range: 30.063
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 11893923224105565907
+    NameComponent:
+      Name: Directional Light
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-156.3, 0, 0]
+      Scale: [1, 1.0000004, 1.0000004]
+    ParentComponent:
+      Parent: 15261194553434392209
+    ChildrenComponent:
+      Children:
+        []
+    LightComponent:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 3.494
+      Range: 2.5
+      InnerConeDegrees: 15
+      OuterConeDegrees: 30
+      CastsShadows: true
+  - Entity: 1018384515503876314
+    NameComponent:
+      Name: Camera
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 17.1, 4.9]
+      Rotation: [-74.99999, 0, 0]
+      Scale: [1, 0.9999997, 0.9999997]
+    ChildrenComponent:
+      Children:
+        []
+    CameraRigMarkerComponent:
+      Purpose: GameplayCamera
+    CameraComponent:
+      FovDegrees: 70
+      NearClip: 0.1
+      FarClip: 1000
+      Primary: true
+      FollowPlayer: true
+      FollowOffset: [0, 14, 4]
+      FollowRotation: [-75, 0, 0]
+  - Entity: 11218737984569260609
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 4
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 7851726704420713188
+    NameComponent:
+      Name: Ice
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2152108974092994668
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 13159441835091159249
+      MaterialAsset: 2175547380742926098
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Rink
+      Material: Ice
+    BoxColliderComponent:
+      HalfExtents: [32, 1, 16]
+      Offset: [0, -1, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+  - Entity: 15261194553434392209
+    NameComponent:
+      Name: Lights
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 11893923224105565907
+        - 1008347190258484961
+        - 10248690052845677441
+  - Entity: 4889032326641418298
+    NameComponent:
+      Name: Puck Spawn
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5.725543e-08, 0.029999856, 8.8119914e-11]
+      Rotation: [9.784143e-07, -4.9191593e-05, 1.2207346e-06]
+      Scale: [0.3, 0.05, 0.3]
+    ChildrenComponent:
+      Children:
+        []
+    PuckComponent:
+      StartsInPlay: true
+    MeshRendererComponent:
+      MeshAsset: 11795346347216253737
+      MaterialAsset: 15902365976934225153
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Dynamic
+      CollisionDetection: Continuous
+      Mass: 0.17
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Puck
+      Material: PuckRubber
+    CylinderColliderComponent:
+      Radius: 0.3
+      HalfHeight: 0.05
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PuckGameplayComponent:
+      State: Loose
+      PossessingPlayer: 0
+      LastTouchedPlayer: 0
+      ShotIgnorePlayer: 0
+      LastTouchedTeam: None
+      TimeSinceLastTouch: 13.149971
+      ShotIgnoreTimer: 0
+      InPlay: true
+    PuckRuntimeComponent:
+      Velocity: [0, 0, 0]
+      TargetPosition: [-5.725543e-08, 0.05, 8.8119914e-11]
+  - Entity: 2152108974092994668
+    NameComponent:
+      Name: Rink
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 7851726704420713188
+        - 5061585731813137042
+    RinkComponent:
+      RinkName: Default Rink
+    PlayAreaComponent:
+      HalfExtents: [30, 5, 60]
+    OutOfPlayComponent:
+      ResetPosition: [0, 0.1, 0]
+      MinY: -5
+  - Entity: 10182949701149343919
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 3
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 10291132853185531657
+    NameComponent:
+      Name: Home Goal
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-27.281801, 1, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    GoalComponent:
+      DefendingTeam: Home
+    MeshRendererComponent:
+      MeshAsset: 1546920521154545052
+      MaterialAsset: 15319051867854327546
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Goal
+      Material: Trigger
+    BoxColliderComponent:
+      HalfExtents: [0.9, 0.6, 0.5]
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: true
+    TriggerComponent:
+      Tag: Goal
+      DetectPlayers: false
+      DetectGoalies: false
+      DetectPuck: true
+    GoalGameplayComponent:
+      ScoringTeam: Away
+      DefendingTeam: Home
+      Enabled: true
+  - Entity: 333869889202117304
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 6
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 5061585731813137042
+    NameComponent:
+      Name: Boards
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2152108974092994668
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 2462135637550940025
+      MaterialAsset: 616265134277951580
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Static
+      Material: Default
+    MeshColliderComponent:
+      MeshAsset: 2462135637550940025
+      Convex: false
+      IsTrigger: false
+  - Entity: 13593464849941118167
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 5
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 5052788030723451090
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 7
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 956092642842137730
+    NameComponent:
+      Name: Away Goal
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [27, 1, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    GoalComponent:
+      DefendingTeam: Away
+    MeshRendererComponent:
+      MeshAsset: 1546920521154545052
+      MaterialAsset: 15319051867854327546
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Goal
+      Material: Trigger
+    BoxColliderComponent:
+      HalfExtents: [0.9, 0.6, 0.5]
+      Offset: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: true
+    TriggerComponent:
+      Tag: Goal
+      DetectPlayers: false
+      DetectGoalies: false
+      DetectPuck: true
+    GoalGameplayComponent:
+      ScoringTeam: Home
+      DefendingTeam: Away
+      Enabled: true
+  - Entity: 5534319458377150736
+    NameComponent:
+      Name: Cube
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 2.0193176, -13.872839]
+      Rotation: [0, -0, 0]
+      Scale: [4, 4, 0.3]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 1834512563645225461
+      MaterialAsset: 10521881175517512760
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 11135175642709873218
+    NameComponent:
+      Name: Spawn Points
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 13834129436059877179
+        - 10671912287347989761
+        - 3233215121453051651
+        - 12449220125119555231
+        - 6502924177042829097
+        - 7358551676639057854
+        - 9131766345977832237
+        - 17382679961160677532
+  - Entity: 3012378329905567836
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 2
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 7652441794973251613
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 1
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 8323359849368398886
+    NameComponent:
+      Name: Away Penalty Faceoff Spawn 0
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: true
+  - Entity: 10013057124304199162
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 7
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 12508973974705520392
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 6
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 12390468913758425544
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 5
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 3010834720696732214
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 4
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 664855235523703960
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 3
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 13093889667951075132
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 2
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 17344885227942914862
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 1
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 3886231691040597735
+    NameComponent:
+      Name: Home Penalty Faceoff Spawn 0
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: true
+  - Entity: 8239693943004560612
+    NameComponent:
+      Name: Neutral Faceoff Spawn 7
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [25, 0.751, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 1802726154350730119
+    NameComponent:
+      Name: Neutral Faceoff Spawn 6
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 17366388659798416218
+    NameComponent:
+      Name: Neutral Faceoff Spawn 5
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [2, 0.751, 4.5]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 826337671771975504
+    NameComponent:
+      Name: Neutral Faceoff Spawn 4
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [2, 0.751, -4.5]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 10360568317142434568
+    NameComponent:
+      Name: Neutral Faceoff Spawn 3
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-20, 0.751, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 9947575563238135698
+    NameComponent:
+      Name: Neutral Faceoff Spawn 2
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-2, 0.751, 4.5]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 13252650536859962827
+    NameComponent:
+      Name: Neutral Faceoff Spawn 1
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-2, 0.751, -4.5]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 409116100497201228
+    NameComponent:
+      Name: Neutral Faceoff Spawn 0
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-5, 0.751, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 2578604999404376562
+    ChildrenComponent:
+      Children:
+        []
+    SpawnPointComponent:
+      Team: None
+      FaceoffSpawn: true
+  - Entity: 2578604999404376562
+    NameComponent:
+      Name: Faceoff Spawns
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 409116100497201228
+        - 13252650536859962827
+        - 9947575563238135698
+        - 10360568317142434568
+        - 826337671771975504
+        - 17366388659798416218
+        - 1802726154350730119
+        - 8239693943004560612
+        - 3886231691040597735
+        - 17344885227942914862
+        - 13093889667951075132
+        - 664855235523703960
+        - 3010834720696732214
+        - 12390468913758425544
+        - 12508973974705520392
+        - 10013057124304199162
+        - 8323359849368398886
+        - 7652441794973251613
+        - 3012378329905567836
+        - 10182949701149343919
+        - 11218737984569260609
+        - 13593464849941118167
+        - 333869889202117304
+        - 5052788030723451090
+  - Entity: 17382679961160677532
+    NameComponent:
+      Name: Away Spawn 3
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [25, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Away
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
+  - Entity: 9131766345977832237
+    NameComponent:
+      Name: Away Spawn 2
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [12.5, 0, 5]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Away
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
+  - Entity: 7358551676639057854
+    NameComponent:
+      Name: Away Spawn 1
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [20, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Away
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
+  - Entity: 6502924177042829097
+    NameComponent:
+      Name: Away Spawn 0
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [5, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Away
+    SpawnPointComponent:
+      Team: Away
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
+  - Entity: 12449220125119555231
+    NameComponent:
+      Name: Home Spawn 3
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-25, 0, 0]
+      Rotation: [0, 90, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Home
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
+  - Entity: 3233215121453051651
+    NameComponent:
+      Name: Home Spawn 2
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-12.5, 0, -6]
+      Rotation: [0, 90, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11135175642709873218
+    ChildrenComponent:
+      Children:
+        []
+    TeamComponent:
+      Team: Home
+    SpawnPointComponent:
+      Team: Home
+      FaceoffSpawn: false
+      PlayerPrefabPath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
+  - Entity: 615434210026521737
+    NameComponent:
+      Name: Home_Skater_Prefab
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-1.25, 0, -29.086634]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 2]
+    ChildrenComponent:
+      Children:
+        - 11676552745153587533
+    PrefabComponent:
+      PrefabAssetId: 16908415092254043516
+      SourceEntityId: 14780938805346465367
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
+    TeamComponent:
+      Team: Home
+    PlayerRoleComponent:
+      Role: Skater
+    MeshRendererComponent:
+      MeshAsset: 6674370949423982319
+      MaterialAsset: 10279919324660303988
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Dynamic
+      CollisionDetection: Continuous
+      Mass: 80
+      UseGravity: false
+      AllowSleeping: false
+      LockTranslationX: false
+      LockTranslationY: true
+      LockTranslationZ: false
+      LockRotationX: true
+      LockRotationY: false
+      LockRotationZ: true
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Player
+      Material: PlayerBody
+    CylinderColliderComponent:
+      Radius: 0.5
+      HalfHeight: 0.751
+      Offset: [0, 0.75, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false
+    PlayerComponent:
+      PlayerIndex: 0
+      Slot: HomeSkater0
+      Team: Home
+      Role: Skater
+      ControlledByLocalInput: true
+      ControlledByAI: false
+      ActiveInMatch: true
+    SkaterComponent:
+      MaxSpeed: 9
+      Acceleration: 32
+      Deceleration: 20
+      TurnSpeedDegrees: 720
+      HasPuck: false
+    PlayerRuntimeComponent:
+      Velocity: [0, 0, 0]
+      FacingDirection: [0, 0, 1]
+      MoveTarget: [0, 0, 0]
+      BoostCooldown: 0
+      GoalieBoostCharges: 2
+      GoalieBoostRechargeTimer: 0
+      ShieldTimer: 0
+      ShieldCooldown: 0
+      LastBrakePressedTime: -1000
+      StealCooldown: 0
+      HasMoveTarget: false
+      ShieldActive: false
+      InputEnabled: true
+      MovementEnabled: true
+    ShotComponent:
+      Charge: 0
+      Charging: false
+  - Entity: 11676552745153587533
+    NameComponent:
+      Name: Stick
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0.1]
+      Rotation: [0, -0, 0]
+      Scale: [0.67, 0.67, 0.67]
+    ParentComponent:
+      Parent: 615434210026521737
+    ChildrenComponent:
+      Children:
+        []
+    PrefabComponent:
+      PrefabAssetId: 1047268789333683979
+      SourceEntityId: 11676552745153587533
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Stick.prefab.yaml
+    MeshRendererComponent:
+      MeshAsset: 2566647934480036238
+      MaterialAsset: 11219802514363683653
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    StickComponent:
+      OwnerPlayer: 0
+      Reach: 1.5
+      Width: 0.25
+      LocalOffset: [0, 0, 1.2]
+      CanControlPuck: true
+      CanShoot: true

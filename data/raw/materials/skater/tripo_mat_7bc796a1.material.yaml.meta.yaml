@@ -1,0 +1,17 @@
+Asset:
+  ID: 10279919324660303988
+  Type: Material
+  Name: tripo_mat_7bc796a1
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/skater/tripo_mat_7bc796a1.material.yaml
+  CookedPath: data/cooked/assets/materials/10279919324660303988.material.yaml
+  RawFileTimestamp: 134270677415706741
+  RawFileHash: 2260503171721496205
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594564
+  Dependencies: [4589403135196506491, 12719071700555448510]
+  Dependents: [6674370949423982319, 3944394127734966371, 7564859252353305484]
+  Dirty: false
+  Missing: false
+  Cooked: true

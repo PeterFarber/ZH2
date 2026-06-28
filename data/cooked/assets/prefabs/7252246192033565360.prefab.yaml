@@ -1,11 +1,11 @@
 Prefab:
   Name: Waypoint_Marker
   Version: 1
-  AssetId: 0
+  AssetId: 11878409918161947744
 Root:
-  Entity: 18202026062600000001
+  Entity: 4716504038111396826
 Entities:
-  - Entity: 18202026062600000001
+  - Entity: 4716504038111396826
     NameComponent:
       Name: Waypoint_Marker
     ObjectSettingsComponent:
@@ -19,14 +19,19 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [0.5, 0.05, 0.5]
     ChildrenComponent:
-      Children: []
+      Children:
+        []
+    PrefabComponent:
+      PrefabAssetId: 0
+      SourceEntityId: 18202026062600000001
+      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Waypoint_Marker.prefab.yaml
+    MeshRendererComponent:
+      MeshAsset: 7218028831466573626
+      MaterialAsset: 9507614320415798529
+      Visible: true
+      CastsShadows: false
+      ReceivesShadows: false
     WaypointMarkerComponent:
       OwnerPlayerIndex: 0
       TargetPosition: [0, 0, 0]
       Active: true
-    MeshRendererComponent:
-      MeshAsset: 2462135637550940025
-      MaterialAsset: 616265134277951580
-      Visible: true
-      CastsShadows: false
-      ReceivesShadows: false

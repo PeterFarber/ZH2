@@ -6,11 +6,11 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/scenes/Main.scene.yaml
   CookedPath: data/cooked/assets/scenes/3465686706665373809.scene.yaml
-  RawFileTimestamp: 134268019037366553
-  RawFileHash: 12695617322579790416
-  ImportedTimestamp: 1782329407
-  CookedTimestamp: 1782325310
-  Dependencies: []
+  RawFileTimestamp: 134270694043481852
+  RawFileHash: 5762925467219559366
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782595784
+  Dependencies: [10521881175517512760, 1546920521154545052, 15319051867854327546, 2462135637550940025, 616265134277951580, 11795346347216253737, 15902365976934225153, 13159441835091159249, 2175547380742926098]
   Dependents: []
   Dirty: true
   Missing: false

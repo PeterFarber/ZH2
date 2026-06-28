@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/meshes/torus/torus_mesh.mesh.yaml
   CookedPath: data/cooked/assets/meshes/7218028831466573626.mesh.bin
-  RawFileTimestamp: 134269681207663570
+  RawFileTimestamp: 134270677388385742
   RawFileHash: 3988086478783607806
-  ImportedTimestamp: 1782494520
-  CookedTimestamp: 1782494526
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594549
   Dependencies: []
   Dependents: [4847304758356720494, 7252246192033565360]
-  Dirty: true
+  Dirty: false
   Missing: false
   Cooked: true

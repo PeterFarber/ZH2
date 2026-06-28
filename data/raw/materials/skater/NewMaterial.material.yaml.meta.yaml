@@ -1,0 +1,17 @@
+Asset:
+  ID: 12456872314640691628
+  Type: Material
+  Name: NewMaterial
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/skater/NewMaterial.material.yaml
+  CookedPath: data/cooked/assets/materials/12456872314640691628.material.yaml
+  RawFileTimestamp: 134269684919462722
+  RawFileHash: 7134495461835136409
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594159
+  Dependencies: [4589403135196506491, 12719071700555448510]
+  Dependents: [11008184057249989742]
+  Dirty: false
+  Missing: false
+  Cooked: true

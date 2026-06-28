@@ -1,0 +1,17 @@
+Asset:
+  ID: 11780164313808154305
+  Type: Model
+  Name: uvsphere
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/models/uvsphere.glb
+  CookedPath: data/cooked/assets/models/11780164313808154305.model.bin
+  RawFileTimestamp: 134269648191173171
+  RawFileHash: 2081300267668768979
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594152
+  Dependencies: [11224341320273880233]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

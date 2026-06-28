@@ -1,0 +1,17 @@
+Asset:
+  ID: 10521881175517512760
+  Type: Material
+  Name: GlassFrosted
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/GlassFrosted.material.yaml
+  CookedPath: data/cooked/assets/materials/10521881175517512760.material.yaml
+  RawFileTimestamp: 134269649704931285
+  RawFileHash: 3582957160925514935
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594159
+  Dependencies: [3709775965342076075, 8459536251869193738, 8347058172217482816, 3851845498635662592]
+  Dependents: [3465686706665373809]
+  Dirty: false
+  Missing: false
+  Cooked: true

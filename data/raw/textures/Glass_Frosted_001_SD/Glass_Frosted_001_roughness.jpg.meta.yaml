@@ -1,0 +1,17 @@
+Asset:
+  ID: 8347058172217482816
+  Type: Texture
+  Name: Glass_Frosted_001_roughness
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/Glass_Frosted_001_SD/Glass_Frosted_001_roughness.jpg
+  CookedPath: data/cooked/assets/textures/8347058172217482816.tex.bin
+  RawFileTimestamp: 134269634829693164
+  RawFileHash: 14510757520356650912
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594152
+  Dependencies: []
+  Dependents: [10521881175517512760]
+  Dirty: false
+  Missing: false
+  Cooked: true

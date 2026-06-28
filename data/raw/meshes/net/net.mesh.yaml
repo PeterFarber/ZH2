@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/net.glb
+  MeshIndex: 0
+  Name: net
+  Materials:
+    - data/raw/materials/net/net.material.yaml

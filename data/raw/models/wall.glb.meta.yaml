@@ -3,15 +3,15 @@ Asset:
   Type: Model
   Name: wall
   ImporterVersion: 1.0.0
-  CookerVersion: ""
+  CookerVersion: 1.0.0
   RawPath: data/raw/models/wall.glb
-  CookedPath: ""
+  CookedPath: data/cooked/assets/models/212105626793489814.model.bin
   RawFileTimestamp: 134262093458671043
   RawFileHash: 5404369872927073403
-  ImportedTimestamp: 1782330354
-  CookedTimestamp: 0
-  Dependencies: [616265134277951580, 2462135637550940025]
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594160
+  Dependencies: [2462135637550940025, 616265134277951580]
   Dependents: []
-  Dirty: true
+  Dirty: false
   Missing: false
-  Cooked: false
+  Cooked: true

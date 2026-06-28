@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/ice/Ice_GameExport_Baked_PBR.material.yaml
   CookedPath: data/cooked/assets/materials/2175547380742926098.material.yaml
-  RawFileTimestamp: 134268036893885401
-  RawFileHash: 2548985516529074327
-  ImportedTimestamp: 1782330089
-  CookedTimestamp: 1782330073
+  RawFileTimestamp: 134270677388239600
+  RawFileHash: 8464832371034896867
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594564
   Dependencies: [1956483358797437224, 3430640482485695819, 5265000974720859190]
-  Dependents: [9446198346239280572, 13159441835091159249]
-  Dirty: true
+  Dependents: [13159441835091159249, 9446198346239280572, 3465686706665373809]
+  Dirty: false
   Missing: false
   Cooked: true

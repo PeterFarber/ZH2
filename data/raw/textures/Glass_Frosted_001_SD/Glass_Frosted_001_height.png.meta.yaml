@@ -1,0 +1,17 @@
+Asset:
+  ID: 11967634905082147841
+  Type: Texture
+  Name: Glass_Frosted_001_height
+  ImporterVersion: TextureImporter_v1
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/Glass_Frosted_001_SD/Glass_Frosted_001_height.png
+  CookedPath: data/cooked/assets/textures/11967634905082147841.tex.bin
+  RawFileTimestamp: 134269634829875241
+  RawFileHash: 9474728642131668452
+  ImportedTimestamp: 1782594139
+  CookedTimestamp: 1782594148
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

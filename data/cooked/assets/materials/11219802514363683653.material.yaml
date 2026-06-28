@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 11219802514363683653
+  Name: stick
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 11555530629446236583
+    Normal: 18402622177859952636
+    MetallicRoughness: 9362800432065433071
+    Occlusion: 0
+    Emissive: 0

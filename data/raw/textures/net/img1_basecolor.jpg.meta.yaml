@@ -1,0 +1,17 @@
+Asset:
+  ID: 9543490355230126823
+  Type: Texture
+  Name: img1_basecolor
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/textures/net/img1_basecolor.jpg
+  CookedPath: ""
+  RawFileTimestamp: 134270696561509600
+  RawFileHash: 458676966701351098
+  ImportedTimestamp: 1782596056
+  CookedTimestamp: 0
+  Dependencies: []
+  Dependents: [7828305144141514195]
+  Dirty: true
+  Missing: false
+  Cooked: false

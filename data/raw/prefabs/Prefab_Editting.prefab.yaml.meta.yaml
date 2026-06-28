@@ -1,0 +1,17 @@
+Asset:
+  ID: 2018126858195272879
+  Type: Prefab
+  Name: Prefab_Editting.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Prefab_Editting.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/2018126858195272879.prefab.yaml
+  RawFileTimestamp: 134269744028108038
+  RawFileHash: 13977743364187182244
+  ImportedTimestamp: 1782582677
+  CookedTimestamp: 1782501705
+  Dependencies: [11795346347216253737, 15440424719225186514, 12167797944562569286, 16045454102454522057, 15406165282806881381]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

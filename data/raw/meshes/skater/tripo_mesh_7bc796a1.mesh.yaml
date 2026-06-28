@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/skater.glb
+  MeshIndex: 0
+  Name: tripo_mesh_7bc796a1
+  Materials:
+    - data/raw/materials/skater/tripo_mat_7bc796a1.material.yaml

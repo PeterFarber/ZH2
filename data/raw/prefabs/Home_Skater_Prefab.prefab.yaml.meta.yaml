@@ -6,11 +6,11 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
   CookedPath: data/cooked/assets/prefabs/7564859252353305484.prefab.yaml
-  RawFileTimestamp: 134270562244429904
-  RawFileHash: 10899150322206827071
-  ImportedTimestamp: 1782582679
-  CookedTimestamp: 1782501705
-  Dependencies: [6674370949423982319, 10279919324660303988]
+  RawFileTimestamp: 134270743323438268
+  RawFileHash: 7985882666741103058
+  ImportedTimestamp: 1782600732
+  CookedTimestamp: 1782596058
+  Dependencies: [6674370949423982319, 10279919324660303988, 2566647934480036238, 11219802514363683653]
   Dependents: []
   Dirty: true
   Missing: false

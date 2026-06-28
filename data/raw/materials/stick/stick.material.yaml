@@ -1,0 +1,18 @@
+Material:
+  Name: stick
+  Type: PBR
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: data/raw/textures/stick/img1_basecolor.jpg
+    Normal: data/raw/textures/stick/img0_normal.jpg
+    MetallicRoughness: data/raw/textures/stick/img2_metallicroughness.png

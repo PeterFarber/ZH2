@@ -1,0 +1,17 @@
+Asset:
+  ID: 1319581073191614121
+  Type: Prefab
+  Name: Stick.prefab
+  ImporterVersion: ""
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Stick.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/1319581073191614121.prefab.yaml
+  RawFileTimestamp: 134270693652134699
+  RawFileHash: 1756747859603015757
+  ImportedTimestamp: 0
+  CookedTimestamp: 1782595784
+  Dependencies: [2566647934480036238, 11219802514363683653]
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

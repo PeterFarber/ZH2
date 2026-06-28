@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/meshes/capsule/capsule_mesh.mesh.yaml
   CookedPath: data/cooked/assets/meshes/14503252706931961359.mesh.bin
-  RawFileTimestamp: 134269681188797054
+  RawFileTimestamp: 134270677387396680
   RawFileHash: 17304149311294016906
-  ImportedTimestamp: 1782494522
-  CookedTimestamp: 1782494534
+  ImportedTimestamp: 1782594139
+  CookedTimestamp: 1782594562
   Dependencies: []
   Dependents: [8074149833177858028]
-  Dirty: true
+  Dirty: false
   Missing: false
   Cooked: true

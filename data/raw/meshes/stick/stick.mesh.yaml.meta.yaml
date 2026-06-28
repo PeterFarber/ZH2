@@ -1,0 +1,17 @@
+Asset:
+  ID: 2566647934480036238
+  Type: Mesh
+  Name: stick
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/meshes/stick/stick.mesh.yaml
+  CookedPath: data/cooked/assets/meshes/2566647934480036238.mesh.bin
+  RawFileTimestamp: 134270677416063581
+  RawFileHash: 5648971817760436705
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594565
+  Dependencies: [11219802514363683653]
+  Dependents: [7564859252353305484, 11008184057249989742, 13754134128618196032, 17635721111350468473, 18000701732279517277, 1319581073191614121]
+  Dirty: false
+  Missing: false
+  Cooked: true

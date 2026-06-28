@@ -7,9 +7,6 @@ hot_reload = false
 enabled = true
 interval_seconds = 120
 
-[ui]
-editor_scale = 1.0
-
 [camera]
 fast_multiplier = 4.0
 mouse_sensitivity = 0.15000000596046448
@@ -20,7 +17,7 @@ show = false
 spacing = 1.0
 
 [layout]
-panel_count = 12
+panel_count = 14
 
     [layout.panel_0]
     name = 'Hierarchy'
@@ -31,10 +28,18 @@ panel_count = 12
     open = true
 
     [layout.panel_10]
-    name = 'Prefab'
-    open = false
+    name = 'Stats'
+    open = true
 
     [layout.panel_11]
+    name = 'Scene Validation'
+    open = true
+
+    [layout.panel_12]
+    name = 'Prefab'
+    open = true
+
+    [layout.panel_13]
     name = 'Project Settings'
     open = true
 
@@ -47,27 +52,27 @@ panel_count = 12
     open = true
 
     [layout.panel_4]
-    name = 'Gameplay Tuning'
+    name = 'Client Preview'
     open = true
 
     [layout.panel_5]
-    name = 'Project'
+    name = 'Gameplay Tuning'
     open = true
 
     [layout.panel_6]
-    name = 'Console'
+    name = 'Project'
     open = true
 
     [layout.panel_7]
-    name = 'Properties'
+    name = 'Client Flow'
     open = true
 
     [layout.panel_8]
-    name = 'Stats'
+    name = 'Console'
     open = true
 
     [layout.panel_9]
-    name = 'Scene Validation'
+    name = 'Properties'
     open = true
 
 [scene]
@@ -89,6 +94,9 @@ enabled = false
 move = 0.5
 rotate_degrees = 15.0
 scale = 0.10000000149011612
+
+[ui]
+editor_scale = 1.0
 
 [validation]
 after_load = true

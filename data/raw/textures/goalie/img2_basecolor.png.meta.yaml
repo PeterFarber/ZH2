@@ -1,0 +1,17 @@
+Asset:
+  ID: 203869266260794646
+  Type: Texture
+  Name: img2_basecolor
+  ImporterVersion: 1.0.0
+  CookerVersion: TextureCooker_v1
+  RawPath: data/raw/textures/goalie/img2_basecolor.png
+  CookedPath: data/cooked/assets/textures/203869266260794646.tex.bin
+  RawFileTimestamp: 134270681463525048
+  RawFileHash: 12525555279062612233
+  ImportedTimestamp: 1782594546
+  CookedTimestamp: 1782594564
+  Dependencies: []
+  Dependents: [13188400377850077421]
+  Dirty: false
+  Missing: false
+  Cooked: true

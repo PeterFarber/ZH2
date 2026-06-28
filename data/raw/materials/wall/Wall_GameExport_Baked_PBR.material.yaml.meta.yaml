@@ -6,12 +6,12 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/materials/wall/Wall_GameExport_Baked_PBR.material.yaml
   CookedPath: data/cooked/assets/materials/616265134277951580.material.yaml
-  RawFileTimestamp: 134268040106891836
-  RawFileHash: 13695248154056346288
-  ImportedTimestamp: 1782330410
-  CookedTimestamp: 1782330361
+  RawFileTimestamp: 134270677417102983
+  RawFileHash: 2967766301960851448
+  ImportedTimestamp: 1782594141
+  CookedTimestamp: 1782594564
   Dependencies: [11605109223550927380, 15702033425252339247, 18380893089174589515]
-  Dependents: [212105626793489814, 2462135637550940025]
-  Dirty: true
+  Dependents: [212105626793489814, 2462135637550940025, 3465686706665373809]
+  Dirty: false
   Missing: false
   Cooked: true

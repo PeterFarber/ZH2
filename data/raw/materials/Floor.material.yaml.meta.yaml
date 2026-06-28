@@ -1,0 +1,17 @@
+Asset:
+  ID: 15406165282806881381
+  Type: Material
+  Name: Floor
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/materials/Floor.material.yaml
+  CookedPath: data/cooked/assets/materials/15406165282806881381.material.yaml
+  RawFileTimestamp: 134269621860330831
+  RawFileHash: 16637830623673674912
+  ImportedTimestamp: 1782594138
+  CookedTimestamp: 1782594146
+  Dependencies: []
+  Dependents: []
+  Dirty: false
+  Missing: false
+  Cooked: true

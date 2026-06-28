@@ -1,6 +1,0 @@
-Mesh:
-  SourceModel: data/raw/models/cube.glb
-  MeshIndex: 0
-  Name: cube_mesh
-  Materials:
-    []

@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/uvsphere.glb
+  MeshIndex: 0
+  Name: uvsphere_mesh
+  Materials:
+    []
