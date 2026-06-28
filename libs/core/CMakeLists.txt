@@ -17,6 +17,7 @@ target_sources(hockey_core
         src/Screenshot.cpp
         src/Config.cpp
         src/RuntimeConfig.cpp
+        src/RuntimeConfigDefaults.cpp
         src/ResourceProvider.cpp
         src/Time.cpp
         src/Timer.cpp

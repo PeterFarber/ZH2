@@ -1,0 +1,218 @@
+#include "Hockey/Core/RuntimeConfigDefaults.hpp"
+
+#include <string>
+
+namespace Hockey {
+
+std::string_view DefaultRuntimeConfigToml() {
+    return R"toml([app]
+name = 'Hockey Map Editor'
+sleep_when_idle = true
+target_fps = 180
+
+[assets]
+auto_cook_dirty = false
+auto_discover = false
+auto_import = false
+cooked_path = ''
+hot_reload = false
+raw_path = ''
+
+[camera]
+follow_local_player = true
+follow_player_index = 0
+follow_look_at_offset_x = 0.0
+follow_look_at_offset_y = 1.2
+follow_look_at_offset_z = 0.0
+follow_look_at_response = 12.0
+follow_offset_x = 0.0
+follow_offset_y = 7.5
+follow_offset_z = 10.0
+follow_position_response = 9.0
+
+[diagnostics]
+movement_smoothness_trace = false
+movement_smoothness_trace_player_index = 0
+
+[gameplay]
+allow_manual_goalie = true
+allow_out_of_play = true
+authoritative = true
+auto_faceoff_after_goal = true
+countdown_beep_start_seconds = 4.0
+debug_draw_gameplay = true
+enabled = true
+faceoff_delay_seconds = 1.0
+fixed_delta_seconds = 0.01666666753590107
+goal_detection_radius = 1.0
+goalies_per_team = 1
+log_gameplay_events = true
+local_play = true
+period_count = 3
+period_length_seconds = 180.0
+post_goal_delay_seconds = 3.0
+pregame_countdown_seconds = 0.0
+preview_enabled = true
+require_puck_for_goal = true
+skaters_per_team = 3
+spawn_random_seed = 94380068
+stop_clock_after_goal = true
+target_player_count = 8
+validate_on_load = true
+waypoint_prefab_path = 'data/raw/prefabs/Waypoint_Marker.prefab.yaml'
+
+[input]
+gamepad_enabled = false
+mouse_capture = true
+
+[physics]
+collision_steps = 1
+deterministic_mode = true
+enable_debug_draw = true
+enable_sleeping = true
+enabled = true
+fixed_delta_seconds = 0.01666666753590107
+gravity_x = 0.0
+gravity_y = -9.8100004196167
+gravity_z = 0.0
+integration_substeps = 1
+job_thread_count = 0
+max_bodies = 65536
+max_body_pairs = 65536
+max_contact_constraints = 20000
+preview_simulation = false
+temp_allocator_size_mb = 64
+world_min_y = -1000.0
+
+[presentation]
+interpolate_gameplay = true
+interpolate_players = true
+interpolate_puck = true
+
+[renderer]
+anisotropy = 16
+anti_aliasing = 'FXAA'
+ao_quality = 'High'
+arena_detail = 'High'
+bloom = true
+board_glass_detail = 'High'
+brightness = 1.0
+chromatic_aberration = false
+contact_shadow_bias_base = 0.00011999999696854502
+contact_shadow_bias_max = 0.0012000000569969416
+contact_shadow_bias_min = 0.00011999999696854502
+contact_shadow_bias_slope = 0.0007999999797903001
+contact_shadow_distance = 35.0
+contact_shadow_normal_offset_min = 0.001500000013038516
+contact_shadow_normal_offset_scale = 0.20000000298023224
+contact_shadow_strength = 0.75
+contact_shadows = true
+crowd_quality = 'Medium'
+depth_of_field = false
+decals = true
+directional_shadow_atlas_resolution = 0
+directional_shadow_bias_base = 0.0017999999690800905
+directional_shadow_bias_max = 0.003000000026077032
+directional_shadow_bias_min = 0.00044999999227002263
+directional_shadow_bias_slope = 0.0017999999690800905
+directional_shadow_depth_bias_constant = 1.25
+directional_shadow_depth_bias_slope = 1.75
+directional_shadow_normal_offset_max = 0.029999999329447746
+directional_shadow_normal_offset_min = 0.003000000026077032
+directional_shadow_normal_offset_scale = 0.75
+directional_shadow_pcf_radius = 1
+display_mode = 'Windowed'
+dynamic_resolution = false
+field_of_view = 50.0
+film_grain = false
+fps_limit = 0
+global_illumination_quality = 'Medium'
+goal_net_quality = 'High'
+hdr = false
+ice_quality = 'High'
+ice_reflection_quality = 'High'
+ice_scratch_quality = 'High'
+jersey_quality = 'High'
+lens_flare = false
+local_shadow_atlas_resolution = 0
+local_shadow_bias_max = 0.004000000189989805
+local_shadow_bias_min = 0.00019999999494757503
+local_shadow_bias_scale = 0.0012000000569969416
+local_shadow_pcf_radius = 1
+lod_distance_multiplier = 1.0
+material_quality = 'High'
+max_local_shadow_tiles = 16
+max_rendered_decals = 32
+max_rendered_lights = 16
+model_quality = 'High'
+monitor_index = 0
+motion_blur = false
+particle_quality = 'High'
+preset = 'Custom'
+puck_trail_quality = 'Medium'
+reflection_quality = 'High'
+refresh_rate = 0
+render_scale = 1.0
+resolution_height = 1440
+resolution_width = 2560
+shadow_cascade_blend_scale = 0.11999999731779099
+shadow_cascade_count = 0
+shadow_cascade_max_overlap_scale = 0.10000000149011612
+shadow_cascade_min_blend = 0.75
+shadow_cascade_min_overlap = 4.0
+shadow_cascade_overlap_scale = 1.0
+shadow_cascade_split_lambda = 0.949999988079071
+shadow_distance = 601.0
+shadow_quality = 'High'
+sharpening = 1.0
+show_fps = true
+show_frame_time = true
+show_gpu_stats = true
+show_network_stats = true
+skate_spray_quality = 'High'
+texture_quality = 'High'
+texture_streaming_budget_mb = 8000
+tone_mapper = 'ACES'
+upscaler = 'None'
+vignette = false
+volumetric_lighting = 'Medium'
+vsync = true
+
+[scene]
+autosave_enabled = true
+autosave_interval_seconds = 120
+startup_scene = 'data/raw/scenes/Main.scene.yaml'
+validate_on_load = true
+
+[server]
+max_players = 8
+name = 'Local Hockey Server'
+port = 27020
+tick_rate = 120.0
+
+[ui]
+debugger_enabled = false
+default_font = 'data/ui/fonts/Inter-Regular.ttf'
+enabled = true
+reload_documents = false
+start_flow = 'data/ui/flows/default.clientflow.yaml'
+theme_document = 'data/ui/themes/hockey.rcss'
+ui_scale = 1.0
+
+[window]
+height = 900
+maximized = true
+resizable = true
+start_centered = true
+title = 'Hockey Map Editor'
+width = 1600
+)toml";
+}
+
+Config MakeDefaultRuntimeConfig() {
+    Config config;
+    (void)config.LoadString(std::string(DefaultRuntimeConfigToml()), "built-in-runtime-defaults");
+    return config;
+}
+
+} // namespace Hockey

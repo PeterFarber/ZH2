@@ -36,8 +36,10 @@ private:
 
     Config m_EditorConfig;
     Config m_ServerConfig;
+    Config m_DefaultConfig;
 
     GameplayTuning m_Tuning;
+    GameplaySettings m_DefaultSettings;
     GameplaySettings m_EditorSettings;
     GameplaySettings m_ServerSettings;
 

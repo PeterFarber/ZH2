@@ -37,26 +37,32 @@ void TestRuntimeConfigEmbeddingContracts() {
     const std::string gameClientHeader = ReadProjectFile("apps/game_client/src/GameClientApp.hpp");
     const std::string serverSource = ReadProjectFile("apps/dedicated_server/src/DedicatedServerApp.cpp");
 
-    HK_CHECK_MSG(Contains(gameClientCMake, "hockey_embed_text_resource"),
-                 "game client embeds editor.toml defaults from editor-authored data");
-    HK_CHECK_MSG(Contains(gameClientCMake, "data/config/editor.toml"),
-                 "game client default config source is editor.toml");
+    HK_CHECK_MSG(!Contains(gameClientCMake, "hockey_embed_text_resource"),
+                 "game client does not generate runtime defaults from editable TOML");
+    HK_CHECK_MSG(!Contains(gameClientCMake, "data/config/editor.toml"),
+                 "game client default config source is code-owned");
     HK_CHECK_MSG(!Contains(gameClientCMake, "data/config/client.toml"),
                  "game client build does not reference client.toml");
     HK_CHECK_MSG(!Contains(gameClientCMake, "copy_if_different") ||
                      !Contains(gameClientCMake, "data/config/client.toml"),
                  "game client build does not copy client.toml as runtime data");
-    HK_CHECK_MSG(Contains(serverCMake, "hockey_embed_text_resource"),
-                 "dedicated server embeds editor.toml defaults from editor-authored data");
-    HK_CHECK_MSG(Contains(serverCMake, "data/config/editor.toml"),
-                 "dedicated server default config source is editor.toml");
+    HK_CHECK_MSG(!Contains(serverCMake, "hockey_embed_text_resource"),
+                 "dedicated server does not generate runtime defaults from editable TOML");
+    HK_CHECK_MSG(!Contains(serverCMake, "data/config/editor.toml"),
+                 "dedicated server default config source is code-owned");
     HK_CHECK_MSG(!Contains(serverCMake, "data/config/server.toml"),
                  "dedicated server build does not reference server.toml");
     HK_CHECK_MSG(!Contains(serverCMake, "copy_if_different") ||
                      !Contains(serverCMake, "data/config/server.toml"),
                  "dedicated server build does not copy server.toml as runtime data");
-    HK_CHECK_MSG(Contains(gameClientSource, "LoadRuntimeConfig"), "game client loads embedded runtime defaults");
-    HK_CHECK_MSG(Contains(serverSource, "LoadRuntimeConfig"), "dedicated server loads embedded runtime defaults");
+    HK_CHECK_MSG(Contains(gameClientSource, "DefaultRuntimeConfigToml"),
+                 "game client loads shared code-owned runtime defaults");
+    HK_CHECK_MSG(Contains(serverSource, "DefaultRuntimeConfigToml"),
+                 "dedicated server loads shared code-owned runtime defaults");
+    HK_CHECK_MSG(!Contains(gameClientSource, "EmbeddedClientDefaults"),
+                 "game client does not include generated config defaults");
+    HK_CHECK_MSG(!Contains(serverSource, "EmbeddedServerDefaults"),
+                 "dedicated server does not include generated config defaults");
     HK_CHECK_MSG(Contains(gameClientSource, "HockeyGameClient.toml"),
                  "game client uses executable-sibling user config");
     HK_CHECK_MSG(Contains(serverSource, "HockeyDedicatedServer.toml"),

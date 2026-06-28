@@ -27,6 +27,7 @@ void RunGameplayTuningPanelContractTests() {
     const std::string dockspace = ReadProjectFile("libs/editor/include/Hockey/Editor/Dockspace.hpp");
     const std::string app = ReadProjectFile("libs/editor/src/EditorApp.cpp");
     const std::string source = ReadProjectFile("libs/editor/src/Panels/GameplayTuningPanel.cpp");
+    const std::string header = ReadProjectFile("libs/editor/include/Hockey/Editor/Panels/GameplayTuningPanel.hpp");
     const std::string client = ReadProjectFile("apps/game_client/src/GameClientApp.cpp");
     const std::string server = ReadProjectFile("apps/dedicated_server/src/DedicatedServerApp.cpp");
     const std::string preview = ReadProjectFile("libs/editor/include/Hockey/Editor/EditorGameplayPreview.hpp");
@@ -42,6 +43,16 @@ void RunGameplayTuningPanelContractTests() {
     HK_CHECK_MSG(Contains(preview, "void Configure(const GameplaySettings& settings, const GameplayTuning& tuning)"),
                  "editor gameplay preview accepts tuning");
     HK_CHECK_MSG(Contains(source, "tuning.default.yaml"), "panel edits gameplay tuning YAML");
+    HK_CHECK_MSG(Contains(header, "m_DefaultConfig"),
+                 "Gameplay Tuning keeps code-owned config defaults for settings reset");
+    HK_CHECK_MSG(Contains(header, "m_DefaultSettings"),
+                 "Gameplay Tuning keeps gameplay settings defaults for settings reset");
+    HK_CHECK_MSG(Contains(source, "MakeDefaultRuntimeConfig"),
+                 "Gameplay Tuning loads code-owned defaults before editor-authored overrides");
+    HK_CHECK_MSG(Contains(source, "Reset Tuning To Defaults"),
+                 "Gameplay Tuning can reset YAML tuning values to struct defaults");
+    HK_CHECK_MSG(Contains(source, "Reset Settings To Defaults"),
+                 "Gameplay Tuning can reset preview/server settings to code defaults");
     HK_CHECK_MSG(Contains(source, "Editor Preview"), "Gameplay Tuning labels editor preview settings");
     HK_CHECK_MSG(!Contains(source, "Client Build Defaults"), "Gameplay Tuning omits separate client defaults");
     HK_CHECK_MSG(Contains(source, "Server Build Defaults"), "Gameplay Tuning labels server build defaults");

@@ -3,6 +3,7 @@
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/RuntimeConfig.hpp"
+#include "Hockey/Core/RuntimeConfigDefaults.hpp"
 #include <filesystem>
 #include <string>
 using namespace Hockey;
@@ -18,6 +19,25 @@ void RunConfigTests() {
     HK_CHECK_EQ(editor.GetInt("does.not.exist", 42), 42);
     HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("client.toml")));
     HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("server.toml")));
+
+    Config builtInDefaults;
+    HK_CHECK_MSG(builtInDefaults.LoadString(std::string(DefaultRuntimeConfigToml()), "built-in-runtime-defaults"),
+                 "built-in runtime defaults parse as TOML");
+    HK_CHECK_EQ(builtInDefaults.GetString("app.name", ""), std::string("Hockey Map Editor"));
+    HK_CHECK_EQ(builtInDefaults.GetInt("window.width", -1), 1600);
+    HK_CHECK(builtInDefaults.Has("renderer.vsync"));
+    HK_CHECK(builtInDefaults.Has("physics.fixed_delta_seconds"));
+    HK_CHECK(builtInDefaults.Has("gameplay.local_play"));
+    HK_CHECK(builtInDefaults.Has("gameplay.authoritative"));
+    HK_CHECK(builtInDefaults.Has("scene.startup_scene"));
+    HK_CHECK(builtInDefaults.Has("server.tick_rate"));
+    HK_CHECK(builtInDefaults.Has("ui.start_flow"));
+    HK_CHECK(builtInDefaults.Has("camera.follow_local_player"));
+    HK_CHECK(builtInDefaults.Has("presentation.interpolate_gameplay"));
+
+    Config madeDefaults = MakeDefaultRuntimeConfig();
+    HK_CHECK_EQ(madeDefaults.GetString("scene.startup_scene", ""), builtInDefaults.GetString("scene.startup_scene", ""));
+    HK_CHECK_EQ(madeDefaults.GetBool("renderer.vsync", false), builtInDefaults.GetBool("renderer.vsync", false));
 
     Config out;
     out.SetString("app.name", "Temp");
@@ -63,14 +83,16 @@ void RunConfigTests() {
     HK_CHECK(Paths::Init(fakeExe, {}));
 
     const RuntimeConfigLoadInfo info{
-        .embeddedToml = "[window]\nwidth = 1920\nheight = 1080\n",
-        .embeddedSourceName = "embedded-client-defaults",
+        .embeddedToml = DefaultRuntimeConfigToml(),
+        .embeddedSourceName = "built-in-runtime-defaults",
         .siblingFilename = "HockeyGameClient.toml",
     };
     const Result<RuntimeConfigLoadResult> loaded = LoadRuntimeConfig(info);
     HK_CHECK(loaded);
     HK_CHECK_EQ(loaded.value.config.GetInt("window.width", 0), 1600);
-    HK_CHECK_EQ(loaded.value.config.GetInt("window.height", 0), 1080);
+    HK_CHECK_EQ(loaded.value.config.GetInt("window.height", 0), builtInDefaults.GetInt("window.height", 0));
+    HK_CHECK_EQ(loaded.value.config.GetString("scene.startup_scene", ""),
+                builtInDefaults.GetString("scene.startup_scene", ""));
     HK_CHECK_EQ(loaded.value.userConfigPath, fakeRuntimeRoot / "HockeyGameClient.toml");
     HK_CHECK(loaded.value.loadedUserOverride);
     HK_CHECK(!loaded.value.usedCommandLineOverride);

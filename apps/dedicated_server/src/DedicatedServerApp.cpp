@@ -1,4 +1,3 @@
-#include "EmbeddedServerDefaults.hpp"
 #include "DedicatedServerApp.hpp"
 #include "Hockey/Core/CrashHandler.hpp"
 #include "Hockey/Core/FileSystem.hpp"
@@ -7,6 +6,7 @@
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Core/Platform.hpp"
 #include "Hockey/Core/RuntimeConfig.hpp"
+#include "Hockey/Core/RuntimeConfigDefaults.hpp"
 #include "Hockey/ECS/SceneSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/Gameplay.hpp"
@@ -32,8 +32,8 @@ bool DedicatedServerApp::OnInit() {
     Hockey::CrashHandler::Install();
     Hockey::JobSystem::Init();
     const Hockey::RuntimeConfigLoadInfo configInfo{
-        .embeddedToml = HockeyServer::Embedded::DefaultServerConfigToml(),
-        .embeddedSourceName = "embedded-server-defaults",
+        .embeddedToml = Hockey::DefaultRuntimeConfigToml(),
+        .embeddedSourceName = "built-in-runtime-defaults",
         .siblingFilename = "HockeyDedicatedServer.toml",
         .commandLineOverride = cmd.Has("--config") ? Hockey::Paths::Resolve(cmd.GetString("--config", ""))
                                                    : std::filesystem::path{},

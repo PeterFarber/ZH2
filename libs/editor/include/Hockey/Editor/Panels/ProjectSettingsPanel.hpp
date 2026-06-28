@@ -39,6 +39,7 @@ private:
     void EnsureLoaded(EditorContext& context);
     void LoadAll(EditorContext& context);
     void RefreshDerivedSettings();
+    void ResetCurrentSection(EditorContext& context);
 
     void DrawNavigation();
     void DrawEditorApplication(EditorContext& context);
@@ -62,12 +63,16 @@ private:
 
     Config m_EditorConfig;
     Config m_ServerConfig;
+    Config m_DefaultConfig;
 
     RendererSettings m_EditorRenderer;
+    RendererSettings m_DefaultRenderer;
     PhysicsSettings m_EditorPhysics;
     PhysicsSettings m_ServerPhysics;
+    PhysicsSettings m_DefaultPhysics;
     GameplaySettings m_EditorGameplay;
     GameplaySettings m_ServerGameplay;
+    GameplaySettings m_DefaultGameplay;
 
     std::filesystem::path m_EditorPath;
     std::filesystem::path m_UserPreferencesPath;

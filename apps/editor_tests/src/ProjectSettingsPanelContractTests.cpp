@@ -36,6 +36,14 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(header, "ServerSimulation"), "Project Settings keeps server simulation separate");
     HK_CHECK_MSG(Contains(header, "ServerStartupScene"), "Project Settings keeps server startup scene separate");
     HK_CHECK_MSG(!Contains(header, "m_ClientConfig"), "Project Settings does not keep a separate client config");
+    HK_CHECK_MSG(Contains(header, "m_DefaultConfig"),
+                 "Project Settings keeps code-owned defaults for resetting project config values");
+    HK_CHECK_MSG(Contains(header, "m_DefaultRenderer"),
+                 "Project Settings keeps renderer defaults for resetting individual renderer fields");
+    HK_CHECK_MSG(Contains(header, "m_DefaultPhysics"),
+                 "Project Settings keeps physics defaults for resetting individual physics fields");
+    HK_CHECK_MSG(Contains(header, "m_DefaultGameplay"),
+                 "Project Settings keeps gameplay defaults for resetting individual gameplay fields");
 
     HK_CHECK_MSG(Contains(source, "Window / Input"), "navigation exposes window/input pages");
     HK_CHECK_MSG(Contains(source, "Lighting & Shadows"), "navigation exposes lighting/shadows pages");
@@ -70,6 +78,14 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "kPrefabDragDropType"), "Project Settings accepts prefab drag/drop payloads");
     HK_CHECK_MSG(Contains(source, "SaveServerBuildDefaults"),
                  "Project Settings writes editor-authored server build defaults");
+    HK_CHECK_MSG(Contains(source, "MakeDefaultRuntimeConfig"),
+                 "Project Settings loads code-owned defaults before editor-authored overrides");
+    HK_CHECK_MSG(Contains(source, "Reset Setting"),
+                 "Project Settings exposes per-setting reset controls");
+    HK_CHECK_MSG(Contains(source, "Reset Page"), "Project Settings exposes page-level reset controls");
+    HK_CHECK_MSG(Contains(source, "Reset All Project Settings"),
+                 "Project Settings exposes project-wide reset to defaults");
+    HK_CHECK_MSG(Contains(source, "Reset Preferences"), "Project Settings exposes user preference reset");
     HK_CHECK_MSG(!Contains(source, "Client Build Defaults"),
                  "Project Settings does not label separate client defaults");
     HK_CHECK_MSG(Contains(source, "Server Build Defaults"),
