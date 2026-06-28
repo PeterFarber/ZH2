@@ -80,7 +80,7 @@ void PopulateScene(Scene& scene, AssetManager& assets) {
     Entity cube = scene.CreateEntity("Cube");
     cube.GetComponent<TransformComponent>().localPosition = {-1.5f, 0.5f, 0.0f};
     auto& cubeMesh = cube.AddComponent<MeshRendererComponent>();
-    cubeMesh.meshAsset = MeshId(assets, "data/raw/meshes/cube/cube_mesh.mesh.yaml");
+    cubeMesh.meshAsset = MeshId(assets, "data/raw/meshes/cube/Cube.mesh.yaml");
     cubeMesh.materialAsset = MaterialId(assets, "data/raw/materials/HomeJersey.material.yaml");
 
     Entity sphere = scene.CreateEntity("Sphere");

@@ -19,7 +19,7 @@ struct ExpectedBasicMesh {
 };
 
 constexpr ExpectedBasicMesh kExpectedBasicMeshes[] = {
-    {"cube", "data/raw/meshes/cube/cube_mesh.mesh.yaml"},
+    {"cube", "data/raw/meshes/cube/Cube.mesh.yaml"},
     {"sphere", "data/raw/meshes/sphere/sphere_mesh.mesh.yaml"},
     {"cylinder", "data/raw/meshes/cylinder/cylinder_mesh.mesh.yaml"},
     {"capsule", "data/raw/meshes/capsule/capsule_mesh.mesh.yaml"},

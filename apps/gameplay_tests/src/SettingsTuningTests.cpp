@@ -153,7 +153,7 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(tuning.value.goalie.shieldCooldownSeconds, 5.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.puck.floorY, 0.05f, 0.0001f);
-        HK_CHECK_NEAR(tuning.value.puck.possessionOffset.z, 1.1f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.puck.possessionOffset.z, 2.98f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.shot.maxPower, 32.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
 
