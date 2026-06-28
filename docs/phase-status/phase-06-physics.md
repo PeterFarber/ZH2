@@ -107,7 +107,7 @@ Source material:
 - [x] Component serialization/metadata tests exist.
 - [x] Collider validation tests exist.
 - [x] Rigid body/world stepping tests exist.
-- [x] Rigid body tests cover a continuous fast puck colliding with a thin wall without tunneling.
+- [x] Rigid body tests cover a puck-layer fast body colliding with a thin wall without tunneling.
 - [x] Component serialization tests cover collision detection round trip and legacy dynamic puck migration.
 - [x] Scene sync tests exist.
 - [x] Contact/trigger tests exist.

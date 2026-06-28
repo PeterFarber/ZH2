@@ -61,7 +61,7 @@ void ScoreSystem::AddGoal(Scene& scene,
     events.Push({GameplayEventType::ScoreChanged, match.GetUUID(), UUID(0), scoringTeam});
 
     if (settings.autoFaceoffAfterGoal) {
-        ResetSystem::BeginReset(scene, events);
+        ResetSystem::BeginReset(scene, events, GameplayTeam::None, true);
     } else {
         state.phase = MatchPhase::GoalScored;
         state.phaseTimer = 0.0f;

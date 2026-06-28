@@ -145,6 +145,7 @@ void AddGameplayActorPhysics(Entity player, PhysicsLayer layer, const char* mate
     body.allowSleeping = false;
     body.lockTranslationY = true;
     body.lockRotationX = true;
+    body.lockRotationY = false;
     body.lockRotationZ = true;
     body.layer = layer;
     body.materialName = materialName;
@@ -204,6 +205,9 @@ void TestPhysicsBackedMovementLetsPhysicsOwnPosition() {
     HK_CHECK_NEAR(afterGameplay.x, beforeGameplay.x, 0.001f);
     HK_CHECK_NEAR(afterGameplay.y, beforeGameplay.y, 0.001f);
     HK_CHECK_NEAR(afterGameplay.z, beforeGameplay.z, 0.001f);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.x, 0.0f, 0.001f);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.y, 90.0f, 0.001f);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.z, 0.0f, 0.001f);
 
     physicsWorld.SyncSceneToPhysics(scene);
     physicsWorld.Step(settings.fixedDeltaSeconds);
@@ -212,6 +216,9 @@ void TestPhysicsBackedMovementLetsPhysicsOwnPosition() {
     const glm::vec3 afterPhysics = skater.GetComponent<TransformComponent>().localPosition;
 
     HK_CHECK_MSG(afterPhysics.x > afterGameplay.x, "physics step advances dynamic player body");
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.x, 0.0f, 0.001f);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.y, 90.0f, 0.001f);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.z, 0.0f, 0.001f);
 
     physicsWorld.Shutdown();
     Physics::Shutdown();
@@ -286,14 +293,21 @@ void RunSkaterMovementTests() {
     HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x > 0.0f);
     HK_CHECK(skater.GetComponent<TransformComponent>().localPosition.x > -3.0f);
     HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.x, 0.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.y, 90.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.z, 0.0f, 0.001);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
     skater.GetComponent<TransformComponent>().localPosition = {-3.0f, 0.0f, -5.0f};
+    skater.GetComponent<TransformComponent>().localRotation = glm::vec3{12.0f, 0.0f, -7.0f};
     PushWaypoint(world, playerIndex, 2, {3.0f, 0.0f, -5.0f});
     world.FixedUpdate(scene, settings.fixedDeltaSeconds, 2);
     HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
     HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x > 0.0f);
     HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.x, 0.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.y, 90.0f, 0.001);
+    HK_CHECK_NEAR(skater.GetComponent<TransformComponent>().localRotation.z, 0.0f, 0.001);
 
     const float speedAfterInput = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
     GameplayInputFrame brakeInput;
@@ -341,6 +355,33 @@ void RunSkaterMovementTests() {
     HK_CHECK(!skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
     HK_CHECK(glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity) < 4.0f);
     HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, -1.0f, 0.001);
+
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+    skater.GetComponent<PlayerRuntimeComponent>().facingDirection = glm::vec3{0.0f, 0.0f, 1.0f};
+    GameplayInputFrame moveWithOppositeAim;
+    moveWithOppositeAim.playerIndex = playerIndex;
+    moveWithOppositeAim.inputSequence = 160;
+    moveWithOppositeAim.simulationTick = 160;
+    moveWithOppositeAim.move = {1.0f, 0.0f};
+    moveWithOppositeAim.aim = {-1.0f, 0.0f};
+    world.PushInput(moveWithOppositeAim);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 160);
+    HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
+
+    skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
+    skater.GetComponent<TransformComponent>().localPosition = {-3.0f, 0.0f, -5.0f};
+    GameplayInputFrame waypointWithOppositeAim;
+    waypointWithOppositeAim.playerIndex = playerIndex;
+    waypointWithOppositeAim.inputSequence = 170;
+    waypointWithOppositeAim.simulationTick = 170;
+    waypointWithOppositeAim.moveTarget = {3.0f, 0.0f, -5.0f};
+    waypointWithOppositeAim.setMoveTarget = true;
+    waypointWithOppositeAim.aim = {-1.0f, 0.0f};
+    world.PushInput(waypointWithOppositeAim);
+    world.FixedUpdate(scene, settings.fixedDeltaSeconds, 170);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().hasMoveTarget);
+    HK_CHECK(skater.GetComponent<PlayerRuntimeComponent>().velocity.x > 0.0f);
+    HK_CHECK_NEAR(skater.GetComponent<PlayerRuntimeComponent>().facingDirection.x, 1.0f, 0.001);
 
     skater.GetComponent<PlayerRuntimeComponent>().velocity = glm::vec3{0.0f};
     skater.GetComponent<PlayerRuntimeComponent>().movementEnabled = false;

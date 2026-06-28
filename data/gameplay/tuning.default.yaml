@@ -1,39 +1,39 @@
 Skater:
-  MaxSpeed: 9.0
-  Acceleration: 32.0
-  Deceleration: 20.0
-  TurnSpeedDegrees: 720.0
+  MaxSpeed: 9
+  Acceleration: 20
+  Deceleration: 0
+  TurnSpeedDegrees: 720
   BoostImpulse: 7.5
   BoostCooldownSeconds: 1.25
   SlideStopDamping: 0.35
-  DoubleStopWindowSeconds: 0.30
+  DoubleStopWindowSeconds: 0.3
   PuckControlRadius: 1.25
   StealRadius: 1.5
   StealCooldownSeconds: 0.35
 Goalie:
   MaxSpeed: 6.5
-  Acceleration: 28.0
-  CreaseMoveMultiplier: 1.0
+  Acceleration: 28
+  CreaseMoveMultiplier: 1
   SaveReachRadius: 1.8
   BoostCharges: 2
-  BoostRechargeSeconds: 4.0
-  BoostImpulse: 8.0
-  ShieldRadius: 2.0
-  ShieldDurationSeconds: 1.0
-  ShieldCooldownSeconds: 5.0
-  ShieldReflectImpulse: 22.0
+  BoostRechargeSeconds: 4
+  BoostImpulse: 8
+  ShieldRadius: 2
+  ShieldDurationSeconds: 1
+  ShieldCooldownSeconds: 5
+  ShieldReflectImpulse: 22
 Puck:
-  MaxSpeed: 45.0
-  PossessionOffset: [0.0, 0.0, 1.1]
+  MaxSpeed: 45
+  PossessionOffset: [0, 0, 2.98]
   LoosePuckDrag: 0.15
   FloorY: 0.05
-  OutOfPlayY: -5.0
+  OutOfPlayY: -5
 Stick:
   Reach: 1.5
   Width: 0.25
 Shot:
-  MinPower: 8.0
-  MaxPower: 32.0
-  ChargeSeconds: 1.0
-  SelfCollisionGraceSeconds: 0.20
-  AccuracyDegrees: 4.0
+  MinPower: 6.45
+  MaxPower: 32
+  ChargeSeconds: 1
+  SelfCollisionGraceSeconds: 0.2
+  AccuracyDegrees: 4

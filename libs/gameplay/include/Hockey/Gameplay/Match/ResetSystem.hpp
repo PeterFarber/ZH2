@@ -11,10 +11,14 @@ class Scene;
 
 class ResetSystem {
 public:
-    static void BeginReset(Scene& scene, GameplayEventQueue& events, GameplayTeam causeTeam = GameplayTeam::None);
+    static void BeginReset(Scene& scene,
+                           GameplayEventQueue& events,
+                           GameplayTeam causeTeam = GameplayTeam::None,
+                           bool useNormalSpawnsForReset = false);
     static void CompleteReset(Scene& scene,
                               GameplayEventQueue& events,
                               GameplayTeam causeTeam = GameplayTeam::None,
+                              bool useNormalSpawnsForReset = false,
                               const GameplaySettings& settings = {},
                               PhysicsWorld* physicsWorld = nullptr);
     static void FixedUpdate(Scene& scene,

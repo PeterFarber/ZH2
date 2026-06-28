@@ -67,7 +67,7 @@ void GameplayWorld::ResetMatchForFaceoff(Scene& scene, GameplayTeam causeTeam) {
     }
 
     ResetSystem::BeginReset(scene, m_Events, causeTeam);
-    ResetSystem::CompleteReset(scene, m_Events, causeTeam, m_Settings, m_PhysicsWorld);
+    ResetSystem::CompleteReset(scene, m_Events, causeTeam, false, m_Settings, m_PhysicsWorld);
 }
 
 void GameplayWorld::PushInput(const GameplayInputFrame& input) {

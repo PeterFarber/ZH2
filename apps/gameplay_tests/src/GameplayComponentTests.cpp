@@ -76,6 +76,7 @@ void RunGameplayComponentTests() {
     faceoff.causeTeam = GameplayTeam::Away;
     faceoff.spawnSequence = 42;
     faceoff.locked = true;
+    faceoff.useNormalSpawnsForReset = true;
     goal.AddComponent<FaceoffComponent>(faceoff);
 
     Entity team = scene.CreateEntity("Home Team State");
@@ -122,6 +123,7 @@ void RunGameplayComponentTests() {
     HK_CHECK_EQ(loadedGoal.GetComponent<FaceoffComponent>().causeTeam, GameplayTeam::Away);
     HK_CHECK_EQ(loadedGoal.GetComponent<FaceoffComponent>().spawnSequence, 42u);
     HK_CHECK(loadedGoal.GetComponent<FaceoffComponent>().locked);
+    HK_CHECK(loadedGoal.GetComponent<FaceoffComponent>().useNormalSpawnsForReset);
 
     Entity loadedTeam = loaded.FindEntityByName("Home Team State");
     HK_CHECK_EQ(loadedTeam.GetComponent<TeamStateComponent>().team, GameplayTeam::Home);

@@ -1,6 +1,7 @@
 #include "Hockey/Gameplay/Player/PlayerMovement.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 #include <entt/entt.hpp>
 #include <glm/geometric.hpp>
@@ -76,6 +77,16 @@ MovementConfig ConfigFor(Entity player, const GameplayTuning& tuning) {
 
 glm::vec3 NormalizedOrForward(const glm::vec3& value) {
     return glm::length(value) > 0.0001f ? glm::normalize(value) : glm::vec3{0.0f, 0.0f, 1.0f};
+}
+
+float YawDegreesFromFacing(const glm::vec3& facingDirection) {
+    constexpr float kRadiansToDegrees = 57.29577951308232f;
+    const glm::vec3 facing = NormalizedOrForward(facingDirection);
+    return std::atan2(facing.x, facing.z) * kRadiansToDegrees;
+}
+
+void ApplyFacingRotation(const PlayerRuntimeComponent& runtime, TransformComponent& transform) {
+    transform.localRotation = {0.0f, YawDegreesFromFacing(runtime.facingDirection), 0.0f};
 }
 
 void TickAbilityTimers(Entity player,
@@ -201,6 +212,8 @@ void PlayerMovement::FixedUpdate(Scene& scene,
 
         const MovementConfig config = ConfigFor(player, tuning);
         glm::vec2 moveInput = ClampedInput(input.move);
+        glm::vec2 waypointDirection{0.0f};
+        bool hasWaypointDirection = false;
         if (runtime.hasMoveTarget) {
             const glm::vec2 toTarget = Xz(runtime.moveTarget - transform.localPosition);
             const float distanceToTarget = glm::length(toTarget);
@@ -208,7 +221,9 @@ void PlayerMovement::FixedUpdate(Scene& scene,
                 runtime.hasMoveTarget = false;
                 moveInput = {0.0f, 0.0f};
             } else {
-                moveInput = toTarget / distanceToTarget;
+                waypointDirection = toTarget / distanceToTarget;
+                hasWaypointDirection = true;
+                moveInput = waypointDirection;
             }
         }
         if (config.lockGoalieDepth) {
@@ -269,17 +284,20 @@ void PlayerMovement::FixedUpdate(Scene& scene,
 
         ApplyGoalieShield(scene, player, runtime, tuning);
 
-        if (!quickTurned && LengthSq(input.aim) > 0.0001f) {
-            runtime.facingDirection = glm::normalize(Xz(ClampedInput(input.aim)));
+        if (!quickTurned && hasWaypointDirection && !braking) {
+            runtime.facingDirection = glm::normalize(Xz(waypointDirection));
         } else if (!quickTurned && hasMoveInput && !braking) {
             runtime.facingDirection = glm::normalize(Xz(moveInput));
         } else if (!quickTurned && glm::length(runtime.velocity) > 0.0001f) {
             runtime.facingDirection = glm::normalize(runtime.velocity);
         }
+        ApplyFacingRotation(runtime, transform);
 
         if (HasDynamicPhysicsBody(player, physicsWorld)) {
             glm::vec3 physicsVelocity = runtime.velocity;
             physicsVelocity.y = 0.0f;
+            const glm::vec3 worldPosition = glm::vec3(scene.GetWorldTransform(player)[3]);
+            physicsWorld->SetBodyTransform(player, worldPosition, glm::quat(glm::radians(transform.localRotation)));
             physicsWorld->SetLinearVelocity(player, physicsVelocity);
         } else {
             transform.localPosition += runtime.velocity * fixedDeltaSeconds;
@@ -310,9 +328,10 @@ void PlayerMovement::SyncFromPhysics(Scene& scene, PhysicsWorld* physicsWorld) {
 
         PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
         runtime.velocity = velocity;
-        if (glm::length(velocity) > 0.0001f) {
+        if (!runtime.hasMoveTarget && glm::length(velocity) > 0.0001f) {
             runtime.facingDirection = glm::normalize(velocity);
         }
+        ApplyFacingRotation(runtime, player.GetComponent<TransformComponent>());
     }
 }
 

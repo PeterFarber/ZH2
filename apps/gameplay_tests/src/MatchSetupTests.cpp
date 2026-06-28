@@ -1,9 +1,11 @@
 #include "Test.hpp"
 
+#include <cmath>
 #include <filesystem>
 #include <vector>
 
 #include <entt/entt.hpp>
+#include <glm/geometric.hpp>
 
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/Components.hpp"
@@ -25,17 +27,18 @@ Entity AddMarker(Scene& scene, const std::string& name, const glm::vec3& positio
     return entity;
 }
 
-void AddSpawn(Scene& scene,
-              Team team,
-              const glm::vec3& position,
-              const std::filesystem::path& prefabPath = {},
-              bool faceoffSpawn = false) {
+Entity AddSpawn(Scene& scene,
+                Team team,
+                const glm::vec3& position,
+                const std::filesystem::path& prefabPath = {},
+                bool faceoffSpawn = false) {
     Entity spawn = AddMarker(scene, "Spawn", position);
     SpawnPointComponent component;
     component.team = team;
     component.faceoffSpawn = faceoffSpawn;
     component.playerPrefabPath = prefabPath;
     spawn.AddComponent<SpawnPointComponent>(component);
+    return spawn;
 }
 
 void BuildValidGameplayScene(Scene& scene) {
@@ -55,6 +58,50 @@ void BuildValidGameplayScene(Scene& scene) {
         AddSpawn(scene, Team::Home, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, -5.0f});
         AddSpawn(scene, Team::Away, {-6.0f + static_cast<float>(i) * 4.0f, 0.0f, 5.0f});
     }
+    for (int i = 0; i < 8; ++i) {
+        AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 0.0f}, {}, true);
+    }
+}
+
+void BuildRoleMarkedGameplayScene(Scene& scene, glm::vec3& outHomeGoalieSpawn, glm::vec3& outAwayGoalieSpawn) {
+    Entity rink = AddMarker(scene, "Rink", {0.0f, 0.0f, 0.0f});
+    rink.AddComponent<RinkComponent>().rinkName = "Role Marked Rink";
+    rink.AddComponent<PlayAreaComponent>();
+
+    Entity puck = AddMarker(scene, "Puck", {0.0f, 0.05f, 0.0f});
+    puck.AddComponent<PuckComponent>();
+
+    Entity homeGoal = AddMarker(scene, "Home Goal", {0.0f, 0.0f, -28.0f});
+    homeGoal.AddComponent<GoalComponent>().defendingTeam = Team::Home;
+    Entity awayGoal = AddMarker(scene, "Away Goal", {0.0f, 0.0f, 28.0f});
+    awayGoal.AddComponent<GoalComponent>().defendingTeam = Team::Away;
+
+    outHomeGoalieSpawn = {11.0f, 0.0f, -9.0f};
+    outAwayGoalieSpawn = {-13.0f, 0.0f, 9.0f};
+
+    const glm::vec3 homePositions[] = {
+        {-17.0f, 0.0f, -9.0f},
+        outHomeGoalieSpawn,
+        {-5.0f, 0.0f, -9.0f},
+        {1.0f, 0.0f, -9.0f},
+    };
+    const glm::vec3 awayPositions[] = {
+        {-19.0f, 0.0f, 9.0f},
+        {-7.0f, 0.0f, 9.0f},
+        outAwayGoalieSpawn,
+        {5.0f, 0.0f, 9.0f},
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        Entity home = AddSpawn(scene, Team::Home, homePositions[i]);
+        home.AddComponent<PlayerRoleComponent>(
+            PlayerRoleComponent{i == 1 ? PlayerRole::Goalie : PlayerRole::Skater});
+
+        Entity away = AddSpawn(scene, Team::Away, awayPositions[i]);
+        away.AddComponent<PlayerRoleComponent>(
+            PlayerRoleComponent{i == 2 ? PlayerRole::Goalie : PlayerRole::Skater});
+    }
+
     for (int i = 0; i < 8; ++i) {
         AddSpawn(scene, Team::None, {-14.0f + static_cast<float>(i) * 4.0f, 0.0f, 0.0f}, {}, true);
     }
@@ -85,6 +132,43 @@ Entity FindSpawn(Scene& scene, Team team, bool faceoffSpawn, std::size_t skip = 
         }
     }
     return {};
+}
+
+glm::vec3 ExpectedFacingToward(const glm::vec3& from, const glm::vec3& target) {
+    glm::vec3 direction = target - from;
+    direction.y = 0.0f;
+    return glm::length(direction) > 0.0001f ? glm::normalize(direction) : glm::vec3{0.0f, 0.0f, 1.0f};
+}
+
+float ExpectedYawDegrees(const glm::vec3& facing) {
+    constexpr float kRadiansToDegrees = 57.29577951308232f;
+    return std::atan2(facing.x, facing.z) * kRadiansToDegrees;
+}
+
+void CheckPlayerFacesPuck(Entity player, Entity puck) {
+    const TransformComponent& playerTransform = player.GetComponent<TransformComponent>();
+    const glm::vec3 expectedFacing =
+        ExpectedFacingToward(playerTransform.localPosition, puck.GetComponent<TransformComponent>().localPosition);
+    const PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
+
+    HK_CHECK_NEAR(runtime.facingDirection.x, expectedFacing.x, 0.001f);
+    HK_CHECK_NEAR(runtime.facingDirection.y, 0.0f, 0.001f);
+    HK_CHECK_NEAR(runtime.facingDirection.z, expectedFacing.z, 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.x, 0.0f, 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.y, ExpectedYawDegrees(expectedFacing), 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.z, 0.0f, 0.001f);
+}
+
+void CheckAllPlayersFacePuck(Scene& scene) {
+    Entity puck = scene.FindEntityByName("Puck");
+    HK_CHECK(puck.IsValid());
+    auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent>();
+    int checked = 0;
+    for (const entt::entity handle : view) {
+        CheckPlayerFacesPuck(Entity(handle, &scene), puck);
+        ++checked;
+    }
+    HK_CHECK_EQ(checked, 8);
 }
 
 std::filesystem::path SavePlayerPrefab() {
@@ -173,6 +257,7 @@ void RunMatchSetupTests() {
     Entity puck = scene.FindEntityByName("Puck");
     HK_CHECK(puck.HasComponent<PuckGameplayComponent>());
     HK_CHECK(puck.HasComponent<PuckRuntimeComponent>());
+    CheckAllPlayersFacePuck(scene);
 
     Entity homeGoal = scene.FindEntityByName("Home Goal");
     Entity awayGoal = scene.FindEntityByName("Away Goal");
@@ -251,6 +336,34 @@ void RunMatchSetupTests() {
         for (std::size_t i = 0; i < occupiedHomePositions.size(); ++i) {
             for (std::size_t j = i + 1; j < occupiedHomePositions.size(); ++j) {
                 HK_CHECK(occupiedHomePositions[i] != occupiedHomePositions[j]);
+            }
+        }
+    }
+
+    {
+        for (uint32_t seed = 0; seed < 16; ++seed) {
+            Scene roleMarkedScene("RoleMarkedSpawnScene");
+            glm::vec3 homeGoalieSpawn{0.0f};
+            glm::vec3 awayGoalieSpawn{0.0f};
+            BuildRoleMarkedGameplayScene(roleMarkedScene, homeGoalieSpawn, awayGoalieSpawn);
+
+            GameplaySettings roleMarkedSettings;
+            roleMarkedSettings.spawnRandomSeed = seed;
+            HK_CHECK(static_cast<bool>(MatchSystem::InitializeMatch(roleMarkedScene, roleMarkedSettings)));
+
+            Entity homeGoalie = FindPlayer(roleMarkedScene, PlayerSlot::HomeGoalie);
+            Entity awayGoalie = FindPlayer(roleMarkedScene, PlayerSlot::AwayGoalie);
+            HK_CHECK(homeGoalie.IsValid());
+            HK_CHECK(awayGoalie.IsValid());
+            if (homeGoalie.IsValid()) {
+                const glm::vec3& position = homeGoalie.GetComponent<TransformComponent>().localPosition;
+                HK_CHECK_NEAR(position.x, homeGoalieSpawn.x, 0.001f);
+                HK_CHECK_NEAR(position.z, homeGoalieSpawn.z, 0.001f);
+            }
+            if (awayGoalie.IsValid()) {
+                const glm::vec3& position = awayGoalie.GetComponent<TransformComponent>().localPosition;
+                HK_CHECK_NEAR(position.x, awayGoalieSpawn.x, 0.001f);
+                HK_CHECK_NEAR(position.z, awayGoalieSpawn.z, 0.001f);
             }
         }
     }

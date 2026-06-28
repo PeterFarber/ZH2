@@ -25,6 +25,7 @@ struct FaceoffComponent {
     uint32_t spawnSequence = 0;
     float timer = 0.0f;
     bool locked = false;
+    bool useNormalSpawnsForReset = false;
 };
 
 template <> struct ComponentTraits<GoalGameplayComponent> {

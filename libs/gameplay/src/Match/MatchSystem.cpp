@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <optional>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <entt/entt.hpp>
@@ -14,6 +16,7 @@
 #include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Gameplay/Player/PlayerFacing.hpp"
 #include "Hockey/Gameplay/Stick/StickAttachment.hpp"
 #include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
 
@@ -23,6 +26,8 @@ namespace {
 struct SpawnCandidate {
     glm::vec3 position{0.0f};
     std::filesystem::path prefabPath;
+    PlayerRole assignedRole = PlayerRole::Skater;
+    bool hasAssignedRole = false;
 };
 
 GameplayTeam ToGameplayTeam(Team team) {
@@ -45,6 +50,10 @@ GameplayRole RoleForSlot(PlayerSlot slot) {
     return IsGoalieSlot(slot) ? GameplayRole::Goalie : GameplayRole::Skater;
 }
 
+PlayerRole MarkerRoleForSlot(PlayerSlot slot) {
+    return IsGoalieSlot(slot) ? PlayerRole::Goalie : PlayerRole::Skater;
+}
+
 Entity FindPlayerBySlot(Scene& scene, PlayerSlot slot) {
     auto view = scene.Registry().view<PlayerComponent>();
     for (const entt::entity handle : view) {
@@ -59,6 +68,27 @@ Entity FindPlayerBySlot(Scene& scene, PlayerSlot slot) {
 Entity FindOrCreateNamed(Scene& scene, const std::string& name) {
     Entity entity = scene.FindEntityByName(name);
     return entity.IsValid() ? entity : scene.CreateEntity(name);
+}
+
+std::optional<glm::vec3> FindPuckPosition(Scene& scene) {
+    auto view = scene.Registry().view<PuckComponent, TransformComponent>();
+    const auto it = view.begin();
+    if (it == view.end()) {
+        return std::nullopt;
+    }
+    return view.get<TransformComponent>(*it).localPosition;
+}
+
+void FacePlayersTowardPuck(Scene& scene) {
+    const std::optional<glm::vec3> puckPosition = FindPuckPosition(scene);
+    if (!puckPosition.has_value()) {
+        return;
+    }
+
+    auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent>();
+    for (const entt::entity handle : view) {
+        FacePlayerToward(Entity(handle, &scene), *puckPosition);
+    }
 }
 
 Result<Entity> CreatePlayerFromSpawnPrefab(Scene& scene, const std::filesystem::path& prefabPath, PlayerSlot slot) {
@@ -84,7 +114,14 @@ std::vector<SpawnCandidate> CollectSpawns(Scene& scene, Team team, bool faceoffS
         if (spawn.team != team || spawn.faceoffSpawn != faceoffSpawn) {
             continue;
         }
-        spawns.push_back({view.get<TransformComponent>(handle).localPosition, spawn.playerPrefabPath});
+        SpawnCandidate candidate;
+        candidate.position = view.get<TransformComponent>(handle).localPosition;
+        candidate.prefabPath = spawn.playerPrefabPath;
+        if (const auto* role = scene.Registry().try_get<PlayerRoleComponent>(handle)) {
+            candidate.assignedRole = role->role;
+            candidate.hasAssignedRole = true;
+        }
+        spawns.push_back(std::move(candidate));
     }
     return spawns;
 }
@@ -92,6 +129,35 @@ std::vector<SpawnCandidate> CollectSpawns(Scene& scene, Team team, bool faceoffS
 template <typename T> void ShuffleDeterministic(std::vector<T>& values, uint32_t seed) {
     std::mt19937 rng(seed);
     std::shuffle(values.begin(), values.end(), rng);
+}
+
+std::size_t FindMatchingSpawn(const std::vector<SpawnCandidate>& spawns,
+                              const std::vector<bool>& used,
+                              PlayerSlot slot) {
+    const PlayerRole desiredRole = MarkerRoleForSlot(slot);
+
+    const auto find = [&](auto&& predicate) {
+        for (std::size_t i = 0; i < spawns.size(); ++i) {
+            if (!used[i] && predicate(spawns[i])) {
+                return i;
+            }
+        }
+        return spawns.size();
+    };
+
+    std::size_t match = find([&](const SpawnCandidate& spawn) {
+        return spawn.hasAssignedRole && spawn.assignedRole == desiredRole;
+    });
+    if (match != spawns.size()) {
+        return match;
+    }
+
+    match = find([](const SpawnCandidate& spawn) { return !spawn.hasAssignedRole; });
+    if (match != spawns.size()) {
+        return match;
+    }
+
+    return find([](const SpawnCandidate&) { return true; });
 }
 
 Status ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const glm::vec3& position) {
@@ -140,19 +206,28 @@ Status AssignTeamPlayers(Scene& scene,
         return Status::Fail(std::string("not enough ") + GameplayTeamToString(gameplayTeam) + " player spawns");
     }
     ShuffleDeterministic(spawns, settings.spawnRandomSeed ^ seedSalt);
+    std::vector<bool> usedSpawns(spawns.size(), false);
 
     const std::array<PlayerSlot, 4> slots = SlotsForTeam(gameplayTeam);
     for (std::size_t i = 0; i < slots.size(); ++i) {
         const PlayerSlot slot = slots[i];
+        const std::size_t spawnIndex = FindMatchingSpawn(spawns, usedSpawns, slot);
+        if (spawnIndex == spawns.size()) {
+            return Status::Fail(std::string("failed to assign ") + GameplayTeamToString(gameplayTeam) +
+                                " player spawn");
+        }
+        usedSpawns[spawnIndex] = true;
+
         Entity player = FindPlayerBySlot(scene, slot);
         if (!player.IsValid()) {
-            Result<Entity> spawnedPlayer = CreatePlayerFromSpawnPrefab(scene, spawns[i].prefabPath, slot);
+            Result<Entity> spawnedPlayer = CreatePlayerFromSpawnPrefab(scene, spawns[spawnIndex].prefabPath, slot);
             if (!spawnedPlayer) {
                 return Status::Fail(spawnedPlayer.error);
             }
             player = spawnedPlayer.value;
         }
-        if (const Status configured = ConfigurePlayer(player, slot, gameplayTeam, spawns[i].position); !configured) {
+        if (const Status configured = ConfigurePlayer(player, slot, gameplayTeam, spawns[spawnIndex].position);
+            !configured) {
             return configured;
         }
     }
@@ -249,6 +324,7 @@ Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settin
 
     EnsurePuckGameplay(scene);
     EnsureGoalGameplay(scene);
+    FacePlayersTowardPuck(scene);
     EnsureTeamState(scene, GameplayTeam::Home);
     EnsureTeamState(scene, GameplayTeam::Away);
 

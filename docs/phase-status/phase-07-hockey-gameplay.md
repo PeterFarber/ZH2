@@ -70,7 +70,7 @@ Source material:
 ## Finished - Match And Rules
 
 - [x] Match initialization exists.
-- [x] Player spawn/setup flow uses deterministic shuffled team spawn pools.
+- [x] Player spawn/setup flow uses deterministic shuffled, role-aware team spawn pools that honor authored skater/goalie markers.
 - [x] Match setup auto-discovers authored stick child entities from spawned player prefabs while preserving root stick gameplay data.
 - [x] 4v4 setup exists.
 - [x] Match clock exists.
@@ -79,7 +79,8 @@ Source material:
 - [x] Pregame countdown exists.
 - [x] Countdown tick/beep gameplay events exist.
 - [x] Faceoff flow exists.
-- [x] Reset flow uses neutral/Home/Away faceoff spawn pools with deterministic placement.
+- [x] Reset flow uses normal team spawns after goals and neutral/Home/Away faceoff pools for explicit faceoff resets, with deterministic slot-aware placement.
+- [x] Initial spawn and reset placement face active players toward the puck.
 - [x] Score system exists.
 - [x] Goal detection exists.
 - [x] Out-of-play handling exists.
@@ -120,6 +121,7 @@ Source material:
 - [x] Player snapshots expose shot charge state/ratio.
 - [x] Puck snapshots exist.
 - [x] Client local gameplay integration exists.
+- [x] Local client gameplay applies scoped presentation interpolation between fixed simulation ticks without mutating authoritative simulation state.
 - [x] Client local play draws a lightweight shot power bar while charging.
 - [x] Editor gameplay validation integration exists.
 - [x] Editor gameplay preview integration exists.

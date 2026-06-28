@@ -257,6 +257,7 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "SpawnSequence" << YAML::Value << c.spawnSequence;
         out << YAML::Key << "Timer" << YAML::Value << c.timer;
         out << YAML::Key << "Locked" << YAML::Value << c.locked;
+        out << YAML::Key << "UseNormalSpawnsForReset" << YAML::Value << c.useNormalSpawnsForReset;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<RespawnComponent>()) {
@@ -411,6 +412,7 @@ void DeserializeGameplay(Entity entity, const YAML::Node& node) {
         if (n["SpawnSequence"]) c.spawnSequence = n["SpawnSequence"].as<uint32_t>();
         if (n["Timer"]) c.timer = n["Timer"].as<float>();
         if (n["Locked"]) c.locked = n["Locked"].as<bool>();
+        if (n["UseNormalSpawnsForReset"]) c.useNormalSpawnsForReset = n["UseNormalSpawnsForReset"].as<bool>();
         entity.AddOrReplaceComponent<FaceoffComponent>(c);
     }
     if (const auto n = node["RespawnComponent"]) {
@@ -547,6 +549,9 @@ void RegisterMetadata() {
         md.fields.push_back(MakeField("SpawnSequence", FieldType::Int, offsetof(FaceoffComponent, spawnSequence)));
         md.fields.push_back(MakeField("Timer", FieldType::Float, offsetof(FaceoffComponent, timer)));
         md.fields.push_back(MakeField("Locked", FieldType::Bool, offsetof(FaceoffComponent, locked)));
+        md.fields.push_back(MakeField("UseNormalSpawnsForReset",
+                                      FieldType::Bool,
+                                      offsetof(FaceoffComponent, useNormalSpawnsForReset)));
         registry.RegisterComponent<FaceoffComponent>(std::move(md));
     }
     registry.RegisterComponent<RespawnComponent>({"RespawnComponent", "Respawn", "Gameplay"});

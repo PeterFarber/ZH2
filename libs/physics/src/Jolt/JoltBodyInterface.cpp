@@ -51,6 +51,10 @@ JPH::EAllowedDOFs ComputeAllowedDOFs(const RigidBodyComponent& rb) {
     return dofs;
 }
 
+bool RequiresLinearCastMotion(const RigidBodyComponent& rb) {
+    return rb.collisionDetection == CollisionDetectionMode::Continuous || rb.layer == PhysicsLayer::Puck;
+}
+
 } // namespace
 
 JPH::BodyCreationSettings MakeBodyCreationSettings(const RigidBodyComponent& rb, const PhysicsMaterial& material,
@@ -73,7 +77,7 @@ JPH::BodyCreationSettings MakeBodyCreationSettings(const RigidBodyComponent& rb,
 
     if (motionType == JPH::EMotionType::Dynamic) {
         settings.mAllowedDOFs = ComputeAllowedDOFs(rb);
-        if (rb.collisionDetection == CollisionDetectionMode::Continuous) {
+        if (RequiresLinearCastMotion(rb)) {
             settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
         }
         if (rb.mass > 0.0f) {

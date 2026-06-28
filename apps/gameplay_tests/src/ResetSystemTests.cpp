@@ -1,14 +1,18 @@
 #include "Test.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include <entt/entt.hpp>
+#include <glm/geometric.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Match/ResetSystem.hpp"
+#include "Hockey/Gameplay/Match/ScoreSystem.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
 
 using namespace Hockey;
@@ -80,6 +84,43 @@ Entity FindMatch(Scene& scene) {
     return it == view.end() ? Entity{} : Entity(*it, &scene);
 }
 
+glm::vec3 ExpectedFacingToward(const glm::vec3& from, const glm::vec3& target) {
+    glm::vec3 direction = target - from;
+    direction.y = 0.0f;
+    return glm::length(direction) > 0.0001f ? glm::normalize(direction) : glm::vec3{0.0f, 0.0f, 1.0f};
+}
+
+float ExpectedYawDegrees(const glm::vec3& facing) {
+    constexpr float kRadiansToDegrees = 57.29577951308232f;
+    return std::atan2(facing.x, facing.z) * kRadiansToDegrees;
+}
+
+void CheckPlayerFacesPuck(Entity player, Entity puck) {
+    const TransformComponent& playerTransform = player.GetComponent<TransformComponent>();
+    const glm::vec3 expectedFacing =
+        ExpectedFacingToward(playerTransform.localPosition, puck.GetComponent<TransformComponent>().localPosition);
+    const PlayerRuntimeComponent& runtime = player.GetComponent<PlayerRuntimeComponent>();
+
+    HK_CHECK_NEAR(runtime.facingDirection.x, expectedFacing.x, 0.001f);
+    HK_CHECK_NEAR(runtime.facingDirection.y, 0.0f, 0.001f);
+    HK_CHECK_NEAR(runtime.facingDirection.z, expectedFacing.z, 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.x, 0.0f, 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.y, ExpectedYawDegrees(expectedFacing), 0.001f);
+    HK_CHECK_NEAR(playerTransform.localRotation.z, 0.0f, 0.001f);
+}
+
+void CheckAllPlayersFacePuck(Scene& scene) {
+    Entity puck = FindPuck(scene);
+    HK_CHECK(puck.IsValid());
+    auto view = scene.Registry().view<PlayerComponent, PlayerRuntimeComponent, TransformComponent>();
+    int checked = 0;
+    for (const entt::entity handle : view) {
+        CheckPlayerFacesPuck(Entity(handle, &scene), puck);
+        ++checked;
+    }
+    HK_CHECK_EQ(checked, 8);
+}
+
 bool AllPlayersInZBand(Scene& scene, float expectedZ) {
     auto view = scene.Registry().view<PlayerComponent, TransformComponent>();
     int count = 0;
@@ -91,6 +132,51 @@ bool AllPlayersInZBand(Scene& scene, float expectedZ) {
         ++count;
     }
     return count == 8;
+}
+
+bool AllPlayersForTeamInZBand(Scene& scene, GameplayTeam team, float expectedZ) {
+    auto view = scene.Registry().view<PlayerComponent, TransformComponent>();
+    int count = 0;
+    for (const entt::entity handle : view) {
+        const PlayerComponent& player = view.get<PlayerComponent>(handle);
+        if (player.team != team) {
+            continue;
+        }
+        const glm::vec3 position = view.get<TransformComponent>(handle).localPosition;
+        if (std::abs(position.z - expectedZ) > 0.001f) {
+            return false;
+        }
+        ++count;
+    }
+    return count == 4;
+}
+
+void ConfigureNeutralFaceoffSlots(Scene& scene) {
+    std::vector<Entity> spawns;
+    auto view = scene.Registry().view<SpawnPointComponent, TransformComponent>();
+    for (const entt::entity handle : view) {
+        const SpawnPointComponent& spawn = view.get<SpawnPointComponent>(handle);
+        if (spawn.faceoffSpawn && spawn.team == Team::None) {
+            spawns.emplace_back(handle, &scene);
+        }
+    }
+    std::sort(spawns.begin(), spawns.end(), [](Entity lhs, Entity rhs) {
+        return lhs.GetComponent<TransformComponent>().localPosition.x <
+               rhs.GetComponent<TransformComponent>().localPosition.x;
+    });
+
+    for (std::size_t i = 0; i < spawns.size() && i < 8; ++i) {
+        spawns[i].AddOrReplaceComponent<TeamComponent>(
+            TeamComponent{i < 4 ? Team::Home : Team::Away});
+        spawns[i].AddOrReplaceComponent<PlayerRoleComponent>(
+            PlayerRoleComponent{(i == 3 || i == 7) ? PlayerRole::Goalie : PlayerRole::Skater});
+    }
+}
+
+bool PlayerNearX(Scene& scene, PlayerSlot slot, float expectedX) {
+    Entity player = FindPlayer(scene, slot);
+    return player.IsValid() &&
+           std::abs(player.GetComponent<TransformComponent>().localPosition.x - expectedX) <= 0.001f;
 }
 
 } // namespace
@@ -131,6 +217,7 @@ void RunResetSystemTests() {
         HK_CHECK(!player.GetComponent<SkaterComponent>().hasPuck);
         const glm::vec3 expectedPuckPosition{0.0f, 0.0f, 2.0f};
         HK_CHECK_EQ(puck.GetComponent<TransformComponent>().localPosition, expectedPuckPosition);
+        CheckAllPlayersFacePuck(scene);
         HK_CHECK_EQ(puck.GetComponent<PuckGameplayComponent>().state, PuckState::Loose);
         HK_CHECK(!puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid());
         HK_CHECK_EQ(puck.GetComponent<PuckRuntimeComponent>().velocity, zero);
@@ -174,5 +261,45 @@ void RunResetSystemTests() {
 
         world.ResetMatchForFaceoff(scene, GameplayTeam::Away);
         HK_CHECK(AllPlayersInZBand(scene, 30.0f));
+    }
+
+    {
+        Scene scene("PostGoalNormalSpawnResetScene");
+        BuildValidGameplayScene(scene);
+
+        GameplayWorld world;
+        GameplaySettings settings;
+        settings.postGoalDelaySeconds = settings.fixedDeltaSeconds;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+
+        auto players = scene.Registry().view<PlayerComponent, TransformComponent>();
+        for (const entt::entity handle : players) {
+            players.get<TransformComponent>(handle).localPosition = {20.0f, 0.0f, 20.0f};
+        }
+
+        GameplayEventQueue events;
+        ScoreSystem::AddGoal(scene, GameplayTeam::Home, settings, events);
+        ResetSystem::FixedUpdate(scene, settings.fixedDeltaSeconds, settings, events);
+
+        HK_CHECK(AllPlayersForTeamInZBand(scene, GameplayTeam::Home, -5.0f));
+        HK_CHECK(AllPlayersForTeamInZBand(scene, GameplayTeam::Away, 5.0f));
+    }
+
+    {
+        Scene scene("NeutralFaceoffSlotMetadataResetScene");
+        BuildValidGameplayScene(scene);
+        ConfigureNeutralFaceoffSlots(scene);
+
+        GameplayWorld world;
+        GameplaySettings settings;
+        settings.spawnRandomSeed = 0u;
+        HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings)), "gameplay world initializes");
+        world.DrainEvents();
+
+        world.ResetMatchForFaceoff(scene, GameplayTeam::None);
+
+        HK_CHECK(PlayerNearX(scene, PlayerSlot::HomeGoalie, -2.0f));
+        HK_CHECK(PlayerNearX(scene, PlayerSlot::AwayGoalie, 14.0f));
     }
 }
