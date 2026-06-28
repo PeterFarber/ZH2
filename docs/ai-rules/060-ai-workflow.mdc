@@ -16,6 +16,9 @@ Canonical workflow docs:
 Before editing:
 
 - Read `AGENTS.md`.
+- Work on the current git branch only. Do not create worktrees, create new
+  branches, or switch branches unless the user explicitly requests that git
+  operation.
 - Read the relevant phase status file and current source/CMake/tests.
 - Inspect the relevant source, headers, CMake target, config, and tests.
 - Check dependency boundaries before adding includes, links, or new targets.

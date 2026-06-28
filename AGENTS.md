@@ -63,6 +63,11 @@ At the start of a coding task, read the relevant current source/CMake/tests and
 the matching `docs/phase-status/` file before editing. Use `docs/ai/onboarding.md`
 for the full orientation checklist when the task spans multiple subsystems.
 
+Work directly on the current branch. Do not create git worktrees, do not create
+new branches, and do not switch branches unless the user explicitly asks for
+that git operation. If the current branch looks wrong, stop and ask before
+changing it.
+
 Prefer the root `justfile` command surface:
 
 - `just tools-check` for local tool inventory.

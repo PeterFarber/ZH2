@@ -20,6 +20,13 @@ Use this as the first-read checklist for AI sessions that will change the repo.
 Prefer current source/CMake truth over summary text. If sources disagree, stop
 and call out the conflict before making a risky change.
 
+## Git Workspace
+
+Always work on the branch that is already checked out. Do not create git
+worktrees, do not create new branches, and do not switch branches unless the
+user explicitly requests that git operation. If branch state is unexpected,
+ask before changing it.
+
 ## Phase Selection
 
 Do not assume a phase from the docs file you happen to have open. Determine the

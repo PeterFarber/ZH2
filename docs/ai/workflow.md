@@ -20,6 +20,8 @@ Use this loop for day-to-day AI-assisted work in ZH2.
 
 ## Before Editing
 
+- Stay on the current git branch. Do not create worktrees, create new branches,
+  or switch branches unless the user explicitly asks for that git operation.
 - Read the matching `docs/phase-status/phase-*.md`.
 - Determine the active phase from the user's request, owning subsystem, and
   matching phase status file.
