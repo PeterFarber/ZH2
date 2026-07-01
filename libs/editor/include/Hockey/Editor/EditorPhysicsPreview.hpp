@@ -8,6 +8,7 @@
 #include "Hockey/Core/FixedTimestep.hpp"
 #include "Hockey/Core/UUID.hpp"
 #include "Hockey/ECS/Components.hpp"
+#include "Hockey/Physics/PhysicsEvents.hpp"
 #include "Hockey/Physics/PhysicsScene.hpp"
 #include "Hockey/Physics/PhysicsSettings.hpp"
 
@@ -61,6 +62,7 @@ public:
     const std::vector<glm::vec3>& ContactPoints() const {
         return m_ContactPoints;
     }
+    std::vector<PhysicsContactEvent> DrainContactEvents();
 
 private:
     void CaptureContactPoints();
@@ -74,6 +76,7 @@ private:
     bool m_Running = false;
     std::unordered_map<UUID, TransformComponent> m_SavedTransforms;
     std::vector<glm::vec3> m_ContactPoints;
+    std::vector<PhysicsContactEvent> m_PendingContactEvents;
 };
 
 } // namespace Hockey

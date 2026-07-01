@@ -1,5 +1,7 @@
 #include "Hockey/Editor/EditorPhysicsPreview.hpp"
 
+#include <utility>
+
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Physics/Physics.hpp"
@@ -27,6 +29,7 @@ void EditorPhysicsPreview::Start(Scene& scene) {
     m_PhysicsScene.OnSimulationStart(scene);
     m_Timestep.Reset();
     m_ContactPoints.clear();
+    m_PendingContactEvents.clear();
     m_Active = true;
     m_Running = false;
 }
@@ -40,6 +43,7 @@ void EditorPhysicsPreview::Stop(Scene& scene) {
     RestoreTransforms(scene);
     m_SavedTransforms.clear();
     m_ContactPoints.clear();
+    m_PendingContactEvents.clear();
     m_Active = false;
     m_Running = false;
 }
@@ -80,6 +84,7 @@ void EditorPhysicsPreview::Reset(Scene& scene) {
     m_PhysicsScene.OnSimulationStart(scene);
     m_Timestep.Reset();
     m_ContactPoints.clear();
+    m_PendingContactEvents.clear();
 }
 
 void EditorPhysicsPreview::Update(Scene& scene, float deltaTime) {
@@ -94,12 +99,20 @@ void EditorPhysicsPreview::Update(Scene& scene, float deltaTime) {
     }
 }
 
+std::vector<PhysicsContactEvent> EditorPhysicsPreview::DrainContactEvents() {
+    std::vector<PhysicsContactEvent> events = std::move(m_PendingContactEvents);
+    m_PendingContactEvents.clear();
+    return events;
+}
+
 void EditorPhysicsPreview::CaptureContactPoints() {
     // Capture contact points for the overlay, then keep event queues bounded.
     m_ContactPoints.clear();
-    for (const PhysicsContactEvent& contact : m_PhysicsScene.World().DrainContactEvents()) {
+    std::vector<PhysicsContactEvent> contacts = m_PhysicsScene.World().DrainContactEvents();
+    for (const PhysicsContactEvent& contact : contacts) {
         m_ContactPoints.push_back(contact.contactPoint);
     }
+    m_PendingContactEvents.insert(m_PendingContactEvents.end(), contacts.begin(), contacts.end());
     m_PhysicsScene.World().DrainTriggerEvents();
 }
 

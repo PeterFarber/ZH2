@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <utility>
 
 #include <entt/entt.hpp>
 #include "Hockey/Core/FileSystem.hpp"
@@ -162,7 +163,9 @@ Status EditorGameplayPreview::Start(Scene& scene, EditorPhysicsPreview& physicsP
 
     m_Timestep.Reset();
     m_LocalInputSequence = 0;
+    m_InputAccumulator.Reset();
     m_Tick = 0;
+    m_PendingEvents.clear();
     m_HasMoveTarget = false;
     m_FollowCameraInitialized = false;
     m_Active = true;
@@ -177,6 +180,8 @@ void EditorGameplayPreview::Stop(Scene& scene, EditorPhysicsPreview& physicsPrev
     }
 
     m_World.Shutdown();
+    m_InputAccumulator.Reset();
+    m_PendingEvents.clear();
     m_Active = false;
     m_Running = false;
     m_InputEnabled = false;
@@ -206,6 +211,7 @@ void EditorGameplayPreview::StepOnce(Scene& scene, EditorPhysicsPreview& physics
         return;
     }
     m_Running = false;
+    AccumulateLocalInputSample(scene);
     StepFixed(scene, physicsPreview, m_Settings.fixedDeltaSeconds);
     UpdateFollowCamera(scene, m_Settings.fixedDeltaSeconds, m_FollowCameraInitialized, m_FollowCameraPosition);
 }
@@ -222,7 +228,9 @@ void EditorGameplayPreview::Reset(Scene& scene, EditorPhysicsPreview& physicsPre
     }
     m_Timestep.Reset();
     m_LocalInputSequence = 0;
+    m_InputAccumulator.Reset();
     m_Tick = 0;
+    m_PendingEvents.clear();
     m_HasMoveTarget = false;
     m_FollowCameraInitialized = false;
     if (Status initialized = m_World.Init(scene, &physicsPreview.World().World(), m_Settings, m_Tuning); !initialized) {
@@ -236,13 +244,14 @@ void EditorGameplayPreview::Update(Scene& scene, EditorPhysicsPreview& physicsPr
         return;
     }
 
+    AccumulateLocalInputSample(scene);
     const int steps = m_Timestep.Accumulate(static_cast<double>(deltaTime));
     const float fixedDelta = static_cast<float>(m_Timestep.GetFixedDeltaSeconds());
     for (int i = 0; i < steps; ++i) {
         StepFixed(scene, physicsPreview, fixedDelta);
+        UpdateFollowCamera(scene, fixedDelta, m_FollowCameraInitialized, m_FollowCameraPosition);
         m_Timestep.AdvanceTick();
     }
-    UpdateFollowCamera(scene, deltaTime, m_FollowCameraInitialized, m_FollowCameraPosition);
 }
 
 void EditorGameplayPreview::SetMoveTarget(const glm::vec3& target) {
@@ -253,6 +262,12 @@ void EditorGameplayPreview::SetMoveTarget(const glm::vec3& target) {
 void EditorGameplayPreview::SetAimTarget(const glm::vec3& target) {
     m_AimTarget = target;
     m_HasAimTarget = true;
+}
+
+std::vector<GameplayEvent> EditorGameplayPreview::DrainEvents() {
+    std::vector<GameplayEvent> events = std::move(m_PendingEvents);
+    m_PendingEvents.clear();
+    return events;
 }
 
 Status EditorGameplayPreview::SaveAuthoringSnapshot(Scene& scene) {
@@ -279,18 +294,22 @@ void EditorGameplayPreview::ClearSnapshot() {
     }
 }
 
-GameplayInputFrame EditorGameplayPreview::BuildLocalInput(Scene& scene, std::uint64_t simulationTick) {
+void EditorGameplayPreview::AccumulateLocalInputSample(Scene& scene) {
+    if (!m_InputEnabled || (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput)) {
+        m_InputAccumulator.Reset();
+        return;
+    }
+
+    m_InputAccumulator.Accumulate(BuildLocalInputSample(scene));
+}
+
+GameplayInputFrame EditorGameplayPreview::BuildLocalInputSample(Scene& scene) {
     GameplayInputFrame input;
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
-    input.simulationTick = simulationTick;
     const Entity localPlayer = FindPreviewPlayer(scene, input.playerIndex);
     const bool localHasPuck = PlayerHasPuck(scene, localPlayer);
     const bool localIsGoalie = localPlayer.IsValid() && localPlayer.HasComponent<GoalieComponent>();
-
-    if (!m_InputEnabled || (ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantTextInput)) {
-        return input;
-    }
 
     if (m_HasMoveTarget) {
         input.moveTarget = m_MoveTarget;
@@ -350,8 +369,10 @@ void EditorGameplayPreview::StepFixed(Scene& scene, EditorPhysicsPreview& physic
     if (!m_World.IsInitialized() || !physicsPreview.IsActive()) {
         return;
     }
-    m_World.PushInput(BuildLocalInput(scene, m_Tick));
+    m_World.PushInput(m_InputAccumulator.Consume(m_Tick));
     m_World.FixedUpdate(scene, fixedDeltaSeconds, m_Tick);
+    std::vector<GameplayEvent> events = m_World.DrainEvents();
+    m_PendingEvents.insert(m_PendingEvents.end(), events.begin(), events.end());
     physicsPreview.AdvanceFixed(scene, fixedDeltaSeconds);
     m_World.SyncPhysicsState(scene);
     ++m_Tick;

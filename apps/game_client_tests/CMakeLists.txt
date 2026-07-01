@@ -1,6 +1,8 @@
 add_executable(HockeyGameClientTests
     src/GameClientTestsMain.cpp
     src/ConfigPathTests.cpp
+    src/GameClientAudioContractTests.cpp
+    src/GameClientAnimationContractTests.cpp
     src/GameplayCameraTests.cpp
     src/GameplayPresentationTests.cpp
     ${CMAKE_SOURCE_DIR}/apps/game_client/src/GameplayCamera.cpp

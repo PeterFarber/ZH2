@@ -31,6 +31,7 @@ void RunEditorTooltipContractTests();
 void RunHierarchyPanelContractTests();
 void RunEditorClientPreviewTests();
 void RunClientFlowPanelContractTests();
+void RunEditorAudioCueContractTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -62,6 +63,7 @@ int main(int argc, char** argv) {
     RunHierarchyPanelContractTests();
     RunEditorClientPreviewTests();
     RunClientFlowPanelContractTests();
+    RunEditorAudioCueContractTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Editor tests completed: {} passed, {} failed", stats.passed, stats.failed);

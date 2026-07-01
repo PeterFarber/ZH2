@@ -17,6 +17,7 @@ target_sources(hockey_editor
         src/EditorApp.cpp
         src/EditorCamera.cpp
         src/EditorClientPreview.cpp
+        src/EditorAudioPreview.cpp
         src/EditorGameplayPreview.cpp
         src/EditorPhysicsPreview.cpp
         src/EditorSettings.cpp
@@ -111,6 +112,7 @@ target_link_libraries(hockey_editor
         hockey_gameplay
         imgui::imgui
     PRIVATE
+        hockey_audio
         imguizmo::imguizmo
         nfd::nfd
         volk::volk_headers

@@ -51,4 +51,17 @@ private:
     std::unordered_map<uint32_t, GameplayInputFrame> m_LatestByPlayer;
 };
 
+class GameplayInputAccumulator {
+public:
+    void Accumulate(const GameplayInputFrame& input);
+    GameplayInputFrame Consume(uint64_t simulationTick);
+    void Reset();
+
+    bool HasPendingInput() const;
+
+private:
+    GameplayInputFrame m_Pending{};
+    bool m_HasPending = false;
+};
+
 }

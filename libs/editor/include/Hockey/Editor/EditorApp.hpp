@@ -143,6 +143,7 @@ private:
     EditorPhysicsPreview m_PhysicsPreview;
     EditorGameplayPreview m_GameplayPreview;
     std::unique_ptr<EditorClientPreview> m_ClientPreview;
+    std::unique_ptr<EditorAudioPreview> m_AudioPreview;
 
     PendingAction m_PendingAction = PendingAction::None;
     std::filesystem::path m_PendingScenePath;

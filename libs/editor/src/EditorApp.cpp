@@ -12,6 +12,8 @@
 #include "Hockey/Assets/AssetPath.hpp"
 #include "Hockey/Assets/AssetType.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
+#include "Hockey/Audio/AudioComponents.hpp"
+#include "Hockey/Audio/AudioEvents.hpp"
 #include "Hockey/Core/Config.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Log.hpp"
@@ -22,6 +24,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/ECS/SceneValidator.hpp"
 #include "Hockey/Editor/EditorCommands.hpp"
+#include "Hockey/Editor/EditorAudioPreview.hpp"
 #include "Hockey/Editor/EditorClientPreview.hpp"
 #include "Hockey/Editor/FileDialog.hpp"
 #include "Hockey/Editor/Logging/EditorConsoleSink.hpp"
@@ -82,7 +85,9 @@ const char* EditorVersionString() {
     return "HockeyEditor 0.4.0";
 }
 
-EditorApp::EditorApp() : m_ClientPreview(std::make_unique<EditorClientPreview>()) {}
+EditorApp::EditorApp()
+    : m_ClientPreview(std::make_unique<EditorClientPreview>()),
+      m_AudioPreview(std::make_unique<EditorAudioPreview>()) {}
 
 EditorApp::~EditorApp() {
     Shutdown();
@@ -133,6 +138,7 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     // inspector dropdown and validation.
     RegisterPhysicsComponents();
     RegisterGameplayComponents();
+    RegisterAudioComponents();
     PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     // hockey_physics cannot load mesh assets itself (it must not depend on
@@ -178,6 +184,17 @@ Status EditorApp::Init(const EditorContextCreateInfo& info) {
     m_GameplayPreview.Configure(gameplaySettings, gameplayTuning);
     m_Context.gameplayPreview = &m_GameplayPreview;
     m_Context.clientPreviewHost = m_ClientPreview.get();
+    m_Context.audioPreview = m_AudioPreview.get();
+    if (m_AudioPreview != nullptr) {
+        if (m_Context.assetManager != nullptr) {
+            if (const Status status = m_AudioPreview->Init(m_Context.assetManager); !status) {
+                HK_EDITOR_WARN("Audio preview unavailable: {}", status.error);
+            }
+        }
+        const Config emptyConfig;
+        const Config& cueConfig = m_Context.config != nullptr ? *m_Context.config : emptyConfig;
+        m_AudioPreview->SetCueMap(ResolveHockeyAudioCueMap(cueConfig, m_Context.assetManager));
+    }
 
     RegisterPanels();
     m_Context.panelManager.ApplyPanelOpenStates(m_Context.settings);
@@ -267,6 +284,10 @@ void EditorApp::Shutdown() {
     m_Context.clientPreviewHost = nullptr;
     m_Context.gameplayPreview = nullptr;
     m_Context.physicsPreview = nullptr;
+    if (m_AudioPreview != nullptr) {
+        m_AudioPreview->Shutdown();
+    }
+    m_Context.audioPreview = nullptr;
     // Drop the mesh-collider provider so it can't outlive the AssetManager.
     PhysicsMeshRegistry::Get().Clear();
     SaveLayout();
@@ -315,6 +336,9 @@ void EditorApp::Update(float deltaTime) {
     }
 
     PollAssetHotReload();
+    if (m_AudioPreview != nullptr) {
+        m_AudioPreview->Update(deltaTime);
+    }
 
     m_Context.toolManager.Update(m_Context, deltaTime);
     m_SceneWorkflow.TickAutosave(m_Context, deltaTime);
@@ -329,6 +353,16 @@ void EditorApp::Update(float deltaTime) {
             m_GameplayPreview.Update(*m_Context.activeScene, m_PhysicsPreview, deltaTime);
         } else {
             m_PhysicsPreview.Update(*m_Context.activeScene, deltaTime);
+        }
+        const std::vector<GameplayEvent> gameplayEvents = m_GameplayPreview.DrainEvents();
+        const std::vector<PhysicsContactEvent> contactEvents = m_PhysicsPreview.DrainContactEvents();
+        if (m_AudioPreview != nullptr && m_AudioPreview->IsReady()) {
+            for (const GameplayEvent& event : gameplayEvents) {
+                m_AudioPreview->HandleGameplayEvent(event);
+            }
+            for (const PhysicsContactEvent& contact : contactEvents) {
+                m_AudioPreview->HandlePhysicsContact(*m_Context.activeScene, contact);
+            }
         }
         SyncPreviewState();
         m_Context.physicsView.contactPoints.clear();
@@ -762,10 +796,11 @@ void EditorApp::ImportAsset() {
     // filters for convenience. Extensions are dot-less, comma-separated.
     const auto chosen = FileDialog::OpenFile(
         {
-            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp"},
+            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp,mp3,wav,flac"},
             {"Models", "gltf,glb"},
             {"Textures", "png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2"},
             {"Materials / Scenes / Prefabs", "yaml"},
+            {"Audio", "mp3,wav,flac"},
             {"Shaders", "glsl,vert,frag,comp"},
         },
         {});

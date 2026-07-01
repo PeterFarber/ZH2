@@ -26,6 +26,7 @@ private:
         EditorLightingShadows,
         EditorSceneAutosave,
         EditorAssets,
+        EditorAudio,
         EditorPhysicsPreview,
         EditorGameplayPreview,
         ServerApplication,
@@ -48,6 +49,7 @@ private:
     void DrawEditorLightingShadows(EditorContext& context);
     void DrawEditorSceneAutosave(EditorContext& context);
     void DrawEditorAssets(EditorContext& context);
+    void DrawEditorAudio(EditorContext& context);
     void DrawEditorPhysicsPreview(EditorContext& context);
     void DrawEditorGameplayPreview(EditorContext& context);
     void DrawServerApplication(EditorContext& context);

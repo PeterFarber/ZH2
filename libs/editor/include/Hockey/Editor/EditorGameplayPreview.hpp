@@ -2,11 +2,13 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <vector>
 
 #include <glm/glm.hpp>
 
 #include "Hockey/Core/FixedTimestep.hpp"
 #include "Hockey/Core/Result.hpp"
+#include "Hockey/Gameplay/GameplayEvents.hpp"
 #include "Hockey/Gameplay/GameplayInput.hpp"
 #include "Hockey/Gameplay/GameplaySettings.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
@@ -46,6 +48,7 @@ public:
     void SetInputEnabled(bool enabled) {
         m_InputEnabled = enabled;
     }
+    std::vector<GameplayEvent> DrainEvents();
 
     void SetDebugDrawEnabled(bool enabled) {
         m_Settings.debugDrawGameplay = enabled;
@@ -58,14 +61,17 @@ private:
     Status SaveAuthoringSnapshot(Scene& scene);
     Status RestoreAuthoringSnapshot(Scene& scene);
     void ClearSnapshot();
-    GameplayInputFrame BuildLocalInput(Scene& scene, std::uint64_t simulationTick);
+    void AccumulateLocalInputSample(Scene& scene);
+    GameplayInputFrame BuildLocalInputSample(Scene& scene);
     void StepFixed(Scene& scene, EditorPhysicsPreview& physicsPreview, float fixedDeltaSeconds);
 
     GameplaySettings m_Settings{};
     GameplayTuning m_Tuning{};
     GameplayWorld m_World;
+    GameplayInputAccumulator m_InputAccumulator;
     FixedTimestep m_Timestep{60.0};
     std::filesystem::path m_SnapshotPath;
+    std::vector<GameplayEvent> m_PendingEvents;
     std::uint64_t m_LocalInputSequence = 0;
     std::uint64_t m_Tick = 0;
     glm::vec3 m_MoveTarget{0.0f};

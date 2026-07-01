@@ -131,4 +131,73 @@ void RunInputModelTests() {
     HK_CHECK(actionInput.shootPressed);
     HK_CHECK(actionInput.shootHeld);
     HK_CHECK(actionInput.shootReleased);
+
+    GameplayInputAccumulator accumulator;
+    GameplayInputFrame renderSample;
+    renderSample.playerIndex = 0;
+    renderSample.inputSequence = 1;
+    renderSample.move = {0.25f, 0.0f};
+    renderSample.stealPressed = true;
+    accumulator.Accumulate(renderSample);
+
+    GameplayInputFrame nextRenderSample;
+    nextRenderSample.playerIndex = 0;
+    nextRenderSample.inputSequence = 2;
+    nextRenderSample.move = {1.0f, 0.0f};
+    accumulator.Accumulate(nextRenderSample);
+
+    GameplayInputFrame fixedInput = accumulator.Consume(7);
+    HK_CHECK_EQ(fixedInput.simulationTick, 7ull);
+    HK_CHECK_EQ(fixedInput.inputSequence, 2ull);
+    HK_CHECK_NEAR(fixedInput.move.x, 1.0f, 0.0001f);
+    HK_CHECK(fixedInput.stealPressed);
+
+    fixedInput = accumulator.Consume(8);
+    HK_CHECK_EQ(fixedInput.simulationTick, 8ull);
+    HK_CHECK_NEAR(fixedInput.move.x, 1.0f, 0.0001f);
+    HK_CHECK(!fixedInput.stealPressed);
+
+    GameplayInputFrame shotDown;
+    shotDown.playerIndex = 0;
+    shotDown.inputSequence = 3;
+    shotDown.shootPressed = true;
+    shotDown.shootHeld = true;
+    accumulator.Accumulate(shotDown);
+
+    GameplayInputFrame shotUp;
+    shotUp.playerIndex = 0;
+    shotUp.inputSequence = 4;
+    shotUp.shootReleased = true;
+    shotUp.shootHeld = false;
+    accumulator.Accumulate(shotUp);
+
+    fixedInput = accumulator.Consume(9);
+    HK_CHECK(fixedInput.shootPressed);
+    HK_CHECK(fixedInput.shootReleased);
+    HK_CHECK(!fixedInput.shootHeld);
+
+    GameplayInputFrame chargeSample;
+    chargeSample.playerIndex = 0;
+    chargeSample.inputSequence = 5;
+    chargeSample.aim = {0.0f, 1.0f};
+    chargeSample.shootHeld = true;
+    accumulator.Accumulate(chargeSample);
+
+    GameplayInputFrame releaseSample;
+    releaseSample.playerIndex = 0;
+    releaseSample.inputSequence = 6;
+    releaseSample.aim = {1.0f, 0.0f};
+    releaseSample.shootReleased = true;
+    accumulator.Accumulate(releaseSample);
+
+    GameplayInputFrame postReleaseSample;
+    postReleaseSample.playerIndex = 0;
+    postReleaseSample.inputSequence = 7;
+    postReleaseSample.aim = {0.0f, 0.0f};
+    accumulator.Accumulate(postReleaseSample);
+
+    fixedInput = accumulator.Consume(10);
+    HK_CHECK(fixedInput.shootReleased);
+    HK_CHECK_NEAR(fixedInput.aim.x, 1.0f, 0.0001f);
+    HK_CHECK_NEAR(fixedInput.aim.y, 0.0f, 0.0001f);
 }

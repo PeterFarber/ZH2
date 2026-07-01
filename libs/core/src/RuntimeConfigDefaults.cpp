@@ -18,6 +18,32 @@ cooked_path = ''
 hot_reload = false
 raw_path = ''
 
+[audio]
+ambience_volume = 0.8
+backend = 'Auto'
+channels = 2
+crowd_volume = 0.8
+enable_spatial_audio = true
+enabled = true
+master_volume = 1.0
+music_volume = 0.7
+mute_when_unfocused = false
+sample_rate = 48000
+sfx_volume = 0.9
+ui_volume = 0.8
+
+[audio_cues]
+countdown = 'data/raw/audio/Countdown.mp3'
+goalie_shield = 'data/raw/audio/Shield.mp3'
+one_timer = 'data/raw/audio/OneTimer.mp3'
+player_boost = 'data/raw/audio/Zoom.mp3'
+puck_collision = 'data/raw/audio/PuckCollision.mp3'
+puck_metal_collision = 'data/raw/audio/PuckMetalCollision.mp3'
+shot = 'data/raw/audio/Shot.mp3'
+ui_back = 'data/raw/audio/Countdown.mp3'
+ui_click = 'data/raw/audio/Countdown.mp3'
+ui_confirm = 'data/raw/audio/Countdown.mp3'
+
 [camera]
 follow_local_player = true
 follow_player_index = 0
@@ -110,7 +136,7 @@ contact_shadows = true
 crowd_quality = 'Medium'
 depth_of_field = false
 decals = true
-directional_shadow_atlas_resolution = 0
+directional_shadow_atlas_resolution = 4096
 directional_shadow_bias_base = 0.0017999999690800905
 directional_shadow_bias_max = 0.003000000026077032
 directional_shadow_bias_min = 0.00044999999227002263
@@ -134,7 +160,7 @@ ice_reflection_quality = 'High'
 ice_scratch_quality = 'High'
 jersey_quality = 'High'
 lens_flare = true
-local_shadow_atlas_resolution = 0
+local_shadow_atlas_resolution = 2048
 local_shadow_bias_max = 0.004000000189989805
 local_shadow_bias_min = 0.00019999999494757503
 local_shadow_bias_scale = 0.0012000000569969416
@@ -156,7 +182,7 @@ render_scale = 1.0
 resolution_height = 1440
 resolution_width = 2560
 shadow_cascade_blend_scale = 0.11999999731779099
-shadow_cascade_count = 0
+shadow_cascade_count = 4
 shadow_cascade_max_overlap_scale = 0.10000000149011612
 shadow_cascade_min_blend = 0.75
 shadow_cascade_min_overlap = 4.0

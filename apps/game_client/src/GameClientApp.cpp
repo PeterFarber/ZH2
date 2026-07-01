@@ -1,4 +1,7 @@
 #include "GameClientApp.hpp"
+#include "Hockey/Animation/AnimationSerializer.hpp"
+#include "Hockey/Audio/AudioComponents.hpp"
+#include "Hockey/Audio/AudioEvents.hpp"
 #include "Hockey/Core/CrashHandler.hpp"
 #include "Hockey/Core/FileSystem.hpp"
 #include "Hockey/Core/Input.hpp"
@@ -178,6 +181,52 @@ MovementTraceEntityState CaptureMovementTraceEntityState(Hockey::Scene& scene,
         state.lockRotationZ = body.lockRotationZ;
     }
     return state;
+}
+
+Hockey::HockeyAnimationFrame BuildHockeyAnimationFrame(const Hockey::GameplaySnapshot& snapshot,
+                                                       const std::vector<Hockey::GameplayEvent>& events) {
+    Hockey::HockeyAnimationFrame frame;
+    frame.players.reserve(snapshot.players.size());
+
+    for (const Hockey::PlayerGameplaySnapshot& player : snapshot.players) {
+        Hockey::HockeyAnimationPlayerState state;
+        state.entity = player.entity;
+        state.velocity = player.velocity;
+        state.shotChargeRatio = player.shotChargeRatio;
+        state.hasPuck = player.hasPuck;
+        state.shotCharging = player.shotCharging;
+        state.goalie = player.role == Hockey::GameplayRole::Goalie;
+        frame.players.push_back(state);
+    }
+
+    for (const Hockey::GameplayEvent& event : events) {
+        switch (event.type) {
+        case Hockey::GameplayEventType::PuckShot:
+            frame.triggers.push_back({event.primaryEntity, Hockey::HockeyAnimationTriggerType::Shoot});
+            break;
+        case Hockey::GameplayEventType::StealAttempted:
+            frame.triggers.push_back({event.primaryEntity, Hockey::HockeyAnimationTriggerType::Steal});
+            break;
+        case Hockey::GameplayEventType::GoalieShieldStarted:
+            frame.triggers.push_back({event.primaryEntity, Hockey::HockeyAnimationTriggerType::GoalieSave});
+            break;
+        case Hockey::GameplayEventType::GoalScored:
+            if (event.team == Hockey::GameplayTeam::None) {
+                frame.triggers.push_back({event.primaryEntity, Hockey::HockeyAnimationTriggerType::Celebrate});
+            } else {
+                for (const Hockey::PlayerGameplaySnapshot& player : snapshot.players) {
+                    if (player.team == event.team) {
+                        frame.triggers.push_back({player.entity, Hockey::HockeyAnimationTriggerType::Celebrate});
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    return frame;
 }
 
 bool FindActiveCameraPosition(Hockey::Scene& scene, glm::vec3& outPosition) {
@@ -433,7 +482,23 @@ bool GameClientApp::OnInit() {
     }
     m_Config = runtimeConfig.value.config;
     m_UserConfigPath = runtimeConfig.value.userConfigPath;
+    m_AudioSettings = Hockey::LoadAudioSettings(m_Config);
     m_UISettings = Hockey::LoadUISettings(m_Config);
+    m_AnimationSettings.enabled = m_Config.GetBool("animation.enabled", m_AnimationSettings.enabled);
+    m_AnimationSettings.enableAnimationEvents =
+        m_Config.GetBool("animation.enable_animation_events", m_AnimationSettings.enableAnimationEvents);
+    m_AnimationSettings.enableRootMotion =
+        m_Config.GetBool("animation.enable_root_motion", m_AnimationSettings.enableRootMotion);
+    m_AnimationSettings.defaultBlendTimeSeconds = static_cast<float>(
+        m_Config.GetDouble("animation.default_blend_time_seconds", m_AnimationSettings.defaultBlendTimeSeconds));
+    m_AnimationSettings.maxBones =
+        static_cast<std::uint32_t>(std::max(0, m_Config.GetInt("animation.max_bones",
+                                                               static_cast<int>(m_AnimationSettings.maxBones))));
+    m_AnimationSettings.debugDrawSkeletons =
+        m_Config.GetBool("animation.debug_draw_skeletons", m_AnimationSettings.debugDrawSkeletons);
+    m_AnimationSettings.logAnimationEvents =
+        m_Config.GetBool("animation.log_animation_events", m_AnimationSettings.logAnimationEvents);
+    m_AnimationSystem.SetSettings(m_AnimationSettings);
     m_UIEnabled = m_UISettings.enabled && !cmd.Has("--no-ui");
     m_PresentationSettings.enabled = m_Config.GetBool("presentation.interpolate_gameplay", true);
     m_PresentationSettings.interpolatePlayers = m_Config.GetBool("presentation.interpolate_players", true);
@@ -480,6 +545,8 @@ bool GameClientApp::OnInit() {
     // physics components deserialize and resolve their materials.
     Hockey::RegisterPhysicsComponents();
     Hockey::RegisterGameplayComponents();
+    Hockey::RegisterAnimationComponentSerialization();
+    Hockey::RegisterAudioComponents();
     Hockey::PhysicsMaterialRegistry::Get().RegisterBuiltIns();
 
     m_Scene.SetMode(Hockey::SceneMode::Play);
@@ -578,6 +645,21 @@ bool GameClientApp::OnInit() {
         HK_CLIENT_INFO("Asset manager unavailable: {}", status.error);
     }
 
+    m_AudioCueMap = Hockey::ResolveHockeyAudioCueMap(m_Config, m_AssetsReady ? &m_AssetManager : nullptr);
+    m_AudioController.SetCueMap(m_AudioCueMap);
+
+    if (m_AudioSettings.enabled && m_AssetsReady) {
+        m_AudioSystem = std::make_unique<Hockey::AudioSystem>(m_AudioSettings);
+        if (const Hockey::Status status = m_AudioSystem->Initialize(&m_AssetManager); status) {
+            m_AudioController.SetSink(m_AudioSystem.get());
+            m_AudioReady = true;
+            HK_CLIENT_INFO("Audio initialized");
+        } else {
+            HK_CLIENT_INFO("Audio disabled: {}", status.error);
+            m_AudioSystem.reset();
+        }
+    }
+
     if (m_UIEnabled) {
         Hockey::ClientFlow flow = Hockey::MakeDefaultClientFlow();
         const std::filesystem::path flowPath = Hockey::Paths::Resolve(m_UISettings.startFlow);
@@ -647,6 +729,13 @@ void GameClientApp::BindRuntimeUIActions() {
 }
 
 void GameClientApp::QueueRuntimeUIAction(Hockey::UIAction action) {
+    if (m_AudioReady && action != Hockey::UIAction::Quit) {
+        const Hockey::AssetID clip = action == Hockey::UIAction::ReturnToMenu ? m_AudioCueMap.uiBack
+                                    : action == Hockey::UIAction::StartOffline ? m_AudioCueMap.uiConfirm
+                                                                               : m_AudioCueMap.uiClick;
+        m_AudioSystem->PlayOneShot(clip, Hockey::AudioBusType::UI, 1.0f);
+    }
+
     if (action == Hockey::UIAction::Quit) {
         RequestQuit();
         return;
@@ -716,6 +805,8 @@ bool GameClientApp::LoadOfflineGameplayScene(const std::string& scenePath) {
 
     m_SimulationTimestep.Reset();
     m_LocalInputSequence = 0;
+    m_LocalInputAccumulator.Reset();
+    m_ResetMatchRequested = false;
     m_PresentationState.Reset();
     MarkMovementSmoothnessPresentationReset();
     m_PresentationState.CaptureFixedStep(m_Scene);
@@ -742,6 +833,12 @@ void GameClientApp::OnShutdown() {
         m_Renderer.WaitIdle();
         m_Renderer.SetAssetManager(nullptr);
     }
+    if (m_AudioSystem != nullptr) {
+        m_AudioController.SetSink(nullptr);
+        m_AudioSystem->Shutdown();
+        m_AudioSystem.reset();
+        m_AudioReady = false;
+    }
     if (m_AssetsReady) {
         m_AssetManager.Shutdown();
         m_AssetsReady = false;
@@ -753,14 +850,10 @@ void GameClientApp::OnShutdown() {
     Hockey::Log::Shutdown();
 }
 
-Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTick) {
+Hockey::GameplayInputFrame GameClientApp::BuildLocalInputSample() {
     Hockey::GameplayInputFrame input;
     input.playerIndex = 0;
     input.inputSequence = ++m_LocalInputSequence;
-    input.simulationTick = simulationTick;
-    if (m_UIEnabled && m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud) {
-        return input;
-    }
     const Hockey::Entity localPlayer = FindLocalGameplayPlayer(m_Scene, input.playerIndex);
     const bool localHasPuck = PlayerHasPuck(m_Scene, localPlayer);
     const bool localIsGoalie = localPlayer.IsValid() && localPlayer.HasComponent<Hockey::GoalieComponent>();
@@ -822,6 +915,18 @@ Hockey::GameplayInputFrame GameClientApp::BuildLocalInput(uint64_t simulationTic
     return input;
 }
 
+void GameClientApp::AccumulateLocalInputSample() {
+    if (!m_LocalGameplayEnabled || !m_GameplayWorld.IsInitialized() ||
+        (m_UIEnabled && m_ClientFlow.ActiveScreen() != Hockey::UIScreenId::MatchHud)) {
+        m_LocalInputAccumulator.Reset();
+        m_ResetMatchRequested = false;
+        return;
+    }
+
+    m_ResetMatchRequested = m_ResetMatchRequested || Hockey::Input::WasKeyPressed(Hockey::KeyCode::R);
+    m_LocalInputAccumulator.Accumulate(BuildLocalInputSample());
+}
+
 void GameClientApp::MarkMovementSmoothnessPresentationReset() {
     if (m_MovementSmoothnessTraceSettings.enabled) {
         m_MovementSmoothnessPresentationResetThisFrame = true;
@@ -838,6 +943,7 @@ void GameClientApp::StepSimulation(float deltaTime) {
     const float fixedDelta = static_cast<float>(m_SimulationTimestep.GetFixedDeltaSeconds());
     for (int i = 0; i < steps; ++i) {
         const uint64_t tick = m_SimulationTimestep.GetTick() + 1;
+        std::vector<Hockey::GameplayEvent> gameplayEvents;
         MovementTraceEntityState beforeGameplay;
         if (m_MovementSmoothnessTraceSettings.enabled) {
             beforeGameplay = CaptureMovementTraceEntityState(
@@ -846,18 +952,25 @@ void GameClientApp::StepSimulation(float deltaTime) {
         }
 
         if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
-            if (Hockey::Input::WasKeyPressed(Hockey::KeyCode::R)) {
+            if (m_ResetMatchRequested) {
                 m_GameplayWorld.ResetMatch(m_Scene);
                 m_PresentationState.Reset();
                 MarkMovementSmoothnessPresentationReset();
                 m_PresentationState.CaptureFixedStep(m_Scene);
+                m_LocalInputAccumulator.Reset();
+                m_ResetMatchRequested = false;
             }
-            m_GameplayWorld.PushInput(BuildLocalInput(tick));
+            m_GameplayWorld.PushInput(m_LocalInputAccumulator.Consume(tick));
             m_GameplayWorld.FixedUpdate(m_Scene, fixedDelta, tick);
-            const std::vector<Hockey::GameplayEvent> events = m_GameplayWorld.DrainEvents();
+            gameplayEvents = m_GameplayWorld.DrainEvents();
             if (m_GameplaySettings.logGameplayEvents) {
-                for (const Hockey::GameplayEvent& event : events) {
+                for (const Hockey::GameplayEvent& event : gameplayEvents) {
                     HK_CLIENT_INFO("Gameplay event: {}", Hockey::GameplayEventTypeToString(event.type));
+                }
+            }
+            if (m_AudioReady) {
+                for (const Hockey::GameplayEvent& event : gameplayEvents) {
+                    HandleAudioGameplayEvent(event);
                 }
             }
         }
@@ -879,6 +992,15 @@ void GameClientApp::StepSimulation(float deltaTime) {
         }
         if (m_LocalGameplayEnabled && m_GameplayWorld.IsInitialized()) {
             m_GameplayWorld.SyncPhysicsState(m_Scene);
+            const Hockey::GameplaySnapshot snapshot =
+                Hockey::BuildGameplaySnapshot(m_Scene, tick, m_GameplayWorld.GetTuning());
+            m_AnimationController.Apply(m_Scene, BuildHockeyAnimationFrame(snapshot, gameplayEvents));
+            if (m_AssetsReady) {
+                const Hockey::Status status = m_AnimationSystem.Update(m_Scene, m_AssetManager, fixedDelta);
+                if (!status) {
+                    HK_CLIENT_INFO("Animation update failed: {}", status.error);
+                }
+            }
             m_PresentationState.CaptureFixedStep(m_Scene);
         }
         if (m_MovementSmoothnessTraceSettings.enabled) {
@@ -903,9 +1025,62 @@ void GameClientApp::StepSimulation(float deltaTime) {
         m_SimulationTimestep.AdvanceTick();
     }
     if (m_PhysicsReady) {
-        m_PhysicsSystem->World().DrainContactEvents();
+        const std::vector<Hockey::PhysicsContactEvent> contacts = m_PhysicsSystem->World().DrainContactEvents();
+        if (m_AudioReady) {
+            for (const Hockey::PhysicsContactEvent& contact : contacts) {
+                HandleAudioPhysicsContact(contact);
+            }
+        }
         m_PhysicsSystem->World().DrainTriggerEvents();
     }
+}
+
+void GameClientApp::HandleAudioGameplayEvent(const Hockey::GameplayEvent& event) {
+    switch (event.type) {
+    case Hockey::GameplayEventType::CountdownBeep:
+    case Hockey::GameplayEventType::FaceoffStarted:
+        m_AudioController.Trigger(Hockey::AudioCueId::Countdown, event.position);
+        break;
+    case Hockey::GameplayEventType::PuckShot:
+        m_AudioController.Trigger(Hockey::AudioCueId::Shot, event.position);
+        break;
+    case Hockey::GameplayEventType::GoalieShieldStarted:
+        m_AudioController.Trigger(Hockey::AudioCueId::GoalieShield, event.position);
+        break;
+    case Hockey::GameplayEventType::PlayerBoosted:
+        m_AudioController.Trigger(Hockey::AudioCueId::PlayerBoost, event.position, 0.8f);
+        break;
+    default:
+        break;
+    }
+}
+
+void GameClientApp::HandleAudioPhysicsContact(const Hockey::PhysicsContactEvent& contact) {
+    if (contact.type != Hockey::PhysicsContactEvent::Type::Started) {
+        return;
+    }
+
+    auto contactUsesMetalCue = [this](Hockey::UUID id) {
+        Hockey::Entity entity = m_Scene.FindEntityByUUID(id);
+        if (!entity) {
+            return false;
+        }
+        std::string material;
+        if (entity.HasComponent<Hockey::PhysicsMaterialComponent>()) {
+            material = entity.GetComponent<Hockey::PhysicsMaterialComponent>().materialName;
+        } else if (entity.HasComponent<Hockey::RigidBodyComponent>()) {
+            material = entity.GetComponent<Hockey::RigidBodyComponent>().materialName;
+        }
+        return material.find("Metal") != std::string::npos || material.find("Board") != std::string::npos ||
+               material.find("Glass") != std::string::npos || material.find("Goal") != std::string::npos;
+    };
+
+    const Hockey::AudioCueId cue =
+        (contactUsesMetalCue(contact.entityA) || contactUsesMetalCue(contact.entityB))
+            ? Hockey::AudioCueId::PuckMetalCollision
+            : Hockey::AudioCueId::PuckCollision;
+    const float volume = contact.impulse > 0.0f ? std::clamp(contact.impulse / 8.0f, 0.2f, 1.0f) : 0.35f;
+    m_AudioController.Trigger(cue, contact.contactPoint, volume);
 }
 
 void GameClientApp::SubmitPhysicsDebugDraw() {
@@ -967,7 +1142,11 @@ void GameClientApp::SubmitGameplayDebugDraw() {
 
 void GameClientApp::OnUpdate(float deltaTime) {
     m_Scene.OnUpdate(deltaTime);
+    AccumulateLocalInputSample();
     StepSimulation(deltaTime);
+    if (m_AudioReady) {
+        m_AudioSystem->OnUpdate(m_Scene, deltaTime);
+    }
     if (!m_RendererReady) {
         return;
     }

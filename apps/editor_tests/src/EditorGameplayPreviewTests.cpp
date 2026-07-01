@@ -16,6 +16,8 @@
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsMaterial.hpp"
 
+#include <glm/geometric.hpp>
+
 using namespace Hockey;
 
 namespace {
@@ -141,6 +143,27 @@ void RunEditorGameplayPreviewTests() {
             const glm::vec3 cameraRotation = camera.GetComponent<TransformComponent>().localRotation;
             HK_CHECK_NEAR(cameraRotation.x, -20.0f, 0.001f);
             HK_CHECK_NEAR(cameraRotation.y, 15.0f, 0.001f);
+
+            for (const entt::entity handle : fix.scene.Registry().view<MatchStateComponent>()) {
+                fix.scene.Registry().get<MatchStateComponent>(handle).phase = MatchPhase::Playing;
+            }
+
+            const glm::vec3 playerBeforeMove = glm::vec3(fix.scene.GetWorldTransform(player)[3]);
+            gameplayPreview.SetInputEnabled(true);
+            gameplayPreview.SetMoveTarget(playerBeforeMove + glm::vec3{20.0f, 0.0f, 0.0f});
+            gameplayPreview.Update(fix.scene, physicsPreview, 1.0f / 60.0f);
+
+            const glm::vec3 playerAfterFixedStep = glm::vec3(fix.scene.GetWorldTransform(player)[3]);
+            HK_CHECK_MSG(glm::length(playerAfterFixedStep - playerBeforeMove) > 0.0001f,
+                         "preview player advances during fixed gameplay tick");
+
+            const glm::vec3 cameraAfterFixedStep = glm::vec3(fix.scene.GetWorldTransform(camera)[3]);
+            gameplayPreview.Update(fix.scene, physicsPreview, 1.0f / 240.0f);
+            const glm::vec3 cameraAfterRenderOnlyFrame = glm::vec3(fix.scene.GetWorldTransform(camera)[3]);
+
+            HK_CHECK_NEAR(cameraAfterRenderOnlyFrame.x, cameraAfterFixedStep.x, 0.0001f);
+            HK_CHECK_NEAR(cameraAfterRenderOnlyFrame.y, cameraAfterFixedStep.y, 0.0001f);
+            HK_CHECK_NEAR(cameraAfterRenderOnlyFrame.z, cameraAfterFixedStep.z, 0.0001f);
         }
 
         gameplayPreview.Stop(fix.scene, physicsPreview);

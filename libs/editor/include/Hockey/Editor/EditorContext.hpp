@@ -32,6 +32,7 @@ class AssetManager;
 class EditorPhysicsPreview;
 class EditorGameplayPreview;
 class EditorClientPreview;
+class EditorAudioPreview;
 
 // Parameters used to wire the editor to the host application's subsystems.
 struct EditorContextCreateInfo {
@@ -132,6 +133,7 @@ public:
     EditorPhysicsPreview* physicsPreview = nullptr;
     EditorGameplayPreview* gameplayPreview = nullptr;
     EditorClientPreview* clientPreviewHost = nullptr;
+    EditorAudioPreview* audioPreview = nullptr;
 
     // Set by panels (e.g. double-clicking a scene in the Project panel) to ask
     // the host to open a scene file. EditorApp drains this each frame, running

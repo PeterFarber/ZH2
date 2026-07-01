@@ -8,6 +8,8 @@
 void RunGameplayCameraTests();
 void RunGameplayPresentationTests();
 void RunConfigPathTests();
+void RunGameClientAudioContractTests();
+void RunGameClientAnimationContractTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -17,6 +19,8 @@ int main(int argc, char** argv) {
     RunGameplayCameraTests();
     RunGameplayPresentationTests();
     RunConfigPathTests();
+    RunGameClientAudioContractTests();
+    RunGameClientAnimationContractTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     HK_TEST_INFO("Game client tests completed: {} passed, {} failed", stats.passed, stats.failed);
