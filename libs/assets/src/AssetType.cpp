@@ -20,6 +20,8 @@ std::string AssetTypeToString(AssetType type) {
         return "Prefab";
     case AssetType::Audio:
         return "Audio";
+    case AssetType::Skeleton:
+        return "Skeleton";
     case AssetType::Animation:
         return "Animation";
     case AssetType::Unknown:
@@ -45,6 +47,8 @@ AssetType AssetTypeFromString(const std::string& value) {
         return AssetType::Prefab;
     if (value == "Audio")
         return AssetType::Audio;
+    if (value == "Skeleton")
+        return AssetType::Skeleton;
     if (value == "Animation")
         return AssetType::Animation;
     return AssetType::Unknown;

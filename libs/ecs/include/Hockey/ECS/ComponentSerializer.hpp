@@ -23,6 +23,8 @@ public:
 
     // Writes one entity as a YAML map node (Entity id + every present component).
     static void SerializeEntity(YAML::Emitter& out, Entity entity);
+    // Appends only externally registered component keys to the current YAML map.
+    static void SerializeExternalComponents(YAML::Emitter& out, Entity entity);
 
     // Creates an entity in 'scene' from a node, preserving its stored UUID.
     static Entity DeserializeEntity(Scene& scene, const YAML::Node& node);

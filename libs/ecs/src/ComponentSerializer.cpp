@@ -100,6 +100,17 @@ void SerializeRenderComponents(YAML::Emitter& out, Entity entity) {
         out << YAML::Key << "ReceivesShadows" << YAML::Value << mesh.receivesShadows;
         out << YAML::EndMap;
     }
+    if (entity.HasComponent<SkinnedMeshRendererComponent>()) {
+        const auto& mesh = entity.GetComponent<SkinnedMeshRendererComponent>();
+        out << YAML::Key << "SkinnedMeshRendererComponent" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "MeshAsset" << YAML::Value << mesh.meshAsset;
+        out << YAML::Key << "MaterialAsset" << YAML::Value << mesh.materialAsset;
+        out << YAML::Key << "SkeletonAsset" << YAML::Value << mesh.skeletonAsset;
+        out << YAML::Key << "Visible" << YAML::Value << mesh.visible;
+        out << YAML::Key << "CastsShadows" << YAML::Value << mesh.castsShadows;
+        out << YAML::Key << "ReceivesShadows" << YAML::Value << mesh.receivesShadows;
+        out << YAML::EndMap;
+    }
     if (entity.HasComponent<LightComponent>()) {
         const auto& light = entity.GetComponent<LightComponent>();
         out << YAML::Key << "LightComponent" << YAML::Value << YAML::BeginMap;
@@ -196,13 +207,17 @@ void ComponentSerializer::SerializeEntity(YAML::Emitter& out, Entity entity) {
     SerializeHockeyMarkers(out, entity);
     SerializeRenderComponents(out, entity);
 
+    SerializeExternalComponents(out, entity);
+
+    out << YAML::EndMap;
+}
+
+void ComponentSerializer::SerializeExternalComponents(YAML::Emitter& out, Entity entity) {
     for (const ExternalHook& hook : ExternalHooks()) {
         if (hook.serialize) {
             hook.serialize(out, entity);
         }
     }
-
-    out << YAML::EndMap;
 }
 
 Entity ComponentSerializer::DeserializeEntity(Scene& scene, const YAML::Node& node) {
@@ -419,6 +434,29 @@ bool ComponentSerializer::DeserializeRenderComponents(Entity entity, const YAML:
             component.receivesShadows = meshNode["ReceivesShadows"].as<bool>();
         }
         registry.emplace_or_replace<MeshRendererComponent>(handle, component);
+    }
+
+    if (const auto meshNode = node["SkinnedMeshRendererComponent"]) {
+        SkinnedMeshRendererComponent component;
+        if (meshNode["MeshAsset"]) {
+            component.meshAsset = meshNode["MeshAsset"].as<std::uint64_t>();
+        }
+        if (meshNode["MaterialAsset"]) {
+            component.materialAsset = meshNode["MaterialAsset"].as<std::uint64_t>();
+        }
+        if (meshNode["SkeletonAsset"]) {
+            component.skeletonAsset = meshNode["SkeletonAsset"].as<std::uint64_t>();
+        }
+        if (meshNode["Visible"]) {
+            component.visible = meshNode["Visible"].as<bool>();
+        }
+        if (meshNode["CastsShadows"]) {
+            component.castsShadows = meshNode["CastsShadows"].as<bool>();
+        }
+        if (meshNode["ReceivesShadows"]) {
+            component.receivesShadows = meshNode["ReceivesShadows"].as<bool>();
+        }
+        registry.emplace_or_replace<SkinnedMeshRendererComponent>(handle, component);
     }
 
     if (const auto lightNode = node["LightComponent"]) {

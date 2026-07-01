@@ -289,6 +289,16 @@ bool AppendPrimitive(const fastgltf::Asset& asset, const fastgltf::Primitive& pr
             asset, asset.accessors[it->accessorIndex],
             [&](glm::vec2 value, size_t i) { mesh.vertices[baseVertex + i].uv0 = value; });
     }
+    if (const auto* it = primitive.findAttribute("JOINTS_0"); it != primitive.attributes.end()) {
+        fastgltf::iterateAccessorWithIndex<glm::u16vec4>(
+            asset, asset.accessors[it->accessorIndex],
+            [&](glm::u16vec4 value, size_t i) { mesh.vertices[baseVertex + i].jointIndices = value; });
+    }
+    if (const auto* it = primitive.findAttribute("WEIGHTS_0"); it != primitive.attributes.end()) {
+        fastgltf::iterateAccessorWithIndex<glm::vec4>(
+            asset, asset.accessors[it->accessorIndex],
+            [&](glm::vec4 value, size_t i) { mesh.vertices[baseVertex + i].jointWeights = value; });
+    }
 
     MeshSubmesh submesh;
     submesh.firstIndex = static_cast<uint32_t>(mesh.indices.size());
@@ -318,6 +328,228 @@ bool AppendPrimitive(const fastgltf::Asset& asset, const fastgltf::Primitive& pr
     mesh.submeshMaterialIndex.push_back(primitive.materialIndex.has_value() ? static_cast<int>(*primitive.materialIndex)
                                                                             : -1);
     return true;
+}
+
+glm::mat4 ToGlm(const fastgltf::math::fmat4x4& value) {
+    glm::mat4 out{1.0f};
+    for (int column = 0; column < 4; ++column) {
+        for (int row = 0; row < 4; ++row) {
+            out[column][row] = value[column][row];
+        }
+    }
+    return out;
+}
+
+std::vector<size_t> BuildParentNodes(const fastgltf::Asset& asset) {
+    constexpr size_t kNoParent = std::numeric_limits<size_t>::max();
+    std::vector<size_t> parents(asset.nodes.size(), kNoParent);
+    for (size_t parentIndex = 0; parentIndex < asset.nodes.size(); ++parentIndex) {
+        for (const size_t childIndex : asset.nodes[parentIndex].children) {
+            if (childIndex < parents.size()) {
+                parents[childIndex] = parentIndex;
+            }
+        }
+    }
+    return parents;
+}
+
+std::vector<glm::mat4> ReadInverseBindMatrices(const fastgltf::Asset& asset, const fastgltf::Skin& skin) {
+    std::vector<glm::mat4> matrices(skin.joints.size(), glm::mat4{1.0f});
+    if (!skin.inverseBindMatrices.has_value() || *skin.inverseBindMatrices >= asset.accessors.size()) {
+        return matrices;
+    }
+    fastgltf::iterateAccessorWithIndex<glm::mat4>(
+        asset, asset.accessors[*skin.inverseBindMatrices],
+        [&](const glm::mat4& value, size_t index) {
+            if (index < matrices.size()) {
+                matrices[index] = value;
+            }
+        });
+    return matrices;
+}
+
+std::vector<std::unordered_map<size_t, int>> ExtractSkeletons(const fastgltf::Asset& asset,
+                                                              const std::vector<size_t>& parentNodes,
+                                                              GltfScene& scene) {
+    constexpr size_t kNoParent = std::numeric_limits<size_t>::max();
+    std::vector<std::unordered_map<size_t, int>> jointToBoneBySkeleton;
+    jointToBoneBySkeleton.reserve(asset.skins.size());
+    scene.skeletons.reserve(asset.skins.size());
+
+    for (size_t skinIndex = 0; skinIndex < asset.skins.size(); ++skinIndex) {
+        const fastgltf::Skin& skin = asset.skins[skinIndex];
+        GltfSkeletonData skeleton;
+        skeleton.name = skin.name.empty() ? ("skeleton_" + std::to_string(skinIndex)) : std::string(skin.name);
+        skeleton.jointNodeIndices.assign(skin.joints.begin(), skin.joints.end());
+
+        std::unordered_map<size_t, int> jointToBone;
+        for (size_t boneIndex = 0; boneIndex < skin.joints.size(); ++boneIndex) {
+            jointToBone.emplace(skin.joints[boneIndex], static_cast<int>(boneIndex));
+        }
+
+        const std::vector<glm::mat4> inverseBindMatrices = ReadInverseBindMatrices(asset, skin);
+        skeleton.bones.reserve(skin.joints.size());
+        for (size_t boneIndex = 0; boneIndex < skin.joints.size(); ++boneIndex) {
+            const size_t nodeIndex = skin.joints[boneIndex];
+            SkeletonAssetBone bone;
+            bone.name = nodeIndex < asset.nodes.size() && !asset.nodes[nodeIndex].name.empty()
+                            ? std::string(asset.nodes[nodeIndex].name)
+                            : ("joint_" + std::to_string(boneIndex));
+            if (nodeIndex < parentNodes.size() && parentNodes[nodeIndex] != kNoParent) {
+                if (const auto foundParent = jointToBone.find(parentNodes[nodeIndex]); foundParent != jointToBone.end()) {
+                    bone.parentIndex = foundParent->second;
+                }
+            }
+            if (boneIndex < inverseBindMatrices.size()) {
+                bone.inverseBindPose = inverseBindMatrices[boneIndex];
+            }
+            if (nodeIndex < asset.nodes.size()) {
+                bone.localBindTransform = ToGlm(fastgltf::getTransformMatrix(asset.nodes[nodeIndex]));
+            }
+            skeleton.bones.push_back(std::move(bone));
+        }
+
+        jointToBoneBySkeleton.push_back(std::move(jointToBone));
+        scene.skeletons.push_back(std::move(skeleton));
+    }
+
+    return jointToBoneBySkeleton;
+}
+
+void AssignMeshSkins(const fastgltf::Asset& asset, GltfScene& scene) {
+    for (const fastgltf::Node& node : asset.nodes) {
+        if (!node.meshIndex.has_value() || !node.skinIndex.has_value()) {
+            continue;
+        }
+        if (*node.meshIndex >= scene.meshes.size() || *node.skinIndex >= scene.skeletons.size()) {
+            continue;
+        }
+        if (scene.meshes[*node.meshIndex].skinIndex < 0) {
+            scene.meshes[*node.meshIndex].skinIndex = static_cast<int>(*node.skinIndex);
+        }
+    }
+}
+
+std::vector<float> ReadAnimationTimes(const fastgltf::Asset& asset, size_t accessorIndex) {
+    std::vector<float> times;
+    if (accessorIndex >= asset.accessors.size()) {
+        return times;
+    }
+    const fastgltf::Accessor& accessor = asset.accessors[accessorIndex];
+    times.reserve(accessor.count);
+    fastgltf::iterateAccessor<float>(asset, accessor, [&](float value) { times.push_back(value); });
+    return times;
+}
+
+template <typename T> std::vector<T> ReadAnimationValues(const fastgltf::Asset& asset, size_t accessorIndex) {
+    std::vector<T> values;
+    if (accessorIndex >= asset.accessors.size()) {
+        return values;
+    }
+    const fastgltf::Accessor& accessor = asset.accessors[accessorIndex];
+    values.reserve(accessor.count);
+    fastgltf::iterateAccessor<T>(asset, accessor, [&](T value) { values.push_back(value); });
+    return values;
+}
+
+AnimationBoneTrack& FindOrAddTrack(std::vector<AnimationBoneTrack>& tracks, int boneIndex) {
+    for (AnimationBoneTrack& track : tracks) {
+        if (track.boneIndex == boneIndex) {
+            return track;
+        }
+    }
+    AnimationBoneTrack track;
+    track.boneIndex = boneIndex;
+    tracks.push_back(std::move(track));
+    return tracks.back();
+}
+
+bool FindSkeletonBoneForNode(const std::vector<std::unordered_map<size_t, int>>& jointToBoneBySkeleton,
+                             size_t nodeIndex, int& skeletonIndex, int& boneIndex) {
+    for (size_t i = 0; i < jointToBoneBySkeleton.size(); ++i) {
+        if (const auto found = jointToBoneBySkeleton[i].find(nodeIndex); found != jointToBoneBySkeleton[i].end()) {
+            skeletonIndex = static_cast<int>(i);
+            boneIndex = found->second;
+            return true;
+        }
+    }
+    return false;
+}
+
+size_t AnimationValueIndex(const fastgltf::AnimationSampler& sampler, size_t keyIndex) {
+    if (sampler.interpolation == fastgltf::AnimationInterpolation::CubicSpline) {
+        return keyIndex * 3 + 1;
+    }
+    return keyIndex;
+}
+
+void ExtractAnimations(const fastgltf::Asset& asset,
+                       const std::vector<std::unordered_map<size_t, int>>& jointToBoneBySkeleton,
+                       GltfScene& scene) {
+    scene.animations.reserve(asset.animations.size());
+    for (size_t animationIndex = 0; animationIndex < asset.animations.size(); ++animationIndex) {
+        const fastgltf::Animation& gltfAnimation = asset.animations[animationIndex];
+        GltfAnimationData animation;
+        animation.name =
+            gltfAnimation.name.empty() ? ("animation_" + std::to_string(animationIndex)) : std::string(gltfAnimation.name);
+
+        for (const fastgltf::AnimationChannel& channel : gltfAnimation.channels) {
+            if (!channel.nodeIndex.has_value() || channel.samplerIndex >= gltfAnimation.samplers.size()) {
+                continue;
+            }
+
+            int channelSkeleton = -1;
+            int boneIndex = -1;
+            if (!FindSkeletonBoneForNode(jointToBoneBySkeleton, *channel.nodeIndex, channelSkeleton, boneIndex)) {
+                continue;
+            }
+            if (animation.skeletonIndex < 0) {
+                animation.skeletonIndex = channelSkeleton;
+            }
+            if (animation.skeletonIndex != channelSkeleton) {
+                continue;
+            }
+
+            const fastgltf::AnimationSampler& sampler = gltfAnimation.samplers[channel.samplerIndex];
+            const std::vector<float> times = ReadAnimationTimes(asset, sampler.inputAccessor);
+            if (times.empty()) {
+                continue;
+            }
+            animation.durationSeconds = std::max(animation.durationSeconds, times.back());
+            AnimationBoneTrack& track = FindOrAddTrack(animation.tracks, boneIndex);
+
+            if (channel.path == fastgltf::AnimationPath::Translation) {
+                const std::vector<glm::vec3> values = ReadAnimationValues<glm::vec3>(asset, sampler.outputAccessor);
+                for (size_t i = 0; i < times.size(); ++i) {
+                    const size_t valueIndex = AnimationValueIndex(sampler, i);
+                    if (valueIndex < values.size()) {
+                        track.translations.push_back({times[i], values[valueIndex]});
+                    }
+                }
+            } else if (channel.path == fastgltf::AnimationPath::Rotation) {
+                const std::vector<glm::vec4> values = ReadAnimationValues<glm::vec4>(asset, sampler.outputAccessor);
+                for (size_t i = 0; i < times.size(); ++i) {
+                    const size_t valueIndex = AnimationValueIndex(sampler, i);
+                    if (valueIndex < values.size()) {
+                        const glm::vec4 value = values[valueIndex];
+                        track.rotations.push_back({times[i], glm::quat(value.w, value.x, value.y, value.z)});
+                    }
+                }
+            } else if (channel.path == fastgltf::AnimationPath::Scale) {
+                const std::vector<glm::vec3> values = ReadAnimationValues<glm::vec3>(asset, sampler.outputAccessor);
+                for (size_t i = 0; i < times.size(); ++i) {
+                    const size_t valueIndex = AnimationValueIndex(sampler, i);
+                    if (valueIndex < values.size()) {
+                        track.scales.push_back({times[i], values[valueIndex]});
+                    }
+                }
+            }
+        }
+
+        if (animation.skeletonIndex >= 0 && !animation.tracks.empty()) {
+            scene.animations.push_back(std::move(animation));
+        }
+    }
 }
 
 } // namespace
@@ -366,6 +598,12 @@ Result<GltfScene> GltfLoader::Load(const fs::path& gltfPath) {
         }
         scene.meshes.push_back(std::move(mesh));
     }
+
+    const std::vector<size_t> parentNodes = BuildParentNodes(asset);
+    const std::vector<std::unordered_map<size_t, int>> jointToBoneBySkeleton =
+        ExtractSkeletons(asset, parentNodes, scene);
+    AssignMeshSkins(asset, scene);
+    ExtractAnimations(asset, jointToBoneBySkeleton, scene);
 
     return Result<GltfScene>::Ok(std::move(scene));
 }

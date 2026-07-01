@@ -2,19 +2,23 @@
 
 #include "Hockey/Assets/AssetHash.hpp"
 #include "Hockey/Assets/AssetPath.hpp"
+#include "Hockey/Assets/Assets/AnimationAsset.hpp"
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Assets/Assets/ModelAsset.hpp"
 #include "Hockey/Assets/Assets/PrefabAsset.hpp"
 #include "Hockey/Assets/Assets/SceneAsset.hpp"
 #include "Hockey/Assets/Assets/ShaderAsset.hpp"
+#include "Hockey/Assets/Assets/SkeletonAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
+#include "Hockey/Assets/Cookers/AnimationCooker.hpp"
 #include "Hockey/Assets/Cookers/MaterialCooker.hpp"
 #include "Hockey/Assets/Cookers/MeshCooker.hpp"
 #include "Hockey/Assets/Cookers/ModelCooker.hpp"
 #include "Hockey/Assets/Cookers/PrefabCooker.hpp"
 #include "Hockey/Assets/Cookers/SceneCooker.hpp"
 #include "Hockey/Assets/Cookers/ShaderCooker.hpp"
+#include "Hockey/Assets/Cookers/SkeletonCooker.hpp"
 #include "Hockey/Assets/Cookers/TextureCooker.hpp"
 #include "Hockey/Assets/Importers/GltfImporter.hpp"
 #include "Hockey/Assets/Importers/MaterialImporter.hpp"
@@ -53,6 +57,12 @@ uint64_t FileTimestamp(const fs::path& path) {
 
 std::string LowerExtension(const fs::path& path) {
     std::string ext = path.extension().string();
+    if (ext.empty()) {
+        const std::string filename = path.filename().string();
+        if (filename.size() > 1 && filename.front() == '.' && filename.find('.', 1) == std::string::npos) {
+            ext = filename;
+        }
+    }
     std::transform(ext.begin(), ext.end(), ext.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return ext;
@@ -97,6 +107,10 @@ AssetType AssetManager::ClassifyExtension(const fs::path& rawPath) {
         return AssetType::Scene;
     if (HasSuffix(name, ".prefab.yaml"))
         return AssetType::Prefab;
+    if (HasSuffix(name, ".skeleton.yaml"))
+        return AssetType::Skeleton;
+    if (HasSuffix(name, ".anim.yaml"))
+        return AssetType::Animation;
 
     const std::string ext = LowerExtension(rawPath);
     if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp" || ext == ".hdr" ||
@@ -921,6 +935,66 @@ template <> Result<std::shared_ptr<ShaderAsset>> AssetManager::Load<ShaderAsset>
     return loaded;
 }
 
+    }
+    Status status;
+    AssetMetadata* metadata = EnsureCooked(id, status);
+    if (metadata == nullptr) {
+    }
+    AssetLoader loader(m_Info.projectRoot);
+    if (!loaded) {
+        return loaded;
+    }
+    return loaded;
+}
+
+template <> Result<std::shared_ptr<SkeletonAsset>> AssetManager::Load<SkeletonAsset>(AssetID id) {
+    if (const AssetMetadata* known = m_Database.Find(id); known != nullptr && known->type != AssetType::Skeleton) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Fail("asset is not a skeleton: " + id.ToString());
+    }
+    if (auto cached = m_Registry.Get<SkeletonAsset>(id)) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Ok(std::move(cached));
+    }
+    Status status;
+    AssetMetadata* metadata = EnsureCooked(id, status);
+    if (metadata == nullptr) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Fail(status.error);
+    }
+    if (metadata->type != AssetType::Skeleton) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Fail("asset is not a skeleton: " + id.ToString());
+    }
+    AssetLoader loader(m_Info.projectRoot);
+    Result<std::shared_ptr<SkeletonAsset>> loaded = loader.LoadSkeleton(*metadata);
+    if (!loaded) {
+        return loaded;
+    }
+    m_Registry.Store<SkeletonAsset>(id, loaded.value);
+    return loaded;
+}
+
+template <> Result<std::shared_ptr<AnimationAsset>> AssetManager::Load<AnimationAsset>(AssetID id) {
+    if (const AssetMetadata* known = m_Database.Find(id); known != nullptr && known->type != AssetType::Animation) {
+        return Result<std::shared_ptr<AnimationAsset>>::Fail("asset is not an animation: " + id.ToString());
+    }
+    if (auto cached = m_Registry.Get<AnimationAsset>(id)) {
+        return Result<std::shared_ptr<AnimationAsset>>::Ok(std::move(cached));
+    }
+    Status status;
+    AssetMetadata* metadata = EnsureCooked(id, status);
+    if (metadata == nullptr) {
+        return Result<std::shared_ptr<AnimationAsset>>::Fail(status.error);
+    }
+    if (metadata->type != AssetType::Animation) {
+        return Result<std::shared_ptr<AnimationAsset>>::Fail("asset is not an animation: " + id.ToString());
+    }
+    AssetLoader loader(m_Info.projectRoot);
+    Result<std::shared_ptr<AnimationAsset>> loaded = loader.LoadAnimation(*metadata);
+    if (!loaded) {
+        return loaded;
+    }
+    m_Registry.Store<AnimationAsset>(id, loaded.value);
+    return loaded;
+}
+
 void AssetManager::RegisterPipelines() {
     // Importers and cookers are registered here as each pipeline is implemented.
     RegisterImporter(std::make_unique<TextureImporter>());
@@ -930,6 +1004,8 @@ void AssetManager::RegisterPipelines() {
     RegisterImporter(std::make_unique<GltfImporter>());
     RegisterCooker(std::make_unique<MeshCooker>());
     RegisterCooker(std::make_unique<ModelCooker>());
+    RegisterCooker(std::make_unique<SkeletonCooker>());
+    RegisterCooker(std::make_unique<AnimationCooker>());
     RegisterImporter(std::make_unique<ShaderImporter>());
     RegisterCooker(std::make_unique<ShaderCooker>());
     RegisterImporter(std::make_unique<SceneImporter>());

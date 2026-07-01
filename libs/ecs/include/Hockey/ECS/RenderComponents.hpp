@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -36,6 +37,23 @@ struct MeshRendererComponent {
     bool visible = true;
     bool castsShadows = true;
     bool receivesShadows = true;
+};
+
+struct SkinnedMeshRendererComponent {
+    // 0 means no asset assigned. AssetID lives in hockey_assets, so ECS stores
+    // the raw value to preserve the dependency boundary.
+    uint64_t meshAsset = 0;
+    uint64_t materialAsset = 0;
+    uint64_t skeletonAsset = 0;
+
+    bool visible = true;
+    bool castsShadows = true;
+    bool receivesShadows = true;
+};
+
+struct AnimationPosePaletteComponent {
+    std::vector<glm::mat4> skinningMatrices;
+    bool valid = false;
 };
 
 struct LightComponent {
@@ -77,6 +95,12 @@ template <> struct ComponentTraits<CameraComponent> {
 };
 template <> struct ComponentTraits<MeshRendererComponent> {
     static constexpr const char* Name = "MeshRendererComponent";
+};
+template <> struct ComponentTraits<SkinnedMeshRendererComponent> {
+    static constexpr const char* Name = "SkinnedMeshRendererComponent";
+};
+template <> struct ComponentTraits<AnimationPosePaletteComponent> {
+    static constexpr const char* Name = "AnimationPosePaletteComponent";
 };
 template <> struct ComponentTraits<LightComponent> {
     static constexpr const char* Name = "LightComponent";

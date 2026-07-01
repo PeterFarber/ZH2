@@ -3,9 +3,7 @@
 
 namespace Hockey {
 
-// All asset categories tracked by the pipeline. Audio and Animation are
-// future-facing placeholders in Phase 5: they are recognized as enum values
-// but have no importer/cooker yet.
+// All asset categories tracked by the pipeline.
 enum class AssetType {
     Unknown,
     Texture,
@@ -16,6 +14,7 @@ enum class AssetType {
     Scene,
     Prefab,
     Audio,
+    Skeleton,
     Animation
 };
 

@@ -1,14 +1,18 @@
 #include "Hockey/Assets/Runtime/AssetLoader.hpp"
 
+#include "Hockey/Assets/Assets/AnimationAsset.hpp"
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
 #include "Hockey/Assets/Assets/ModelAsset.hpp"
 #include "Hockey/Assets/Assets/ShaderAsset.hpp"
+#include "Hockey/Assets/Assets/SkeletonAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
+#include "Hockey/Assets/Runtime/AnimationLoader.hpp"
 #include "Hockey/Assets/Runtime/MaterialLoader.hpp"
 #include "Hockey/Assets/Runtime/MeshLoader.hpp"
 #include "Hockey/Assets/Runtime/ModelLoader.hpp"
 #include "Hockey/Assets/Runtime/ShaderLoader.hpp"
+#include "Hockey/Assets/Runtime/SkeletonLoader.hpp"
 #include "Hockey/Assets/Runtime/TextureLoader.hpp"
 
 namespace Hockey {
@@ -75,6 +79,34 @@ Result<std::shared_ptr<ShaderAsset>> AssetLoader::LoadShader(const AssetMetadata
         return Result<std::shared_ptr<ShaderAsset>>::Fail(loaded.error);
     }
     return Result<std::shared_ptr<ShaderAsset>>::Ok(std::make_shared<ShaderAsset>(std::move(loaded.value)));
+}
+
+    if (metadata.cookedPath.empty()) {
+    }
+    if (!loaded) {
+    }
+}
+
+Result<std::shared_ptr<SkeletonAsset>> AssetLoader::LoadSkeleton(const AssetMetadata& metadata) {
+    if (metadata.cookedPath.empty()) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Fail("skeleton has no cooked path");
+    }
+    Result<SkeletonAsset> loaded = SkeletonLoader::LoadCooked(CookedAbsolute(metadata));
+    if (!loaded) {
+        return Result<std::shared_ptr<SkeletonAsset>>::Fail(loaded.error);
+    }
+    return Result<std::shared_ptr<SkeletonAsset>>::Ok(std::make_shared<SkeletonAsset>(std::move(loaded.value)));
+}
+
+Result<std::shared_ptr<AnimationAsset>> AssetLoader::LoadAnimation(const AssetMetadata& metadata) {
+    if (metadata.cookedPath.empty()) {
+        return Result<std::shared_ptr<AnimationAsset>>::Fail("animation has no cooked path");
+    }
+    Result<AnimationAsset> loaded = AnimationLoader::LoadCooked(CookedAbsolute(metadata));
+    if (!loaded) {
+        return Result<std::shared_ptr<AnimationAsset>>::Fail(loaded.error);
+    }
+    return Result<std::shared_ptr<AnimationAsset>>::Ok(std::make_shared<AnimationAsset>(std::move(loaded.value)));
 }
 
 } // namespace Hockey

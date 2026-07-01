@@ -79,6 +79,8 @@ std::string CookedSubdirectory(AssetType type) {
         return "prefabs";
     case AssetType::Audio:
         return "audio";
+    case AssetType::Skeleton:
+        return "skeletons";
     case AssetType::Animation:
         return "animations";
     case AssetType::Unknown:
@@ -105,6 +107,8 @@ std::string CookedExtension(AssetType type) {
         return ".prefab.yaml";
     case AssetType::Audio:
         return ".audio.bin";
+    case AssetType::Skeleton:
+        return ".skel.bin";
     case AssetType::Animation:
         return ".anim.bin";
     case AssetType::Unknown:

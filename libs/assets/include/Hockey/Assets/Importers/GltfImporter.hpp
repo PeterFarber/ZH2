@@ -36,6 +36,10 @@ public:
                                                              const std::vector<std::string>& meshNames);
     static std::vector<std::filesystem::path> MaterialAssetPaths(const std::filesystem::path& modelRawPath,
                                                                  const std::vector<std::string>& materialNames);
+    static std::vector<std::filesystem::path> SkeletonAssetPaths(const std::filesystem::path& modelRawPath,
+                                                                 const std::vector<std::string>& skeletonNames);
+    static std::vector<std::filesystem::path> AnimationAssetPaths(const std::filesystem::path& modelRawPath,
+                                                                  const std::vector<std::string>& animationNames);
 
     // True when a raw path refers to a glTF-generated sub-asset.
     static bool IsSubAsset(const std::filesystem::path& rawPath);

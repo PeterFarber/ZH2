@@ -302,6 +302,31 @@ void ComponentRegistry::RegisterPhase2Components() {
 
     {
         ComponentMetadata md;
+        md.name = "SkinnedMeshRendererComponent";
+        md.displayName = "Skinned Mesh Renderer";
+        md.category = "Rendering";
+        FieldMetadata meshAsset =
+            MakeField("MeshAsset", FieldType::AssetRef, offsetof(SkinnedMeshRendererComponent, meshAsset));
+        meshAsset.assetTypeName = "Mesh";
+        md.fields.push_back(meshAsset);
+        FieldMetadata materialAsset =
+            MakeField("MaterialAsset", FieldType::AssetRef, offsetof(SkinnedMeshRendererComponent, materialAsset));
+        materialAsset.assetTypeName = "Material";
+        md.fields.push_back(materialAsset);
+        FieldMetadata skeletonAsset =
+            MakeField("SkeletonAsset", FieldType::AssetRef, offsetof(SkinnedMeshRendererComponent, skeletonAsset));
+        skeletonAsset.assetTypeName = "Skeleton";
+        md.fields.push_back(skeletonAsset);
+        md.fields.push_back(MakeField("Visible", FieldType::Bool, offsetof(SkinnedMeshRendererComponent, visible)));
+        md.fields.push_back(
+            MakeField("CastsShadows", FieldType::Bool, offsetof(SkinnedMeshRendererComponent, castsShadows)));
+        md.fields.push_back(
+            MakeField("ReceivesShadows", FieldType::Bool, offsetof(SkinnedMeshRendererComponent, receivesShadows)));
+        RegisterComponent<SkinnedMeshRendererComponent>(std::move(md));
+    }
+
+    {
+        ComponentMetadata md;
         md.name = "LightComponent";
         md.displayName = "Light";
         md.category = "Rendering";

@@ -15,6 +15,8 @@ struct MeshVertex {
     glm::vec3 normal{0.0f, 1.0f, 0.0f};
     glm::vec4 tangent{1.0f, 0.0f, 0.0f, 1.0f};
     glm::vec2 uv0{0.0f};
+    glm::u16vec4 jointIndices{0, 0, 0, 0};
+    glm::vec4 jointWeights{0.0f};
 };
 
 struct MeshSubmesh {

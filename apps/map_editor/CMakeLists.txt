@@ -4,7 +4,7 @@ add_executable(HockeyMapEditor
     src/MapEditorApp.hpp
 )
 
-target_link_libraries(HockeyMapEditor PRIVATE hockey_core hockey_ecs hockey_renderer hockey_assets hockey_editor hockey_physics hockey_gameplay)
+target_link_libraries(HockeyMapEditor PRIVATE hockey_core hockey_ecs hockey_renderer hockey_assets hockey_animation hockey_editor hockey_physics hockey_gameplay)
 set_target_properties(HockeyMapEditor PROPERTIES OUTPUT_NAME "HockeyMapEditor")
 
 add_custom_command(TARGET HockeyMapEditor POST_BUILD

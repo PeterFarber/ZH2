@@ -196,7 +196,8 @@ MaterialSource SourceFromGltf(const GltfMaterialData& gltf,
 }
 
 Status WriteMeshDescriptor(const fs::path& path, const fs::path& modelRawPath, size_t meshIndex,
-                           const std::string& meshName, const std::vector<fs::path>& materialPaths) {
+                           const std::string& meshName, const std::vector<fs::path>& materialPaths,
+                           const fs::path& skeletonPath) {
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
@@ -208,6 +209,38 @@ Status WriteMeshDescriptor(const fs::path& path, const fs::path& modelRawPath, s
         out << materialPath.generic_string();
     }
     out << YAML::EndSeq;
+    if (!skeletonPath.empty()) {
+        out << YAML::Key << "Skeleton" << YAML::Value << skeletonPath.generic_string();
+    }
+    out << YAML::EndMap;
+    out << YAML::EndMap;
+
+    return FileSystem::WriteTextFile(path, out.c_str());
+}
+
+Status WriteSkeletonDescriptor(const fs::path& path, const fs::path& modelRawPath, size_t skinIndex,
+                               const std::string& skeletonName) {
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "Skeleton" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "SourceModel" << YAML::Value << modelRawPath.generic_string();
+    out << YAML::Key << "SkinIndex" << YAML::Value << static_cast<uint64_t>(skinIndex);
+    out << YAML::Key << "Name" << YAML::Value << skeletonName;
+    out << YAML::EndMap;
+    out << YAML::EndMap;
+
+    return FileSystem::WriteTextFile(path, out.c_str());
+}
+
+Status WriteAnimationDescriptor(const fs::path& path, const fs::path& modelRawPath, size_t animationIndex,
+                                const std::string& animationName, const fs::path& skeletonPath) {
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "SourceModel" << YAML::Value << modelRawPath.generic_string();
+    out << YAML::Key << "AnimationIndex" << YAML::Value << static_cast<uint64_t>(animationIndex);
+    out << YAML::Key << "Name" << YAML::Value << animationName;
+    out << YAML::Key << "Skeleton" << YAML::Value << skeletonPath.generic_string();
     out << YAML::EndMap;
     out << YAML::EndMap;
 
@@ -238,6 +271,16 @@ std::vector<fs::path> GltfImporter::MeshAssetPaths(const fs::path& modelRawPath,
 std::vector<fs::path> GltfImporter::MaterialAssetPaths(const fs::path& modelRawPath,
                                                        const std::vector<std::string>& materialNames) {
     return BuildGeneratedAssetPaths(modelRawPath, materialNames, "materials", "material", ".material.yaml");
+}
+
+std::vector<fs::path> GltfImporter::SkeletonAssetPaths(const fs::path& modelRawPath,
+                                                       const std::vector<std::string>& skeletonNames) {
+    return BuildGeneratedAssetPaths(modelRawPath, skeletonNames, "animation/skeletons", "skeleton", ".skeleton.yaml");
+}
+
+std::vector<fs::path> GltfImporter::AnimationAssetPaths(const fs::path& modelRawPath,
+                                                        const std::vector<std::string>& animationNames) {
+    return BuildGeneratedAssetPaths(modelRawPath, animationNames, "animation/clips", "animation", ".anim.yaml");
 }
 
 bool GltfImporter::IsSubAsset(const fs::path& rawPath) {
@@ -357,6 +400,20 @@ ImportResult GltfImporter::Import(const ImportContext& context) {
     }
     const std::vector<fs::path> meshPaths = MeshAssetPaths(modelRawPath, meshNames);
 
+    std::vector<std::string> skeletonNames;
+    skeletonNames.reserve(scene.value.skeletons.size());
+    for (const GltfSkeletonData& skeleton : scene.value.skeletons) {
+        skeletonNames.push_back(skeleton.name);
+    }
+    const std::vector<fs::path> skeletonPaths = SkeletonAssetPaths(modelRawPath, skeletonNames);
+
+    std::vector<std::string> animationNames;
+    animationNames.reserve(scene.value.animations.size());
+    for (const GltfAnimationData& animation : scene.value.animations) {
+        animationNames.push_back(animation.name);
+    }
+    const std::vector<fs::path> animationPaths = AnimationAssetPaths(modelRawPath, animationNames);
+
     // Generated material sub-assets (and their texture dependencies).
     std::vector<AssetID> materialIds(scene.value.materials.size());
     for (size_t i = 0; i < scene.value.materials.size(); ++i) {
@@ -388,12 +445,43 @@ ImportResult GltfImporter::Import(const ImportContext& context) {
         result.generatedAssets.push_back(std::move(meta));
     }
 
+    // Generated skeleton assets.
+    std::vector<AssetID> skeletonIds(scene.value.skeletons.size());
+    for (size_t i = 0; i < scene.value.skeletons.size(); ++i) {
+        const GltfSkeletonData& skeleton = scene.value.skeletons[i];
+        const fs::path subPath = skeletonPaths[i];
+        const Status wrote = WriteSkeletonDescriptor(context.projectRoot / subPath, modelRawPath, i, skeleton.name);
+        if (!wrote) {
+            result.success = false;
+            result.error = wrote.error;
+            return result;
+        }
+
+        AssetMetadata meta;
+        meta.type = AssetType::Skeleton;
+        meta.rawPath = subPath.generic_string();
+        meta.metadataPath = AssetPath::MetadataSidecar(meta.rawPath);
+        meta.name = skeleton.name;
+        meta.importerVersion = Version();
+
+        if (db != nullptr) {
+            meta.id = db->GetOrCreateIDForPath(subPath, AssetType::Skeleton);
+        }
+        skeletonIds[i] = meta.id;
+        AddDependency(modelDeps, meta.id);
+        result.generatedAssets.push_back(std::move(meta));
+    }
+
     // Generated mesh sub-assets (depend on the materials their submeshes use).
     for (size_t i = 0; i < scene.value.meshes.size(); ++i) {
         const GltfMeshData& mesh = scene.value.meshes[i];
         const fs::path subPath = meshPaths[i];
-        const Status wrote = WriteMeshDescriptor(context.projectRoot / subPath, modelRawPath, i, mesh.name,
-                                                materialPaths);
+        fs::path skeletonPath;
+        if (mesh.skinIndex >= 0 && static_cast<size_t>(mesh.skinIndex) < skeletonPaths.size()) {
+            skeletonPath = skeletonPaths[static_cast<size_t>(mesh.skinIndex)];
+        }
+        const Status wrote =
+            WriteMeshDescriptor(context.projectRoot / subPath, modelRawPath, i, mesh.name, materialPaths, skeletonPath);
         if (!wrote) {
             result.success = false;
             result.error = wrote.error;
@@ -414,6 +502,41 @@ ImportResult GltfImporter::Import(const ImportContext& context) {
                     AddDependency(meta.dependencies, materialIds[materialIndex]);
                 }
             }
+            if (mesh.skinIndex >= 0 && static_cast<size_t>(mesh.skinIndex) < skeletonIds.size()) {
+                AddDependency(meta.dependencies, skeletonIds[static_cast<size_t>(mesh.skinIndex)]);
+            }
+        }
+        AddDependency(modelDeps, meta.id);
+        result.generatedAssets.push_back(std::move(meta));
+    }
+
+    // Generated animation clip assets.
+    for (size_t i = 0; i < scene.value.animations.size(); ++i) {
+        const GltfAnimationData& animation = scene.value.animations[i];
+        if (animation.skeletonIndex < 0 || static_cast<size_t>(animation.skeletonIndex) >= skeletonPaths.size()) {
+            continue;
+        }
+
+        const fs::path subPath = animationPaths[i];
+        const fs::path skeletonPath = skeletonPaths[static_cast<size_t>(animation.skeletonIndex)];
+        const Status wrote =
+            WriteAnimationDescriptor(context.projectRoot / subPath, modelRawPath, i, animation.name, skeletonPath);
+        if (!wrote) {
+            result.success = false;
+            result.error = wrote.error;
+            return result;
+        }
+
+        AssetMetadata meta;
+        meta.type = AssetType::Animation;
+        meta.rawPath = subPath.generic_string();
+        meta.metadataPath = AssetPath::MetadataSidecar(meta.rawPath);
+        meta.name = animation.name;
+        meta.importerVersion = Version();
+
+        if (db != nullptr) {
+            meta.id = db->GetOrCreateIDForPath(subPath, AssetType::Animation);
+            AddDependency(meta.dependencies, skeletonIds[static_cast<size_t>(animation.skeletonIndex)]);
         }
         AddDependency(modelDeps, meta.id);
         result.generatedAssets.push_back(std::move(meta));

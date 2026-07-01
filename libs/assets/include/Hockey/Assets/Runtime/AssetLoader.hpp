@@ -12,6 +12,8 @@ struct MeshAsset;
 struct MaterialAsset;
 struct ModelAsset;
 struct ShaderAsset;
+struct SkeletonAsset;
+struct AnimationAsset;
 
 // Loads cooked CPU-side assets from disk. Resolves the project-relative cooked
 // path stored in metadata against the project root. The renderer turns the
@@ -25,6 +27,8 @@ public:
     Result<std::shared_ptr<ModelAsset>> LoadModel(const AssetMetadata& metadata);
     Result<std::shared_ptr<MaterialAsset>> LoadMaterial(const AssetMetadata& metadata);
     Result<std::shared_ptr<ShaderAsset>> LoadShader(const AssetMetadata& metadata);
+    Result<std::shared_ptr<SkeletonAsset>> LoadSkeleton(const AssetMetadata& metadata);
+    Result<std::shared_ptr<AnimationAsset>> LoadAnimation(const AssetMetadata& metadata);
 
 private:
     std::filesystem::path CookedAbsolute(const AssetMetadata& metadata) const;

@@ -29,6 +29,8 @@ target_sources(hockey_assets
         src/CookedFormat.cpp
         src/StbImpl.cpp
         src/Gltf/GltfLoader.cpp
+        src/Assets/AnimationAsset.cpp
+        src/Assets/SkeletonAsset.cpp
         src/Assets/TextureAsset.cpp
         src/Assets/ShaderAsset.cpp
         src/Importers/TextureImporter.cpp
@@ -36,13 +38,17 @@ target_sources(hockey_assets
         src/Importers/GltfImporter.cpp
         src/Importers/ShaderImporter.cpp
         src/Importers/SceneImporter.cpp
+        src/Cookers/AnimationCooker.cpp
         src/Cookers/TextureCooker.cpp
         src/Cookers/MaterialCooker.cpp
         src/Cookers/MeshCooker.cpp
         src/Cookers/ModelCooker.cpp
+        src/Cookers/SkeletonCooker.cpp
         src/Cookers/ShaderCooker.cpp
         src/Cookers/SceneCooker.cpp
         src/Runtime/AssetLoader.cpp
+        src/Runtime/AnimationLoader.cpp
+        src/Runtime/SkeletonLoader.cpp
         src/Runtime/TextureLoader.cpp
         src/Runtime/SvgRasterizer.cpp
         src/Runtime/MeshLoader.cpp

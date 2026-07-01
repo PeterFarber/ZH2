@@ -7,6 +7,17 @@
 namespace Hockey {
 namespace fs = std::filesystem;
 
+namespace {
+
+struct MeshVertexV1 {
+    glm::vec3 position{0.0f};
+    glm::vec3 normal{0.0f, 1.0f, 0.0f};
+    glm::vec4 tangent{1.0f, 0.0f, 0.0f, 1.0f};
+    glm::vec2 uv0{0.0f};
+};
+
+} // namespace
+
 std::vector<std::byte> MeshLoader::Encode(const MeshAsset& asset, uint64_t sourceHash) {
     std::vector<std::byte> buffer;
     BinaryWriter writer(buffer);
@@ -42,7 +53,8 @@ Result<MeshAsset> MeshLoader::Decode(const std::byte* data, size_t size) {
     BinaryReader reader(data, size);
     const CookedAssetHeader header = reader.ReadHeader();
     if (!reader.Ok() || header.magic != CookedFormat::kMagic ||
-        header.assetType != static_cast<uint32_t>(AssetType::Mesh)) {
+        header.assetType != static_cast<uint32_t>(AssetType::Mesh) ||
+        (header.version != 1 && header.version != kVersion)) {
         return Result<MeshAsset>::Fail("invalid cooked mesh header");
     }
 
@@ -50,11 +62,23 @@ Result<MeshAsset> MeshLoader::Decode(const std::byte* data, size_t size) {
     asset.id = AssetID(header.assetID);
 
     const uint32_t vertexCount = reader.Read<uint32_t>();
-    if (!reader.Ok() || static_cast<size_t>(vertexCount) * sizeof(MeshVertex) > reader.Remaining()) {
+    const size_t encodedVertexSize = header.version == 1 ? sizeof(MeshVertexV1) : sizeof(MeshVertex);
+    if (!reader.Ok() || static_cast<size_t>(vertexCount) * encodedVertexSize > reader.Remaining()) {
         return Result<MeshAsset>::Fail("cooked mesh vertices truncated");
     }
     asset.vertices.resize(vertexCount);
-    if (vertexCount > 0) {
+    if (header.version == 1) {
+        for (MeshVertex& vertex : asset.vertices) {
+            MeshVertexV1 legacy;
+            reader.ReadBytes(&legacy, sizeof(legacy));
+            vertex.position = legacy.position;
+            vertex.normal = legacy.normal;
+            vertex.tangent = legacy.tangent;
+            vertex.uv0 = legacy.uv0;
+            vertex.jointIndices = {0, 0, 0, 0};
+            vertex.jointWeights = {0.0f, 0.0f, 0.0f, 0.0f};
+        }
+    } else if (vertexCount > 0) {
         reader.ReadBytes(asset.vertices.data(), vertexCount * sizeof(MeshVertex));
     }
 

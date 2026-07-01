@@ -24,6 +24,7 @@ struct MeshDescriptor {
     fs::path sourceModel;
     size_t meshIndex = 0;
     std::vector<fs::path> materialPaths;
+    fs::path skeletonPath;
 };
 
 Result<MeshDescriptor> LoadMeshDescriptor(const fs::path& path) {
@@ -49,6 +50,9 @@ Result<MeshDescriptor> LoadMeshDescriptor(const fs::path& path) {
         for (const YAML::Node material : materials) {
             descriptor.materialPaths.push_back(material.as<std::string>());
         }
+    }
+    if (const YAML::Node skeleton = node["Skeleton"]) {
+        descriptor.skeletonPath = skeleton.as<std::string>();
     }
     return Result<MeshDescriptor>::Ok(std::move(descriptor));
 }
@@ -101,6 +105,7 @@ CookResult MeshCooker::Cook(const CookContext& context) {
     size_t meshIndex = 0;
     bool isMesh = false;
     std::vector<fs::path> materialPaths;
+    fs::path skeletonPath;
     const bool legacySubAsset = GltfImporter::ParseSubAsset(metadata.rawPath, modelRawPath, meshIndex, isMesh);
     if (legacySubAsset) {
         if (!isMesh) {
@@ -118,6 +123,7 @@ CookResult MeshCooker::Cook(const CookContext& context) {
         modelRawPath = descriptor.value.sourceModel;
         meshIndex = descriptor.value.meshIndex;
         materialPaths = std::move(descriptor.value.materialPaths);
+        skeletonPath = std::move(descriptor.value.skeletonPath);
     }
 
     const fs::path gltfAbsolute = context.projectRoot / modelRawPath;
@@ -163,6 +169,14 @@ CookResult MeshCooker::Cook(const CookContext& context) {
             if (std::find(result.dependencies.begin(), result.dependencies.end(), materialMeta->id) ==
                 result.dependencies.end()) {
                 result.dependencies.push_back(materialMeta->id);
+            }
+        }
+    }
+    if (!skeletonPath.empty() && context.database != nullptr) {
+        if (const AssetMetadata* skeletonMeta = context.database->FindByRawPath(skeletonPath)) {
+            if (std::find(result.dependencies.begin(), result.dependencies.end(), skeletonMeta->id) ==
+                result.dependencies.end()) {
+                result.dependencies.push_back(skeletonMeta->id);
             }
         }
     }

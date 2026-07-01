@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <utility>
 
+#include "Hockey/ECS/ComponentSerializer.hpp"
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
 #include "Hockey/ECS/PrefabOverride.hpp"
@@ -154,11 +155,18 @@ entt::entity Scene::DuplicateRecursive(entt::entity sourceHandle) {
     CopyComponent<CameraRigMarkerComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<CameraComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<MeshRendererComponent>(m_Registry, sourceHandle, newHandle);
+    CopyComponent<SkinnedMeshRendererComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<LightComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<EnvironmentComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<ReflectionProbeComponent>(m_Registry, sourceHandle, newHandle);
     CopyComponent<DecalComponent>(m_Registry, sourceHandle, newHandle);
     // PrefabComponent is intentionally not copied on a plain duplicate.
+
+    YAML::Emitter external;
+    external << YAML::BeginMap;
+    ComponentSerializer::SerializeExternalComponents(external, MakeEntity(sourceHandle));
+    external << YAML::EndMap;
+    ComponentSerializer::DeserializeExternalComponents(copy, YAML::Load(external.c_str()));
 
     if (const auto* sourceChildren = m_Registry.try_get<ChildrenComponent>(sourceHandle)) {
         const std::vector<UUID> childIds = sourceChildren->children;

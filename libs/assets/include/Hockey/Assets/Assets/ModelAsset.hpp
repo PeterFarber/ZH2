@@ -14,6 +14,8 @@ struct ModelAsset {
     std::string name;
     std::vector<AssetID> meshes;
     std::vector<AssetID> materials;
+    std::vector<AssetID> skeletons;
+    std::vector<AssetID> animations;
 };
 
 } // namespace Hockey

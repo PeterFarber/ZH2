@@ -41,6 +41,27 @@ void RunRenderComponentTests() {
         HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().followOffset.y, 2.0f, 1e-5);
         HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().followRotation.x, -20.0f, 1e-5);
         HK_CHECK_NEAR(camera.GetComponent<CameraComponent>().fovDegrees, 60.0f, 1e-5);
+
+        Entity skinned = scene.CreateEntity("SkinnedPlayer");
+        SkinnedMeshRendererComponent skinnedRenderer;
+        skinnedRenderer.meshAsset = 101u;
+        skinnedRenderer.materialAsset = 202u;
+        skinnedRenderer.skeletonAsset = 303u;
+        skinnedRenderer.visible = false;
+        skinnedRenderer.castsShadows = true;
+        skinnedRenderer.receivesShadows = false;
+        skinned.AddComponent<SkinnedMeshRendererComponent>(skinnedRenderer);
+        HK_CHECK(skinned.HasComponent<SkinnedMeshRendererComponent>());
+        HK_CHECK_EQ(skinned.GetComponent<SkinnedMeshRendererComponent>().skeletonAsset, 303u);
+        HK_CHECK(!skinned.GetComponent<SkinnedMeshRendererComponent>().visible);
+
+        AnimationPosePaletteComponent palette;
+        palette.skinningMatrices.push_back(glm::mat4{1.0f});
+        palette.valid = true;
+        skinned.AddComponent<AnimationPosePaletteComponent>(palette);
+        HK_CHECK(skinned.HasComponent<AnimationPosePaletteComponent>());
+        HK_CHECK_EQ(skinned.GetComponent<AnimationPosePaletteComponent>().skinningMatrices.size(), 1u);
+        HK_CHECK(skinned.GetComponent<AnimationPosePaletteComponent>().valid);
     }
 
     // --- Enum string conversion round-trip ---
@@ -73,6 +94,20 @@ void RunRenderComponentTests() {
         mesh.castsShadows = false;
         mesh.receivesShadows = true;
         meshEntity.AddComponent<MeshRendererComponent>(mesh);
+
+        Entity skinnedEntity = scene.CreateEntity("AnimatedSkater");
+        SkinnedMeshRendererComponent skinnedMesh;
+        skinnedMesh.meshAsset = 7444ull;
+        skinnedMesh.materialAsset = 8555ull;
+        skinnedMesh.skeletonAsset = 9666ull;
+        skinnedMesh.visible = false;
+        skinnedMesh.castsShadows = true;
+        skinnedMesh.receivesShadows = false;
+        skinnedEntity.AddComponent<SkinnedMeshRendererComponent>(skinnedMesh);
+        AnimationPosePaletteComponent palette;
+        palette.skinningMatrices.push_back(glm::mat4{1.0f});
+        palette.valid = true;
+        skinnedEntity.AddComponent<AnimationPosePaletteComponent>(palette);
 
         Entity lightEntity = scene.CreateEntity("Sun");
         LightComponent light;
@@ -137,6 +172,19 @@ void RunRenderComponentTests() {
             HK_CHECK(m.receivesShadows);
         }
 
+        Entity loadedSkinned = loaded.FindEntityByUUID(skinnedEntity.GetUUID());
+        HK_CHECK(loadedSkinned.HasComponent<SkinnedMeshRendererComponent>());
+        if (loadedSkinned.HasComponent<SkinnedMeshRendererComponent>()) {
+            const auto& m = loadedSkinned.GetComponent<SkinnedMeshRendererComponent>();
+            HK_CHECK_EQ(m.meshAsset, 7444ull);
+            HK_CHECK_EQ(m.materialAsset, 8555ull);
+            HK_CHECK_EQ(m.skeletonAsset, 9666ull);
+            HK_CHECK(!m.visible);
+            HK_CHECK(m.castsShadows);
+            HK_CHECK(!m.receivesShadows);
+        }
+        HK_CHECK(!loadedSkinned.HasComponent<AnimationPosePaletteComponent>());
+
         Entity loadedLight = loaded.FindEntityByUUID(lightEntity.GetUUID());
         HK_CHECK(loadedLight.HasComponent<LightComponent>());
         HK_CHECK(loadedLight.HasComponent<EnvironmentComponent>());
@@ -165,8 +213,9 @@ void RunRenderComponentTests() {
     {
         ComponentRegistry& registry = ComponentRegistry::Get();
         registry.RegisterPhase2Components();
-        const char* names[] = {"CameraComponent",      "MeshRendererComponent",    "LightComponent",
-                               "EnvironmentComponent", "ReflectionProbeComponent", "DecalComponent"};
+        const char* names[] = {"CameraComponent",      "MeshRendererComponent",    "SkinnedMeshRendererComponent",
+                               "LightComponent",       "EnvironmentComponent",     "ReflectionProbeComponent",
+                               "DecalComponent"};
         for (const char* name : names) {
             HK_CHECK_MSG(registry.FindByName(name) != nullptr, name);
         }
@@ -191,5 +240,18 @@ void RunRenderComponentTests() {
             HK_CHECK(followRotation != nullptr && followRotation->type == FieldType::Vec3);
             HK_CHECK(followRotation != nullptr && followRotation->visibleWhenField == "FollowPlayer");
         }
+        const ComponentMetadata* skinnedMeta = registry.FindByName("SkinnedMeshRendererComponent");
+        if (skinnedMeta != nullptr) {
+            const FieldMetadata* meshAsset = FindField(*skinnedMeta, "MeshAsset");
+            HK_CHECK(meshAsset != nullptr && meshAsset->type == FieldType::AssetRef);
+            HK_CHECK(meshAsset != nullptr && meshAsset->assetTypeName == "Mesh");
+            const FieldMetadata* materialAsset = FindField(*skinnedMeta, "MaterialAsset");
+            HK_CHECK(materialAsset != nullptr && materialAsset->type == FieldType::AssetRef);
+            HK_CHECK(materialAsset != nullptr && materialAsset->assetTypeName == "Material");
+            const FieldMetadata* skeletonAsset = FindField(*skinnedMeta, "SkeletonAsset");
+            HK_CHECK(skeletonAsset != nullptr && skeletonAsset->type == FieldType::AssetRef);
+            HK_CHECK(skeletonAsset != nullptr && skeletonAsset->assetTypeName == "Skeleton");
+        }
+        HK_CHECK(registry.FindByName("AnimationPosePaletteComponent") == nullptr);
     }
 }

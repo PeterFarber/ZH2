@@ -69,6 +69,32 @@ CookResult ModelCooker::Cook(const CookContext& context) {
                 result.dependencies.push_back(sub->id);
             }
         }
+
+        std::vector<std::string> skeletonNames;
+        skeletonNames.reserve(scene.value.skeletons.size());
+        for (const GltfSkeletonData& skeleton : scene.value.skeletons) {
+            skeletonNames.push_back(skeleton.name);
+        }
+        const std::vector<fs::path> skeletonPaths = GltfImporter::SkeletonAssetPaths(metadata.rawPath, skeletonNames);
+        for (const fs::path& skeletonPath : skeletonPaths) {
+            if (const AssetMetadata* sub = context.database->FindByRawPath(skeletonPath)) {
+                asset.skeletons.push_back(sub->id);
+                result.dependencies.push_back(sub->id);
+            }
+        }
+
+        std::vector<std::string> animationNames;
+        animationNames.reserve(scene.value.animations.size());
+        for (const GltfAnimationData& animation : scene.value.animations) {
+            animationNames.push_back(animation.name);
+        }
+        const std::vector<fs::path> animationPaths = GltfImporter::AnimationAssetPaths(metadata.rawPath, animationNames);
+        for (const fs::path& animationPath : animationPaths) {
+            if (const AssetMetadata* sub = context.database->FindByRawPath(animationPath)) {
+                asset.animations.push_back(sub->id);
+                result.dependencies.push_back(sub->id);
+            }
+        }
     }
 
     const fs::path cookedAbsolute = context.cookedRoot / "assets" / AssetPath::CookedSubdirectory(AssetType::Model) /

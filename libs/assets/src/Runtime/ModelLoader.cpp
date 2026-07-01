@@ -23,6 +23,16 @@ std::vector<std::byte> ModelLoader::Encode(const ModelAsset& asset, uint64_t sou
     for (const AssetID material : asset.materials) {
         writer.Write<uint64_t>(material.Value());
     }
+
+    writer.Write<uint32_t>(static_cast<uint32_t>(asset.skeletons.size()));
+    for (const AssetID skeleton : asset.skeletons) {
+        writer.Write<uint64_t>(skeleton.Value());
+    }
+
+    writer.Write<uint32_t>(static_cast<uint32_t>(asset.animations.size()));
+    for (const AssetID animation : asset.animations) {
+        writer.Write<uint64_t>(animation.Value());
+    }
     return buffer;
 }
 
@@ -30,7 +40,8 @@ Result<ModelAsset> ModelLoader::Decode(const std::byte* data, size_t size) {
     BinaryReader reader(data, size);
     const CookedAssetHeader header = reader.ReadHeader();
     if (!reader.Ok() || header.magic != CookedFormat::kMagic ||
-        header.assetType != static_cast<uint32_t>(AssetType::Model)) {
+        header.assetType != static_cast<uint32_t>(AssetType::Model) ||
+        (header.version != 1 && header.version != kVersion)) {
         return Result<ModelAsset>::Fail("invalid cooked model header");
     }
 
@@ -54,6 +65,26 @@ Result<ModelAsset> ModelLoader::Decode(const std::byte* data, size_t size) {
     asset.materials.reserve(materialCount);
     for (uint32_t i = 0; i < materialCount; ++i) {
         asset.materials.emplace_back(reader.Read<uint64_t>());
+    }
+
+    if (header.version >= 2) {
+        const uint32_t skeletonCount = reader.Read<uint32_t>();
+        if (!reader.Ok() || static_cast<size_t>(skeletonCount) * sizeof(uint64_t) > reader.Remaining()) {
+            return Result<ModelAsset>::Fail("cooked model skeletons truncated");
+        }
+        asset.skeletons.reserve(skeletonCount);
+        for (uint32_t i = 0; i < skeletonCount; ++i) {
+            asset.skeletons.emplace_back(reader.Read<uint64_t>());
+        }
+
+        const uint32_t animationCount = reader.Read<uint32_t>();
+        if (!reader.Ok() || static_cast<size_t>(animationCount) * sizeof(uint64_t) > reader.Remaining()) {
+            return Result<ModelAsset>::Fail("cooked model animations truncated");
+        }
+        asset.animations.reserve(animationCount);
+        for (uint32_t i = 0; i < animationCount; ++i) {
+            asset.animations.emplace_back(reader.Read<uint64_t>());
+        }
     }
 
     if (!reader.Ok()) {

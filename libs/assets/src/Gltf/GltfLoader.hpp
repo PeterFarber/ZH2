@@ -6,7 +6,9 @@
 
 #include <glm/glm.hpp>
 
+#include "Hockey/Assets/Assets/AnimationAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
+#include "Hockey/Assets/Assets/SkeletonAsset.hpp"
 #include "Hockey/Core/Result.hpp"
 
 namespace Hockey {
@@ -49,6 +51,7 @@ struct GltfMaterialData {
 // material index for submesh i (-1 when the primitive has no material).
 struct GltfMeshData {
     std::string name;
+    int skinIndex = -1;
     std::vector<MeshVertex> vertices;
     std::vector<uint32_t> indices;
     std::vector<MeshSubmesh> submeshes;
@@ -57,9 +60,25 @@ struct GltfMeshData {
     glm::vec3 boundsMax{0.0f};
 };
 
+struct GltfSkeletonData {
+    std::string name;
+    std::vector<size_t> jointNodeIndices;
+    std::vector<SkeletonAssetBone> bones;
+};
+
+struct GltfAnimationData {
+    std::string name;
+    int skeletonIndex = -1;
+    float durationSeconds = 0.0f;
+    bool looping = true;
+    std::vector<AnimationBoneTrack> tracks;
+};
+
 struct GltfScene {
     std::vector<GltfMeshData> meshes;
     std::vector<GltfMaterialData> materials;
+    std::vector<GltfSkeletonData> skeletons;
+    std::vector<GltfAnimationData> animations;
     // Images embedded in the file that the importer should write to disk so the
     // texture pipeline can cook them. Paths are referenced by material slots.
     std::vector<GltfEmbeddedTexture> embeddedTextures;
