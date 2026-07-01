@@ -8,6 +8,7 @@
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Simulation/GameplayWorld.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Physics/Physics.hpp"
 #include "Hockey/Physics/PhysicsComponents.hpp"
 #include "Hockey/Physics/PhysicsWorld.hpp"
@@ -269,10 +270,56 @@ void TestDynamicPlayerBouncesOffBoardAndSyncsVelocity() {
     Physics::Shutdown();
 }
 
+void TestMovementUsesGameplayTuningInsteadOfPrefabComponents() {
+    Scene scene("MovementTuningSourceScene");
+    BuildValidGameplayScene(scene);
+
+    GameplaySettings settings;
+    settings.pregameCountdownSeconds = 0.0f;
+
+    GameplayTuning tuning;
+    tuning.skater.maxSpeed = 3.0f;
+    tuning.skater.acceleration = 60.0f;
+    tuning.goalie.maxSpeed = 2.0f;
+    tuning.goalie.acceleration = 60.0f;
+
+    GameplayWorld world;
+    HK_CHECK_MSG(static_cast<bool>(world.Init(scene, nullptr, settings, tuning)), "gameplay world initializes");
+    SetPlaying(scene);
+
+    Entity skater = FindPlayer(scene, PlayerSlot::HomeSkater0);
+    Entity goalie = FindPlayer(scene, PlayerSlot::HomeGoalie);
+    HK_CHECK(skater.IsValid());
+    HK_CHECK(goalie.IsValid());
+    if (!skater.IsValid() || !goalie.IsValid()) {
+        return;
+    }
+
+    skater.GetComponent<SkaterComponent>().maxSpeed = 99.0f;
+    skater.GetComponent<SkaterComponent>().acceleration = 99.0f;
+    goalie.GetComponent<GoalieComponent>().maxSpeed = 99.0f;
+    goalie.GetComponent<GoalieComponent>().acceleration = 99.0f;
+
+    const uint32_t skaterIndex = skater.GetComponent<PlayerComponent>().playerIndex;
+    const uint32_t goalieIndex = goalie.GetComponent<PlayerComponent>().playerIndex;
+    for (uint64_t tick = 1; tick < 30; ++tick) {
+        PushMove(world, skaterIndex, tick, {1.0f, 0.0f});
+        PushMove(world, goalieIndex, tick, {1.0f, 0.0f});
+        world.FixedUpdate(scene, settings.fixedDeltaSeconds, tick);
+    }
+
+    const float skaterSpeed = glm::length(skater.GetComponent<PlayerRuntimeComponent>().velocity);
+    const float goalieSpeed = glm::length(goalie.GetComponent<PlayerRuntimeComponent>().velocity);
+    HK_CHECK(skaterSpeed <= tuning.skater.maxSpeed + 0.001f);
+    HK_CHECK(goalieSpeed <= tuning.goalie.maxSpeed + 0.001f);
+}
+
 } // namespace
 
 void RunSkaterMovementTests() {
     HockeyTest::BeginSuite("SkaterMovementTests");
+
+    TestMovementUsesGameplayTuningInsteadOfPrefabComponents();
 
     Scene scene("SkaterMovementScene");
     BuildValidGameplayScene(scene);

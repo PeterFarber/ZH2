@@ -1,0 +1,17 @@
+Asset:
+  ID: 8177072562716307229
+  Type: Prefab
+  Name: Skater_Stick.prefab
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/prefabs/Skater_Stick.prefab.yaml
+  CookedPath: data/cooked/assets/prefabs/8177072562716307229.prefab.yaml
+  RawFileTimestamp: 134271543427345898
+  RawFileHash: 9817843451567407143
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 1782702436
+  Dependencies: [2566647934480036238, 11219802514363683653]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

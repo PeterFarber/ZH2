@@ -1,93 +1,81 @@
 #include "Hockey/Gameplay/Stick/StickAttachment.hpp"
 
-#include <cstddef>
+#include <vector>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
+#include "Hockey/ECS/PrefabSerializer.hpp"
 #include "Hockey/ECS/Scene.hpp"
 #include "Hockey/Gameplay/GameplayComponents.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 
 namespace Hockey {
 namespace {
 
-struct StickChildSearch {
-    Entity stick;
-    std::size_t candidateCount = 0;
-    bool ambiguous = false;
-};
-
-StickChildSearch FindDirectStickChild(Scene& scene, Entity player) {
-    StickChildSearch result;
-    Entity namedStick;
-    std::size_t namedStickCount = 0;
-
+std::vector<Entity> FindDirectStickChildren(Scene& scene, Entity player) {
+    std::vector<Entity> sticks;
     for (Entity child : scene.GetChildren(player)) {
         if (!child.HasComponent<StickComponent>()) {
             continue;
         }
-
-        ++result.candidateCount;
-        if (!result.stick.IsValid()) {
-            result.stick = child;
-        }
-        if (child.GetName() == "Stick") {
-            ++namedStickCount;
-            if (!namedStick.IsValid()) {
-                namedStick = child;
-            }
-        }
+        sticks.push_back(child);
     }
-
-    if (namedStickCount == 1) {
-        result.stick = namedStick;
-        result.ambiguous = false;
-        return result;
-    }
-
-    result.ambiguous = result.candidateCount > 1;
-    if (namedStickCount > 1) {
-        result.ambiguous = true;
-    }
-    return result;
+    return sticks;
 }
 
-void ApplyStickGameplayData(Entity player, Entity stickEntity) {
+void DestroyDirectStickChildren(Scene& scene, Entity player) {
+    const std::vector<Entity> existingSticks = FindDirectStickChildren(scene, player);
+    for (Entity stick : existingSticks) {
+        scene.DestroyEntityRecursive(stick);
+    }
+}
+
+Result<Entity> CreateStickEntity(Scene& scene, Entity player, const StickTuning& tuning) {
+    Entity stick;
+    if (!tuning.prefabPath.empty()) {
+        Result<Entity> instantiated = PrefabSerializer::Instantiate(scene, tuning.prefabPath);
+        if (!instantiated) {
+            return Result<Entity>::Fail("failed to instantiate stick prefab '" + tuning.prefabPath.generic_string() +
+                                        "': " + instantiated.error);
+        }
+        stick = instantiated.value;
+    } else {
+        stick = scene.CreateEntity("Stick");
+    }
+
+    stick.GetComponent<NameComponent>().name = "Stick";
+    scene.SetParent(stick, player, false);
+    return Result<Entity>::Ok(stick);
+}
+
+void ApplyStickGameplayData(Entity player, Entity stickEntity, const StickTuning& tuning) {
     StickComponent stick;
-    if (player.HasComponent<StickComponent>()) {
-        stick = player.GetComponent<StickComponent>();
-    }
-    if (stickEntity.IsValid() && stickEntity.HasComponent<StickComponent>()) {
-        stick = stickEntity.GetComponent<StickComponent>();
-    }
     stick.ownerPlayer = player.GetUUID();
+    stick.reach = tuning.reach;
+    stick.width = tuning.width;
+    stick.localOffset = tuning.localOffset;
+    stick.canControlPuck = true;
+    stick.canShoot = true;
     player.AddOrReplaceComponent<StickComponent>(stick);
 
-    if (stickEntity.IsValid() && stickEntity.HasComponent<StickComponent>()) {
-        StickComponent authored = stickEntity.GetComponent<StickComponent>();
-        authored.ownerPlayer = player.GetUUID();
-        stickEntity.AddOrReplaceComponent<StickComponent>(authored);
+    if (stickEntity.IsValid()) {
+        stickEntity.AddOrReplaceComponent<StickComponent>(stick);
     }
 }
 
 } // namespace
 
-Status StickAttachment::EnsureStickAttached(Scene& scene, Entity player) {
+Status StickAttachment::EnsureStickAttached(Scene& scene, Entity player, const StickTuning& tuning) {
     if (!player.IsValid()) {
         return Status::Fail("stick attachment requires a valid player entity");
     }
 
-    const StickChildSearch childStick = FindDirectStickChild(scene, player);
-    if (childStick.ambiguous) {
-        return Status::Fail("player '" + player.GetName() +
-                            "' has multiple direct stick children; keep one StickComponent child or name exactly one child 'Stick'");
+    DestroyDirectStickChildren(scene, player);
+    Result<Entity> stick = CreateStickEntity(scene, player, tuning);
+    if (!stick) {
+        return Status::Fail(stick.error);
     }
-
-    if (!childStick.stick.IsValid()) {
-        ApplyStickGameplayData(player, {});
-        return Status::Ok();
-    }
-
-    ApplyStickGameplayData(player, childStick.stick);
+    ApplyStickGameplayData(player, stick.value, tuning);
     return Status::Ok();
 }
 

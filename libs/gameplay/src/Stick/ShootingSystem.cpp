@@ -63,7 +63,14 @@ bool ConsumeBlockedStealClickShotInput(Entity player, ShotComponent& shot, const
 
 void SyncShotPuckBody(Entity puck, PhysicsWorld* physicsWorld, const glm::vec3& velocity) {
     if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid() ||
-        !puck.HasComponent<TransformComponent>() || !physicsWorld->HasBody(puck)) {
+        !puck.HasComponent<TransformComponent>()) {
+        return;
+    }
+
+    if (!physicsWorld->HasBody(puck)) {
+        physicsWorld->ResumeBody(puck);
+    }
+    if (!physicsWorld->HasBody(puck)) {
         return;
     }
 
@@ -121,7 +128,7 @@ void ShootingSystem::FixedUpdate(Scene& scene,
     const float power = tuning.shot.minPower + (tuning.shot.maxPower - tuning.shot.minPower) * chargeRatio;
     const glm::vec3 direction = DirectionFromInputOrFacing(player, input);
 
-    PuckPossession::Release(scene, puck, events);
+    PuckPossession::Release(scene, puck, events, physicsWorld);
     puckGameplay.state = PuckState::Shot;
     puckGameplay.lastTouchedPlayer = player.GetUUID();
     puckGameplay.lastTouchedTeam = player.GetComponent<PlayerComponent>().team;

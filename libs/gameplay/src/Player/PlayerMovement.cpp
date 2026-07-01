@@ -65,14 +65,13 @@ struct MovementConfig {
 MovementConfig ConfigFor(Entity player, const GameplayTuning& tuning) {
     if (player.HasComponent<GoalieComponent>()) {
         const GoalieComponent& goalie = player.GetComponent<GoalieComponent>();
-        return {goalie.maxSpeed,
-                goalie.acceleration,
+        return {tuning.goalie.maxSpeed,
+                tuning.goalie.acceleration,
                 tuning.skater.deceleration,
                 goalie.lockToCrease};
     }
 
-    const SkaterComponent& skater = player.GetComponent<SkaterComponent>();
-    return {skater.maxSpeed, skater.acceleration, skater.deceleration, false};
+    return {tuning.skater.maxSpeed, tuning.skater.acceleration, tuning.skater.deceleration, false};
 }
 
 glm::vec3 NormalizedOrForward(const glm::vec3& value) {

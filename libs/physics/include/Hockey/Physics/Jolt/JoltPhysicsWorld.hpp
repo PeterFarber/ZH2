@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -81,6 +82,8 @@ public:
 
     PhysicsBodyHandle CreateBody(Entity entity);
     void DestroyBody(Entity entity);
+    void SuspendBody(Entity entity);
+    PhysicsBodyHandle ResumeBody(Entity entity);
     bool HasBody(UUID entity) const;
     std::size_t BodyCount() const {
         return m_EntityToBody.size();
@@ -124,6 +127,7 @@ private:
     std::unordered_map<UUID, JPH::BodyID> m_EntityToBody;
     std::unordered_map<JPH::BodyID, UUID, BodyIDHash> m_BodyToEntity;
     std::unordered_map<JPH::BodyID, BodyDebugInfo, BodyIDHash> m_BodyDebug;
+    std::unordered_set<UUID> m_SuspendedBodies;
 };
 
 } // namespace Hockey::JoltDetail

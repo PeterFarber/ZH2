@@ -1,6 +1,8 @@
 #include "Hockey/Gameplay/Tuning/TuningSerializer.hpp"
 
 #include <cstdint>
+#include <filesystem>
+#include <string>
 
 #include <yaml-cpp/yaml.h>
 
@@ -30,8 +32,31 @@ glm::vec3 ReadVec3(const YAML::Node& node, const char* key, glm::vec3 fallback) 
     return {value[0].as<float>(fallback.x), value[1].as<float>(fallback.y), value[2].as<float>(fallback.z)};
 }
 
+std::filesystem::path ReadPath(const YAML::Node& node, const char* key, const std::filesystem::path& fallback) {
+    if (const YAML::Node value = node[key]) {
+        return value.as<std::string>(fallback.generic_string());
+    }
+    return fallback;
+}
+
 void EmitVec3(YAML::Emitter& out, const char* key, const glm::vec3& value) {
     out << YAML::Key << key << YAML::Value << YAML::Flow << YAML::BeginSeq << value.x << value.y << value.z << YAML::EndSeq;
+}
+
+void EmitStickTuning(YAML::Emitter& out, const char* key, const StickTuning& tuning) {
+    out << YAML::Key << key << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "PrefabPath" << YAML::Value << tuning.prefabPath.generic_string();
+    out << YAML::Key << "Reach" << YAML::Value << tuning.reach;
+    out << YAML::Key << "Width" << YAML::Value << tuning.width;
+    EmitVec3(out, "LocalOffset", tuning.localOffset);
+    out << YAML::EndMap;
+}
+
+void ReadStickTuning(const YAML::Node& node, StickTuning& tuning) {
+    tuning.prefabPath = ReadPath(node, "PrefabPath", tuning.prefabPath);
+    tuning.reach = ReadFloat(node, "Reach", tuning.reach);
+    tuning.width = ReadFloat(node, "Width", tuning.width);
+    tuning.localOffset = ReadVec3(node, "LocalOffset", tuning.localOffset);
 }
 }
 
@@ -74,10 +99,8 @@ std::string TuningSerializer::Serialize(const GameplayTuning& tuning) {
     out << YAML::Key << "OutOfPlayY" << YAML::Value << tuning.puck.outOfPlayY;
     out << YAML::EndMap;
 
-    out << YAML::Key << "Stick" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "Reach" << YAML::Value << tuning.stick.reach;
-    out << YAML::Key << "Width" << YAML::Value << tuning.stick.width;
-    out << YAML::EndMap;
+    EmitStickTuning(out, "SkaterStick", tuning.skaterStick);
+    EmitStickTuning(out, "GoalieStick", tuning.goalieStick);
 
     out << YAML::Key << "Shot" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "MinPower" << YAML::Value << tuning.shot.minPower;
@@ -140,8 +163,14 @@ bool TuningSerializer::Deserialize(const std::string& text, GameplayTuning& outT
         outTuning.puck.outOfPlayY = ReadFloat(puck, "OutOfPlayY", outTuning.puck.outOfPlayY);
     }
     if (const YAML::Node stick = root["Stick"]) {
-        outTuning.stick.reach = ReadFloat(stick, "Reach", outTuning.stick.reach);
-        outTuning.stick.width = ReadFloat(stick, "Width", outTuning.stick.width);
+        ReadStickTuning(stick, outTuning.skaterStick);
+        ReadStickTuning(stick, outTuning.goalieStick);
+    }
+    if (const YAML::Node skaterStick = root["SkaterStick"]) {
+        ReadStickTuning(skaterStick, outTuning.skaterStick);
+    }
+    if (const YAML::Node goalieStick = root["GoalieStick"]) {
+        ReadStickTuning(goalieStick, outTuning.goalieStick);
     }
     if (const YAML::Node shot = root["Shot"]) {
         outTuning.shot.minPower = ReadFloat(shot, "MinPower", outTuning.shot.minPower);

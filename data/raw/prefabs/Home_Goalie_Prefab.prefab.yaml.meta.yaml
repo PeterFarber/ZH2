@@ -6,11 +6,11 @@ Asset:
   CookerVersion: 1.0.0
   RawPath: data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
   CookedPath: data/cooked/assets/prefabs/13754134128618196032.prefab.yaml
-  RawFileTimestamp: 134270699560835300
-  RawFileHash: 1900677414585913978
-  ImportedTimestamp: 1782596356
-  CookedTimestamp: 1782595784
-  Dependencies: [15742120718558245390, 13188400377850077421, 2566647934480036238, 11219802514363683653]
+  RawFileTimestamp: 134271542974623569
+  RawFileHash: 14050948175586714306
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 1782702435
+  Dependencies: [15742120718558245390, 13188400377850077421]
   Dependents: []
   Dirty: true
   Missing: false

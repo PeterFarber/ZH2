@@ -1,9 +1,9 @@
 Skater:
-  MaxSpeed: 9
-  Acceleration: 20
-  Deceleration: 0
+  MaxSpeed: 7
+  Acceleration: 5
+  Deceleration: 10
   TurnSpeedDegrees: 720
-  BoostImpulse: 7.5
+  BoostImpulse: 6
   BoostCooldownSeconds: 1.25
   SlideStopDamping: 0.35
   DoubleStopWindowSeconds: 0.3
@@ -28,9 +28,16 @@ Puck:
   LoosePuckDrag: 0.15
   FloorY: 0.05
   OutOfPlayY: -5
-Stick:
+SkaterStick:
+  PrefabPath: data/raw/prefabs/Skater_Stick.prefab.yaml
   Reach: 1.5
   Width: 0.25
+  LocalOffset: [0, 0, 1.3]
+GoalieStick:
+  PrefabPath: data/raw/prefabs/Goalie_Stick.prefab.yaml
+  Reach: 2
+  Width: 0.35
+  LocalOffset: [0, 0, 1.55]
 Shot:
   MinPower: 6.45
   MaxPower: 32

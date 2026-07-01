@@ -20,7 +20,7 @@ Entities:
       Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 13554096163049684843
+        []
     PrefabComponent:
       PrefabAssetId: 15392473300653576747
       SourceEntityId: 14508237098617680358
@@ -68,10 +68,6 @@ Entities:
       ControlledByAI: false
       ActiveInMatch: true
     SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
       HasPuck: false
     PlayerRuntimeComponent:
       Velocity: [0, 0, 0]
@@ -91,38 +87,3 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 13554096163049684843
-    NameComponent:
-      Name: Stick
-    ObjectSettingsComponent:
-      Tag: Untagged
-      Layer: Default
-      Static: false
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0.1]
-      Rotation: [0, -0, 0]
-      Scale: [0.67, 0.67, 0.67]
-    ParentComponent:
-      Parent: 10699376868008630970
-    ChildrenComponent:
-      Children:
-        []
-    PrefabComponent:
-      PrefabAssetId: 15392473300653576747
-      SourceEntityId: 17838578063035641765
-      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
-    MeshRendererComponent:
-      MeshAsset: 2566647934480036238
-      MaterialAsset: 11219802514363683653
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    StickComponent:
-      OwnerPlayer: 0
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1.3]
-      CanControlPuck: true
-      CanShoot: true

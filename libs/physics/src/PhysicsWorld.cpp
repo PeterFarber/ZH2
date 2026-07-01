@@ -97,6 +97,16 @@ void PhysicsWorld::DestroyBody(Entity entity) {
     m_Impl->DestroyBody(entity);
 }
 
+void PhysicsWorld::SuspendBody(Entity entity) {
+    if (entity.IsValid()) {
+        m_Impl->SuspendBody(entity);
+    }
+}
+
+PhysicsBodyHandle PhysicsWorld::ResumeBody(Entity entity) {
+    return entity.IsValid() ? m_Impl->ResumeBody(entity) : PhysicsBodyHandle{};
+}
+
 bool PhysicsWorld::HasBody(Entity entity) const {
     return entity.IsValid() && m_Impl->HasBody(entity.GetUUID());
 }

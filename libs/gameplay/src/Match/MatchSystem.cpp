@@ -18,6 +18,7 @@
 #include "Hockey/Gameplay/GameplayComponents.hpp"
 #include "Hockey/Gameplay/Player/PlayerFacing.hpp"
 #include "Hockey/Gameplay/Stick/StickAttachment.hpp"
+#include "Hockey/Gameplay/Tuning/GameplayTuning.hpp"
 #include "Hockey/Gameplay/Validation/GameplayValidation.hpp"
 
 namespace Hockey {
@@ -52,6 +53,10 @@ GameplayRole RoleForSlot(PlayerSlot slot) {
 
 PlayerRole MarkerRoleForSlot(PlayerSlot slot) {
     return IsGoalieSlot(slot) ? PlayerRole::Goalie : PlayerRole::Skater;
+}
+
+const StickTuning& StickTuningForRole(GameplayRole role, const GameplayTuning& tuning) {
+    return role == GameplayRole::Goalie ? tuning.goalieStick : tuning.skaterStick;
 }
 
 Entity FindPlayerBySlot(Scene& scene, PlayerSlot slot) {
@@ -160,7 +165,11 @@ std::size_t FindMatchingSpawn(const std::vector<SpawnCandidate>& spawns,
     return find([](const SpawnCandidate&) { return true; });
 }
 
-Status ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const glm::vec3& position) {
+Status ConfigurePlayer(Entity player,
+                       PlayerSlot slot,
+                       GameplayTeam team,
+                       const glm::vec3& position,
+                       const GameplayTuning& tuning) {
     const GameplayRole role = RoleForSlot(slot);
     player.GetComponent<TransformComponent>().localPosition = position;
 
@@ -188,7 +197,9 @@ Status ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const 
     }
 
     player.AddOrReplaceComponent<PlayerRuntimeComponent>();
-    if (const Status status = StickAttachment::EnsureStickAttached(*player.GetScene(), player); !status) {
+    if (const Status status = StickAttachment::EnsureStickAttached(*player.GetScene(), player,
+                                                                   StickTuningForRole(role, tuning));
+        !status) {
         return status;
     }
     player.AddOrReplaceComponent<ShotComponent>();
@@ -197,6 +208,7 @@ Status ConfigurePlayer(Entity player, PlayerSlot slot, GameplayTeam team, const 
 
 Status AssignTeamPlayers(Scene& scene,
                          const GameplaySettings& settings,
+                         const GameplayTuning& tuning,
                          Team markerTeam,
                          GameplayTeam gameplayTeam,
                          uint32_t seedSalt) {
@@ -226,7 +238,7 @@ Status AssignTeamPlayers(Scene& scene,
             }
             player = spawnedPlayer.value;
         }
-        if (const Status configured = ConfigurePlayer(player, slot, gameplayTeam, spawns[spawnIndex].position);
+        if (const Status configured = ConfigurePlayer(player, slot, gameplayTeam, spawns[spawnIndex].position, tuning);
             !configured) {
             return configured;
         }
@@ -290,7 +302,7 @@ void EnsureGoalGameplay(Scene& scene) {
 
 } // namespace
 
-Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settings) {
+Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settings, const GameplayTuning& tuning) {
     RegisterGameplayComponents();
     RegisterGameplayValidation();
 
@@ -313,11 +325,11 @@ Status MatchSystem::InitializeMatch(Scene& scene, const GameplaySettings& settin
     match.AddOrReplaceComponent<MatchStateComponent>(matchState);
     match.AddOrReplaceComponent<ScoreComponent>();
 
-    Status homeStatus = AssignTeamPlayers(scene, settings, Team::Home, GameplayTeam::Home, 0x1000u);
+    Status homeStatus = AssignTeamPlayers(scene, settings, tuning, Team::Home, GameplayTeam::Home, 0x1000u);
     if (!homeStatus) {
         return homeStatus;
     }
-    Status awayStatus = AssignTeamPlayers(scene, settings, Team::Away, GameplayTeam::Away, 0x2000u);
+    Status awayStatus = AssignTeamPlayers(scene, settings, tuning, Team::Away, GameplayTeam::Away, 0x2000u);
     if (!awayStatus) {
         return awayStatus;
     }

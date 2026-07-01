@@ -108,7 +108,7 @@ void RunStickHandlingTests() {
 
     skater.GetComponent<TransformComponent>().localPosition = {2.0f, 0.0f, 3.0f};
     skater.GetComponent<PlayerRuntimeComponent>().facingDirection = {1.0f, 0.0f, 0.0f};
-    const glm::vec3 expectedStickPosition{3.0f, 0.0f, 3.0f};
+    const glm::vec3 expectedStickPosition = StickHandling::GetStickWorldPosition(skater, world.GetTuning().skaterStick);
     HK_CHECK_EQ(StickHandling::GetStickWorldPosition(skater), expectedStickPosition);
 
     puck.GetComponent<TransformComponent>().localPosition = expectedStickPosition;
@@ -284,8 +284,10 @@ void RunPuckInteractionTests() {
                                         &physicsWorld));
     const glm::vec3 acquiredPosition = physicsPuck.GetComponent<TransformComponent>().localPosition;
     HK_CHECK_EQ(acquiredPosition, FloorStickPosition(physicsPlayer, defaultTuning.puck.floorY));
+    HK_CHECK_MSG(!physicsWorld.HasBody(physicsPuck), "possessed puck has no active physics body");
 
     physicsWorld.SyncSceneToPhysics(physicsContactScene);
+    HK_CHECK_MSG(!physicsWorld.HasBody(physicsPuck), "scene sync does not recreate a possessed puck body");
     physicsWorld.Step(1.0f / 60.0f);
     physicsWorld.SyncPhysicsToScene(physicsContactScene);
 

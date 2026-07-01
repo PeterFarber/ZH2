@@ -6,10 +6,11 @@
 namespace Hockey {
 
 class Scene;
+struct StickTuning;
 
 class StickAttachment {
 public:
-    static Status EnsureStickAttached(Scene& scene, Entity player);
+    static Status EnsureStickAttached(Scene& scene, Entity player, const StickTuning& tuning);
 };
 
 } // namespace Hockey

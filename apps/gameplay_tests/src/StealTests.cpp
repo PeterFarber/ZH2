@@ -135,7 +135,7 @@ void RunStealTests() {
         stealer.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
         stealer.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
         carrier.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 1.0f};
-        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, -1.0f};
+        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
         puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
 
         GameplayEventQueue events;
@@ -175,7 +175,7 @@ void RunStealTests() {
         stealer.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 0.0f};
         stealer.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
         carrier.GetComponent<TransformComponent>().localPosition = {0.0f, 0.0f, 1.0f};
-        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, -1.0f};
+        carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
         puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
 
         GameplayEventQueue events;
@@ -302,6 +302,7 @@ void RunStealTests() {
 
         GameplaySettings settings;
         GameplayTuning tuning;
+        tuning.skaterStick.reach = 3.0f;
         GameplayWorld world;
         HK_CHECK_MSG(static_cast<bool>(world.Init(scene, &physicsWorld, settings, tuning)),
                      "gameplay world initializes with physics for stolen puck sync");
@@ -314,14 +315,13 @@ void RunStealTests() {
         Entity puck = FindPuck(scene);
         stealer.GetComponent<TransformComponent>().localPosition = {-1.0f, 1.25f, 0.0f};
         stealer.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
-        stealer.GetComponent<StickComponent>().reach = 3.0f;
         carrier.GetComponent<TransformComponent>().localPosition = {-2.0f, 1.25f, 0.0f};
         carrier.GetComponent<PlayerRuntimeComponent>().facingDirection = {0.0f, 0.0f, 1.0f};
-        carrier.GetComponent<StickComponent>().reach = 3.0f;
-        puck.GetComponent<TransformComponent>().localPosition = StickHandling::GetStickWorldPosition(carrier);
+        puck.GetComponent<TransformComponent>().localPosition =
+            StickHandling::GetStickWorldPosition(carrier, tuning.skaterStick);
 
         GameplayEventQueue events;
-        HK_CHECK(PuckPossession::TryAcquire(scene, carrier, puck, events, &physicsWorld, tuning.puck.floorY));
+        HK_CHECK(PuckPossession::TryAcquire(scene, carrier, puck, events, &physicsWorld, tuning));
 
         PushSteal(world, stealer.GetComponent<PlayerComponent>().playerIndex, 1);
         world.FixedUpdate(scene, settings.fixedDeltaSeconds, 1);

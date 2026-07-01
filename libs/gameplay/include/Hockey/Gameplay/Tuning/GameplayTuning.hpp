@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 
 #include <glm/glm.hpp>
 
@@ -43,8 +44,10 @@ struct PuckTuning {
 };
 
 struct StickTuning {
+    std::filesystem::path prefabPath = "data/raw/prefabs/Skater_Stick.prefab.yaml";
     float reach = 1.5f;
     float width = 0.25f;
+    glm::vec3 localOffset{0.0f, 0.0f, 1.3f};
 };
 
 struct ShotTuning {
@@ -59,7 +62,8 @@ struct GameplayTuning {
     SkaterTuning skater;
     GoalieTuning goalie;
     PuckTuning puck;
-    StickTuning stick;
+    StickTuning skaterStick;
+    StickTuning goalieStick{"data/raw/prefabs/Goalie_Stick.prefab.yaml", 2.0f, 0.35f, {0.0f, 0.0f, 1.55f}};
     ShotTuning shot;
 };
 

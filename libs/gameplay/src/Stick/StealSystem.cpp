@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include <entt/entt.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 #include "Hockey/ECS/Components.hpp"
 #include "Hockey/ECS/Entity.hpp"
@@ -32,23 +31,26 @@ bool PlayerPossessesPuck(Entity player, const PuckGameplayComponent& puck) {
     return player.IsValid() && puck.possessingPlayer == player.GetUUID();
 }
 
-void SyncPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
-    if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid() ||
-        !puck.HasComponent<TransformComponent>() || !physicsWorld->HasBody(puck)) {
+const StickTuning& StickTuningForPlayer(Entity player, const GameplayTuning& tuning) {
+    if (player.IsValid() && player.GetComponent<PlayerComponent>().role == GameplayRole::Goalie) {
+        return tuning.goalieStick;
+    }
+    return tuning.skaterStick;
+}
+
+void SuspendPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
+    if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid()) {
         return;
     }
 
-    const TransformComponent& transform = puck.GetComponent<TransformComponent>();
-    physicsWorld->SetBodyTransform(puck,
-                                   transform.localPosition,
-                                   glm::quat(glm::radians(transform.localRotation)));
-    physicsWorld->SetLinearVelocity(puck, glm::vec3{0.0f});
+    physicsWorld->SuspendBody(puck);
 }
 
 void TransferPossession(Scene& scene,
                         Entity stealer,
                         Entity puck,
                         float puckFloorY,
+                        const StickTuning& stickTuning,
                         GameplayEventQueue& events,
                         PhysicsWorld* physicsWorld) {
     PuckGameplayComponent& puckGameplay = puck.GetComponent<PuckGameplayComponent>();
@@ -75,7 +77,7 @@ void TransferPossession(Scene& scene,
         shot.charging = false;
     }
     if (puck.HasComponent<TransformComponent>()) {
-        glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(stealer);
+        glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(stealer, stickTuning);
         puckPosition.y = puckFloorY;
         puck.GetComponent<TransformComponent>().localPosition = puckPosition;
     }
@@ -85,7 +87,7 @@ void TransferPossession(Scene& scene,
         runtime.targetPosition =
             puck.HasComponent<TransformComponent>() ? puck.GetComponent<TransformComponent>().localPosition : glm::vec3{0.0f};
     }
-    SyncPuckBody(puck, physicsWorld);
+    SuspendPuckBody(puck, physicsWorld);
 
     events.Push({GameplayEventType::PuckPossessionChanged,
                  puck.GetUUID(),
@@ -124,13 +126,15 @@ void StealSystem::FixedUpdate(Scene& scene,
                      stealer.GetComponent<PlayerComponent>().team,
                      stealer.GetComponent<TransformComponent>().localPosition});
 
+        const StickTuning& stickTuning = StickTuningForPlayer(stealer, tuning);
         if (!puck.IsValid() || !puck.HasComponent<PuckGameplayComponent>() || PlayerPossessesPuck(stealer, puck.GetComponent<PuckGameplayComponent>()) ||
             puck.GetComponent<PuckGameplayComponent>().state != PuckState::Possessed ||
-            !puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid() || !StickHandling::CanControlPuck(stealer, puck)) {
+            !puck.GetComponent<PuckGameplayComponent>().possessingPlayer.IsValid() ||
+            !StickHandling::CanControlPuck(stealer, puck, stickTuning)) {
             continue;
         }
 
-        TransferPossession(scene, stealer, puck, tuning.puck.floorY, events, physicsWorld);
+        TransferPossession(scene, stealer, puck, tuning.puck.floorY, stickTuning, events, physicsWorld);
     }
 }
 

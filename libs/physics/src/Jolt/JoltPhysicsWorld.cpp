@@ -157,6 +157,7 @@ void JoltPhysicsWorld::Shutdown() {
         return;
     }
     DestroyBodies();
+    m_SuspendedBodies.clear();
     m_System.reset();
     m_ContactListener.reset();
     m_JobSystem.reset();
@@ -264,7 +265,7 @@ void JoltPhysicsWorld::CreateBodiesFromScene(Scene& scene) {
         return;
     }
     for (Entity entity : scene.GetAllEntities()) {
-        if (QualifiesForBody(entity)) {
+        if (QualifiesForBody(entity) && m_SuspendedBodies.find(entity.GetUUID()) == m_SuspendedBodies.end()) {
             CreateBodyForEntity(entity);
         }
     }
@@ -275,6 +276,7 @@ void JoltPhysicsWorld::DestroyBodies() {
     if (!m_System) {
         m_EntityToBody.clear();
         m_BodyToEntity.clear();
+        m_SuspendedBodies.clear();
         return;
     }
     for (const auto& [uuid, id] : m_EntityToBody) {
@@ -284,6 +286,7 @@ void JoltPhysicsWorld::DestroyBodies() {
     m_EntityToBody.clear();
     m_BodyToEntity.clear();
     m_BodyDebug.clear();
+    m_SuspendedBodies.clear();
 }
 
 void JoltPhysicsWorld::Step(float fixedDeltaSeconds) {
@@ -301,6 +304,9 @@ void JoltPhysicsWorld::Step(float fixedDeltaSeconds) {
 }
 
 PhysicsBodyHandle JoltPhysicsWorld::CreateBody(Entity entity) {
+    if (entity.IsValid()) {
+        m_SuspendedBodies.erase(entity.GetUUID());
+    }
     return CreateBodyForEntity(entity);
 }
 
@@ -309,6 +315,7 @@ void JoltPhysicsWorld::DestroyBody(Entity entity) {
         return;
     }
     const UUID uuid = entity.GetUUID();
+    m_SuspendedBodies.erase(uuid);
     const auto it = m_EntityToBody.find(uuid);
     if (it == m_EntityToBody.end()) {
         return;
@@ -318,6 +325,35 @@ void JoltPhysicsWorld::DestroyBody(Entity entity) {
     m_EntityToBody.erase(it);
     m_BodyToEntity.erase(id);
     m_BodyDebug.erase(id);
+}
+
+void JoltPhysicsWorld::SuspendBody(Entity entity) {
+    if (!entity.IsValid()) {
+        return;
+    }
+
+    const UUID uuid = entity.GetUUID();
+    m_SuspendedBodies.insert(uuid);
+
+    const auto it = m_EntityToBody.find(uuid);
+    if (it == m_EntityToBody.end()) {
+        return;
+    }
+
+    const JPH::BodyID id = it->second;
+    RemoveAndDestroy(id);
+    m_EntityToBody.erase(it);
+    m_BodyToEntity.erase(id);
+    m_BodyDebug.erase(id);
+}
+
+PhysicsBodyHandle JoltPhysicsWorld::ResumeBody(Entity entity) {
+    if (!entity.IsValid()) {
+        return {};
+    }
+
+    m_SuspendedBodies.erase(entity.GetUUID());
+    return CreateBodyForEntity(entity);
 }
 
 bool JoltPhysicsWorld::HasBody(UUID entity) const {
@@ -340,6 +376,18 @@ void JoltPhysicsWorld::SyncSceneToPhysics(Scene& scene) {
             continue;
         }
         const UUID uuid = entity.GetUUID();
+        if (m_SuspendedBodies.find(uuid) != m_SuspendedBodies.end()) {
+            const auto suspendedBody = m_EntityToBody.find(uuid);
+            if (suspendedBody != m_EntityToBody.end()) {
+                const JPH::BodyID id = suspendedBody->second;
+                RemoveAndDestroy(id);
+                m_EntityToBody.erase(suspendedBody);
+                m_BodyToEntity.erase(id);
+                m_BodyDebug.erase(id);
+            }
+            continue;
+        }
+
         qualifying.emplace(uuid, true);
 
         const auto bodyIt = m_EntityToBody.find(uuid);

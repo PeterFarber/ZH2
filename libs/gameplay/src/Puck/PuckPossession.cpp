@@ -117,8 +117,18 @@ bool BodyContactsPuck(Entity player, Entity puck) {
     return contact;
 }
 
-bool CanAcquireByContact(Entity player, Entity puck) {
-    return StickHandling::CanControlPuck(player, puck) || BodyContactsPuck(player, puck);
+const StickTuning& StickTuningForPlayer(Entity player, const GameplayTuning& tuning) {
+    if (player.IsValid() && player.HasComponent<PlayerComponent>() &&
+        player.GetComponent<PlayerComponent>().role == GameplayRole::Goalie) {
+        return tuning.goalieStick;
+    }
+    return tuning.skaterStick;
+}
+
+bool CanAcquireByContact(Entity player, Entity puck, const StickTuning* tuning) {
+    const bool stickCanControl =
+        tuning != nullptr ? StickHandling::CanControlPuck(player, puck, *tuning) : StickHandling::CanControlPuck(player, puck);
+    return stickCanControl || BodyContactsPuck(player, puck);
 }
 
 bool IsTemporarilyIgnoredShooter(Entity player, const PuckGameplayComponent& gameplay) {
@@ -126,9 +136,22 @@ bool IsTemporarilyIgnoredShooter(Entity player, const PuckGameplayComponent& gam
            gameplay.shotIgnorePlayer == player.GetUUID();
 }
 
-void SyncPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
+void SuspendPuckBody(Entity puck, PhysicsWorld* physicsWorld) {
+    if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid()) {
+        return;
+    }
+
+    physicsWorld->SuspendBody(puck);
+}
+
+void ResumePuckBody(Entity puck, PhysicsWorld* physicsWorld) {
     if (physicsWorld == nullptr || !physicsWorld->IsInitialized() || !puck.IsValid() ||
-        !puck.HasComponent<TransformComponent>() || !physicsWorld->HasBody(puck)) {
+        !puck.HasComponent<TransformComponent>()) {
+        return;
+    }
+
+    physicsWorld->ResumeBody(puck);
+    if (!physicsWorld->HasBody(puck)) {
         return;
     }
 
@@ -143,13 +166,15 @@ void FollowPossessingPlayer(Scene& scene,
                             Entity puck,
                             const PuckGameplayComponent& gameplay,
                             PhysicsWorld* physicsWorld,
-                            float puckFloorY) {
+                            float puckFloorY,
+                            const StickTuning* stickTuning) {
     Entity player = FindEntity(scene, gameplay.possessingPlayer);
     if (!player.IsValid() || !player.HasComponent<TransformComponent>() || !puck.HasComponent<TransformComponent>()) {
         return;
     }
 
-    glm::vec3 puckPosition = StickHandling::GetStickWorldPosition(player);
+    glm::vec3 puckPosition = stickTuning != nullptr ? StickHandling::GetStickWorldPosition(player, *stickTuning)
+                                                    : StickHandling::GetStickWorldPosition(player);
     puckPosition.y = puckFloorY;
     puck.GetComponent<TransformComponent>().localPosition = puckPosition;
     if (puck.HasComponent<PuckRuntimeComponent>()) {
@@ -157,7 +182,7 @@ void FollowPossessingPlayer(Scene& scene,
         runtime.velocity = glm::vec3{0.0f};
         runtime.targetPosition = puck.GetComponent<TransformComponent>().localPosition;
     }
-    SyncPuckBody(puck, physicsWorld);
+    SuspendPuckBody(puck, physicsWorld);
 }
 
 } // namespace
@@ -176,8 +201,9 @@ bool PuckPossession::TryAcquire(Scene& scene,
                                 GameplayEventQueue& events,
                                 PhysicsWorld* physicsWorld,
                                 float puckFloorY) {
+    const StickTuning* stickTuning = nullptr;
     if (!player.IsValid() || !puck.IsValid() || !player.HasComponent<PlayerComponent>() ||
-        !puck.HasComponent<PuckGameplayComponent>() || !CanAcquireByContact(player, puck)) {
+        !puck.HasComponent<PuckGameplayComponent>() || !CanAcquireByContact(player, puck, stickTuning)) {
         return false;
     }
 
@@ -203,13 +229,53 @@ bool PuckPossession::TryAcquire(Scene& scene,
         player.GetComponent<SkaterComponent>().hasPuck = true;
     }
 
-    FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY);
+    FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY, stickTuning);
     events.Push({GameplayEventType::PuckPossessionChanged, puck.GetUUID(), player.GetUUID(), playerComponent.team,
                  puck.GetComponent<TransformComponent>().localPosition});
     return true;
 }
 
-void PuckPossession::Release(Scene& scene, Entity puck, GameplayEventQueue& events) {
+bool PuckPossession::TryAcquire(Scene& scene,
+                                Entity player,
+                                Entity puck,
+                                GameplayEventQueue& events,
+                                PhysicsWorld* physicsWorld,
+                                const GameplayTuning& tuning) {
+    const StickTuning& stickTuning = StickTuningForPlayer(player, tuning);
+    if (!player.IsValid() || !puck.IsValid() || !player.HasComponent<PlayerComponent>() ||
+        !puck.HasComponent<PuckGameplayComponent>() || !CanAcquireByContact(player, puck, &stickTuning)) {
+        return false;
+    }
+
+    PuckGameplayComponent& gameplay = puck.GetComponent<PuckGameplayComponent>();
+    if (!CanAcquireState(gameplay.state) || gameplay.possessingPlayer.IsValid()) {
+        return false;
+    }
+    if (IsTemporarilyIgnoredShooter(player, gameplay)) {
+        return false;
+    }
+
+    ClearSkaterPossession(scene);
+    const PlayerComponent& playerComponent = player.GetComponent<PlayerComponent>();
+    gameplay.state = PuckState::Possessed;
+    gameplay.possessingPlayer = player.GetUUID();
+    gameplay.lastTouchedPlayer = player.GetUUID();
+    gameplay.lastTouchedTeam = playerComponent.team;
+    gameplay.timeSinceLastTouch = 0.0f;
+    gameplay.shotIgnorePlayer = UUID(0);
+    gameplay.shotIgnoreTimer = 0.0f;
+
+    if (player.HasComponent<SkaterComponent>()) {
+        player.GetComponent<SkaterComponent>().hasPuck = true;
+    }
+
+    FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, tuning.puck.floorY, &stickTuning);
+    events.Push({GameplayEventType::PuckPossessionChanged, puck.GetUUID(), player.GetUUID(), playerComponent.team,
+                 puck.GetComponent<TransformComponent>().localPosition});
+    return true;
+}
+
+void PuckPossession::Release(Scene& scene, Entity puck, GameplayEventQueue& events, PhysicsWorld* physicsWorld) {
     if (!puck.IsValid() || !puck.HasComponent<PuckGameplayComponent>()) {
         return;
     }
@@ -229,6 +295,7 @@ void PuckPossession::Release(Scene& scene, Entity puck, GameplayEventQueue& even
     ClearSkaterPossession(scene);
     gameplay.state = PuckState::Loose;
     gameplay.possessingPlayer = UUID(0);
+    ResumePuckBody(puck, physicsWorld);
 
     events.Push({GameplayEventType::PuckPossessionChanged, puck.GetUUID(), previousPlayer, previousTeam,
                  puck.HasComponent<TransformComponent>() ? puck.GetComponent<TransformComponent>().localPosition : glm::vec3{0.0f}});
@@ -249,7 +316,7 @@ void PuckPossession::FixedUpdate(Scene& scene,
 
     PuckGameplayComponent& gameplay = puck.GetComponent<PuckGameplayComponent>();
     if (gameplay.state == PuckState::Possessed && gameplay.possessingPlayer.IsValid()) {
-        FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY);
+        FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, puckFloorY, nullptr);
         return;
     }
 
@@ -261,6 +328,36 @@ void PuckPossession::FixedUpdate(Scene& scene,
     for (const entt::entity handle : players) {
         Entity player(handle, &scene);
         if (TryAcquire(scene, player, puck, events, physicsWorld, puckFloorY)) {
+            return;
+        }
+    }
+}
+
+void PuckPossession::FixedUpdate(Scene& scene,
+                                 GameplayEventQueue& events,
+                                 PhysicsWorld* physicsWorld,
+                                 const GameplayTuning& tuning) {
+    Entity puck = FindPuck(scene);
+    if (!puck.IsValid() || !puck.HasComponent<PuckGameplayComponent>()) {
+        return;
+    }
+
+    PuckGameplayComponent& gameplay = puck.GetComponent<PuckGameplayComponent>();
+    if (gameplay.state == PuckState::Possessed && gameplay.possessingPlayer.IsValid()) {
+        Entity player = FindEntity(scene, gameplay.possessingPlayer);
+        const StickTuning& stickTuning = StickTuningForPlayer(player, tuning);
+        FollowPossessingPlayer(scene, puck, gameplay, physicsWorld, tuning.puck.floorY, &stickTuning);
+        return;
+    }
+
+    if (!CanAcquireState(gameplay.state)) {
+        return;
+    }
+
+    auto players = scene.Registry().view<PlayerComponent>();
+    for (const entt::entity handle : players) {
+        Entity player(handle, &scene);
+        if (TryAcquire(scene, player, puck, events, physicsWorld, tuning)) {
             return;
         }
     }

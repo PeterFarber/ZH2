@@ -1,0 +1,33 @@
+Prefab:
+  Name: Goalie_Stick
+  Version: 1
+  AssetId: 14888590780823488107
+Root:
+  Entity: 14888590780823488108
+Entities:
+  - Entity: 14888590780823488108
+    NameComponent:
+      Name: Goalie_Stick
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0.12]
+      Rotation: [0, 0, 0]
+      Scale: [0.74, 0.74, 0.74]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 2566647934480036238
+      MaterialAsset: 11219802514363683653
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    StickComponent:
+      OwnerPlayer: 0
+      CanControlPuck: true
+      CanShoot: true

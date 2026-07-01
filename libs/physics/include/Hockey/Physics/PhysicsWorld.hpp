@@ -59,6 +59,8 @@ public:
     // --- per-body control ---------------------------------------------------
     PhysicsBodyHandle CreateBody(Entity entity);
     void DestroyBody(Entity entity);
+    void SuspendBody(Entity entity);
+    PhysicsBodyHandle ResumeBody(Entity entity);
     bool HasBody(Entity entity) const;
 
     std::size_t BodyCount() const;

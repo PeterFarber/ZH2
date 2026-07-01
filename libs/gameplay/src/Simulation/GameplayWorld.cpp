@@ -39,7 +39,7 @@ Status GameplayWorld::Init(Scene& scene,
     m_InputBuffer.Reset();
     m_Events.Clear();
 
-    const Status status = MatchSystem::InitializeMatch(scene, settings);
+    const Status status = MatchSystem::InitializeMatch(scene, settings, tuning);
     if (!status) {
         m_Initialized = false;
         return status;
@@ -83,7 +83,7 @@ void GameplayWorld::FixedUpdate(Scene& scene, float fixedDeltaSeconds, uint64_t 
     PlayerMovement::FixedUpdate(scene, m_PhysicsWorld, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events);
     WaypointMarkerSystem::FixedUpdate(scene, m_Settings);
     if (IsActiveGameplayPhase(scene)) {
-        PuckPossession::FixedUpdate(scene, m_Events, m_PhysicsWorld, m_Tuning.puck.floorY);
+        PuckPossession::FixedUpdate(scene, m_Events, m_PhysicsWorld, m_Tuning);
         ShootingSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events, m_PhysicsWorld);
         StealSystem::FixedUpdate(scene, m_InputBuffer, m_Tuning, fixedDeltaSeconds, m_Events, m_PhysicsWorld);
         PuckController::FixedUpdate(scene, m_Tuning, fixedDeltaSeconds);

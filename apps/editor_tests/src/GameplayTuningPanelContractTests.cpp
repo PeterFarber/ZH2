@@ -53,6 +53,36 @@ void RunGameplayTuningPanelContractTests() {
                  "Gameplay Tuning can reset YAML tuning values to struct defaults");
     HK_CHECK_MSG(Contains(source, "Reset Settings To Defaults"),
                  "Gameplay Tuning can reset preview/server settings to code defaults");
+    HK_CHECK_MSG(Contains(source, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
+                 "Gameplay Tuning routes setting help through the shared tooltip helper");
+    HK_CHECK_MSG(Contains(source, "BuildSettingTooltip"),
+                 "Gameplay Tuning builds detailed setting tooltips with generated default metadata");
+    HK_CHECK_MSG(Contains(source, "Recommended value:"),
+                 "Gameplay Tuning tooltips include the recommended reset value");
+    HK_CHECK_MSG(Contains(source, "Allowed range:"),
+                 "Gameplay Tuning numeric tooltips include allowed ranges");
+    HK_CHECK_MSG(Contains(source, "Examples:"),
+                 "Gameplay Tuning tooltips include concrete value examples");
+    HK_CHECK_MSG(Contains(source, "Performance impact:"),
+                 "Gameplay Tuning tooltips include performance or simulation-cost guidance");
+    HK_CHECK_MSG(Contains(source, "BuildGeneratedExamplesText"),
+                 "Gameplay Tuning generates fallback examples from the specific setting label and value kind");
+    HK_CHECK_MSG(Contains(source, "BuildGeneratedPerformanceImpactText"),
+                 "Gameplay Tuning generates fallback performance notes from the specific setting category");
+    HK_CHECK_MSG(!Contains(source, "Lower values reduce this setting's effect"),
+                 "Gameplay Tuning avoids repeated generic example text");
+    HK_CHECK_MSG(!Contains(source, "Most gameplay tuning values are read during fixed gameplay or preview ticks"),
+                 "Gameplay Tuning avoids repeated generic performance text");
+    HK_CHECK_MSG(!Contains(source, "ImGui::SetTooltip"),
+                 "Gameplay Tuning avoids raw ImGui tooltip calls");
+    HK_CHECK_MSG(Contains(source, "Higher skater max speed makes rushes and breakaways faster"),
+                 "Gameplay Tuning skater speed tooltip explains gameplay impact");
+    HK_CHECK_MSG(Contains(source, "0.0083 runs gameplay at roughly 120 Hz"),
+                 "Gameplay Tuning fixed timestep tooltip gives simulation examples");
+    HK_CHECK_MSG(Contains(source, "Longer shot charge raises commitment and lowers shot spam"),
+                 "Gameplay Tuning shot charge tooltip explains gameplay pacing");
+    HK_CHECK_MSG(Contains(source, "Debug draw adds editor rendering work"),
+                 "Gameplay Tuning debug draw tooltip explains performance impact");
     HK_CHECK_MSG(Contains(source, "Editor Preview"), "Gameplay Tuning labels editor preview settings");
     HK_CHECK_MSG(!Contains(source, "Client Build Defaults"), "Gameplay Tuning omits separate client defaults");
     HK_CHECK_MSG(Contains(source, "Server Build Defaults"), "Gameplay Tuning labels server build defaults");

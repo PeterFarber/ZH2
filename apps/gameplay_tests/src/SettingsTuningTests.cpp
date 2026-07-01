@@ -137,8 +137,8 @@ void RunSettingsTuningTests() {
     const Result<GameplayTuning> tuning = TuningSerializer::Load(Paths::DataFile("gameplay/tuning.default.yaml"));
     HK_CHECK_MSG(static_cast<bool>(tuning), tuning.error);
     if (tuning) {
-        HK_CHECK_NEAR(tuning.value.skater.maxSpeed, 9.0f, 0.0001f);
-        HK_CHECK_NEAR(tuning.value.skater.boostImpulse, 7.5f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.skater.maxSpeed, 7.0f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.skater.boostImpulse, 6.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.skater.boostCooldownSeconds, 1.25f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.skater.slideStopDamping, 0.35f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.skater.doubleStopWindowSeconds, 0.30f, 0.0001f);
@@ -154,6 +154,16 @@ void RunSettingsTuningTests() {
         HK_CHECK_NEAR(tuning.value.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.puck.floorY, 0.05f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.puck.possessionOffset.z, 2.98f, 0.0001f);
+        HK_CHECK_EQ(tuning.value.skaterStick.prefabPath.generic_string(),
+                    std::string("data/raw/prefabs/Skater_Stick.prefab.yaml"));
+        HK_CHECK_NEAR(tuning.value.skaterStick.reach, 1.5f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.skaterStick.width, 0.25f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.skaterStick.localOffset.z, 1.3f, 0.0001f);
+        HK_CHECK_EQ(tuning.value.goalieStick.prefabPath.generic_string(),
+                    std::string("data/raw/prefabs/Goalie_Stick.prefab.yaml"));
+        HK_CHECK_NEAR(tuning.value.goalieStick.reach, 2.0f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.goalieStick.width, 0.35f, 0.0001f);
+        HK_CHECK_NEAR(tuning.value.goalieStick.localOffset.z, 1.55f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.shot.maxPower, 32.0f, 0.0001f);
         HK_CHECK_NEAR(tuning.value.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
 
@@ -163,13 +173,46 @@ void RunSettingsTuningTests() {
         HK_CHECK(text.find("Check:") == std::string::npos);
         HK_CHECK(text.find("StealRadius") != std::string::npos);
         HK_CHECK(text.find("StealCooldownSeconds") != std::string::npos);
+        HK_CHECK(text.find("SkaterStick:") != std::string::npos);
+        HK_CHECK(text.find("GoalieStick:") != std::string::npos);
+        HK_CHECK(text.find("PrefabPath") != std::string::npos);
         HK_CHECK(text.find("Shot:") != std::string::npos);
         GameplayTuning roundTrip;
         HK_CHECK(TuningSerializer::Deserialize(text, roundTrip));
-        HK_CHECK_NEAR(roundTrip.skater.boostImpulse, 7.5f, 0.0001f);
+        HK_CHECK_NEAR(roundTrip.skater.boostImpulse, 6.0f, 0.0001f);
         HK_CHECK_EQ(roundTrip.goalie.boostCharges, 2u);
         HK_CHECK_NEAR(roundTrip.goalie.shieldReflectImpulse, 22.0f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.puck.floorY, 0.05f, 0.0001f);
+        HK_CHECK_EQ(roundTrip.skaterStick.prefabPath.generic_string(),
+                    std::string("data/raw/prefabs/Skater_Stick.prefab.yaml"));
+        HK_CHECK_NEAR(roundTrip.skaterStick.localOffset.z, 1.3f, 0.0001f);
+        HK_CHECK_EQ(roundTrip.goalieStick.prefabPath.generic_string(),
+                    std::string("data/raw/prefabs/Goalie_Stick.prefab.yaml"));
+        HK_CHECK_NEAR(roundTrip.goalieStick.reach, 2.0f, 0.0001f);
         HK_CHECK_NEAR(roundTrip.shot.selfCollisionGraceSeconds, 0.20f, 0.0001f);
     }
+
+    const char* roleStickYaml =
+        "SkaterStick:\n"
+        "  PrefabPath: data/raw/prefabs/TestSkaterStick.prefab.yaml\n"
+        "  Reach: 1.75\n"
+        "  Width: 0.3\n"
+        "  LocalOffset: [0.1, 0.2, 1.4]\n"
+        "GoalieStick:\n"
+        "  PrefabPath: data/raw/prefabs/TestGoalieStick.prefab.yaml\n"
+        "  Reach: 2.4\n"
+        "  Width: 0.45\n"
+        "  LocalOffset: [-0.1, 0.3, 1.8]\n";
+    GameplayTuning roleStickTuning;
+    HK_CHECK(TuningSerializer::Deserialize(roleStickYaml, roleStickTuning));
+    HK_CHECK_EQ(roleStickTuning.skaterStick.prefabPath.generic_string(),
+                std::string("data/raw/prefabs/TestSkaterStick.prefab.yaml"));
+    HK_CHECK_NEAR(roleStickTuning.skaterStick.reach, 1.75f, 0.0001f);
+    HK_CHECK_NEAR(roleStickTuning.skaterStick.width, 0.3f, 0.0001f);
+    HK_CHECK_NEAR(roleStickTuning.skaterStick.localOffset.x, 0.1f, 0.0001f);
+    HK_CHECK_EQ(roleStickTuning.goalieStick.prefabPath.generic_string(),
+                std::string("data/raw/prefabs/TestGoalieStick.prefab.yaml"));
+    HK_CHECK_NEAR(roleStickTuning.goalieStick.reach, 2.4f, 0.0001f);
+    HK_CHECK_NEAR(roleStickTuning.goalieStick.width, 0.45f, 0.0001f);
+    HK_CHECK_NEAR(roleStickTuning.goalieStick.localOffset.z, 1.8f, 0.0001f);
 }

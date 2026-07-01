@@ -147,19 +147,12 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
     if (entity.HasComponent<SkaterComponent>()) {
         const auto& c = entity.GetComponent<SkaterComponent>();
         out << YAML::Key << "SkaterComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "MaxSpeed" << YAML::Value << c.maxSpeed;
-        out << YAML::Key << "Acceleration" << YAML::Value << c.acceleration;
-        out << YAML::Key << "Deceleration" << YAML::Value << c.deceleration;
-        out << YAML::Key << "TurnSpeedDegrees" << YAML::Value << c.turnSpeedDegrees;
         out << YAML::Key << "HasPuck" << YAML::Value << c.hasPuck;
         out << YAML::EndMap;
     }
     if (entity.HasComponent<GoalieComponent>()) {
         const auto& c = entity.GetComponent<GoalieComponent>();
         out << YAML::Key << "GoalieComponent" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "MaxSpeed" << YAML::Value << c.maxSpeed;
-        out << YAML::Key << "Acceleration" << YAML::Value << c.acceleration;
-        out << YAML::Key << "SaveReachRadius" << YAML::Value << c.saveReachRadius;
         out << YAML::Key << "LockToCrease" << YAML::Value << c.lockToCrease;
         out << YAML::EndMap;
     }
@@ -221,9 +214,6 @@ void SerializeGameplay(YAML::Emitter& out, Entity entity) {
         const auto& c = entity.GetComponent<StickComponent>();
         out << YAML::Key << "StickComponent" << YAML::Value << YAML::BeginMap;
         EmitUUID(out, "OwnerPlayer", c.ownerPlayer);
-        out << YAML::Key << "Reach" << YAML::Value << c.reach;
-        out << YAML::Key << "Width" << YAML::Value << c.width;
-        out << YAML::Key << "LocalOffset" << YAML::Value << c.localOffset;
         out << YAML::Key << "CanControlPuck" << YAML::Value << c.canControlPuck;
         out << YAML::Key << "CanShoot" << YAML::Value << c.canShoot;
         out << YAML::EndMap;
@@ -449,10 +439,6 @@ void RegisterMetadata() {
         md.name = "SkaterComponent";
         md.displayName = "Skater";
         md.category = "Gameplay";
-        md.fields.push_back(MakeField("MaxSpeed", FieldType::Float, offsetof(SkaterComponent, maxSpeed)));
-        md.fields.push_back(MakeField("Acceleration", FieldType::Float, offsetof(SkaterComponent, acceleration)));
-        md.fields.push_back(MakeField("Deceleration", FieldType::Float, offsetof(SkaterComponent, deceleration)));
-        md.fields.push_back(MakeField("TurnSpeedDegrees", FieldType::Float, offsetof(SkaterComponent, turnSpeedDegrees)));
         md.fields.push_back(MakeField("HasPuck", FieldType::Bool, offsetof(SkaterComponent, hasPuck)));
         registry.RegisterComponent<SkaterComponent>(std::move(md));
     }
@@ -461,9 +447,6 @@ void RegisterMetadata() {
         md.name = "GoalieComponent";
         md.displayName = "Goalie";
         md.category = "Gameplay";
-        md.fields.push_back(MakeField("MaxSpeed", FieldType::Float, offsetof(GoalieComponent, maxSpeed)));
-        md.fields.push_back(MakeField("Acceleration", FieldType::Float, offsetof(GoalieComponent, acceleration)));
-        md.fields.push_back(MakeField("SaveReachRadius", FieldType::Float, offsetof(GoalieComponent, saveReachRadius)));
         md.fields.push_back(MakeField("LockToCrease", FieldType::Bool, offsetof(GoalieComponent, lockToCrease)));
         registry.RegisterComponent<GoalieComponent>(std::move(md));
     }
@@ -506,9 +489,6 @@ void RegisterMetadata() {
         md.displayName = "Stick";
         md.category = "Gameplay";
         md.fields.push_back(MakeField("OwnerPlayer", FieldType::UUID, offsetof(StickComponent, ownerPlayer)));
-        md.fields.push_back(MakeField("Reach", FieldType::Float, offsetof(StickComponent, reach)));
-        md.fields.push_back(MakeField("Width", FieldType::Float, offsetof(StickComponent, width)));
-        md.fields.push_back(MakeField("LocalOffset", FieldType::Vec3, offsetof(StickComponent, localOffset)));
         registry.RegisterComponent<StickComponent>(std::move(md));
     }
     {
