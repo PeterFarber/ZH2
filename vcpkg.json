@@ -24,6 +24,7 @@
         "lunasvg",
         "fastgltf",
         "meshoptimizer",
+        "miniaudio",
         "joltphysics",
         {
             "name": "imgui",

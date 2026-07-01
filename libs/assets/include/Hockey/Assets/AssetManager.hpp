@@ -149,6 +149,7 @@ struct MeshAsset;
 struct MaterialAsset;
 struct ModelAsset;
 struct ShaderAsset;
+struct AudioAsset;
 struct SkeletonAsset;
 struct AnimationAsset;
 struct SceneAsset;
@@ -159,6 +160,7 @@ template <> Result<std::shared_ptr<MeshAsset>> AssetManager::Load<MeshAsset>(Ass
 template <> Result<std::shared_ptr<ModelAsset>> AssetManager::Load<ModelAsset>(AssetID id);
 template <> Result<std::shared_ptr<MaterialAsset>> AssetManager::Load<MaterialAsset>(AssetID id);
 template <> Result<std::shared_ptr<ShaderAsset>> AssetManager::Load<ShaderAsset>(AssetID id);
+template <> Result<std::shared_ptr<AudioAsset>> AssetManager::Load<AudioAsset>(AssetID id);
 template <> Result<std::shared_ptr<SkeletonAsset>> AssetManager::Load<SkeletonAsset>(AssetID id);
 template <> Result<std::shared_ptr<AnimationAsset>> AssetManager::Load<AnimationAsset>(AssetID id);
 // Scene/prefab assets are lightweight descriptors (id, name, source path,

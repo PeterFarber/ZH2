@@ -14,6 +14,7 @@ void RunSvgTextureImportTests();
 void RunRuntimePackageTests();
 void RunGltfImportTests();
 void RunMaterialTests();
+void RunAudioAssetTests();
 void RunShaderCookTests();
 void RunDependencyTests();
 void RunHotReloadTests();
@@ -37,6 +38,7 @@ int main(int argc, char** argv) {
     RunRuntimePackageTests();
     RunGltfImportTests();
     RunMaterialTests();
+    RunAudioAssetTests();
     RunShaderCookTests();
     RunDependencyTests();
     RunHotReloadTests();

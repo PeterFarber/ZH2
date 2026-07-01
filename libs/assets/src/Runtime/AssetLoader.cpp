@@ -1,5 +1,6 @@
 #include "Hockey/Assets/Runtime/AssetLoader.hpp"
 
+#include "Hockey/Assets/Assets/AudioAsset.hpp"
 #include "Hockey/Assets/Assets/AnimationAsset.hpp"
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
@@ -7,6 +8,7 @@
 #include "Hockey/Assets/Assets/ShaderAsset.hpp"
 #include "Hockey/Assets/Assets/SkeletonAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
+#include "Hockey/Assets/Runtime/AudioLoader.hpp"
 #include "Hockey/Assets/Runtime/AnimationLoader.hpp"
 #include "Hockey/Assets/Runtime/MaterialLoader.hpp"
 #include "Hockey/Assets/Runtime/MeshLoader.hpp"
@@ -81,10 +83,15 @@ Result<std::shared_ptr<ShaderAsset>> AssetLoader::LoadShader(const AssetMetadata
     return Result<std::shared_ptr<ShaderAsset>>::Ok(std::make_shared<ShaderAsset>(std::move(loaded.value)));
 }
 
+Result<std::shared_ptr<AudioAsset>> AssetLoader::LoadAudio(const AssetMetadata& metadata) {
     if (metadata.cookedPath.empty()) {
+        return Result<std::shared_ptr<AudioAsset>>::Fail("audio has no cooked path");
     }
+    Result<AudioAsset> loaded = AudioLoader::LoadCooked(CookedAbsolute(metadata), metadata.id);
     if (!loaded) {
+        return Result<std::shared_ptr<AudioAsset>>::Fail(loaded.error);
     }
+    return Result<std::shared_ptr<AudioAsset>>::Ok(std::make_shared<AudioAsset>(std::move(loaded.value)));
 }
 
 Result<std::shared_ptr<SkeletonAsset>> AssetLoader::LoadSkeleton(const AssetMetadata& metadata) {

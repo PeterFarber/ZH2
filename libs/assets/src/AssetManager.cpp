@@ -2,6 +2,7 @@
 
 #include "Hockey/Assets/AssetHash.hpp"
 #include "Hockey/Assets/AssetPath.hpp"
+#include "Hockey/Assets/Assets/AudioAsset.hpp"
 #include "Hockey/Assets/Assets/AnimationAsset.hpp"
 #include "Hockey/Assets/Assets/MaterialAsset.hpp"
 #include "Hockey/Assets/Assets/MeshAsset.hpp"
@@ -11,6 +12,7 @@
 #include "Hockey/Assets/Assets/ShaderAsset.hpp"
 #include "Hockey/Assets/Assets/SkeletonAsset.hpp"
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
+#include "Hockey/Assets/Cookers/AudioCooker.hpp"
 #include "Hockey/Assets/Cookers/AnimationCooker.hpp"
 #include "Hockey/Assets/Cookers/MaterialCooker.hpp"
 #include "Hockey/Assets/Cookers/MeshCooker.hpp"
@@ -20,6 +22,7 @@
 #include "Hockey/Assets/Cookers/ShaderCooker.hpp"
 #include "Hockey/Assets/Cookers/SkeletonCooker.hpp"
 #include "Hockey/Assets/Cookers/TextureCooker.hpp"
+#include "Hockey/Assets/Importers/AudioImporter.hpp"
 #include "Hockey/Assets/Importers/GltfImporter.hpp"
 #include "Hockey/Assets/Importers/MaterialImporter.hpp"
 #include "Hockey/Assets/Importers/PrefabImporter.hpp"
@@ -120,6 +123,8 @@ AssetType AssetManager::ClassifyExtension(const fs::path& rawPath) {
         return AssetType::Model;
     if (ext == ".glsl" || ext == ".vert" || ext == ".frag" || ext == ".comp")
         return AssetType::Shader;
+    if (ext == ".mp3" || ext == ".wav" || ext == ".flac")
+        return AssetType::Audio;
     return AssetType::Unknown;
 }
 
@@ -935,15 +940,21 @@ template <> Result<std::shared_ptr<ShaderAsset>> AssetManager::Load<ShaderAsset>
     return loaded;
 }
 
+template <> Result<std::shared_ptr<AudioAsset>> AssetManager::Load<AudioAsset>(AssetID id) {
+    if (auto cached = m_Registry.Get<AudioAsset>(id)) {
+        return Result<std::shared_ptr<AudioAsset>>::Ok(std::move(cached));
     }
     Status status;
     AssetMetadata* metadata = EnsureCooked(id, status);
     if (metadata == nullptr) {
+        return Result<std::shared_ptr<AudioAsset>>::Fail(status.error);
     }
     AssetLoader loader(m_Info.projectRoot);
+    Result<std::shared_ptr<AudioAsset>> loaded = loader.LoadAudio(*metadata);
     if (!loaded) {
         return loaded;
     }
+    m_Registry.Store<AudioAsset>(id, loaded.value);
     return loaded;
 }
 
@@ -997,6 +1008,8 @@ template <> Result<std::shared_ptr<AnimationAsset>> AssetManager::Load<Animation
 
 void AssetManager::RegisterPipelines() {
     // Importers and cookers are registered here as each pipeline is implemented.
+    RegisterImporter(std::make_unique<AudioImporter>());
+    RegisterCooker(std::make_unique<AudioCooker>());
     RegisterImporter(std::make_unique<TextureImporter>());
     RegisterCooker(std::make_unique<TextureCooker>());
     RegisterImporter(std::make_unique<MaterialImporter>());

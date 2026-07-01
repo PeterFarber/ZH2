@@ -10,6 +10,7 @@ add_executable(HockeyAssetTests
     src/GltfImportTests.cpp
     src/MaterialTests.cpp
     src/BasicShapeAssetTests.cpp
+    src/AudioAssetTests.cpp
     src/AnimationAssetTests.cpp
     src/ShaderCookTests.cpp
     src/DependencyTests.cpp

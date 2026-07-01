@@ -12,6 +12,7 @@ struct MeshAsset;
 struct MaterialAsset;
 struct ModelAsset;
 struct ShaderAsset;
+struct AudioAsset;
 struct SkeletonAsset;
 struct AnimationAsset;
 
@@ -27,6 +28,7 @@ public:
     Result<std::shared_ptr<ModelAsset>> LoadModel(const AssetMetadata& metadata);
     Result<std::shared_ptr<MaterialAsset>> LoadMaterial(const AssetMetadata& metadata);
     Result<std::shared_ptr<ShaderAsset>> LoadShader(const AssetMetadata& metadata);
+    Result<std::shared_ptr<AudioAsset>> LoadAudio(const AssetMetadata& metadata);
     Result<std::shared_ptr<SkeletonAsset>> LoadSkeleton(const AssetMetadata& metadata);
     Result<std::shared_ptr<AnimationAsset>> LoadAnimation(const AssetMetadata& metadata);
 
