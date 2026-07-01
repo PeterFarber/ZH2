@@ -68,6 +68,7 @@ Source material:
 - [x] Gameplay Tuning panel exposes editor preview and server runtime gameplay settings from code-owned defaults overlaid by `data/config/editor.toml` plus YAML tuning values.
 - [x] Gameplay Tuning panel exposes reset controls for tuning defaults and gameplay settings defaults.
 - [x] Project Settings and Gameplay Tuning expose waypoint marker prefab selection with prefab drag/drop.
+- [x] Gameplay Tuning exposes separate skater and goalie stick prefab selection plus role-specific stick values.
 - [x] User preferences are exposed from Project Settings.
 - [x] Properties panel exists.
 - [x] Client Preview panel exists for hosted runtime UI/client-flow playback with focused HUD gameplay input routed to the shared gameplay preview.
@@ -83,6 +84,7 @@ Source material:
 - [x] Hierarchy drag sorting uses distinct custom previews for sibling insertion versus parent/inside drops.
 - [x] Focus selected behavior exists.
 - [x] Metadata-driven inspector field drawers exist.
+- [x] Metadata-driven Inspector ranged slider fields expose exact numeric input boxes next to the sliders.
 - [x] Metadata-driven inspector keeps UUID fields read-only; hierarchy-owned references are authored through parent/child structure.
 - [x] Spawn point Inspector exposes a Goalie checkbox backed by `PlayerRoleComponent` for normal and faceoff spawn authoring.
 - [x] Rigid Body collision detection mode is exposed through metadata-driven Inspector enum fields.
@@ -144,6 +146,7 @@ Source material:
 - [x] Project Settings and Gameplay Tuning contract tests cover single editor config ownership, absence of tracked client/server TOML loads, and reset-to-default controls.
 - [x] Editor icon font/helper contract tests cover vendored assets, ImGui font loading, and first-pass high-traffic icon adoption.
 - [x] Inspector field tests exist.
+- [x] Inspector field tests cover exact-value numeric entry contracts for ranged metadata sliders.
 - [x] Scene command tests exist.
 - [x] Project browser tests exist.
 - [x] Hockey tool tests exist.

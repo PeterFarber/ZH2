@@ -40,6 +40,7 @@ Source material:
 - [x] Core authoring/game components are registered.
 - [x] Hockey marker components exist for teams, players, goalie, puck, rink, goals, spawns, faceoffs, camera, and gameplay authoring.
 - [x] Render-facing data components exist as plain ECS data.
+- [x] Phase 9 animation adds data-only `SkinnedMeshRendererComponent` and runtime-only `AnimationPosePaletteComponent` without changing ECS dependencies.
 
 ## Finished - Transform, Hierarchy, And Active State
 
@@ -82,6 +83,7 @@ Source material:
 - [x] ECS tests cover scene validation.
 - [x] ECS tests cover prefab behavior.
 - [x] ECS tests cover metadata behavior.
+- [x] ECS tests cover skinned mesh renderer serialization and metadata behavior.
 - [x] ECS scene fixture coverage loads `data/raw/scenes/Main.scene.yaml`.
 - [x] ECS tests cover lifecycle and scene events.
 - [x] ECS tests cover marker component round trips.

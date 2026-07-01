@@ -70,6 +70,7 @@ Source material:
 ## Finished - World, Sync, Events, Queries
 
 - [x] Physics world facade exists.
+- [x] Physics world supports runtime body suspension/resume so gameplay can temporarily remove entities from simulation without changing authored physics components.
 - [x] Scene-to-physics body creation and sync exist.
 - [x] Physics-to-scene transform sync exists.
 - [x] Fixed-step `PhysicsSystem` exists.

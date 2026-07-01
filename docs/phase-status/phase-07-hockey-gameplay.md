@@ -37,6 +37,8 @@ Source material:
 - [x] Player slot assignment types exist.
 - [x] Gameplay input frame exists.
 - [x] Input buffering exists.
+- [x] Gameplay input accumulation preserves one-frame local action edges until the next fixed simulation tick.
+- [x] Gameplay input accumulation preserves pending shot-release aim across neutral render samples before the next fixed simulation tick.
 - [x] Gameplay event queue exists.
 - [x] Gameplay event names exist.
 - [x] Countdown, steal, boost, and goalie shield gameplay event names exist.
@@ -45,6 +47,7 @@ Source material:
 - [x] Gameplay settings, tuning, config, and editor controls expose no pass, body-check, or poke-check controls.
 - [x] Gameplay tuning YAML is consumed by editor preview, client local play, and headless server runtime.
 - [x] Gameplay settings expose a selectable waypoint marker prefab path.
+- [x] Gameplay tuning owns role-specific skater and goalie stick prefab paths, reach, width, and local offsets.
 - [x] Optional gameplay event logging exists.
 
 ## Finished - Components And Validation
@@ -71,7 +74,7 @@ Source material:
 
 - [x] Match initialization exists.
 - [x] Player spawn/setup flow uses deterministic shuffled, role-aware team spawn pools that honor authored skater/goalie markers.
-- [x] Match setup auto-discovers authored stick child entities from spawned player prefabs while preserving root stick gameplay data.
+- [x] Match setup attaches role-specific stick prefab children from gameplay tuning and removes stale prefab-authored stick children.
 - [x] 4v4 setup exists.
 - [x] Match clock exists.
 - [x] Period clock behavior exists.
@@ -96,7 +99,7 @@ Source material:
 - [x] Loose and eligible shot pucks can be acquired by stick range or player-body collider contact.
 - [x] Body-contact puck acquisition respects authored collider transform scale.
 - [x] Local Main scene gameplay regression asserts continuous puck collision detection when `Main.scene.yaml` contains the authored puck/goals fixture.
-- [x] Possessed dynamic pucks drive their physics body transform so physics sync does not undo pickup.
+- [x] Possessed dynamic pucks suspend their physics body so they do not simulate, collide, or trigger until released or shot.
 - [x] Possessed pucks from pickup or steal preserve stick X/Z while locking Y to the tuned puck floor height.
 - [x] Stick handling exists.
 - [x] Shooting exists.
@@ -125,6 +128,7 @@ Source material:
 - [x] Client local play draws a lightweight shot power bar while charging.
 - [x] Editor gameplay validation integration exists.
 - [x] Editor gameplay preview integration exists.
+- [x] Local client and editor gameplay preview sample local input per render frame and consume it once per fixed tick.
 - [x] Dedicated server headless gameplay integration exists.
 - [x] Reset match hotkey/path exists in local play.
 
@@ -132,6 +136,8 @@ Source material:
 
 - [x] Gameplay settings/tuning tests exist.
 - [x] Input tests exist.
+- [x] Input tests cover render-frame action edges surviving until the next fixed gameplay tick without repeating on catch-up ticks.
+- [x] Input tests cover shot-release aim surviving a neutral render sample before fixed-tick consumption.
 - [x] Event tests exist.
 - [x] Team/component tests exist.
 - [x] Match setup tests exist.
