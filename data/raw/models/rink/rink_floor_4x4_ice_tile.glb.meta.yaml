@@ -1,0 +1,17 @@
+Asset:
+  ID: 11655200548755707189
+  Type: Model
+  Name: rink_floor_4x4_ice_tile
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/models/rink/rink_floor_4x4_ice_tile.glb
+  CookedPath: ""
+  RawFileTimestamp: 134272358693668779
+  RawFileHash: 3970101022030570260
+  ImportedTimestamp: 1782762555
+  CookedTimestamp: 0
+  Dependencies: [3396748008539041123, 5919598149898360945]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 15456723165474201736
+  Name: GlassFrosted
+  BaseColor: [0.78, 0.95, 1, 0.28]
+  Metallic: 0
+  Roughness: 1
+  NormalStrength: 0.035
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Blend
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 0
+    Normal: 1989780037943191936
+    MetallicRoughness: 4286469292883949421
+    Occlusion: 0
+    Emissive: 0

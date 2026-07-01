@@ -1,0 +1,17 @@
+Asset:
+  ID: 7837855299011406807
+  Type: Audio
+  Name: Countdown.mp3
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/audio/Countdown.mp3
+  CookedPath: data/cooked/assets/audio/7837855299011406807.audio.bin
+  RawFileTimestamp: 134253992285675272
+  RawFileHash: 980656804183677042
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 1782702418
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

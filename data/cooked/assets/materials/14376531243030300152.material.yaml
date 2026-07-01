@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 14376531243030300152
+  Name: Boards
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 0
+  Roughness: 1
+  NormalStrength: 0.24
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 17866937145028107030
+    Normal: 5627371618174268717
+    MetallicRoughness: 5377875170985109351
+    Occlusion: 0
+    Emissive: 0

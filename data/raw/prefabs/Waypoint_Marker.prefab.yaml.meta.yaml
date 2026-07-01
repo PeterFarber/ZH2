@@ -8,10 +8,10 @@ Asset:
   CookedPath: data/cooked/assets/prefabs/7252246192033565360.prefab.yaml
   RawFileTimestamp: 134269722108748617
   RawFileHash: 6648112826662461766
-  ImportedTimestamp: 1782594141
-  CookedTimestamp: 1782594152
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 1782702426
   Dependencies: [7218028831466573626, 9507614320415798529]
   Dependents: []
-  Dirty: false
+  Dirty: true
   Missing: false
   Cooked: true

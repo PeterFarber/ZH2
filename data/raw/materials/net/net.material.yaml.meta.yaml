@@ -6,12 +6,12 @@ Asset:
   CookerVersion: ""
   RawPath: data/raw/materials/net/net.material.yaml
   CookedPath: ""
-  RawFileTimestamp: 134270696561564663
-  RawFileHash: 6342064702978486597
-  ImportedTimestamp: 1782596056
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
   CookedTimestamp: 0
   Dependencies: [9543490355230126823, 2265256472990055568, 16067826143056412195]
-  Dependents: [5245956015780662803, 9649836886187156254]
+  Dependents: []
   Dirty: true
   Missing: false
   Cooked: false

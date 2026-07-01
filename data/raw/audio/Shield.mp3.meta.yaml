@@ -1,0 +1,17 @@
+Asset:
+  ID: 16748117630099624104
+  Type: Audio
+  Name: Shield.mp3
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/audio/Shield.mp3
+  CookedPath: data/cooked/assets/audio/16748117630099624104.audio.bin
+  RawFileTimestamp: 134253992285815408
+  RawFileHash: 8209719131034519554
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 1782702434
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

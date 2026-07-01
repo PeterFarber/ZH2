@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 2331777669657108769
+  Name: mat_rink_boards_straight_4x4_baked
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 3806608464531937321
+    Normal: 17299809243399172684
+    MetallicRoughness: 7294967292478205632
+    Occlusion: 0
+    Emissive: 0

@@ -6,12 +6,12 @@ Asset:
   CookerVersion: ""
   RawPath: data/raw/textures/net/img2_metallicroughness.png
   CookedPath: ""
-  RawFileTimestamp: 134270696561554666
-  RawFileHash: 12844914109689146093
-  ImportedTimestamp: 1782596056
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
   CookedTimestamp: 0
   Dependencies: []
-  Dependents: [7828305144141514195]
+  Dependents: []
   Dirty: true
   Missing: false
   Cooked: false

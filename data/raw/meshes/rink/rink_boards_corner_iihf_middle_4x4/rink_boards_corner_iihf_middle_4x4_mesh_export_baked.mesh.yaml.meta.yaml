@@ -1,0 +1,17 @@
+Asset:
+  ID: 13076140392871938758
+  Type: Mesh
+  Name: rink_boards_corner_iihf_middle_4x4_mesh_export_baked
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/meshes/rink/rink_boards_corner_iihf_middle_4x4/rink_boards_corner_iihf_middle_4x4_mesh_export_baked.mesh.yaml
+  CookedPath: ""
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
+  Dependencies: [17001417286836249985]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

@@ -1,0 +1,52 @@
+Prefab:
+  Name: Floor_Corner_Left
+  Version: 1
+  AssetId: 16426416744496095052
+Root:
+  Entity: 16673563568759452589
+Entities:
+  - Entity: 16673563568759452589
+    NameComponent:
+      Name: Floor_Corner_Left
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-28, 0, 12]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 7294102861106669538
+      MaterialAsset: 3112908978782141296
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Rink
+      Material: Ice
+    BoxColliderComponent:
+      HalfExtents: [2, 0.05, 2]
+      Offset: [2, -0.05, -2]
+      Rotation: [0, 0, 0]
+      IsTrigger: false

@@ -3,15 +3,15 @@ Asset:
   Type: Model
   Name: net
   ImporterVersion: 1.0.0
-  CookerVersion: ""
+  CookerVersion: 1.0.0
   RawPath: data/raw/models/net.glb
-  CookedPath: ""
+  CookedPath: data/cooked/assets/models/5245956015780662803.model.bin
   RawFileTimestamp: 134270696406191519
   RawFileHash: 11555541915657932163
-  ImportedTimestamp: 1782596056
-  CookedTimestamp: 0
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 1782702436
   Dependencies: [7828305144141514195, 9649836886187156254]
   Dependents: []
   Dirty: true
   Missing: false
-  Cooked: false
+  Cooked: true

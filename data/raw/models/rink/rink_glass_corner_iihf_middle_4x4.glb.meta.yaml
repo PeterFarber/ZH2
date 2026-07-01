@@ -1,0 +1,17 @@
+Asset:
+  ID: 8776506631065326438
+  Type: Model
+  Name: rink_glass_corner_iihf_middle_4x4
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/models/rink/rink_glass_corner_iihf_middle_4x4.glb
+  CookedPath: ""
+  RawFileTimestamp: 134272358706539616
+  RawFileHash: 2005186255893181911
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 0
+  Dependencies: [17867826547650122789, 14497713488000787716]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

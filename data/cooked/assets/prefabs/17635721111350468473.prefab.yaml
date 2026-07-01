@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 15049427735966158672
 Root:
-  Entity: 862071309033555729
+  Entity: 16978032343671243344
 Entities:
-  - Entity: 862071309033555729
+  - Entity: 16978032343671243344
     NameComponent:
       Name: Away_Goalie_Prefab
     ObjectSettingsComponent:
@@ -17,13 +17,13 @@ Entities:
     TransformComponent:
       Position: [3.688598, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [2.75, 2.75, 2.75]
+      Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 12734919951741881927
+        []
     PrefabComponent:
       PrefabAssetId: 15049427735966158672
-      SourceEntityId: 2611392523411541573
+      SourceEntityId: 5069139552260657421
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
     TeamComponent:
       Team: Away
@@ -68,9 +68,6 @@ Entities:
       ControlledByAI: true
       ActiveInMatch: true
     GoalieComponent:
-      MaxSpeed: 6.5
-      Acceleration: 28
-      SaveReachRadius: 1.8
       LockToCrease: true
     PlayerRuntimeComponent:
       Velocity: [0, 0, 0]
@@ -90,38 +87,3 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 12734919951741881927
-    NameComponent:
-      Name: Stick
-    ObjectSettingsComponent:
-      Tag: Untagged
-      Layer: Default
-      Static: false
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0.1]
-      Rotation: [0, -0, 0]
-      Scale: [0.6700001, 0.6700001, 0.6700001]
-    ParentComponent:
-      Parent: 862071309033555729
-    ChildrenComponent:
-      Children:
-        []
-    PrefabComponent:
-      PrefabAssetId: 15049427735966158672
-      SourceEntityId: 2611392523411541574
-      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
-    MeshRendererComponent:
-      MeshAsset: 2566647934480036238
-      MaterialAsset: 11219802514363683653
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    StickComponent:
-      OwnerPlayer: 0
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true

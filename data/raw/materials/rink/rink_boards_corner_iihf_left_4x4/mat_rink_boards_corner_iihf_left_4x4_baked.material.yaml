@@ -1,0 +1,18 @@
+Material:
+  Name: mat_rink_boards_corner_iihf_left_4x4_baked
+  Type: PBR
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img1_basecolor.png
+    Normal: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img0_normal.png
+    MetallicRoughness: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img2_metallicroughness.png

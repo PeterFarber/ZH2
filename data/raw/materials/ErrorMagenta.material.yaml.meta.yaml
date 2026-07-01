@@ -8,10 +8,10 @@ Asset:
   CookedPath: data/cooked/assets/materials/18326020525044925964.material.yaml
   RawFileTimestamp: 134269646331247609
   RawFileHash: 13609113564226256632
-  ImportedTimestamp: 1782594138
-  CookedTimestamp: 1782594146
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 1782702418
   Dependencies: []
   Dependents: []
-  Dirty: false
+  Dirty: true
   Missing: false
   Cooked: true

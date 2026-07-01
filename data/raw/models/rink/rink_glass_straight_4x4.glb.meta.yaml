@@ -1,0 +1,17 @@
+Asset:
+  ID: 12238349263810428600
+  Type: Model
+  Name: rink_glass_straight_4x4
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/models/rink/rink_glass_straight_4x4.glb
+  CookedPath: ""
+  RawFileTimestamp: 134272358697371211
+  RawFileHash: 3687198275180193880
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
+  Dependencies: [4409046953977421938, 12664587732029382093]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

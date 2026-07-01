@@ -1,0 +1,17 @@
+Asset:
+  ID: 2059601053219474991
+  Type: Model
+  Name: rink_floor_corner_iihf_bottom_4x4
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/models/rink/rink_floor_corner_iihf_bottom_4x4.glb
+  CookedPath: ""
+  RawFileTimestamp: 134272358710295634
+  RawFileHash: 5894864082464311397
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
+  Dependencies: [4831472021349298339, 10851033402791583111]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

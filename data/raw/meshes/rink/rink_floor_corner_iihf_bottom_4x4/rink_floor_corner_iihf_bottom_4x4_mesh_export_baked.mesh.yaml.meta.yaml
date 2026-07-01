@@ -1,0 +1,17 @@
+Asset:
+  ID: 10851033402791583111
+  Type: Mesh
+  Name: rink_floor_corner_iihf_bottom_4x4_mesh_export_baked
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/meshes/rink/rink_floor_corner_iihf_bottom_4x4/rink_floor_corner_iihf_bottom_4x4_mesh_export_baked.mesh.yaml
+  CookedPath: ""
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
+  Dependencies: [4831472021349298339]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

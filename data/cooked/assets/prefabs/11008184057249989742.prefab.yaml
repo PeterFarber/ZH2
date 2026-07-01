@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 15392473300653576747
 Root:
-  Entity: 14423394206572389208
+  Entity: 10699376868008630970
 Entities:
-  - Entity: 14423394206572389208
+  - Entity: 10699376868008630970
     NameComponent:
       Name: Away_Skater_Prefab
     ObjectSettingsComponent:
@@ -17,13 +17,13 @@ Entities:
     TransformComponent:
       Position: [-1.25, 0, -29.086634]
       Rotation: [0, 0, 0]
-      Scale: [2.75, 2.75, 2.75]
+      Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 17060297348995837681
+        []
     PrefabComponent:
       PrefabAssetId: 15392473300653576747
-      SourceEntityId: 12704451576472485329
+      SourceEntityId: 14508237098617680358
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
     TeamComponent:
       Team: Away
@@ -68,10 +68,6 @@ Entities:
       ControlledByAI: false
       ActiveInMatch: true
     SkaterComponent:
-      MaxSpeed: 9
-      Acceleration: 32
-      Deceleration: 20
-      TurnSpeedDegrees: 720
       HasPuck: false
     PlayerRuntimeComponent:
       Velocity: [0, 0, 0]
@@ -91,38 +87,3 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 17060297348995837681
-    NameComponent:
-      Name: Stick
-    ObjectSettingsComponent:
-      Tag: Untagged
-      Layer: Default
-      Static: false
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0.1]
-      Rotation: [0, -0, 0]
-      Scale: [0.67, 0.67, 0.67]
-    ParentComponent:
-      Parent: 14423394206572389208
-    ChildrenComponent:
-      Children:
-        []
-    PrefabComponent:
-      PrefabAssetId: 15392473300653576747
-      SourceEntityId: 904258629936027389
-      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
-    MeshRendererComponent:
-      MeshAsset: 2566647934480036238
-      MaterialAsset: 11219802514363683653
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    StickComponent:
-      OwnerPlayer: 0
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 2]
-      CanControlPuck: true
-      CanShoot: true

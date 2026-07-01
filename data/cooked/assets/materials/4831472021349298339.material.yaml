@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 4831472021349298339
+  Name: mat_rink_floor_corner_iihf_bottom_4x4_baked
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 1840363162056191655
+    Normal: 5716629705627409328
+    MetallicRoughness: 16441338113613359769
+    Occlusion: 0
+    Emissive: 0

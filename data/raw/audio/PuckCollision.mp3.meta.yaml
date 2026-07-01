@@ -1,0 +1,17 @@
+Asset:
+  ID: 10261627361763244214
+  Type: Audio
+  Name: PuckCollision.mp3
+  ImporterVersion: 1.0.0
+  CookerVersion: 1.0.0
+  RawPath: data/raw/audio/PuckCollision.mp3
+  CookedPath: data/cooked/assets/audio/10261627361763244214.audio.bin
+  RawFileTimestamp: 134253992285605276
+  RawFileHash: 13602351847117134776
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 1782702426
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: true

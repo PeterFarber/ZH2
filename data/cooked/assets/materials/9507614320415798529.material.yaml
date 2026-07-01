@@ -1,15 +1,15 @@
 CookedMaterial:
   ID: 9507614320415798529
   Name: SolidBlue
-  BaseColor: [0.1, 0.3, 0.85, 1]
+  BaseColor: [0, 0.04705882, 1, 0.9647059]
   Metallic: 0
-  Roughness: 0.9
-  NormalStrength: 1
-  OcclusionStrength: 1
+  Roughness: 0
+  NormalStrength: 0
+  OcclusionStrength: 0
   EmissiveColor: [0, 0, 0]
   EmissiveStrength: 0
-  AlphaMode: Opaque
-  AlphaCutoff: 0.5
+  AlphaMode: Blend
+  AlphaCutoff: 0.763
   Tiling: [1, 1]
   Offset: [0, 0]
   Textures:

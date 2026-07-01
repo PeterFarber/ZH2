@@ -2,13 +2,13 @@ Material:
   Name: goalie
   Type: PBR
   BaseColor: [1, 1, 1, 1]
-  Metallic: 0.306
-  Roughness: 0.414
+  Metallic: 0
+  Roughness: 1
   NormalStrength: 1
   OcclusionStrength: 1
   EmissiveColor: [0, 0, 0]
   EmissiveStrength: 1
-  AlphaMode: Opaque
+  AlphaMode: Blend
   AlphaCutoff: 0.5
   Tiling: [1, 1]
   Offset: [0, 0]

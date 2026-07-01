@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 7605780352266746146
+  Name: IceDetail
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 0
+  Roughness: 1
+  NormalStrength: 0.16
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 16312597364227700768
+    Normal: 4155888827000976312
+    MetallicRoughness: 5708258641159481974
+    Occlusion: 0
+    Emissive: 0

@@ -1,0 +1,6 @@
+Mesh:
+  SourceModel: data/raw/models/rink/rink_floor_corner_iihf_left_4x4.glb
+  MeshIndex: 0
+  Name: rink_floor_corner_iihf_left_4x4_mesh_export_baked
+  Materials:
+    - data/raw/materials/rink/rink_floor_corner_iihf_left_4x4/mat_rink_floor_corner_iihf_left_4x4_baked.material.yaml

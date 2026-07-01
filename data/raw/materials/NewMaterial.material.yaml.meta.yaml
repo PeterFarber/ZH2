@@ -1,0 +1,17 @@
+Asset:
+  ID: 16540956864970234978
+  Type: Material
+  Name: NewMaterial
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/materials/NewMaterial.material.yaml
+  CookedPath: ""
+  RawFileTimestamp: 134271710849708107
+  RawFileHash: 1630173040157842958
+  ImportedTimestamp: 1782697484
+  CookedTimestamp: 0
+  Dependencies: []
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

@@ -1,0 +1,29 @@
+Prefab:
+  Name: Floor_Base
+  Version: 1
+  AssetId: 5570574565806667582
+Root:
+  Entity: 4983505767124891453
+Entities:
+  - Entity: 4983505767124891453
+    NameComponent:
+      Name: Floor_Base
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 5919598149898360945
+      MaterialAsset: 3396748008539041123
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

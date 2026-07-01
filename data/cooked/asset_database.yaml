@@ -1,19 +1,19 @@
 AssetDatabase:
   Version: 1
-  Count: 79
+  Count: 163
 Assets:
   - Asset:
       ID: 203869266260794646
       Type: Texture
       Name: img2_basecolor
-      ImporterVersion: 1.0.0
+      ImporterVersion: TextureImporter_v1
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/goalie/img2_basecolor.png
       CookedPath: data/cooked/assets/textures/203869266260794646.tex.bin
-      RawFileTimestamp: 134270681463525048
-      RawFileHash: 12525555279062612233
-      ImportedTimestamp: 1782594546
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762572
       Dependencies: []
       Dependents: [13188400377850077421]
       Dirty: false
@@ -29,10 +29,44 @@ Assets:
       CookedPath: data/cooked/assets/models/212105626793489814.model.bin
       RawFileTimestamp: 134262093458671043
       RawFileHash: 5404369872927073403
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594160
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
       Dependencies: [2462135637550940025, 616265134277951580]
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 525216133810353641
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_middle_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/525216133810353641.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762568
+      Dependencies: []
+      Dependents: [17867826547650122789]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 561186823597067048
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_left_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/561186823597067048.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762570
+      Dependencies: []
+      Dependents: [14167740618595497833]
       Dirty: false
       Missing: false
       Cooked: true
@@ -44,10 +78,10 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/goalie/img1_normal.png
       CookedPath: data/cooked/assets/textures/598577032280755530.tex.bin
-      RawFileTimestamp: 134270681463565169
-      RawFileHash: 3339777517097381889
-      ImportedTimestamp: 1782594546
-      CookedTimestamp: 1782594559
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762565
       Dependencies: []
       Dependents: [13188400377850077421]
       Dirty: false
@@ -61,12 +95,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/wall/Wall_GameExport_Baked_PBR.material.yaml
       CookedPath: data/cooked/assets/materials/616265134277951580.material.yaml
-      RawFileTimestamp: 134270677417102983
-      RawFileHash: 2967766301960851448
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [11605109223550927380, 15702033425252339247, 18380893089174589515]
-      Dependents: [212105626793489814, 2462135637550940025, 3465686706665373809]
+      Dependents: [212105626793489814, 3465686706665373809, 2462135637550940025]
       Dirty: false
       Missing: false
       Cooked: true
@@ -80,8 +114,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/740162671739725182.material.yaml
       RawFileTimestamp: 134269646331378258
       RawFileHash: 3748708596226732933
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -91,14 +125,14 @@ Assets:
       ID: 1319581073191614121
       Type: Prefab
       Name: Stick.prefab
-      ImporterVersion: ""
+      ImporterVersion: 1.0.0
       CookerVersion: 1.0.0
       RawPath: data/raw/prefabs/Stick.prefab.yaml
       CookedPath: data/cooked/assets/prefabs/1319581073191614121.prefab.yaml
       RawFileTimestamp: 134270693652134699
       RawFileHash: 1756747859603015757
-      ImportedTimestamp: 0
-      CookedTimestamp: 1782595784
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
       Dependencies: [2566647934480036238, 11219802514363683653]
       Dependents: []
       Dirty: false
@@ -112,10 +146,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/cube/Cube.mesh.yaml
       CookedPath: data/cooked/assets/meshes/1546920521154545052.mesh.bin
-      RawFileTimestamp: 134270677415025859
-      RawFileHash: 32707504115102050
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594552
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: [3465686706665373809, 10371339210353693876]
       Dirty: false
@@ -129,10 +163,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/sphere/sphere_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/1580850430864872346.mesh.bin
-      RawFileTimestamp: 134270677387258982
-      RawFileHash: 576459801744706714
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594550
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762564
       Dependencies: []
       Dependents: [16053632770209735033]
       Dirty: false
@@ -148,9 +182,43 @@ Assets:
       CookedPath: data/cooked/assets/materials/1683526106923192655.material.yaml
       RawFileTimestamp: 134269646331277610
       RawFileHash: 15805894419148813783
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 1840363162056191655
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_bottom_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/1840363162056191655.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4831472021349298339]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 1860780891692603695
+      Type: Model
+      Name: rink_floor_corner_iihf_left_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_floor_corner_iihf_left_4x4.glb
+      CookedPath: data/cooked/assets/models/1860780891692603695.model.bin
+      RawFileTimestamp: 134272358714286914
+      RawFileHash: 11622685118896374329
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
+      Dependencies: [7294102861106669538, 3112908978782141296]
       Dependents: []
       Dirty: false
       Missing: false
@@ -163,12 +231,46 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/ice/img1_basecolor.png
       CookedPath: data/cooked/assets/textures/1956483358797437224.tex.bin
-      RawFileTimestamp: 134268067821494534
-      RawFileHash: 1978525040696978274
-      ImportedTimestamp: 1782594143
-      CookedTimestamp: 1782594549
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762560
+      CookedTimestamp: 1782762575
       Dependencies: []
       Dependents: [2175547380742926098]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2007380826329294573
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_straight_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/2007380826329294573.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4409046953977421938]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2059601053219474991
+      Type: Model
+      Name: rink_floor_corner_iihf_bottom_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_floor_corner_iihf_bottom_4x4.glb
+      CookedPath: data/cooked/assets/models/2059601053219474991.model.bin
+      RawFileTimestamp: 134272358710295634
+      RawFileHash: 5894864082464311397
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
+      Dependencies: [10851033402791583111, 4831472021349298339]
+      Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
@@ -180,12 +282,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/ice/Ice_GameExport_Baked_PBR.material.yaml
       CookedPath: data/cooked/assets/materials/2175547380742926098.material.yaml
-      RawFileTimestamp: 134270677388239600
-      RawFileHash: 8464832371034896867
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
       Dependencies: [1956483358797437224, 3430640482485695819, 5265000974720859190]
-      Dependents: [13159441835091159249, 9446198346239280572, 3465686706665373809]
+      Dependents: [9446198346239280572, 13159441835091159249]
       Dirty: false
       Missing: false
       Cooked: true
@@ -193,16 +295,67 @@ Assets:
       ID: 2265256472990055568
       Type: Texture
       Name: img0_normal
-      ImporterVersion: 1.0.0
+      ImporterVersion: TextureImporter_v1
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/net/img0_normal.png
       CookedPath: data/cooked/assets/textures/2265256472990055568.tex.bin
-      RawFileTimestamp: 134270696561519599
-      RawFileHash: 10170950040960945262
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596059
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762561
+      CookedTimestamp: 1782762577
       Dependencies: []
       Dependents: [7828305144141514195]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2331777669657108769
+      Type: Material
+      Name: mat_rink_boards_straight_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_boards_straight_4x4/mat_rink_boards_straight_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/2331777669657108769.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [3806608464531937321, 17299809243399172684, 7294967292478205632]
+      Dependents: [2350273854402579628, 6493603590585108812]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2350273854402579628
+      Type: Mesh
+      Name: rink_boards_straight_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_boards_straight_4x4/rink_boards_straight_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/2350273854402579628.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [2331777669657108769]
+      Dependents: [6493603590585108812]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2414842336091743891
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_left_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/2414842336091743891.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: []
+      Dependents: [3112908978782141296]
       Dirty: false
       Missing: false
       Cooked: true
@@ -214,10 +367,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/wall/Wall_Mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/2462135637550940025.mesh.bin
-      RawFileTimestamp: 134270677417112960
-      RawFileHash: 11196646754694356801
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [616265134277951580]
       Dependents: [212105626793489814, 3465686706665373809]
       Dirty: false
@@ -231,12 +384,80 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/stick/stick.mesh.yaml
       CookedPath: data/cooked/assets/meshes/2566647934480036238.mesh.bin
-      RawFileTimestamp: 134270677416063581
-      RawFileHash: 5648971817760436705
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594565
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [11219802514363683653]
-      Dependents: [1319581073191614121, 3465686706665373809, 7564859252353305484, 11008184057249989742, 13754134128618196032, 17635721111350468473, 18000701732279517277]
+      Dependents: [1319581073191614121, 7549909879482055387, 8177072562716307229, 18000701732279517277]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2608092594825299480
+      Type: Mesh
+      Name: rink_boards_corner_iihf_bottom_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_boards_corner_iihf_bottom_4x4/rink_boards_corner_iihf_bottom_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/2608092594825299480.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762590
+      Dependencies: [12344462750173476690]
+      Dependents: [13896213208739981229, 16539079590291300186]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 2684151173378291240
+      Type: Audio
+      Name: Shot.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/Shot.mp3
+      CookedPath: data/cooked/assets/audio/2684151173378291240.audio.bin
+      RawFileTimestamp: 134253992285129991
+      RawFileHash: 13077938962286513784
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3112908978782141296
+      Type: Material
+      Name: mat_rink_floor_corner_iihf_left_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_floor_corner_iihf_left_4x4/mat_rink_floor_corner_iihf_left_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/3112908978782141296.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: [12535977691155680035, 5274138273448671139, 2414842336091743891]
+      Dependents: [7294102861106669538, 1860780891692603695]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3396748008539041123
+      Type: Material
+      Name: mat_rink_floor_4x4_ice_tile_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_floor_4x4_ice_tile/mat_rink_floor_4x4_ice_tile_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/3396748008539041123.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
+      Dependencies: [18002762767178886969, 15714935623224610779, 7019791071114481266]
+      Dependents: [5919598149898360945, 11655200548755707189]
       Dirty: false
       Missing: false
       Cooked: true
@@ -244,14 +465,14 @@ Assets:
       ID: 3430640482485695819
       Type: Texture
       Name: img0_normal
-      ImporterVersion: 1.0.0
+      ImporterVersion: TextureImporter_v1
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/ice/img0_normal.png
       CookedPath: data/cooked/assets/textures/3430640482485695819.tex.bin
-      RawFileTimestamp: 134268067819786033
-      RawFileHash: 9959076869665934206
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594550
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762559
+      CookedTimestamp: 1782762573
       Dependencies: []
       Dependents: [2175547380742926098]
       Dirty: false
@@ -265,11 +486,11 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/scenes/Main.scene.yaml
       CookedPath: data/cooked/assets/scenes/3465686706665373809.scene.yaml
-      RawFileTimestamp: 134270694043481852
-      RawFileHash: 5762925467219559366
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782596058
-      Dependencies: [13159441835091159249, 2175547380742926098, 11795346347216253737, 15902365976934225153, 1546920521154545052, 15319051867854327546, 2462135637550940025, 616265134277951580, 10521881175517512760, 6674370949423982319, 10279919324660303988, 2566647934480036238, 11219802514363683653]
+      RawFileTimestamp: 134272359202733714
+      RawFileHash: 24791280792956325
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762591
+      Dependencies: [1546920521154545052, 10521881175517512760, 9649836886187156254, 7828305144141514195, 11795346347216253737, 15902365976934225153, 2462135637550940025, 616265134277951580, 4311845709199194276, 9507614320415798529, 15350148161379860780, 13159441835091159249, 18328928024750434439]
       Dependents: []
       Dirty: false
       Missing: false
@@ -284,10 +505,44 @@ Assets:
       CookedPath: data/cooked/assets/textures/3709775965342076075.tex.bin
       RawFileTimestamp: 134269634829603125
       RawFileHash: 17748628400880280459
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: [10521881175517512760]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3751262386962623496
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_left_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/3751262386962623496.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: []
+      Dependents: [14167740618595497833]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 3806608464531937321
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_straight_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/3806608464531937321.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: []
+      Dependents: [2331777669657108769]
       Dirty: false
       Missing: false
       Cooked: true
@@ -301,8 +556,8 @@ Assets:
       CookedPath: data/cooked/assets/textures/3851845498635662592.tex.bin
       RawFileTimestamp: 134269634829855248
       RawFileHash: 11856061909013769616
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: [10521881175517512760]
       Dirty: false
@@ -318,9 +573,26 @@ Assets:
       CookedPath: data/cooked/assets/models/3944394127734966371.model.bin
       RawFileTimestamp: 134269676125494316
       RawFileHash: 16490803354411402439
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594160
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
       Dependencies: [6674370949423982319, 10279919324660303988]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4049776950116679496
+      Type: Model
+      Name: rink_boards_corner_iihf_left_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_boards_corner_iihf_left_4x4.glb
+      CookedPath: data/cooked/assets/models/4049776950116679496.model.bin
+      RawFileTimestamp: 134272358703485353
+      RawFileHash: 7939097540817411844
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
+      Dependencies: [13867717324698189658, 9034820723992568987]
       Dependents: []
       Dirty: false
       Missing: false
@@ -335,10 +607,61 @@ Assets:
       CookedPath: data/cooked/assets/materials/4285968122084568309.material.yaml
       RawFileTimestamp: 134269646331393329
       RawFileHash: 9875695932145636247
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594148
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4311845709199194276
+      Type: Material
+      Name: Logo
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/Logo.material.yaml
+      CookedPath: data/cooked/assets/materials/4311845709199194276.material.yaml
+      RawFileTimestamp: 134271745370786851
+      RawFileHash: 503793896574102430
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
+      Dependencies: [9363082953101889311]
+      Dependents: [3465686706665373809]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4409046953977421938
+      Type: Material
+      Name: mat_rink_glass_straight_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_glass_straight_4x4/mat_rink_glass_straight_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/4409046953977421938.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: [9618494961299209561, 6867048518204024146, 2007380826329294573]
+      Dependents: [12664587732029382093, 12238349263810428600]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4549735640161538808
+      Type: Mesh
+      Name: rink_glass_corner_iihf_left_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_glass_corner_iihf_left_4x4/rink_glass_corner_iihf_left_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/4549735640161538808.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: [14167740618595497833]
+      Dependents: [5880436194098769593]
       Dirty: false
       Missing: false
       Cooked: true
@@ -350,12 +673,46 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/skater/img1_basecolor.jpg
       CookedPath: data/cooked/assets/textures/4589403135196506491.tex.bin
-      RawFileTimestamp: 134269676244311226
-      RawFileHash: 15724671125073224106
-      ImportedTimestamp: 1782594143
-      CookedTimestamp: 1782594554
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762562
+      CookedTimestamp: 1782762579
       Dependencies: []
       Dependents: [10279919324660303988, 12456872314640691628]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4615373670794642119
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_middle_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/4615373670794642119.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762564
+      Dependencies: []
+      Dependents: [17001417286836249985]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 4831472021349298339
+      Type: Material
+      Name: mat_rink_floor_corner_iihf_bottom_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_floor_corner_iihf_bottom_4x4/mat_rink_floor_corner_iihf_bottom_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/4831472021349298339.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: [1840363162056191655, 5716629705627409328, 16441338113613359769]
+      Dependents: [2059601053219474991, 10851033402791583111]
       Dirty: false
       Missing: false
       Cooked: true
@@ -369,9 +726,43 @@ Assets:
       CookedPath: data/cooked/assets/models/4847304758356720494.model.bin
       RawFileTimestamp: 134269648191424722
       RawFileHash: 3117240706414132668
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [7218028831466573626]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5115543293691784034
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_middle_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/5115543293691784034.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: []
+      Dependents: [6790689301664185049]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5133882314070925082
+      Type: Model
+      Name: rink_floor_corner_iihf_middle_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_floor_corner_iihf_middle_4x4.glb
+      CookedPath: data/cooked/assets/models/5133882314070925082.model.bin
+      RawFileTimestamp: 134272358712066204
+      RawFileHash: 12642635629285071623
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
+      Dependencies: [11669088365217607018, 6790689301664185049]
       Dependents: []
       Dirty: false
       Missing: false
@@ -386,8 +777,8 @@ Assets:
       CookedPath: data/cooked/assets/models/5245956015780662803.model.bin
       RawFileTimestamp: 134270696406191519
       RawFileHash: 11555541915657932163
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596060
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [9649836886187156254, 7828305144141514195]
       Dependents: []
       Dirty: false
@@ -401,12 +792,182 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/ice/img2_metallicroughness.png
       CookedPath: data/cooked/assets/textures/5265000974720859190.tex.bin
-      RawFileTimestamp: 134268067822182513
-      RawFileHash: 5227478089830320428
-      ImportedTimestamp: 1782594140
-      CookedTimestamp: 1782594556
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762561
+      CookedTimestamp: 1782762577
       Dependencies: []
       Dependents: [2175547380742926098]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5274138273448671139
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_left_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/5274138273448671139.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762585
+      Dependencies: []
+      Dependents: [3112908978782141296]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5498634180443503203
+      Type: Model
+      Name: rink_boards_corner_iihf_middle_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_boards_corner_iihf_middle_4x4.glb
+      CookedPath: data/cooked/assets/models/5498634180443503203.model.bin
+      RawFileTimestamp: 134272358701591978
+      RawFileHash: 4346577766565568592
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
+      Dependencies: [13076140392871938758, 17001417286836249985]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5635519417064548070
+      Type: Material
+      Name: mat_rink_glass_corner_iihf_bottom_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_glass_corner_iihf_bottom_4x4/mat_rink_glass_corner_iihf_bottom_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/5635519417064548070.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762590
+      Dependencies: [12031919643287913735, 15701501673935319887, 5928943465869608009]
+      Dependents: [10697610321559858243, 15178519393528497465, 16539079590291300186]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5716629705627409328
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_bottom_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/5716629705627409328.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4831472021349298339]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5880436194098769593
+      Type: Model
+      Name: rink_glass_corner_iihf_left_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_glass_corner_iihf_left_4x4.glb
+      CookedPath: data/cooked/assets/models/5880436194098769593.model.bin
+      RawFileTimestamp: 134272358708045725
+      RawFileHash: 9826637493873174719
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762588
+      Dependencies: [4549735640161538808, 14167740618595497833]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5919598149898360945
+      Type: Mesh
+      Name: rink_floor_4x4_ice_tile_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_floor_4x4_ice_tile/rink_floor_4x4_ice_tile_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/5919598149898360945.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762590
+      Dependencies: [3396748008539041123]
+      Dependents: [11655200548755707189]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 5928943465869608009
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_bottom_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/5928943465869608009.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762568
+      Dependencies: []
+      Dependents: [5635519417064548070]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 6285429178226087768
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_bottom_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/6285429178226087768.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: []
+      Dependents: [12344462750173476690]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 6403860537742874009
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_middle_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/6403860537742874009.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: []
+      Dependents: [17867826547650122789]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 6493603590585108812
+      Type: Model
+      Name: rink_boards_straight_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_boards_straight_4x4.glb
+      CookedPath: data/cooked/assets/models/6493603590585108812.model.bin
+      RawFileTimestamp: 134272358695812596
+      RawFileHash: 6508934992623195207
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
+      Dependencies: [2350273854402579628, 2331777669657108769]
+      Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
@@ -418,12 +979,80 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/skater/tripo_mesh_7bc796a1.mesh.yaml
       CookedPath: data/cooked/assets/meshes/6674370949423982319.mesh.bin
-      RawFileTimestamp: 134270677415706741
-      RawFileHash: 17420018563546958490
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
       Dependencies: [10279919324660303988]
-      Dependents: [3465686706665373809, 3944394127734966371, 7564859252353305484, 11008184057249989742]
+      Dependents: [3944394127734966371, 7564859252353305484, 11008184057249989742]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 6790689301664185049
+      Type: Material
+      Name: mat_rink_floor_corner_iihf_middle_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_floor_corner_iihf_middle_4x4/mat_rink_floor_corner_iihf_middle_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/6790689301664185049.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: [7589232753621514012, 5115543293691784034, 8310854682922117338]
+      Dependents: [5133882314070925082, 11669088365217607018]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 6867048518204024146
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_straight_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/6867048518204024146.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4409046953977421938]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7019791071114481266
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_4x4_ice_tile/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/7019791071114481266.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762585
+      Dependencies: []
+      Dependents: [3396748008539041123]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7147611584609517154
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_middle_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/7147611584609517154.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: []
+      Dependents: [17001417286836249985]
       Dirty: false
       Missing: false
       Cooked: true
@@ -435,10 +1064,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/torus/torus_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/7218028831466573626.mesh.bin
-      RawFileTimestamp: 134270677388385742
-      RawFileHash: 3988086478783607806
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594549
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762564
       Dependencies: []
       Dependents: [4847304758356720494, 7252246192033565360]
       Dirty: false
@@ -454,10 +1083,44 @@ Assets:
       CookedPath: data/cooked/assets/prefabs/7252246192033565360.prefab.yaml
       RawFileTimestamp: 134269722108748617
       RawFileHash: 6648112826662461766
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [7218028831466573626, 9507614320415798529]
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7294102861106669538
+      Type: Mesh
+      Name: rink_floor_corner_iihf_left_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_floor_corner_iihf_left_4x4/rink_floor_corner_iihf_left_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/7294102861106669538.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [3112908978782141296]
+      Dependents: [1860780891692603695]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7294967292478205632
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_straight_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/7294967292478205632.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: []
+      Dependents: [2331777669657108769]
       Dirty: false
       Missing: false
       Cooked: true
@@ -471,9 +1134,26 @@ Assets:
       CookedPath: data/cooked/assets/models/7400055902900099391.model.bin
       RawFileTimestamp: 134268862757888149
       RawFileHash: 17966049299641883799
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [16045454102454522057]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7549909879482055387
+      Type: Prefab
+      Name: Goalie_Stick.prefab
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/prefabs/Goalie_Stick.prefab.yaml
+      CookedPath: data/cooked/assets/prefabs/7549909879482055387.prefab.yaml
+      RawFileTimestamp: 134271543427345898
+      RawFileHash: 1876263614252311367
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762589
+      Dependencies: [2566647934480036238, 11219802514363683653]
       Dependents: []
       Dirty: false
       Missing: false
@@ -486,13 +1166,30 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/prefabs/Home_Skater_Prefab.prefab.yaml
       CookedPath: data/cooked/assets/prefabs/7564859252353305484.prefab.yaml
-      RawFileTimestamp: 134270743323438268
-      RawFileHash: 7985882666741103058
-      ImportedTimestamp: 1782600732
-      CookedTimestamp: 1782596058
-      Dependencies: [6674370949423982319, 10279919324660303988, 2566647934480036238, 11219802514363683653]
+      RawFileTimestamp: 134271542700658111
+      RawFileHash: 9891017949801978372
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
+      Dependencies: [6674370949423982319, 10279919324660303988]
       Dependents: []
-      Dirty: true
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7589232753621514012
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_middle_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/7589232753621514012.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: []
+      Dependents: [6790689301664185049]
+      Dirty: false
       Missing: false
       Cooked: true
   - Asset:
@@ -503,12 +1200,29 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/net/net.material.yaml
       CookedPath: data/cooked/assets/materials/7828305144141514195.material.yaml
-      RawFileTimestamp: 134270696561564663
-      RawFileHash: 6342064702978486597
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596059
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
       Dependencies: [9543490355230126823, 2265256472990055568, 16067826143056412195]
-      Dependents: [9649836886187156254, 5245956015780662803]
+      Dependents: [3465686706665373809, 5245956015780662803, 9649836886187156254]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 7837855299011406807
+      Type: Audio
+      Name: Countdown.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/Countdown.mp3
+      CookedPath: data/cooked/assets/audio/7837855299011406807.audio.bin
+      RawFileTimestamp: 134253992285675272
+      RawFileHash: 980656804183677042
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
@@ -522,10 +1236,44 @@ Assets:
       CookedPath: data/cooked/assets/models/8074149833177858028.model.bin
       RawFileTimestamp: 134269648191183154
       RawFileHash: 2830308207536219292
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594159
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
       Dependencies: [14503252706931961359]
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 8177072562716307229
+      Type: Prefab
+      Name: Skater_Stick.prefab
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/prefabs/Skater_Stick.prefab.yaml
+      CookedPath: data/cooked/assets/prefabs/8177072562716307229.prefab.yaml
+      RawFileTimestamp: 134271543427345898
+      RawFileHash: 9817843451567407143
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762590
+      Dependencies: [2566647934480036238, 11219802514363683653]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 8310854682922117338
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_middle_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/8310854682922117338.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: []
+      Dependents: [6790689301664185049]
       Dirty: false
       Missing: false
       Cooked: true
@@ -539,8 +1287,8 @@ Assets:
       CookedPath: data/cooked/assets/textures/8347058172217482816.tex.bin
       RawFileTimestamp: 134269634829693164
       RawFileHash: 14510757520356650912
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762570
       Dependencies: []
       Dependents: [10521881175517512760]
       Dirty: false
@@ -556,10 +1304,112 @@ Assets:
       CookedPath: data/cooked/assets/textures/8459536251869193738.tex.bin
       RawFileTimestamp: 134269634829773924
       RawFileHash: 14605580124808795731
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762570
       Dependencies: []
       Dependents: [10521881175517512760]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 8464635183494534765
+      Type: Audio
+      Name: OneTimer.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/OneTimer.mp3
+      CookedPath: data/cooked/assets/audio/8464635183494534765.audio.bin
+      RawFileTimestamp: 134253992285450221
+      RawFileHash: 1027120735007143341
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 8776506631065326438
+      Type: Model
+      Name: rink_glass_corner_iihf_middle_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_glass_corner_iihf_middle_4x4.glb
+      CookedPath: data/cooked/assets/models/8776506631065326438.model.bin
+      RawFileTimestamp: 134272358706539616
+      RawFileHash: 2005186255893181911
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762590
+      Dependencies: [14497713488000787716, 17867826547650122789]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9003912113968586515
+      Type: Audio
+      Name: PuckMetalCollision.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/PuckMetalCollision.mp3
+      CookedPath: data/cooked/assets/audio/9003912113968586515.audio.bin
+      RawFileTimestamp: 134253992285950009
+      RawFileHash: 6565979919786643725
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9010624779934097863
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_bottom_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/9010624779934097863.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762584
+      Dependencies: []
+      Dependents: [12344462750173476690]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9034820723992568987
+      Type: Material
+      Name: mat_rink_boards_corner_iihf_left_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_boards_corner_iihf_left_4x4/mat_rink_boards_corner_iihf_left_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/9034820723992568987.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: [12229219539171425302, 17555808763002887258, 12093362495932547604]
+      Dependents: [4049776950116679496, 13867717324698189658]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9071378339751753426
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_left_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/9071378339751753426.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: []
+      Dependents: [14167740618595497833]
       Dirty: false
       Missing: false
       Cooked: true
@@ -571,12 +1421,29 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/stick/img2_metallicroughness.png
       CookedPath: data/cooked/assets/textures/9362800432065433071.tex.bin
-      RawFileTimestamp: 134270647755807055
-      RawFileHash: 8887464359198097464
-      ImportedTimestamp: 1782594143
-      CookedTimestamp: 1782594554
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762562
+      CookedTimestamp: 1782762581
       Dependencies: []
       Dependents: [11219802514363683653]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9363082953101889311
+      Type: Texture
+      Name: content
+      ImporterVersion: TextureImporter_v1
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/content.svg
+      CookedPath: data/cooked/assets/textures/9363082953101889311.tex.bin
+      RawFileTimestamp: 134271709277662793
+      RawFileHash: 18091596767377516175
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762570
+      Dependencies: []
+      Dependents: [4311845709199194276]
       Dirty: false
       Missing: false
       Cooked: true
@@ -590,8 +1457,8 @@ Assets:
       CookedPath: data/cooked/assets/models/9446198346239280572.model.bin
       RawFileTimestamp: 134262086103986481
       RawFileHash: 18013400771115629165
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594160
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762591
       Dependencies: [13159441835091159249, 2175547380742926098]
       Dependents: []
       Dirty: false
@@ -605,12 +1472,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/SolidBlue.material.yaml
       CookedPath: data/cooked/assets/materials/9507614320415798529.material.yaml
-      RawFileTimestamp: 134269646331393329
-      RawFileHash: 8036357194341929802
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      RawFileTimestamp: 134271466814632191
+      RawFileHash: 1138750464514889999
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
-      Dependents: [7252246192033565360]
+      Dependents: [3465686706665373809, 7252246192033565360]
       Dirty: false
       Missing: false
       Cooked: true
@@ -618,16 +1485,33 @@ Assets:
       ID: 9543490355230126823
       Type: Texture
       Name: img1_basecolor
-      ImporterVersion: 1.0.0
+      ImporterVersion: TextureImporter_v1
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/net/img1_basecolor.jpg
       CookedPath: data/cooked/assets/textures/9543490355230126823.tex.bin
-      RawFileTimestamp: 134270696561509600
-      RawFileHash: 458676966701351098
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596059
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762561
+      CookedTimestamp: 1782762578
       Dependencies: []
       Dependents: [7828305144141514195]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 9618494961299209561
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_straight_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/9618494961299209561.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4409046953977421938]
       Dirty: false
       Missing: false
       Cooked: true
@@ -639,12 +1523,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/net/net.mesh.yaml
       CookedPath: data/cooked/assets/meshes/9649836886187156254.mesh.bin
-      RawFileTimestamp: 134270696561579699
-      RawFileHash: 11291124808239373415
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596059
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [7828305144141514195]
-      Dependents: [5245956015780662803]
+      Dependents: [3465686706665373809, 5245956015780662803]
       Dirty: false
       Missing: false
       Cooked: true
@@ -658,8 +1542,25 @@ Assets:
       CookedPath: data/cooked/assets/materials/9899130797286881812.material.yaml
       RawFileTimestamp: 134269646331247609
       RawFileHash: 4281679364754178099
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 10261627361763244214
+      Type: Audio
+      Name: PuckCollision.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/PuckCollision.mp3
+      CookedPath: data/cooked/assets/audio/10261627361763244214.audio.bin
+      RawFileTimestamp: 134253992285605276
+      RawFileHash: 13602351847117134776
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -673,12 +1574,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/skater/tripo_mat_7bc796a1.material.yaml
       CookedPath: data/cooked/assets/materials/10279919324660303988.material.yaml
-      RawFileTimestamp: 134270677415706741
-      RawFileHash: 2260503171721496205
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594564
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [4589403135196506491, 12719071700555448510]
-      Dependents: [6674370949423982319, 3465686706665373809, 3944394127734966371, 7564859252353305484]
+      Dependents: [6674370949423982319, 3944394127734966371, 7564859252353305484]
       Dirty: false
       Missing: false
       Cooked: true
@@ -692,8 +1593,8 @@ Assets:
       CookedPath: data/cooked/assets/models/10371339210353693876.model.bin
       RawFileTimestamp: 134269753802791826
       RawFileHash: 7214071279230847110
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [1546920521154545052]
       Dependents: []
       Dirty: false
@@ -709,10 +1610,44 @@ Assets:
       CookedPath: data/cooked/assets/materials/10521881175517512760.material.yaml
       RawFileTimestamp: 134269649704931285
       RawFileHash: 3582957160925514935
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594159
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762588
       Dependencies: [3709775965342076075, 8459536251869193738, 8347058172217482816, 3851845498635662592]
       Dependents: [3465686706665373809]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 10697610321559858243
+      Type: Mesh
+      Name: rink_glass_corner_iihf_bottom_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_glass_corner_iihf_bottom_4x4/rink_glass_corner_iihf_bottom_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/10697610321559858243.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762590
+      Dependencies: [5635519417064548070]
+      Dependents: [15178519393528497465, 16539079590291300186]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 10851033402791583111
+      Type: Mesh
+      Name: rink_floor_corner_iihf_bottom_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_floor_corner_iihf_bottom_4x4/rink_floor_corner_iihf_bottom_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/10851033402791583111.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: [4831472021349298339]
+      Dependents: [2059601053219474991]
       Dirty: false
       Missing: false
       Cooked: true
@@ -724,13 +1659,13 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/prefabs/Away_Skater_Prefab.prefab.yaml
       CookedPath: data/cooked/assets/prefabs/11008184057249989742.prefab.yaml
-      RawFileTimestamp: 134270699583177295
-      RawFileHash: 155627644391273065
-      ImportedTimestamp: 1782596358
-      CookedTimestamp: 1782595784
-      Dependencies: [6674370949423982319, 12456872314640691628, 2566647934480036238, 11219802514363683653]
+      RawFileTimestamp: 134271542840598490
+      RawFileHash: 9588187149776927004
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
+      Dependencies: [6674370949423982319, 12456872314640691628]
       Dependents: []
-      Dirty: true
+      Dirty: false
       Missing: false
       Cooked: true
   - Asset:
@@ -741,12 +1676,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/stick/stick.material.yaml
       CookedPath: data/cooked/assets/materials/11219802514363683653.material.yaml
-      RawFileTimestamp: 134270677416053601
-      RawFileHash: 4434741771731657509
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594565
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [11555530629446236583, 18402622177859952636, 9362800432065433071]
-      Dependents: [1319581073191614121, 2566647934480036238, 3465686706665373809, 7564859252353305484, 11008184057249989742, 13754134128618196032, 17635721111350468473, 18000701732279517277]
+      Dependents: [1319581073191614121, 7549909879482055387, 2566647934480036238, 8177072562716307229, 18000701732279517277]
       Dirty: false
       Missing: false
       Cooked: true
@@ -758,10 +1693,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/uvsphere/uvsphere_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/11224341320273880233.mesh.bin
-      RawFileTimestamp: 134270677415066007
-      RawFileHash: 10394332821863217446
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594554
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: [11780164313808154305]
       Dirty: false
@@ -775,10 +1710,10 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/stick/img1_basecolor.jpg
       CookedPath: data/cooked/assets/textures/11555530629446236583.tex.bin
-      RawFileTimestamp: 134270647755665058
-      RawFileHash: 13051515374109526622
-      ImportedTimestamp: 1782594143
-      CookedTimestamp: 1782594560
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762562
+      CookedTimestamp: 1782762580
       Dependencies: []
       Dependents: [11219802514363683653]
       Dirty: false
@@ -792,12 +1727,46 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/wall/img1_basecolor.png
       CookedPath: data/cooked/assets/textures/11605109223550927380.tex.bin
-      RawFileTimestamp: 134268067824009478
-      RawFileHash: 6792881179827685327
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594558
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: []
       Dependents: [616265134277951580]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 11655200548755707189
+      Type: Model
+      Name: rink_floor_4x4_ice_tile
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_floor_4x4_ice_tile.glb
+      CookedPath: data/cooked/assets/models/11655200548755707189.model.bin
+      RawFileTimestamp: 134272358693668779
+      RawFileHash: 3970101022030570260
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762590
+      Dependencies: [5919598149898360945, 3396748008539041123]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 11669088365217607018
+      Type: Mesh
+      Name: rink_floor_corner_iihf_middle_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_floor_corner_iihf_middle_4x4/rink_floor_corner_iihf_middle_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/11669088365217607018.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762586
+      Dependencies: [6790689301664185049]
+      Dependents: [5133882314070925082]
       Dirty: false
       Missing: false
       Cooked: true
@@ -811,8 +1780,8 @@ Assets:
       CookedPath: data/cooked/assets/models/11780164313808154305.model.bin
       RawFileTimestamp: 134269648191173171
       RawFileHash: 2081300267668768979
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594152
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [11224341320273880233]
       Dependents: []
       Dirty: false
@@ -826,10 +1795,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/cylinder/cylinder_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/11795346347216253737.mesh.bin
-      RawFileTimestamp: 134270677388405988
-      RawFileHash: 7442531126423507222
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594560
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: [3465686706665373809, 15706789347486569996]
       Dirty: false
@@ -845,10 +1814,44 @@ Assets:
       CookedPath: data/cooked/assets/textures/11967634905082147841.tex.bin
       RawFileTimestamp: 134269634829875241
       RawFileHash: 9474728642131668452
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594148
+      ImportedTimestamp: 1782762558
+      CookedTimestamp: 1782762570
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12031919643287913735
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_bottom_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/12031919643287913735.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762585
+      Dependencies: []
+      Dependents: [5635519417064548070]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12093362495932547604
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/12093362495932547604.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: []
+      Dependents: [9034820723992568987]
       Dirty: false
       Missing: false
       Cooked: true
@@ -862,8 +1865,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/12160806417561339961.material.yaml
       RawFileTimestamp: 134269646331383294
       RawFileHash: 10665677110563833460
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -879,10 +1882,61 @@ Assets:
       CookedPath: data/cooked/assets/materials/12167797944562569286.material.yaml
       RawFileTimestamp: 134269646331277610
       RawFileHash: 7115184874267113737
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12229219539171425302
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/12229219539171425302.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: []
+      Dependents: [9034820723992568987]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12238349263810428600
+      Type: Model
+      Name: rink_glass_straight_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_glass_straight_4x4.glb
+      CookedPath: data/cooked/assets/models/12238349263810428600.model.bin
+      RawFileTimestamp: 134272358697371211
+      RawFileHash: 3687198275180193880
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762591
+      Dependencies: [12664587732029382093, 4409046953977421938]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12344462750173476690
+      Type: Material
+      Name: mat_rink_boards_corner_iihf_bottom_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_boards_corner_iihf_bottom_4x4/mat_rink_boards_corner_iihf_bottom_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/12344462750173476690.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762588
+      Dependencies: [14515953681935014168, 6285429178226087768, 9010624779934097863]
+      Dependents: [2608092594825299480, 13896213208739981229, 16539079590291300186]
       Dirty: false
       Missing: false
       Cooked: true
@@ -896,8 +1950,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/12437387867741063254.material.yaml
       RawFileTimestamp: 134269646331403331
       RawFileHash: 281603863972060693
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -913,10 +1967,44 @@ Assets:
       CookedPath: data/cooked/assets/materials/12456872314640691628.material.yaml
       RawFileTimestamp: 134269684919462722
       RawFileHash: 7134495461835136409
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594159
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
       Dependencies: [4589403135196506491, 12719071700555448510]
       Dependents: [11008184057249989742]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12535977691155680035
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_left_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/12535977691155680035.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762585
+      Dependencies: []
+      Dependents: [3112908978782141296]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 12664587732029382093
+      Type: Mesh
+      Name: rink_glass_straight_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_glass_straight_4x4/rink_glass_straight_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/12664587732029382093.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [4409046953977421938]
+      Dependents: [12238349263810428600]
       Dirty: false
       Missing: false
       Cooked: true
@@ -924,16 +2012,33 @@ Assets:
       ID: 12719071700555448510
       Type: Texture
       Name: img0_normal
-      ImporterVersion: 1.0.0
+      ImporterVersion: TextureImporter_v1
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/skater/img0_normal.jpg
       CookedPath: data/cooked/assets/textures/12719071700555448510.tex.bin
-      RawFileTimestamp: 134269676244331258
-      RawFileHash: 17161644305613129297
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594553
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762561
+      CookedTimestamp: 1782762579
       Dependencies: []
       Dependents: [10279919324660303988, 12456872314640691628]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 13076140392871938758
+      Type: Mesh
+      Name: rink_boards_corner_iihf_middle_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_boards_corner_iihf_middle_4x4/rink_boards_corner_iihf_middle_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/13076140392871938758.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: [17001417286836249985]
+      Dependents: [5498634180443503203]
       Dirty: false
       Missing: false
       Cooked: true
@@ -945,12 +2050,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/ice/Ice_Mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/13159441835091159249.mesh.bin
-      RawFileTimestamp: 134270677388249638
-      RawFileHash: 456324703016120107
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594565
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762590
       Dependencies: [2175547380742926098]
-      Dependents: [9446198346239280572, 3465686706665373809]
+      Dependents: [3465686706665373809, 9446198346239280572]
       Dirty: false
       Missing: false
       Cooked: true
@@ -962,12 +2067,29 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/materials/goalie/goalie.material.yaml
       CookedPath: data/cooked/assets/materials/13188400377850077421.material.yaml
-      RawFileTimestamp: 134270682682623803
-      RawFileHash: 2908714211049530351
-      ImportedTimestamp: 1782594668
-      CookedTimestamp: 1782594668
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
       Dependencies: [203869266260794646, 598577032280755530]
-      Dependents: [14589946910832969302, 13754134128618196032, 15742120718558245390, 17635721111350468473]
+      Dependents: [15742120718558245390, 13754134128618196032, 14589946910832969302, 17635721111350468473]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 13594931903183041962
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_middle_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/13594931903183041962.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: []
+      Dependents: [17867826547650122789]
       Dirty: false
       Missing: false
       Cooked: true
@@ -979,13 +2101,13 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
       CookedPath: data/cooked/assets/prefabs/13754134128618196032.prefab.yaml
-      RawFileTimestamp: 134270699560835300
-      RawFileHash: 1900677414585913978
-      ImportedTimestamp: 1782596356
-      CookedTimestamp: 1782595784
-      Dependencies: [15742120718558245390, 13188400377850077421, 2566647934480036238, 11219802514363683653]
+      RawFileTimestamp: 134271542974623569
+      RawFileHash: 14050948175586714306
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [15742120718558245390, 13188400377850077421]
       Dependents: []
-      Dirty: true
+      Dirty: false
       Missing: false
       Cooked: true
   - Asset:
@@ -998,10 +2120,78 @@ Assets:
       CookedPath: data/cooked/assets/materials/13768070735824353435.material.yaml
       RawFileTimestamp: 134269646331368226
       RawFileHash: 4206438737026550355
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762564
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 13867717324698189658
+      Type: Mesh
+      Name: rink_boards_corner_iihf_left_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_boards_corner_iihf_left_4x4/rink_boards_corner_iihf_left_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/13867717324698189658.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: [9034820723992568987]
+      Dependents: [4049776950116679496]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 13896213208739981229
+      Type: Model
+      Name: rink_boards_corner_iihf_bottom_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_boards_corner_iihf_bottom_4x4.glb
+      CookedPath: data/cooked/assets/models/13896213208739981229.model.bin
+      RawFileTimestamp: 134272358699413048
+      RawFileHash: 7829991235097800298
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762590
+      Dependencies: [2608092594825299480, 12344462750173476690]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 14167740618595497833
+      Type: Material
+      Name: mat_rink_glass_corner_iihf_left_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_glass_corner_iihf_left_4x4/mat_rink_glass_corner_iihf_left_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/14167740618595497833.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: [9071378339751753426, 561186823597067048, 3751262386962623496]
+      Dependents: [4549735640161538808, 5880436194098769593]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 14497713488000787716
+      Type: Mesh
+      Name: rink_glass_corner_iihf_middle_4x4_mesh_export_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/meshes/rink/rink_glass_corner_iihf_middle_4x4/rink_glass_corner_iihf_middle_4x4_mesh_export_baked.mesh.yaml
+      CookedPath: data/cooked/assets/meshes/14497713488000787716.mesh.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762590
+      Dependencies: [17867826547650122789]
+      Dependents: [8776506631065326438]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1013,12 +2203,29 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/capsule/capsule_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/14503252706931961359.mesh.bin
-      RawFileTimestamp: 134270677387396680
-      RawFileHash: 17304149311294016906
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594562
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: [8074149833177858028]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 14515953681935014168
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_bottom_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/14515953681935014168.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762568
+      Dependencies: []
+      Dependents: [12344462750173476690]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1032,9 +2239,26 @@ Assets:
       CookedPath: data/cooked/assets/models/14589946910832969302.model.bin
       RawFileTimestamp: 134270681235399950
       RawFileHash: 5207013028643053162
-      ImportedTimestamp: 1782594546
-      CookedTimestamp: 1782594668
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [15742120718558245390, 13188400377850077421]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 15178519393528497465
+      Type: Model
+      Name: rink_glass_corner_iihf_bottom_4x4
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/models/rink/rink_glass_corner_iihf_bottom_4x4.glb
+      CookedPath: data/cooked/assets/models/15178519393528497465.model.bin
+      RawFileTimestamp: 134272358705040754
+      RawFileHash: 12927273767825417190
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762591
+      Dependencies: [10697610321559858243, 5635519417064548070]
       Dependents: []
       Dirty: false
       Missing: false
@@ -1049,10 +2273,10 @@ Assets:
       CookedPath: data/cooked/assets/materials/15319051867854327546.material.yaml
       RawFileTimestamp: 134269646331368226
       RawFileHash: 15558451198651190452
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762565
       Dependencies: []
-      Dependents: [3465686706665373809]
+      Dependents: []
       Dirty: false
       Missing: false
       Cooked: true
@@ -1066,10 +2290,10 @@ Assets:
       CookedPath: data/cooked/assets/materials/15350148161379860780.material.yaml
       RawFileTimestamp: 134269646331383294
       RawFileHash: 1663541226657633452
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594148
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762568
       Dependencies: []
-      Dependents: []
+      Dependents: [3465686706665373809]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1083,8 +2307,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/15406165282806881381.material.yaml
       RawFileTimestamp: 134269621860330831
       RawFileHash: 16637830623673674912
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -1100,10 +2324,27 @@ Assets:
       CookedPath: data/cooked/assets/materials/15440424719225186514.material.yaml
       RawFileTimestamp: 134269646331267609
       RawFileHash: 13738238847739765333
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762565
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 15701501673935319887
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_glass_corner_iihf_bottom_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/15701501673935319887.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762585
+      Dependencies: []
+      Dependents: [5635519417064548070]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1115,10 +2356,10 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/wall/img0_normal.png
       CookedPath: data/cooked/assets/textures/15702033425252339247.tex.bin
-      RawFileTimestamp: 134268067823094065
-      RawFileHash: 5417714054491958733
-      ImportedTimestamp: 1782594144
-      CookedTimestamp: 1782594562
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762563
+      CookedTimestamp: 1782762583
       Dependencies: []
       Dependents: [616265134277951580]
       Dirty: false
@@ -1134,10 +2375,27 @@ Assets:
       CookedPath: data/cooked/assets/models/15706789347486569996.model.bin
       RawFileTimestamp: 134268860728844425
       RawFileHash: 4761709595739898576
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594159
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762588
       Dependencies: [11795346347216253737]
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 15714935623224610779
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_4x4_ice_tile/img0_normal.png
+      CookedPath: data/cooked/assets/textures/15714935623224610779.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762584
+      Dependencies: []
+      Dependents: [3396748008539041123]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1149,12 +2407,12 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/goalie/goalie.mesh.yaml
       CookedPath: data/cooked/assets/meshes/15742120718558245390.mesh.bin
-      RawFileTimestamp: 134270681463585345
-      RawFileHash: 11040415904487414771
-      ImportedTimestamp: 1782594546
-      CookedTimestamp: 1782594668
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762589
       Dependencies: [13188400377850077421]
-      Dependents: [14589946910832969302, 13754134128618196032, 17635721111350468473]
+      Dependents: [13754134128618196032, 14589946910832969302, 17635721111350468473]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1168,8 +2426,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/15902365976934225153.material.yaml
       RawFileTimestamp: 134269646331257634
       RawFileHash: 15018315603097574059
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: [3465686706665373809]
       Dirty: false
@@ -1183,10 +2441,10 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/meshes/plane/plane_mesh.mesh.yaml
       CookedPath: data/cooked/assets/meshes/16045454102454522057.mesh.bin
-      RawFileTimestamp: 134270677415056009
-      RawFileHash: 9950122771686160816
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594562
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: [7400055902900099391]
       Dirty: false
@@ -1202,8 +2460,8 @@ Assets:
       CookedPath: data/cooked/assets/models/16053632770209735033.model.bin
       RawFileTimestamp: 134269648191163156
       RawFileHash: 3317158183532487839
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762570
       Dependencies: [1580850430864872346]
       Dependents: []
       Dirty: false
@@ -1217,12 +2475,63 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/net/img2_metallicroughness.png
       CookedPath: data/cooked/assets/textures/16067826143056412195.tex.bin
-      RawFileTimestamp: 134270696561554666
-      RawFileHash: 12844914109689146093
-      ImportedTimestamp: 1782596056
-      CookedTimestamp: 1782596058
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762566
       Dependencies: []
       Dependents: [7828305144141514195]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 16441338113613359769
+      Type: Texture
+      Name: img2_metallicroughness
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_corner_iihf_bottom_4x4/img2_metallicroughness.png
+      CookedPath: data/cooked/assets/textures/16441338113613359769.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762588
+      Dependencies: []
+      Dependents: [4831472021349298339]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 16539079590291300186
+      Type: Prefab
+      Name: Board_Corner_Bottom.prefab
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/prefabs/Rink/Board_Corner_Bottom.prefab.yaml
+      CookedPath: data/cooked/assets/prefabs/16539079590291300186.prefab.yaml
+      RawFileTimestamp: 134272404996661929
+      RawFileHash: 8153449572130105059
+      ImportedTimestamp: 1782766927
+      CookedTimestamp: 1782766927
+      Dependencies: [2608092594825299480, 12344462750173476690, 10697610321559858243, 5635519417064548070]
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 16546469710377006052
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_middle_4x4/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/16546469710377006052.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: [17001417286836249985]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1236,10 +2545,95 @@ Assets:
       CookedPath: data/cooked/assets/materials/16565128318503543426.material.yaml
       RawFileTimestamp: 134269646331403331
       RawFileHash: 13699627335309297151
-      ImportedTimestamp: 1782594139
-      CookedTimestamp: 1782594148
+      ImportedTimestamp: 1782762556
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 16577508034235842581
+      Type: Audio
+      Name: Zoom.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/Zoom.mp3
+      CookedPath: data/cooked/assets/audio/16577508034235842581.audio.bin
+      RawFileTimestamp: 134253992285285162
+      RawFileHash: 11876534923635456158
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 16748117630099624104
+      Type: Audio
+      Name: Shield.mp3
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/audio/Shield.mp3
+      CookedPath: data/cooked/assets/audio/16748117630099624104.audio.bin
+      RawFileTimestamp: 134253992285815408
+      RawFileHash: 8209719131034519554
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
+      Dependencies: []
+      Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 17001417286836249985
+      Type: Material
+      Name: mat_rink_boards_corner_iihf_middle_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_boards_corner_iihf_middle_4x4/mat_rink_boards_corner_iihf_middle_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/17001417286836249985.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762587
+      Dependencies: [16546469710377006052, 7147611584609517154, 4615373670794642119]
+      Dependents: [5498634180443503203, 13076140392871938758]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 17299809243399172684
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_straight_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/17299809243399172684.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762581
+      Dependencies: []
+      Dependents: [2331777669657108769]
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 17555808763002887258
+      Type: Texture
+      Name: img0_normal
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_boards_corner_iihf_left_4x4/img0_normal.png
+      CookedPath: data/cooked/assets/textures/17555808763002887258.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762564
+      Dependencies: []
+      Dependents: [9034820723992568987]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1251,13 +2645,30 @@ Assets:
       CookerVersion: 1.0.0
       RawPath: data/raw/prefabs/Away_Goalie_Prefab.prefab.yaml
       CookedPath: data/cooked/assets/prefabs/17635721111350468473.prefab.yaml
-      RawFileTimestamp: 134270699609655652
-      RawFileHash: 5209663140865467244
-      ImportedTimestamp: 1782596360
-      CookedTimestamp: 1782595784
-      Dependencies: [15742120718558245390, 13188400377850077421, 2566647934480036238, 11219802514363683653]
+      RawFileTimestamp: 134271543097113734
+      RawFileHash: 13024281500143102775
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
+      Dependencies: [15742120718558245390, 13188400377850077421]
       Dependents: []
-      Dirty: true
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 17867826547650122789
+      Type: Material
+      Name: mat_rink_glass_corner_iihf_middle_4x4_baked
+      ImporterVersion: 1.0.0
+      CookerVersion: 1.0.0
+      RawPath: data/raw/materials/rink/rink_glass_corner_iihf_middle_4x4/mat_rink_glass_corner_iihf_middle_4x4_baked.material.yaml
+      CookedPath: data/cooked/assets/materials/17867826547650122789.material.yaml
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762583
+      Dependencies: [525216133810353641, 6403860537742874009, 13594931903183041962]
+      Dependents: [8776506631065326438, 14497713488000787716]
+      Dirty: false
       Missing: false
       Cooked: true
   - Asset:
@@ -1270,10 +2681,27 @@ Assets:
       CookedPath: data/cooked/assets/models/18000701732279517277.model.bin
       RawFileTimestamp: 134270641490464405
       RawFileHash: 13566480292354142464
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594159
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762590
       Dependencies: [2566647934480036238, 11219802514363683653]
       Dependents: []
+      Dirty: false
+      Missing: false
+      Cooked: true
+  - Asset:
+      ID: 18002762767178886969
+      Type: Texture
+      Name: img1_basecolor
+      ImporterVersion: 1.0.0
+      CookerVersion: TextureCooker_v1
+      RawPath: data/raw/textures/rink/rink_floor_4x4_ice_tile/img1_basecolor.png
+      CookedPath: data/cooked/assets/textures/18002762767178886969.tex.bin
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762584
+      Dependencies: []
+      Dependents: [3396748008539041123]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1287,8 +2715,8 @@ Assets:
       CookedPath: data/cooked/assets/materials/18326020525044925964.material.yaml
       RawFileTimestamp: 134269646331247609
       RawFileHash: 13609113564226256632
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762554
+      CookedTimestamp: 1782762563
       Dependencies: []
       Dependents: []
       Dirty: false
@@ -1304,10 +2732,10 @@ Assets:
       CookedPath: data/cooked/assets/materials/18328928024750434439.material.yaml
       RawFileTimestamp: 134269646331257634
       RawFileHash: 4095287344907846030
-      ImportedTimestamp: 1782594138
-      CookedTimestamp: 1782594146
+      ImportedTimestamp: 1782762555
+      CookedTimestamp: 1782762566
       Dependencies: []
-      Dependents: []
+      Dependents: [3465686706665373809]
       Dirty: false
       Missing: false
       Cooked: true
@@ -1319,10 +2747,10 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/wall/img2_metallicroughness.png
       CookedPath: data/cooked/assets/textures/18380893089174589515.tex.bin
-      RawFileTimestamp: 134268067825065553
-      RawFileHash: 14019008880954760387
-      ImportedTimestamp: 1782594141
-      CookedTimestamp: 1782594552
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762557
+      CookedTimestamp: 1782762568
       Dependencies: []
       Dependents: [616265134277951580]
       Dirty: false
@@ -1336,10 +2764,10 @@ Assets:
       CookerVersion: TextureCooker_v1
       RawPath: data/raw/textures/stick/img0_normal.jpg
       CookedPath: data/cooked/assets/textures/18402622177859952636.tex.bin
-      RawFileTimestamp: 134270647755675067
-      RawFileHash: 13678697737708304474
-      ImportedTimestamp: 1782594143
-      CookedTimestamp: 1782594554
+      RawFileTimestamp: 0
+      RawFileHash: 0
+      ImportedTimestamp: 1782762561
+      CookedTimestamp: 1782762579
       Dependencies: []
       Dependents: [11219802514363683653]
       Dirty: false

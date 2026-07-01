@@ -1,0 +1,53 @@
+Prefab:
+  Name: Board_Straight
+  Version: 1
+  AssetId: 7358105479092903377
+Root:
+  Entity: 1259299201408054719
+Entities:
+  - Entity: 1259299201408054719
+    NameComponent:
+      Name: Board_Straight
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, -16]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 14686780182350275610
+    MeshRendererComponent:
+      MeshAsset: 2350273854402579628
+      MaterialAsset: 2331777669657108769
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+  - Entity: 14686780182350275610
+    NameComponent:
+      Name: Glass_Straight
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 1259299201408054719
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 12664587732029382093
+      MaterialAsset: 4409046953977421938
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 12344462750173476690
+  Name: mat_rink_boards_corner_iihf_bottom_4x4_baked
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 14515953681935014168
+    Normal: 6285429178226087768
+    MetallicRoughness: 9010624779934097863
+    Occlusion: 0
+    Emissive: 0

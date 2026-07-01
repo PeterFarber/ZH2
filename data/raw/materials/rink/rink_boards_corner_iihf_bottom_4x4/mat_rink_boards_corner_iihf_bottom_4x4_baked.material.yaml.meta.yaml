@@ -1,0 +1,17 @@
+Asset:
+  ID: 12344462750173476690
+  Type: Material
+  Name: mat_rink_boards_corner_iihf_bottom_4x4_baked
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/materials/rink/rink_boards_corner_iihf_bottom_4x4/mat_rink_boards_corner_iihf_bottom_4x4_baked.material.yaml
+  CookedPath: ""
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762554
+  CookedTimestamp: 0
+  Dependencies: [14515953681935014168, 6285429178226087768, 9010624779934097863]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

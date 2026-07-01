@@ -1,0 +1,17 @@
+Asset:
+  ID: 2331777669657108769
+  Type: Material
+  Name: mat_rink_boards_straight_4x4_baked
+  ImporterVersion: 1.0.0
+  CookerVersion: ""
+  RawPath: data/raw/materials/rink/rink_boards_straight_4x4/mat_rink_boards_straight_4x4_baked.material.yaml
+  CookedPath: ""
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
+  Dependencies: [3806608464531937321, 17299809243399172684, 7294967292478205632]
+  Dependents: []
+  Dirty: true
+  Missing: false
+  Cooked: false

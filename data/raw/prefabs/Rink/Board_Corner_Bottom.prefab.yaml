@@ -1,0 +1,75 @@
+Prefab:
+  Name: Board_Corner_Bottom
+  Version: 1
+  AssetId: 2304459641381334322
+Root:
+  Entity: 11880530552200007664
+Entities:
+  - Entity: 11880530552200007664
+    NameComponent:
+      Name: Board_Corner_Bottom
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [-24, 0, 16]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        - 13666283108529441298
+    MeshRendererComponent:
+      MeshAsset: 2608092594825299480
+      MaterialAsset: 12344462750173476690
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Static
+      Material: Default
+    MeshColliderComponent:
+      MeshAsset: 2608092594825299480
+      Convex: false
+      IsTrigger: false
+  - Entity: 13666283108529441298
+    NameComponent:
+      Name: Glass_Corner_Bottom
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: true
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ParentComponent:
+      Parent: 11880530552200007664
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 10697610321559858243
+      MaterialAsset: 5635519417064548070
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true

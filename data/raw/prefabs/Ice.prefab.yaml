@@ -1,0 +1,52 @@
+Prefab:
+  Name: Ice
+  Version: 1
+  AssetId: 4826895310394793878
+Root:
+  Entity: 7851726704420713188
+Entities:
+  - Entity: 7851726704420713188
+    NameComponent:
+      Name: Ice
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: false
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 13159441835091159249
+      MaterialAsset: 18328928024750434439
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Rink
+      Material: Ice
+    BoxColliderComponent:
+      HalfExtents: [32, 1, 16]
+      Offset: [0, -1, 0]
+      Rotation: [0, 0, 0]
+      IsTrigger: false

@@ -1,0 +1,51 @@
+Prefab:
+  Name: Boards
+  Version: 1
+  AssetId: 13010135600706850373
+Root:
+  Entity: 5061585731813137042
+Entities:
+  - Entity: 5061585731813137042
+    NameComponent:
+      Name: Boards
+    ObjectSettingsComponent:
+      Tag: Untagged
+      Layer: Default
+      Static: false
+    ActiveComponent:
+      Active: false
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ChildrenComponent:
+      Children:
+        []
+    MeshRendererComponent:
+      MeshAsset: 2462135637550940025
+      MaterialAsset: 616265134277951580
+      Visible: true
+      CastsShadows: true
+      ReceivesShadows: true
+    RigidBodyComponent:
+      Type: Static
+      CollisionDetection: Discrete
+      Mass: 1
+      UseGravity: true
+      AllowSleeping: true
+      LockTranslationX: false
+      LockTranslationY: false
+      LockTranslationZ: false
+      LockRotationX: false
+      LockRotationY: false
+      LockRotationZ: false
+      LinearDamping: 0
+      AngularDamping: 0.05
+      InitialLinearVelocity: [0, 0, 0]
+      InitialAngularVelocity: [0, 0, 0]
+      Layer: Static
+      Material: Default
+    MeshColliderComponent:
+      MeshAsset: 0
+      Convex: false
+      IsTrigger: false

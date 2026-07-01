@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 17867826547650122789
+  Name: mat_rink_glass_corner_iihf_middle_4x4_baked
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Blend
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 525216133810353641
+    Normal: 6403860537742874009
+    MetallicRoughness: 13594931903183041962
+    Occlusion: 0
+    Emissive: 0

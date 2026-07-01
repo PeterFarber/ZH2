@@ -8,10 +8,10 @@ Asset:
   CookedPath: data/cooked/assets/models/14589946910832969302.model.bin
   RawFileTimestamp: 134270681235399950
   RawFileHash: 5207013028643053162
-  ImportedTimestamp: 1782594546
-  CookedTimestamp: 1782594668
-  Dependencies: [15742120718558245390, 13188400377850077421]
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 1782702435
+  Dependencies: [13188400377850077421, 15742120718558245390]
   Dependents: []
-  Dirty: false
+  Dirty: true
   Missing: false
   Cooked: true

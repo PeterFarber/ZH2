@@ -3,9 +3,9 @@ Prefab:
   Version: 1
   AssetId: 17478380100763504281
 Root:
-  Entity: 13083135416411077829
+  Entity: 470073066900106810
 Entities:
-  - Entity: 13083135416411077829
+  - Entity: 470073066900106810
     NameComponent:
       Name: Home_Goalie_Prefab
     ObjectSettingsComponent:
@@ -20,10 +20,10 @@ Entities:
       Scale: [2, 2, 2]
     ChildrenComponent:
       Children:
-        - 13713651052834390454
+        []
     PrefabComponent:
       PrefabAssetId: 17478380100763504281
-      SourceEntityId: 7829096301670075893
+      SourceEntityId: 13083135416411077829
       SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
     TeamComponent:
       Team: Home
@@ -68,9 +68,6 @@ Entities:
       ControlledByAI: true
       ActiveInMatch: true
     GoalieComponent:
-      MaxSpeed: 6.5
-      Acceleration: 28
-      SaveReachRadius: 1.8
       LockToCrease: true
     PlayerRuntimeComponent:
       Velocity: [0, 0, 0]
@@ -90,38 +87,3 @@ Entities:
     ShotComponent:
       Charge: 0
       Charging: false
-  - Entity: 13713651052834390454
-    NameComponent:
-      Name: Stick
-    ObjectSettingsComponent:
-      Tag: Untagged
-      Layer: Default
-      Static: false
-    ActiveComponent:
-      Active: true
-    TransformComponent:
-      Position: [0, 0, 0.110635065]
-      Rotation: [0, -0, 0]
-      Scale: [0.6700001, 0.6700001, 0.6700001]
-    ParentComponent:
-      Parent: 13083135416411077829
-    ChildrenComponent:
-      Children:
-        []
-    PrefabComponent:
-      PrefabAssetId: 17478380100763504281
-      SourceEntityId: 1534443748369192398
-      SourcePath: C:/Users/Peter Farber/Documents/ZH2/data/raw/prefabs/Home_Goalie_Prefab.prefab.yaml
-    MeshRendererComponent:
-      MeshAsset: 2566647934480036238
-      MaterialAsset: 11219802514363683653
-      Visible: true
-      CastsShadows: true
-      ReceivesShadows: true
-    StickComponent:
-      OwnerPlayer: 0
-      Reach: 1.5
-      Width: 0.25
-      LocalOffset: [0, 0, 1]
-      CanControlPuck: true
-      CanShoot: true

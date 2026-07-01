@@ -3,15 +3,15 @@ Asset:
   Type: Mesh
   Name: uvsphere_mesh
   ImporterVersion: 1.0.0
-  CookerVersion: 1.0.0
+  CookerVersion: ""
   RawPath: data/raw/meshes/uvsphere/uvsphere_mesh.mesh.yaml
-  CookedPath: data/cooked/assets/meshes/11224341320273880233.mesh.bin
-  RawFileTimestamp: 134270677415066007
-  RawFileHash: 10394332821863217446
-  ImportedTimestamp: 1782594141
-  CookedTimestamp: 1782594554
+  CookedPath: ""
+  RawFileTimestamp: 0
+  RawFileHash: 0
+  ImportedTimestamp: 1782762557
+  CookedTimestamp: 0
   Dependencies: []
-  Dependents: [11780164313808154305]
-  Dirty: false
+  Dependents: []
+  Dirty: true
   Missing: false
-  Cooked: true
+  Cooked: false

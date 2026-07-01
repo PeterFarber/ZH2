@@ -1,0 +1,20 @@
+CookedMaterial:
+  ID: 3396748008539041123
+  Name: mat_rink_floor_4x4_ice_tile_baked
+  BaseColor: [1, 1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  OcclusionStrength: 1
+  EmissiveColor: [0, 0, 0]
+  EmissiveStrength: 1
+  AlphaMode: Opaque
+  AlphaCutoff: 0.5
+  Tiling: [1, 1]
+  Offset: [0, 0]
+  Textures:
+    BaseColor: 18002762767178886969
+    Normal: 15714935623224610779
+    MetallicRoughness: 7019791071114481266
+    Occlusion: 0
+    Emissive: 0

@@ -8,10 +8,10 @@ Asset:
   CookedPath: data/cooked/assets/textures/8459536251869193738.tex.bin
   RawFileTimestamp: 134269634829773924
   RawFileHash: 14605580124808795731
-  ImportedTimestamp: 1782594138
-  CookedTimestamp: 1782594146
+  ImportedTimestamp: 1782762558
+  CookedTimestamp: 1782702426
   Dependencies: []
   Dependents: [10521881175517512760]
-  Dirty: false
+  Dirty: true
   Missing: false
   Cooked: true
