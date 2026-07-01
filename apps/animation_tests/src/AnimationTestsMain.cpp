@@ -13,6 +13,7 @@ void RunAnimationSamplerTests();
 void RunAnimationBlendTests();
 void RunAnimationComponentSerializerTests();
 void RunAnimationGraphTests();
+void RunHockeyAnimationControllerTests();
 
 int main(int argc, char** argv) {
     Hockey::CommandLine commandLine(argc, argv);
@@ -27,6 +28,7 @@ int main(int argc, char** argv) {
     RunAnimationBlendTests();
     RunAnimationComponentSerializerTests();
     RunAnimationGraphTests();
+    RunHockeyAnimationControllerTests();
 
     const HockeyTest::Stats& stats = HockeyTest::GetStats();
     std::fprintf(stderr, "\n==== Animation tests: %d passed, %d failed ====\n", stats.passed, stats.failed);

@@ -18,6 +18,7 @@ target_sources(hockey_animation
         src/AnimationStateMachine.cpp
         src/AnimationEvents.cpp
         src/AnimationSystem.cpp
+        src/HockeyAnimationController.cpp
         src/AnimationComponents.cpp
         src/AnimationSerializer.cpp
 )

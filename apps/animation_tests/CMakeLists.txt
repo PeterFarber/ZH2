@@ -8,6 +8,7 @@ add_executable(HockeyAnimationTests
     src/AnimationBlendTests.cpp
     src/AnimationComponentSerializerTests.cpp
     src/AnimationGraphTests.cpp
+    src/HockeyAnimationControllerTests.cpp
 )
 
 target_link_libraries(HockeyAnimationTests PRIVATE hockey_core hockey_ecs hockey_assets hockey_animation)
