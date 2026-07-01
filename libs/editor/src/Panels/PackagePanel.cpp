@@ -55,6 +55,7 @@ void PackagePanel::EnsureLoaded() {
 
 void PackagePanel::DrawProfile(const char* label, PackageProfile& profile, bool client) {
     if (ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushID(label);
         ImGui::Checkbox("Enabled", &profile.enabled);
         InputString("Preset", profile.preset);
         InputString("Build Mode", profile.buildMode);
@@ -64,6 +65,7 @@ void PackagePanel::DrawProfile(const char* label, PackageProfile& profile, bool 
         if (ImGui::Button(button)) {
             PrepareCommand(label, profile, client);
         }
+        ImGui::PopID();
     }
 }
 

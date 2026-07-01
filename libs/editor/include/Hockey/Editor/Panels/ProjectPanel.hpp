@@ -26,6 +26,7 @@ enum class ProjectSection {
     Prefabs,
     Scenes,
     Textures,
+    Audio,
     Shaders,
 };
 

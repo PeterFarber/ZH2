@@ -66,6 +66,10 @@ void RunClientFlowPanelContractTests() {
                  "ClientFlowPanel edits the current-editor-scene preview toggle");
     HK_CHECK_MSG(Contains(panelSource, "ValidateClientFlow") && Contains(panelSource, "Missing file"),
                  "ClientFlowPanel validates client-flow fields before save/play");
+    HK_CHECK_MSG(Contains(panelSource, "ImGui::TextUnformatted(label)") &&
+                     Contains(panelSource, "ImGui::InputText(\"##path\"") &&
+                     !Contains(panelSource, "ImGui::InputText(label"),
+                 "ClientFlowPanel draws path labels before hidden-label inputs so labels do not clip at the right edge");
     HK_CHECK_MSG(Contains(projectPanel, "Open Source") && Contains(projectPanel, "OpenSourceFile"),
                  "Project panel can open RML/RCSS source files");
 }

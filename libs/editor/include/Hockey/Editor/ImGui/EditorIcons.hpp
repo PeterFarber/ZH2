@@ -37,6 +37,7 @@ enum class EditorIcon {
     Model,
     Mesh,
     Shader,
+    Audio,
     Visible,
     Hidden,
     Pickable,

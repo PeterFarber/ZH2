@@ -78,6 +78,10 @@ void RunProjectSettingsPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "kPrefabDragDropType"), "Project Settings accepts prefab drag/drop payloads");
     HK_CHECK_MSG(Contains(source, "SaveServerBuildDefaults"),
                  "Project Settings writes editor-authored server build defaults");
+    HK_CHECK_MSG(Contains(source, "server.tick_rate\", \"Tick rate\", 120.0f"),
+                 "Project Settings uses the 120 Hz authoritative server tick default");
+    HK_CHECK_MSG(Contains(source, "ResetConfigFloat(m_ServerConfig, m_DefaultConfig, \"server.tick_rate\", 120.0f)"),
+                 "Project Settings resets server tick rate to the 120 Hz default");
     HK_CHECK_MSG(Contains(source, "MakeDefaultRuntimeConfig"),
                  "Project Settings loads code-owned defaults before editor-authored overrides");
     HK_CHECK_MSG(Contains(source, "Reset Setting"),

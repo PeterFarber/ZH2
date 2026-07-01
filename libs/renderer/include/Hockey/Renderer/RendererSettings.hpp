@@ -78,11 +78,10 @@ struct RendererSettings {
     uint32_t maxRenderedLights = kRendererMaxLights;
     uint32_t maxLocalShadowTiles = kRendererMaxLocalShadowTiles;
 
-    // Shadow atlas and cascade overrides. Zero means quality-derived default
-    // for atlas sizes and cascade count.
-    uint32_t directionalShadowAtlasResolution = 0;
-    uint32_t localShadowAtlasResolution = 0;
-    uint32_t shadowCascadeCount = 0;
+    // Shadow atlas and cascade counts for the default High quality target.
+    uint32_t directionalShadowAtlasResolution = 4096;
+    uint32_t localShadowAtlasResolution = 2048;
+    uint32_t shadowCascadeCount = 4;
 
     // Directional cascade fitting
     float shadowCascadeSplitLambda = 0.95f;

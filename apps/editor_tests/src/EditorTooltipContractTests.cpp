@@ -86,8 +86,34 @@ void RunEditorTooltipContractTests() {
                  "Toolbar editor scale control explains that it scales editor UI");
     HK_CHECK_MSG(Contains(projectSettings, "Hockey/Editor/ImGui/EditorTooltip.hpp"),
                  "Project Settings includes tooltip helper");
-    HK_CHECK_MSG(CountOccurrences(projectSettings, "EditorTooltip::ForLastItem") >= 5,
+    const std::size_t projectSettingsTooltipRoutes = CountOccurrences(projectSettings, "EditorTooltip::ForLastItem") +
+                                                     CountOccurrences(projectSettings, "ShowSettingTooltip");
+    HK_CHECK_MSG(projectSettingsTooltipRoutes >= 5,
                  "Project Settings draw helpers route controls through the tooltip helper");
+    HK_CHECK_MSG(Contains(projectSettings, "BuildSettingTooltip"),
+                 "Project Settings builds detailed setting tooltips with generated default metadata");
+    HK_CHECK_MSG(Contains(projectSettings, "Recommended value:"),
+                 "Project Settings tooltips include the recommended reset value");
+    HK_CHECK_MSG(Contains(projectSettings, "Allowed range:"),
+                 "Project Settings numeric tooltips include allowed ranges");
+    HK_CHECK_MSG(Contains(projectSettings, "Examples:"),
+                 "Project Settings tooltips include concrete value examples");
+    HK_CHECK_MSG(Contains(projectSettings, "Performance impact:"),
+                 "Project Settings tooltips include performance or cost guidance");
+    HK_CHECK_MSG(Contains(projectSettings, "BuildGeneratedExamplesText"),
+                 "Project Settings generates fallback examples from the specific setting label and value kind");
+    HK_CHECK_MSG(Contains(projectSettings, "BuildGeneratedPerformanceImpactText"),
+                 "Project Settings generates fallback performance notes from the specific setting category");
+    HK_CHECK_MSG(!Contains(projectSettings, "Use the recommended value as a balanced baseline"),
+                 "Project Settings avoids repeated generic example text");
+    HK_CHECK_MSG(!Contains(projectSettings, "No extra cost beyond the behavior described"),
+                 "Project Settings avoids repeated generic performance text");
+    HK_CHECK_MSG(Contains(projectSettings, "0.75 reduces GPU cost but softens the image"),
+                 "Project Settings render scale tooltip gives lower/higher value examples");
+    HK_CHECK_MSG(Contains(projectSettings, "8192 consumes substantially more shadow memory"),
+                 "Project Settings shadow atlas tooltip explains memory/performance impact");
+    HK_CHECK_MSG(Contains(projectSettings, "0.0083 runs physics at roughly 120 Hz"),
+                 "Project Settings physics timestep tooltip gives simulation examples");
     HK_CHECK_MSG(Contains(projectSettings, "Internal render resolution multiplier"),
                  "Project Settings renderer controls expose hover text");
     HK_CHECK_MSG(Contains(projectSettings, "Caps how many scene lights the renderer submits"),
@@ -96,10 +122,22 @@ void RunEditorTooltipContractTests() {
                  "Project Settings shadow atlas controls expose hover text");
     HK_CHECK_MSG(Contains(projectSettings, "Changing render scale changes how sharp the scene appears"),
                  "Project Settings render scale tooltip explains scene sharpness");
+    HK_CHECK_MSG(Contains(projectSettings, "FXAA is the implemented default"),
+                 "Project Settings anti-aliasing tooltip distinguishes implemented and persisted modes");
+    HK_CHECK_MSG(Contains(projectSettings, "persisted quality targets until the matching polish renderer paths exist"),
+                 "Project Settings hockey polish tooltips avoid promising unwired visuals");
     HK_CHECK_MSG(Contains(projectSettings, "Directional atlas controls how much texel detail the sun shadow map has"),
                  "Project Settings directional atlas tooltip explains shadow detail");
     HK_CHECK_MSG(Contains(projectSettings, "Cascade count controls how far directional shadows stay detailed"),
                  "Project Settings cascade tooltip explains camera-distance shadow detail");
+    HK_CHECK_MSG(!Contains(projectSettings, "FormatPresetOverrideDefault"),
+                 "Project Settings uses concrete preset defaults instead of formatting zero sentinels");
+    HK_CHECK_MSG(!Contains(projectSettings, "set 0 to follow"),
+                 "Project Settings tooltips do not describe zero as the preset-default value");
+    HK_CHECK_MSG(!Contains(projectSettings, "\"0, or \""),
+                 "Project Settings atlas ranges do not present zero as the preset-default value");
+    HK_CHECK_MSG(!Contains(projectSettings, "\"0 (quality preset)\""),
+                 "Project Settings preset override tooltips do not recommend the sentinel zero value");
     HK_CHECK_MSG(Contains(projectSettings, "Contact shadows add small grounding shadows under skates"),
                  "Project Settings contact shadow tooltip explains object grounding");
     HK_CHECK_MSG(Contains(projectSettings, "Ice reflection changes how clearly lights, players, and boards reflect"),

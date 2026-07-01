@@ -1,5 +1,6 @@
 #include "Hockey/Editor/Inspector/FieldDrawers.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -91,6 +92,119 @@ struct WidgetEdit {
     bool started = false;
     bool committed = false;
 };
+
+void TrackLastItemEdit(WidgetEdit& edit) {
+    edit.started = edit.started || ImGui::IsItemActivated();
+    edit.committed = edit.committed || ImGui::IsItemDeactivatedAfterEdit();
+}
+
+void ClampFloatValues(float* values, int componentCount, float minValue, float maxValue) {
+    for (int i = 0; i < componentCount; ++i) {
+        values[i] = std::clamp(values[i], minValue, maxValue);
+    }
+}
+
+float ExactInputWidth(int componentCount) {
+    constexpr float kScalarWidth = 92.0f;
+    constexpr float kVectorComponentWidth = 72.0f;
+    return componentCount <= 1 ? kScalarWidth : kVectorComponentWidth * static_cast<float>(componentCount);
+}
+
+bool UseStackedExactInput(float inputWidth) {
+    constexpr float kMinimumSliderWidth = 120.0f;
+    return ImGui::CalcItemWidth() < inputWidth + ImGui::GetStyle().ItemInnerSpacing.x + kMinimumSliderWidth;
+}
+
+float SliderWidthForExactInput(float inputWidth, bool stacked) {
+    if (stacked) {
+        return ImGui::CalcItemWidth();
+    }
+    return ImGui::CalcItemWidth() - inputWidth - ImGui::GetStyle().ItemInnerSpacing.x;
+}
+
+WidgetEdit DrawRangedFloatControl(const char* label,
+                                  float* value,
+                                  int componentCount,
+                                  float minValue,
+                                  float maxValue) {
+    WidgetEdit edit;
+    const float inputWidth = ExactInputWidth(componentCount);
+    const bool stacked = UseStackedExactInput(inputWidth);
+
+    ImGui::PushID(label);
+    ImGui::SetNextItemWidth(SliderWidthForExactInput(inputWidth, stacked));
+    switch (componentCount) {
+    case 1:
+        edit.changed = ImGui::SliderFloat("##slider", value, minValue, maxValue, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        break;
+    case 2:
+        edit.changed = ImGui::SliderFloat2("##slider", value, minValue, maxValue, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        break;
+    case 3:
+        edit.changed = ImGui::SliderFloat3("##slider", value, minValue, maxValue, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        break;
+    case 4:
+        edit.changed = ImGui::SliderFloat4("##slider", value, minValue, maxValue, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        break;
+    default:
+        break;
+    }
+    TrackLastItemEdit(edit);
+
+    if (!stacked) {
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    }
+    ImGui::SetNextItemWidth(inputWidth);
+    bool inputChanged = false;
+    switch (componentCount) {
+    case 1:
+        inputChanged = ImGui::InputFloat(label, value, 0.0f, 0.0f, "%.3f");
+        break;
+    case 2:
+        inputChanged = ImGui::InputFloat2(label, value, "%.3f");
+        break;
+    case 3:
+        inputChanged = ImGui::InputFloat3(label, value, "%.3f");
+        break;
+    case 4:
+        inputChanged = ImGui::InputFloat4(label, value, "%.3f");
+        break;
+    default:
+        break;
+    }
+    if (inputChanged) {
+        ClampFloatValues(value, componentCount, minValue, maxValue);
+        edit.changed = true;
+    }
+    TrackLastItemEdit(edit);
+    ImGui::PopID();
+
+    return edit;
+}
+
+WidgetEdit DrawRangedIntControl(const char* label, int* value, int minValue, int maxValue) {
+    WidgetEdit edit;
+    const float inputWidth = ExactInputWidth(1);
+    const bool stacked = UseStackedExactInput(inputWidth);
+
+    ImGui::PushID(label);
+    ImGui::SetNextItemWidth(SliderWidthForExactInput(inputWidth, stacked));
+    edit.changed = ImGui::SliderInt("##slider", value, minValue, maxValue, "%d", ImGuiSliderFlags_AlwaysClamp);
+    TrackLastItemEdit(edit);
+
+    if (!stacked) {
+        ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+    }
+    ImGui::SetNextItemWidth(inputWidth);
+    if (ImGui::InputInt(label, value, 0, 0)) {
+        *value = std::clamp(*value, minValue, maxValue);
+        edit.changed = true;
+    }
+    TrackLastItemEdit(edit);
+    ImGui::PopID();
+
+    return edit;
+}
 
 WidgetEdit DrawColorControl(const char* label, float* value, int componentCount) {
     WidgetEdit edit;
@@ -267,7 +381,10 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
         int* value = static_cast<int*>(ptr);
         const float intSpeed = field.speed > 0.0f ? field.speed : 1.0f;
         if (HasIntRange(field)) {
-            result.changed = ImGui::SliderInt(label, value, field.minInt, field.maxInt);
+            const WidgetEdit edit = DrawRangedIntControl(label, value, field.minInt, field.maxInt);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
         } else {
             result.changed = ImGui::DragInt(label, value, intSpeed, field.minInt, field.maxInt);
         }
@@ -275,14 +392,22 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
     }
     case FieldType::Float:
         if (HasFloatRange(field)) {
-            result.changed = ImGui::SliderFloat(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+            const WidgetEdit edit =
+                DrawRangedFloatControl(label, static_cast<float*>(ptr), 1, field.minFloat, field.maxFloat);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
         } else {
             result.changed = ImGui::DragFloat(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
         }
         break;
     case FieldType::Vec2:
         if (HasFloatRange(field)) {
-            result.changed = ImGui::SliderFloat2(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+            const WidgetEdit edit =
+                DrawRangedFloatControl(label, static_cast<float*>(ptr), 2, field.minFloat, field.maxFloat);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
         } else {
             result.changed = ImGui::DragFloat2(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
         }
@@ -294,7 +419,11 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
             result.started = edit.started;
             result.committed = edit.committed;
         } else if (HasFloatRange(field)) {
-            result.changed = ImGui::SliderFloat3(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+            const WidgetEdit edit =
+                DrawRangedFloatControl(label, static_cast<float*>(ptr), 3, field.minFloat, field.maxFloat);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
         } else {
             result.changed = ImGui::DragFloat3(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
         }
@@ -307,7 +436,11 @@ FieldEdit Draw(const FieldMetadata& field, void* componentData, AssetManager* as
             result.started = edit.started;
             result.committed = edit.committed;
         } else if (HasFloatRange(field)) {
-            result.changed = ImGui::SliderFloat4(label, static_cast<float*>(ptr), field.minFloat, field.maxFloat);
+            const WidgetEdit edit =
+                DrawRangedFloatControl(label, static_cast<float*>(ptr), 4, field.minFloat, field.maxFloat);
+            result.changed = edit.changed;
+            result.started = edit.started;
+            result.committed = edit.committed;
         } else {
             result.changed = ImGui::DragFloat4(label, static_cast<float*>(ptr), speed, field.minFloat, field.maxFloat);
         }

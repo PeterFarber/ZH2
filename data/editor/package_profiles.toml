@@ -1,0 +1,13 @@
+[client]
+build_mode = 'Release'
+enabled = true
+include_debug_symbols = false
+output_dir = 'out/packages/client'
+preset = 'windows-release'
+
+[server]
+build_mode = 'Release'
+enabled = true
+include_debug_symbols = false
+output_dir = 'out/packages/server'
+preset = 'windows-release'

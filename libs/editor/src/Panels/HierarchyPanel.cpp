@@ -120,6 +120,10 @@ std::vector<UUID> ResolveDragMoveTargets(Scene& scene, const Selection& selectio
     return targets.empty() ? std::vector<UUID>{draggedId} : targets;
 }
 
+bool ShouldPreserveSelectionForPotentialDrag(const Selection& selection, UUID id) {
+    return selection.Count() > 1 && selection.IsSelected(id);
+}
+
 std::string ToLower(std::string_view text) {
     std::string out;
     out.reserve(text.size());
@@ -529,6 +533,8 @@ void HierarchyPanel::DrawEntityNode(EditorContext& context, Scene& scene, const 
                 context.SelectSceneRange(m_VisibleEntityRows, id, /*additive=*/clickIo.KeyCtrl);
             } else if (clickIo.KeyCtrl) {
                 context.ToggleSceneEntitySelection(id);
+            } else if (ShouldPreserveSelectionForPotentialDrag(selection, id)) {
+                // Keep the selected set intact so a drag from this row moves the group.
             } else {
                 context.SelectSceneEntity(id);
             }

@@ -17,7 +17,7 @@ show = false
 spacing = 1.0
 
 [layout]
-panel_count = 14
+panel_count = 15
 
     [layout.panel_0]
     name = 'Hierarchy'
@@ -37,10 +37,14 @@ panel_count = 14
 
     [layout.panel_12]
     name = 'Prefab'
-    open = true
+    open = false
 
     [layout.panel_13]
     name = 'Project Settings'
+    open = true
+
+    [layout.panel_14]
+    name = 'Package'
     open = true
 
     [layout.panel_2]
@@ -90,8 +94,8 @@ recent_count = 10
 restore_last = true
 
 [snap]
-enabled = false
-move = 0.5
+enabled = true
+move = 4.0
 rotate_degrees = 15.0
 scale = 0.10000000149011612
 

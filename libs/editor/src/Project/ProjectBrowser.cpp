@@ -73,6 +73,8 @@ FileTypeInfo TypeInfoForAsset(const AssetMetadata& metadata) {
         return {EditorFileType::Model, "Model", true};
     case AssetType::Mesh:
         return {EditorFileType::Model, "Mesh", true};
+    case AssetType::Audio:
+        return {EditorFileType::Audio, "Audio", true};
     default:
         return FileTypeRegistry::Classify(metadata.rawPath);
     }

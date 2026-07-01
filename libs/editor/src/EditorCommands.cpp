@@ -250,6 +250,7 @@ void ApplyEntity(Scene& scene, const std::string& yaml) {
         ComponentSerializer::DeserializeCoreComponents(entity, node);
         ComponentSerializer::DeserializeHockeyMarkerComponents(entity, node);
         ComponentSerializer::DeserializeRenderComponents(entity, node);
+        ComponentSerializer::DeserializeExternalComponents(entity, node);
         scene.RecalculateActiveInHierarchy(entity);
     } catch (const std::exception& e) {
         HK_EDITOR_ERROR("ApplyEntity snapshot parse failed: {}", e.what());
@@ -473,18 +474,24 @@ public:
             if (!source) {
                 return;
             }
+            if (Entity parent = scene->GetParent(source)) {
+                m_ParentId = parent.GetUUID();
+            }
+            m_SiblingIndex = scene->GetSiblingIndex(source) + 1;
+
             Entity copy = scene->DuplicateEntity(source);
             if (!copy) {
                 return;
             }
             m_NewId = copy.GetUUID();
-            if (Entity parent = scene->GetParent(copy)) {
-                m_ParentId = parent.GetUUID();
-            }
+            MoveDuplicateToCapturedSlot(*scene, copy);
             m_Snapshot = EntitySnapshot::CaptureSubtree(*scene, m_NewId);
             m_Captured = true;
         } else {
             m_NewId = EntitySnapshot::RestoreSubtree(*scene, m_Snapshot, m_ParentId);
+            if (Entity copy = scene->FindEntityByUUID(m_NewId)) {
+                MoveDuplicateToCapturedSlot(*scene, copy);
+            }
         }
         if (m_NewId.IsValid()) {
             context.selection.Select(m_NewId);
@@ -509,9 +516,26 @@ public:
     }
 
 private:
+    void MoveDuplicateToCapturedSlot(Scene& scene, Entity copy) const {
+        if (!copy) {
+            return;
+        }
+
+        Entity parent;
+        if (m_ParentId.IsValid()) {
+            parent = scene.FindEntityByUUID(m_ParentId);
+            if (!parent || copy == parent) {
+                return;
+            }
+        }
+
+        scene.MoveEntity(copy, parent, m_SiblingIndex, /*keepWorldTransform=*/false);
+    }
+
     UUID m_SourceId;
     UUID m_NewId{0};
     UUID m_ParentId{0};
+    std::size_t m_SiblingIndex = 0;
     std::string m_Snapshot;
     bool m_Captured = false;
 };
@@ -1289,6 +1313,7 @@ public:
             ComponentSerializer::DeserializeCoreComponents(entity, node);
             ComponentSerializer::DeserializeHockeyMarkerComponents(entity, node);
             ComponentSerializer::DeserializeRenderComponents(entity, node);
+            ComponentSerializer::DeserializeExternalComponents(entity, node);
         } catch (const std::exception& e) {
             HK_EDITOR_ERROR("PasteComponent parse failed: {}", e.what());
             return;

@@ -15,6 +15,7 @@
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/EditorTransformOperations.hpp"
 #include "Hockey/Editor/UndoRedo.hpp"
+#include "Hockey/Physics/PhysicsComponents.hpp"
 
 using namespace Hockey;
 
@@ -51,6 +52,7 @@ void RunUndoRedoTests() {
 
     // Metadata drives Add/Remove component commands.
     ComponentRegistry::Get().RegisterPhase2Components();
+    RegisterPhysicsComponents();
 
     // --- stack basics: execute / undo / redo / clear ------------------------
     {
@@ -350,6 +352,61 @@ void RunUndoRedoTests() {
 
         fix.context.undoRedo.Redo(fix.context);
         HK_CHECK_MSG(fix.scene.ContainsUUID(copyId), "redo restores the duplicate with the same UUID");
+    }
+
+    // --- duplicate keeps the source parent ----------------------------------
+    {
+        CommandFixture fix;
+        Entity parent = fix.scene.CreateEntity("Parent");
+        Entity source = fix.scene.CreateEntity("Source");
+        fix.scene.SetParent(source, parent, /*keepWorldTransform=*/false);
+
+        const UUID parentId = parent.GetUUID();
+        const UUID sourceId = source.GetUUID();
+        fix.context.undoRedo.Execute(EditorCommands::DuplicateEntity(sourceId), fix.context);
+
+        const UUID copyId = fix.context.selection.Primary();
+        Entity copy = fix.scene.FindEntityByUUID(copyId);
+        Entity copyParent = copy ? fix.scene.GetParent(copy) : Entity();
+        HK_CHECK_MSG(copy && copyParent && copyParent.GetUUID() == parentId,
+                     "duplicate creates the copy under the same parent as the source");
+
+        fix.context.undoRedo.Undo(fix.context);
+        HK_CHECK_MSG(!fix.scene.ContainsUUID(copyId), "undo removes the parented duplicate");
+
+        fix.context.undoRedo.Redo(fix.context);
+        copy = fix.scene.FindEntityByUUID(copyId);
+        copyParent = copy ? fix.scene.GetParent(copy) : Entity();
+        HK_CHECK_MSG(copy && copyParent && copyParent.GetUUID() == parentId,
+                     "redo restores the duplicate under the same parent");
+    }
+
+    // --- duplicate keeps externally registered components --------------------
+    {
+        CommandFixture fix;
+        Entity source = fix.scene.CreateEntity("Source");
+        RigidBodyComponent body;
+        body.type = RigidBodyType::Dynamic;
+        body.collisionDetection = CollisionDetectionMode::Continuous;
+        body.mass = 7.25f;
+        body.layer = PhysicsLayer::Puck;
+        body.materialName = "PuckBlack";
+        source.AddComponent<RigidBodyComponent>(body);
+
+        fix.context.undoRedo.Execute(EditorCommands::DuplicateEntity(source.GetUUID()), fix.context);
+
+        Entity copy = fix.scene.FindEntityByUUID(fix.context.selection.Primary());
+        HK_CHECK_MSG(copy && copy.HasComponent<RigidBodyComponent>(),
+                     "duplicate preserves externally registered components");
+        if (copy && copy.HasComponent<RigidBodyComponent>()) {
+            const RigidBodyComponent& copied = copy.GetComponent<RigidBodyComponent>();
+            HK_CHECK_MSG(copied.type == RigidBodyType::Dynamic, "duplicate preserves rigid body type");
+            HK_CHECK_MSG(copied.collisionDetection == CollisionDetectionMode::Continuous,
+                         "duplicate preserves collision detection");
+            HK_CHECK_NEAR(copied.mass, 7.25f, 1e-5);
+            HK_CHECK_MSG(copied.layer == PhysicsLayer::Puck, "duplicate preserves physics layer");
+            HK_CHECK_EQ(copied.materialName, std::string("PuckBlack"));
+        }
     }
 
     // --- set parent undo/redo -----------------------------------------------
@@ -736,6 +793,42 @@ void RunUndoRedoTests() {
         fix.context.undoRedo.Undo(fix.context);
         HK_CHECK_MSG(!fix.scene.FindEntityByUUID(targetId).HasComponent<MeshRendererComponent>(),
                      "undo removes the pasted component that was not present before");
+    }
+
+    // --- clipboard paste supports externally registered components -----------
+    {
+        CommandFixture fix;
+        Entity source = fix.scene.CreateEntity("PhysicsSource");
+        Entity target = fix.scene.CreateEntity("PhysicsTarget");
+        RigidBodyComponent body;
+        body.type = RigidBodyType::Dynamic;
+        body.mass = 12.5f;
+        body.layer = PhysicsLayer::Player;
+        body.materialName = "Ice";
+        source.AddComponent<RigidBodyComponent>(body);
+        const UUID targetId = target.GetUUID();
+
+        fix.context.clipboard.CopyComponent(fix.scene, source.GetUUID(), "RigidBodyComponent");
+        HK_CHECK_MSG(fix.context.clipboard.HasComponent(), "clipboard holds copied external component");
+
+        fix.context.undoRedo.Execute(EditorCommands::PasteComponent(fix.scene, targetId, "RigidBodyComponent",
+                                                                    fix.context.clipboard.ComponentYaml()),
+                                     fix.context);
+
+        Entity pastedTarget = fix.scene.FindEntityByUUID(targetId);
+        HK_CHECK_MSG(pastedTarget.HasComponent<RigidBodyComponent>(),
+                     "paste adds the externally registered component to target");
+        if (pastedTarget.HasComponent<RigidBodyComponent>()) {
+            const RigidBodyComponent& pasted = pastedTarget.GetComponent<RigidBodyComponent>();
+            HK_CHECK_MSG(pasted.type == RigidBodyType::Dynamic, "paste preserves rigid body type");
+            HK_CHECK_NEAR(pasted.mass, 12.5f, 1e-5);
+            HK_CHECK_MSG(pasted.layer == PhysicsLayer::Player, "paste preserves physics layer");
+            HK_CHECK_EQ(pasted.materialName, std::string("Ice"));
+        }
+
+        fix.context.undoRedo.Undo(fix.context);
+        HK_CHECK_MSG(!fix.scene.FindEntityByUUID(targetId).HasComponent<RigidBodyComponent>(),
+                     "undo removes the pasted external component that was not present before");
     }
 
     // --- create prefab links the source entity, undo unlinks it -------------

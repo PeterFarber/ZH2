@@ -33,6 +33,9 @@ void RunRendererSettingsTests() {
     HK_CHECK(low.bloom == false);
     HK_CHECK(low.decals == true);
     HK_CHECK_EQ(low.maxRenderedDecals, 8u);
+    HK_CHECK_EQ(low.directionalShadowAtlasResolution, 1024u);
+    HK_CHECK_EQ(low.localShadowAtlasResolution, 1024u);
+    HK_CHECK_EQ(low.shadowCascadeCount, 2u);
 
     const RendererSettings medium = ApplyGraphicsPreset(GraphicsPreset::Medium);
     HK_CHECK(medium.preset == GraphicsPreset::Medium);
@@ -40,12 +43,18 @@ void RunRendererSettingsTests() {
     HK_CHECK(medium.textureQuality == TextureQuality::Medium);
     HK_CHECK(medium.decals == true);
     HK_CHECK_EQ(medium.maxRenderedDecals, 16u);
+    HK_CHECK_EQ(medium.directionalShadowAtlasResolution, 2048u);
+    HK_CHECK_EQ(medium.localShadowAtlasResolution, 2048u);
+    HK_CHECK_EQ(medium.shadowCascadeCount, 3u);
 
     const RendererSettings high = ApplyGraphicsPreset(GraphicsPreset::High);
     HK_CHECK(high.shadowQuality == ShadowQuality::High);
     HK_CHECK(high.anisotropy == 16);
     HK_CHECK(high.decals == true);
     HK_CHECK_EQ(high.maxRenderedDecals, kRendererMaxDecals);
+    HK_CHECK_EQ(high.directionalShadowAtlasResolution, 4096u);
+    HK_CHECK_EQ(high.localShadowAtlasResolution, 2048u);
+    HK_CHECK_EQ(high.shadowCascadeCount, 4u);
 
     const RendererSettings ultra = ApplyGraphicsPreset(GraphicsPreset::Ultra);
     HK_CHECK(ultra.shadowQuality == ShadowQuality::Ultra);
@@ -53,6 +62,9 @@ void RunRendererSettingsTests() {
     HK_CHECK(ultra.antiAliasing == AntiAliasing::TAA);
     HK_CHECK(ultra.decals == true);
     HK_CHECK_EQ(ultra.maxRenderedDecals, kRendererMaxDecals);
+    HK_CHECK_EQ(ultra.directionalShadowAtlasResolution, 8192u);
+    HK_CHECK_EQ(ultra.localShadowAtlasResolution, 4096u);
+    HK_CHECK_EQ(ultra.shadowCascadeCount, 4u);
 
     // Enum <-> string round-trips.
     HK_CHECK(std::string(ToString(ToneMapper::ACES)) == "ACES");
@@ -163,12 +175,22 @@ void RunRendererSettingsTests() {
     HK_CHECK_EQ(clamped.maxRenderedLights, 16u);
     HK_CHECK_EQ(clamped.maxLocalShadowTiles, 16u);
     HK_CHECK_EQ(clamped.maxRenderedDecals, kRendererMaxDecals);
-    HK_CHECK_EQ(clamped.directionalShadowAtlasResolution, 0u);
-    HK_CHECK_EQ(clamped.localShadowAtlasResolution, 0u);
+    HK_CHECK_EQ(clamped.directionalShadowAtlasResolution, 1u);
+    HK_CHECK_EQ(clamped.localShadowAtlasResolution, 1u);
     HK_CHECK_EQ(clamped.shadowCascadeCount, 4u);
     HK_CHECK_NEAR(clamped.shadowCascadeSplitLambda, 1.0f, 0.0001f);
     HK_CHECK_NEAR(clamped.contactShadowStrength, 1.0f, 0.0001f);
     HK_CHECK_EQ(clamped.directionalShadowPcfRadius, 3u);
+
+    Config legacyPresetSentinelConfig;
+    legacyPresetSentinelConfig.SetInt("renderer.directional_shadow_atlas_resolution", 0);
+    legacyPresetSentinelConfig.SetInt("renderer.local_shadow_atlas_resolution", 0);
+    legacyPresetSentinelConfig.SetInt("renderer.shadow_cascade_count", 0);
+    RendererSettings migrated = MakeDefaultRendererSettings();
+    HK_CHECK(static_cast<bool>(LoadRendererSettings(legacyPresetSentinelConfig, migrated)));
+    HK_CHECK_EQ(migrated.directionalShadowAtlasResolution, 4096u);
+    HK_CHECK_EQ(migrated.localShadowAtlasResolution, 2048u);
+    HK_CHECK_EQ(migrated.shadowCascadeCount, 4u);
 }
 
 void RunShadowQualityTests() {
@@ -193,15 +215,15 @@ void RunShadowQualityTests() {
     HK_CHECK(ShadowAtlasResolution(ShadowQuality::Medium) > ShadowAtlasResolution(ShadowQuality::Low));
     HK_CHECK(ShadowCascadeCount(ShadowQuality::High) > ShadowCascadeCount(ShadowQuality::Low));
 
-    RendererSettings qualityFallback = MakeDefaultRendererSettings();
-    qualityFallback.shadowQuality = ShadowQuality::High;
-    HK_CHECK_EQ(ResolveDirectionalShadowAtlasResolution(qualityFallback), 4096u);
-    HK_CHECK_EQ(ResolveLocalShadowAtlasResolution(qualityFallback), 2048u);
-    HK_CHECK_EQ(ResolveShadowCascadeCount(qualityFallback), 4u);
-    HK_CHECK_EQ(ResolveDirectionalShadowPcfRadius(qualityFallback), 1u);
-    HK_CHECK_EQ(ResolveLocalShadowPcfRadius(qualityFallback), 1u);
+    RendererSettings concreteDefaults = MakeDefaultRendererSettings();
+    concreteDefaults.shadowQuality = ShadowQuality::High;
+    HK_CHECK_EQ(ResolveDirectionalShadowAtlasResolution(concreteDefaults), 4096u);
+    HK_CHECK_EQ(ResolveLocalShadowAtlasResolution(concreteDefaults), 2048u);
+    HK_CHECK_EQ(ResolveShadowCascadeCount(concreteDefaults), 4u);
+    HK_CHECK_EQ(ResolveDirectionalShadowPcfRadius(concreteDefaults), 1u);
+    HK_CHECK_EQ(ResolveLocalShadowPcfRadius(concreteDefaults), 1u);
 
-    RendererSettings explicitShadows = qualityFallback;
+    RendererSettings explicitShadows = concreteDefaults;
     explicitShadows.directionalShadowAtlasResolution = 6144;
     explicitShadows.localShadowAtlasResolution = 3072;
     explicitShadows.shadowCascadeCount = 2;

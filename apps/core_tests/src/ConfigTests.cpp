@@ -13,9 +13,12 @@ void RunConfigTests() {
     Config editor;
     HK_CHECK_MSG(static_cast<bool>(editor.Load(Paths::ConfigFile("editor.toml"))),
                  "loads editor.toml");
-    HK_CHECK_EQ(editor.GetString("app.name", ""), std::string("Hockey Map Editor"));
+    HK_CHECK_EQ(editor.GetString("app.name", ""), std::string("Hockey"));
     HK_CHECK_EQ(editor.GetInt("window.width", -1), 1600);
     HK_CHECK_EQ(editor.GetInt("window.height", -1), 900);
+    HK_CHECK_EQ(editor.GetInt("renderer.directional_shadow_atlas_resolution", 0), 8192);
+    HK_CHECK_EQ(editor.GetInt("renderer.local_shadow_atlas_resolution", 0), 4096);
+    HK_CHECK_EQ(editor.GetInt("renderer.shadow_cascade_count", 0), 4);
     HK_CHECK_EQ(editor.GetInt("does.not.exist", 42), 42);
     HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("client.toml")));
     HK_CHECK(!FileSystem::Exists(Paths::ConfigFile("server.toml")));
@@ -28,6 +31,9 @@ void RunConfigTests() {
     HK_CHECK_EQ(builtInDefaults.GetInt("app.target_fps", 0), 144);
     HK_CHECK_EQ(builtInDefaults.GetInt("window.width", -1), 1600);
     HK_CHECK(builtInDefaults.GetBool("input.gamepad_enabled", false));
+    HK_CHECK(builtInDefaults.GetBool("audio.enabled", false));
+    HK_CHECK_EQ(builtInDefaults.GetString("audio.backend", ""), std::string("Auto"));
+    HK_CHECK_EQ(builtInDefaults.GetDouble("audio.master_volume", 0.0), 1.0);
     HK_CHECK(builtInDefaults.Has("renderer.vsync"));
     HK_CHECK(builtInDefaults.Has("physics.fixed_delta_seconds"));
     HK_CHECK(builtInDefaults.Has("gameplay.local_play"));
@@ -40,6 +46,9 @@ void RunConfigTests() {
     HK_CHECK_EQ(builtInDefaults.GetString("renderer.preset", ""), std::string("High"));
     HK_CHECK_EQ(builtInDefaults.GetString("renderer.shadow_quality", ""), std::string("High"));
     HK_CHECK_EQ(builtInDefaults.GetString("renderer.reflection_quality", ""), std::string("High"));
+    HK_CHECK_EQ(builtInDefaults.GetInt("renderer.directional_shadow_atlas_resolution", 0), 4096);
+    HK_CHECK_EQ(builtInDefaults.GetInt("renderer.local_shadow_atlas_resolution", 0), 2048);
+    HK_CHECK_EQ(builtInDefaults.GetInt("renderer.shadow_cascade_count", 0), 4);
     HK_CHECK(builtInDefaults.GetBool("renderer.hdr", false));
     HK_CHECK(builtInDefaults.GetBool("renderer.bloom", false));
     HK_CHECK(builtInDefaults.GetBool("renderer.contact_shadows", false));
@@ -60,6 +69,9 @@ void RunConfigTests() {
     Config madeDefaults = MakeDefaultRuntimeConfig();
     HK_CHECK_EQ(madeDefaults.GetString("scene.startup_scene", ""), builtInDefaults.GetString("scene.startup_scene", ""));
     HK_CHECK_EQ(madeDefaults.GetBool("renderer.vsync", false), builtInDefaults.GetBool("renderer.vsync", false));
+    HK_CHECK_EQ(madeDefaults.GetInt("renderer.directional_shadow_atlas_resolution", 0), 4096);
+    HK_CHECK_EQ(madeDefaults.GetInt("renderer.local_shadow_atlas_resolution", 0), 2048);
+    HK_CHECK_EQ(madeDefaults.GetInt("renderer.shadow_cascade_count", 0), 4);
 
     Config out;
     out.SetString("app.name", "Temp");

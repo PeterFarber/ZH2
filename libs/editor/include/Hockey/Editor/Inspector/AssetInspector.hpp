@@ -22,6 +22,7 @@ private:
     void DrawTexturePreview(EditorContext& context, const AssetMetadata& meta);
     void DrawMaterialEditor(EditorContext& context, const std::filesystem::path& path);
     void DrawMaterialPreview(EditorContext& context);
+    void DrawAudioPreview(EditorContext& context, const AssetMetadata& meta);
     void ApplyMaterialPreview(EditorContext& context);
     void ReimportAndRecook(EditorContext& context, const AssetMetadata& meta);
     void Recook(EditorContext& context, const AssetMetadata& meta);

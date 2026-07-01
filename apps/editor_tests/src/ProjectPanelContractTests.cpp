@@ -83,11 +83,14 @@ void RunProjectPanelContractTests() {
     HK_CHECK_MSG(Contains(source, "DrawStatusStrip"), "Project panel has a bottom path/status strip");
     HK_CHECK_MSG(Contains(source, "DrawViewSizeSlider"), "Project panel has a bottom-right icon size slider");
     HK_CHECK_MSG(Contains(source, "All") && Contains(source, "Models") && Contains(source, "Prefabs") &&
-                     Contains(source, "Scenes") && Contains(source, "Textures"),
+                     Contains(source, "Scenes") && Contains(source, "Textures") && Contains(source, "Audio"),
                  "Project panel exposes default raw asset sections");
     HK_CHECK_MSG(Contains(source, "Import All & Cook"), "Project toolbar exposes import plus cook");
     HK_CHECK_MSG(Contains(source, "Recook Dirty"), "Project toolbar keeps dirty recook as maintenance action");
     HK_CHECK_MSG(Contains(source, "Texture/Image"), "Project toolbar exposes texture/image type filter");
+    HK_CHECK_MSG(Contains(source, "AssetType::Audio") && Contains(source, "EditorFileType::Audio"),
+                 "Project panel exposes audio asset sections and type filters");
+    HK_CHECK_MSG(Contains(source, "mp3,wav,flac"), "Project import dialog includes supported audio extensions");
     HK_CHECK_MSG(Contains(source, "Reimport & Recook"), "Project asset context menu recooks through raw asset selection");
     HK_CHECK_MSG(Contains(source, "Reveal Source"), "Project asset context menu can reveal source");
     HK_CHECK_MSG(Contains(source, "Reveal Cooked"), "Project asset context menu can reveal cooked output");

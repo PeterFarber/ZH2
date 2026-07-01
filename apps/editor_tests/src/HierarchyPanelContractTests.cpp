@@ -132,6 +132,9 @@ void RunHierarchyPanelContractTests() {
                  "Hierarchy row clicks route through lock-aware editor-context selection helpers");
     HK_CHECK_MSG(Contains(source, "ResolveDragMoveTargets"),
                  "Hierarchy drag/drop resolves selected top-level rows when dragging a selected entity");
+    HK_CHECK_MSG(Contains(source, "ShouldPreserveSelectionForPotentialDrag") &&
+                     Contains(source, "selection.Count() > 1") && Contains(source, "selection.IsSelected(id)"),
+                 "Hierarchy click handling preserves an existing multi-selection so a drag can move it as a group");
     HK_CHECK_MSG(Contains(commandsHeader, "MoveEntities") && Contains(commandsSource, "MoveEntitiesCommand"),
                  "Hierarchy selected-group drag/drop has one undoable multi-entity move command");
     HK_CHECK_MSG(Contains(source, "EditorCommands::MoveEntities"),

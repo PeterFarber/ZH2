@@ -53,6 +53,7 @@ constexpr SectionInfo kSections[] = {
     {ProjectSection::Prefabs, AssetType::Prefab, "Prefabs"},
     {ProjectSection::Scenes, AssetType::Scene, "Scenes"},
     {ProjectSection::Textures, AssetType::Texture, "Textures"},
+    {ProjectSection::Audio, AssetType::Audio, "Audio"},
     {ProjectSection::Shaders, AssetType::Shader, "Shaders"},
 };
 
@@ -141,6 +142,10 @@ ImVec4 ColorForType(EditorFileType type, bool supported) {
         return ImVec4(0.66f, 0.78f, 0.96f, 1.0f);
     case EditorFileType::Model:
         return ImVec4(0.78f, 0.70f, 0.95f, 1.0f);
+    case EditorFileType::Audio:
+        return ImVec4(0.92f, 0.78f, 0.52f, 1.0f);
+    case EditorFileType::AudioProject:
+        return ImVec4(0.70f, 0.72f, 0.82f, 1.0f);
     default:
         return supported ? ImVec4(0.85f, 0.85f, 0.85f, 1.0f) : ImVec4(0.55f, 0.55f, 0.55f, 1.0f);
     }
@@ -179,6 +184,8 @@ ProjectSection SectionForAssetType(AssetType type) {
         return ProjectSection::Scenes;
     case AssetType::Texture:
         return ProjectSection::Textures;
+    case AssetType::Audio:
+        return ProjectSection::Audio;
     case AssetType::Shader:
         return ProjectSection::Shaders;
     default:
@@ -248,6 +255,7 @@ bool IsCookableRawType(EditorFileType type) {
     case EditorFileType::ShaderSource:
     case EditorFileType::Image:
     case EditorFileType::Model:
+    case EditorFileType::Audio:
         return true;
     default:
         return false;
@@ -445,6 +453,7 @@ void ProjectPanel::DrawToolbar(EditorContext& context) {
         {EditorFileType::Image, "Texture/Image"},
         {EditorFileType::Model, "Model"},
         {EditorFileType::Model, "Mesh"},
+        {EditorFileType::Audio, "Audio"},
         {EditorFileType::ShaderSource, "Shader"},
     };
     int currentType = 0;
@@ -989,10 +998,11 @@ void ProjectPanel::Recook(EditorContext& context, const AssetMetadata& meta) {
 void ProjectPanel::ImportSelectedFile(EditorContext& context) {
     const auto chosen = FileDialog::OpenFile(
         {
-            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp"},
+            {"All importable", "gltf,glb,png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2,yaml,glsl,vert,frag,comp,mp3,wav,flac"},
             {"Models", "gltf,glb"},
             {"Textures", "png,jpg,jpeg,tga,bmp,hdr,ktx,ktx2"},
             {"Materials / Scenes / Prefabs", "yaml"},
+            {"Audio", "mp3,wav,flac"},
             {"Shaders", "glsl,vert,frag,comp"},
         },
         m_SelectedFolder);

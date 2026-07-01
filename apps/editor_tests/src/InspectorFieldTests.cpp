@@ -1,11 +1,15 @@
 #include "Test.hpp"
 
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
+#include <string_view>
 
 #include <glm/glm.hpp>
 
 #include "Hockey/Core/UUID.hpp"
+#include "Hockey/Core/Paths.hpp"
 #include "Hockey/ECS/ComponentMetadata.hpp"
 #include "Hockey/ECS/ComponentRegistry.hpp"
 #include "Hockey/ECS/Components.hpp"
@@ -36,6 +40,17 @@ struct VecProbe {
     glm::vec2 two{0.0f};
     glm::vec4 four{0.0f};
 };
+
+std::string ReadProjectFile(const char* relativePath) {
+    std::ifstream in(Hockey::Paths::Get().root / relativePath, std::ios::binary);
+    std::ostringstream out;
+    out << in.rdbuf();
+    return out.str();
+}
+
+bool Contains(const std::string& text, const char* needle) {
+    return text.find(std::string_view{needle}) != std::string::npos;
+}
 
 } // namespace
 
@@ -208,5 +223,22 @@ void RunInspectorFieldTests() {
         auto* fourPtr = static_cast<glm::vec4*>(FieldDrawers::FieldPointer(&probe, four));
         *fourPtr = glm::vec4(1.0f, 2.0f, 3.0f, 4.0f);
         HK_CHECK_NEAR(probe.four.w, 4.0f, 1e-5);
+    }
+
+    // --- slider exact-value entry contract ----------------------------------
+    {
+        const std::string fieldDrawers = ReadProjectFile("libs/editor/src/Inspector/FieldDrawers.cpp");
+        HK_CHECK_MSG(Contains(fieldDrawers, "DrawRangedFloatControl"),
+                     "ranged metadata float fields use the shared exact-value slider/input control");
+        HK_CHECK_MSG(Contains(fieldDrawers, "DrawRangedIntControl"),
+                     "ranged metadata int fields use the shared exact-value slider/input control");
+        HK_CHECK_MSG(Contains(fieldDrawers, "ImGui::InputFloat"),
+                     "ranged metadata float sliders expose numeric text input");
+        HK_CHECK_MSG(Contains(fieldDrawers, "ImGui::InputFloat3"),
+                     "ranged metadata vec3 sliders expose exact XYZ text input");
+        HK_CHECK_MSG(Contains(fieldDrawers, "ImGui::InputInt"),
+                     "ranged metadata int sliders expose numeric text input");
+        HK_CHECK_MSG(Contains(fieldDrawers, "std::clamp"),
+                     "typed slider values are clamped to metadata min/max ranges");
     }
 }

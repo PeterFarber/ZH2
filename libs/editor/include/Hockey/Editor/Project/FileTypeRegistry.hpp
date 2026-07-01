@@ -21,6 +21,8 @@ enum class EditorFileType {
     ShaderBinary, // *.spv
     Image,        // *.png/.jpg/... (imported as textures)
     Model,        // *.gltf/.glb (imported as models/meshes)
+    Audio,        // *.mp3/.wav/.flac
+    AudioProject, // *.aup3 (visible source project, not cookable)
     Text,         // *.yaml/.json/.txt/.md
 };
 

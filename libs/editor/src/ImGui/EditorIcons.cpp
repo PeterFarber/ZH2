@@ -93,6 +93,8 @@ const char* EditorIconGlyph(EditorIcon icon) {
         return ICON_FA_VECTOR_SQUARE;
     case EditorIcon::Shader:
         return ICON_FA_CODE;
+    case EditorIcon::Audio:
+        return ICON_FA_VOLUME_HIGH;
     case EditorIcon::Visible:
         return ICON_FA_EYE;
     case EditorIcon::Hidden:
@@ -207,6 +209,9 @@ EditorIcon EditorIconForAssetType(EditorFileType type) {
         return EditorIcon::Texture;
     case EditorFileType::Model:
         return EditorIcon::Model;
+    case EditorFileType::Audio:
+    case EditorFileType::AudioProject:
+        return EditorIcon::Audio;
     case EditorFileType::Toml:
     case EditorFileType::Text:
     case EditorFileType::Unknown:

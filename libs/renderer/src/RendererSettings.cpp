@@ -204,6 +204,14 @@ bool FromString(std::string_view text, ToneMapper& out) {
 // Defaults / presets
 // ---------------------------------------------------------------------------
 
+namespace {
+
+uint32_t QualityDirectionalAtlas(ShadowQuality quality);
+uint32_t QualityLocalAtlas(ShadowQuality quality);
+uint32_t QualityCascadeCount(ShadowQuality quality);
+
+} // namespace
+
 RendererSettings MakeDefaultRendererSettings() {
     return RendererSettings{};
 }
@@ -223,9 +231,9 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.maxLocalShadowTiles = 6;
         base.decals = true;
         base.maxRenderedDecals = 8;
-        base.directionalShadowAtlasResolution = 0;
-        base.localShadowAtlasResolution = 0;
-        base.shadowCascadeCount = 0;
+        base.directionalShadowAtlasResolution = QualityDirectionalAtlas(base.shadowQuality);
+        base.localShadowAtlasResolution = QualityLocalAtlas(base.shadowQuality);
+        base.shadowCascadeCount = QualityCascadeCount(base.shadowQuality);
         base.shadowCascadeSplitLambda = 0.90f;
         base.directionalShadowPcfRadius = 1;
         base.localShadowPcfRadius = 1;
@@ -262,9 +270,9 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.maxLocalShadowTiles = 10;
         base.decals = true;
         base.maxRenderedDecals = 16;
-        base.directionalShadowAtlasResolution = 0;
-        base.localShadowAtlasResolution = 0;
-        base.shadowCascadeCount = 0;
+        base.directionalShadowAtlasResolution = QualityDirectionalAtlas(base.shadowQuality);
+        base.localShadowAtlasResolution = QualityLocalAtlas(base.shadowQuality);
+        base.shadowCascadeCount = QualityCascadeCount(base.shadowQuality);
         base.shadowCascadeSplitLambda = 0.92f;
         base.directionalShadowPcfRadius = 1;
         base.localShadowPcfRadius = 1;
@@ -301,9 +309,9 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.maxLocalShadowTiles = 16;
         base.decals = true;
         base.maxRenderedDecals = kRendererMaxDecals;
-        base.directionalShadowAtlasResolution = 0;
-        base.localShadowAtlasResolution = 0;
-        base.shadowCascadeCount = 0;
+        base.directionalShadowAtlasResolution = QualityDirectionalAtlas(base.shadowQuality);
+        base.localShadowAtlasResolution = QualityLocalAtlas(base.shadowQuality);
+        base.shadowCascadeCount = QualityCascadeCount(base.shadowQuality);
         base.shadowCascadeSplitLambda = 0.95f;
         base.directionalShadowPcfRadius = 1;
         base.localShadowPcfRadius = 1;
@@ -340,9 +348,9 @@ RendererSettings ApplyGraphicsPreset(GraphicsPreset preset, RendererSettings bas
         base.maxLocalShadowTiles = 16;
         base.decals = true;
         base.maxRenderedDecals = kRendererMaxDecals;
-        base.directionalShadowAtlasResolution = 0;
-        base.localShadowAtlasResolution = 0;
-        base.shadowCascadeCount = 0;
+        base.directionalShadowAtlasResolution = QualityDirectionalAtlas(base.shadowQuality);
+        base.localShadowAtlasResolution = QualityLocalAtlas(base.shadowQuality);
+        base.shadowCascadeCount = QualityCascadeCount(base.shadowQuality);
         base.shadowCascadeSplitLambda = 0.95f;
         base.directionalShadowPcfRadius = 2;
         base.localShadowPcfRadius = 2;
@@ -396,6 +404,21 @@ uint32_t LoadU32(const Config& config, std::string_view key, uint32_t fallback) 
 uint32_t LoadU32Clamped(const Config& config, std::string_view key, uint32_t fallback, uint32_t minValue,
                         uint32_t maxValue) {
     const int loaded = config.GetInt(key, static_cast<int>(fallback));
+    if (loaded < 0) {
+        return minValue;
+    }
+    return std::clamp(static_cast<uint32_t>(loaded), minValue, maxValue);
+}
+
+uint32_t LoadU32ClampedMigratingZeroToDefault(const Config& config, std::string_view key, uint32_t fallback,
+                                              uint32_t minValue, uint32_t maxValue) {
+    if (!config.Has(key)) {
+        return fallback;
+    }
+    const int loaded = config.GetInt(key, static_cast<int>(fallback));
+    if (loaded == 0) {
+        return fallback;
+    }
     if (loaded < 0) {
         return minValue;
     }
@@ -459,8 +482,8 @@ RendererSettings ClampRendererSettings(RendererSettings s) {
     s.maxRenderedLights = std::clamp(s.maxRenderedLights, 0u, kRendererMaxLights);
     s.maxLocalShadowTiles = std::clamp(s.maxLocalShadowTiles, 0u, kRendererMaxLocalShadowTiles);
     s.maxRenderedDecals = std::clamp(s.maxRenderedDecals, 0u, kRendererMaxDecals);
-    s.directionalShadowAtlasResolution = std::clamp(s.directionalShadowAtlasResolution, 0u, 16384u);
-    s.localShadowAtlasResolution = std::clamp(s.localShadowAtlasResolution, 0u, 16384u);
+    s.directionalShadowAtlasResolution = std::clamp(s.directionalShadowAtlasResolution, 1u, 16384u);
+    s.localShadowAtlasResolution = std::clamp(s.localShadowAtlasResolution, 1u, 16384u);
     s.shadowCascadeCount = std::clamp(s.shadowCascadeCount, 0u, kRendererMaxCascades);
     s.shadowCascadeSplitLambda = std::clamp(s.shadowCascadeSplitLambda, 0.0f, 1.0f);
     s.shadowCascadeOverlapScale = std::clamp(s.shadowCascadeOverlapScale, 0.0f, 1.0f);
@@ -497,18 +520,17 @@ RendererSettings ClampRendererSettings(RendererSettings s) {
 
 uint32_t ResolveDirectionalShadowAtlasResolution(const RendererSettings& settings) {
     const RendererSettings s = ClampRendererSettings(settings);
-    return s.directionalShadowAtlasResolution == 0 ? QualityDirectionalAtlas(s.shadowQuality)
-                                                   : s.directionalShadowAtlasResolution;
+    return s.directionalShadowAtlasResolution;
 }
 
 uint32_t ResolveLocalShadowAtlasResolution(const RendererSettings& settings) {
     const RendererSettings s = ClampRendererSettings(settings);
-    return s.localShadowAtlasResolution == 0 ? QualityLocalAtlas(s.shadowQuality) : s.localShadowAtlasResolution;
+    return s.localShadowAtlasResolution;
 }
 
 uint32_t ResolveShadowCascadeCount(const RendererSettings& settings) {
     const RendererSettings s = ClampRendererSettings(settings);
-    return s.shadowCascadeCount == 0 ? QualityCascadeCount(s.shadowQuality) : s.shadowCascadeCount;
+    return s.shadowCascadeCount;
 }
 
 uint32_t ResolveDirectionalShadowPcfRadius(const RendererSettings& settings) {
@@ -553,13 +575,13 @@ Status LoadRendererSettings(const Config& config, RendererSettings& s) {
                                          kRendererMaxLights);
     s.maxLocalShadowTiles = LoadU32Clamped(config, "renderer.max_local_shadow_tiles", s.maxLocalShadowTiles, 0,
                                            kRendererMaxLocalShadowTiles);
-    s.directionalShadowAtlasResolution =
-        LoadU32Clamped(config, "renderer.directional_shadow_atlas_resolution", s.directionalShadowAtlasResolution, 0,
-                       16384);
-    s.localShadowAtlasResolution =
-        LoadU32Clamped(config, "renderer.local_shadow_atlas_resolution", s.localShadowAtlasResolution, 0, 16384);
+    s.directionalShadowAtlasResolution = LoadU32ClampedMigratingZeroToDefault(
+        config, "renderer.directional_shadow_atlas_resolution", s.directionalShadowAtlasResolution, 1, 16384);
+    s.localShadowAtlasResolution = LoadU32ClampedMigratingZeroToDefault(
+        config, "renderer.local_shadow_atlas_resolution", s.localShadowAtlasResolution, 1, 16384);
     s.shadowCascadeCount =
-        LoadU32Clamped(config, "renderer.shadow_cascade_count", s.shadowCascadeCount, 0, kRendererMaxCascades);
+        LoadU32ClampedMigratingZeroToDefault(config, "renderer.shadow_cascade_count", s.shadowCascadeCount, 0,
+                                             kRendererMaxCascades);
     s.shadowCascadeSplitLambda =
         LoadFloatClamped(config, "renderer.shadow_cascade_split_lambda", s.shadowCascadeSplitLambda, 0.0f, 1.0f);
     s.shadowCascadeOverlapScale =

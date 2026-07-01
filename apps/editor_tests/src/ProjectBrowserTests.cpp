@@ -59,12 +59,20 @@ void RunProjectBrowserTests() {
         HK_CHECK_MSG(FileTypeRegistry::Classify("rig.prefab.yaml").type == EditorFileType::Prefab, "prefab type");
         HK_CHECK_MSG(FileTypeRegistry::Classify("editor.toml").type == EditorFileType::Toml, "toml type");
         HK_CHECK_MSG(FileTypeRegistry::Classify("art.png").type == EditorFileType::Image, "image type");
+        HK_CHECK_MSG(FileTypeRegistry::Classify("goal_horn.mp3").type == EditorFileType::Audio, "mp3 audio type");
+        HK_CHECK_MSG(FileTypeRegistry::Classify("goal_horn.wav").type == EditorFileType::Audio, "wav audio type");
+        HK_CHECK_MSG(FileTypeRegistry::Classify("ambience.flac").type == EditorFileType::Audio, "flac audio type");
+        HK_CHECK_MSG(FileTypeRegistry::Classify("ZHSounds.aup3").type == EditorFileType::AudioProject,
+                     "Audacity project type");
         HK_CHECK_MSG(FileTypeRegistry::Classify("readme.md").type == EditorFileType::Text, "text type");
         HK_CHECK_MSG(FileTypeRegistry::Classify("mystery.xyz").type == EditorFileType::Unknown, "unknown type");
 
         HK_CHECK_MSG(FileTypeRegistry::Classify("a.scene.yaml").supported, "scene is supported");
         // Images and glTF models are now imported by the asset pipeline.
         HK_CHECK_MSG(FileTypeRegistry::Classify("a.png").supported, "image is importable");
+        HK_CHECK_MSG(FileTypeRegistry::Classify("a.mp3").supported, "audio is importable");
+        HK_CHECK_MSG(!FileTypeRegistry::Classify("ZHSounds.aup3").supported,
+                     "Audacity project is visible but not importable");
         HK_CHECK_MSG(FileTypeRegistry::Classify("m.material.yaml").type == EditorFileType::Material, "material type");
         HK_CHECK_MSG(FileTypeRegistry::Classify("model.gltf").supported, "gltf is importable");
 
@@ -195,10 +203,12 @@ void RunProjectBrowserTests() {
                                        "data/cooked/assets/textures/13.tex.bin", true));
         database.AddOrUpdate(MakeAsset(14, AssetType::Prefab, "data/raw/prefabs/puck.prefab.yaml",
                                        "data/cooked/assets/prefabs/14.prefab.yaml", false));
+        database.AddOrUpdate(MakeAsset(15, AssetType::Audio, "data/raw/audio/shot.mp3",
+                                       "data/cooked/assets/audio/15.audio.bin", true));
 
         ProjectBrowser browser;
         const std::vector<CookedProjectEntry> all = browser.SectionEntries(&database, AssetType::Unknown);
-        HK_CHECK_MSG(all.size() == 4, "all cooked section hides uncooked assets");
+        HK_CHECK_MSG(all.size() == 5, "all cooked section hides uncooked assets");
         HK_CHECK_MSG(std::none_of(all.begin(), all.end(), [](const CookedProjectEntry& entry) {
                          return entry.isDirectory;
                      }),
@@ -209,6 +219,9 @@ void RunProjectBrowserTests() {
 
         const std::vector<CookedProjectEntry> prefabs = browser.SectionEntries(&database, AssetType::Prefab);
         HK_CHECK_MSG(prefabs.empty(), "prefab section hides uncooked prefabs");
+
+        const std::vector<CookedProjectEntry> audio = browser.SectionEntries(&database, AssetType::Audio);
+        HK_CHECK_MSG(audio.size() == 1 && audio[0].assetId == AssetID{15}, "audio section filters by type");
     }
 
     // --- Selection clears when the selected path disappears ------------------

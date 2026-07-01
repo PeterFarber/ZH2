@@ -61,6 +61,12 @@ FileTypeInfo FileTypeRegistry::Classify(const std::filesystem::path& path) {
     if (ext == ".obj" || ext == ".fbx" || ext == ".dds") {
         return {EditorFileType::Model, "Model", false};
     }
+    if (ext == ".mp3" || ext == ".wav" || ext == ".flac") {
+        return {EditorFileType::Audio, "Audio", true};
+    }
+    if (ext == ".aup3") {
+        return {EditorFileType::AudioProject, "Audio Project", false};
+    }
     if (ext == ".yaml" || ext == ".yml" || ext == ".json" || ext == ".txt" || ext == ".md") {
         return {EditorFileType::Text, "Text", true};
     }

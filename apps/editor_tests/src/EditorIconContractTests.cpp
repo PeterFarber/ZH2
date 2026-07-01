@@ -114,6 +114,8 @@ void RunEditorIconContractTests() {
                      Contains(iconsHeader, "Rink") && Contains(iconsHeader, "PlayArea") &&
                      Contains(iconsHeader, "CameraRig"),
                  "editor marker icons are declared");
+    HK_CHECK_MSG(Contains(iconsHeader, "Audio"), "audio asset icon is declared");
+    HK_CHECK_MSG(Contains(iconsSource, "ICON_FA_VOLUME_HIGH"), "audio asset icon glyph is mapped");
     HK_CHECK_MSG(Contains(iconsSource, "ICON_FA_LOCATION_DOT") && Contains(iconsSource, "ICON_FA_CIRCLE_DOT") &&
                      Contains(iconsSource, "ICON_FA_HOCKEY_PUCK") &&
                      Contains(iconsSource, "ICON_FA_FLAG_CHECKERED") &&

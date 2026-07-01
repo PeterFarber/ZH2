@@ -196,8 +196,21 @@ void ClientFlowPanel::CopyBuffersToFlow() {
 }
 
 void ClientFlowPanel::DrawPathField(const char* label, std::array<char, 256>& buffer) {
+    constexpr float kMinimumInputWidth = 320.0f;
+    const float labelWidth = ImGui::CalcTextSize("Team Select Background").x + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
+
+    ImGui::PushID(label);
+    if (availableWidth >= labelWidth + kMinimumInputWidth) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine(labelWidth);
+    } else {
+        ImGui::TextUnformatted(label);
+    }
     ImGui::SetNextItemWidth(-1.0f);
-    ImGui::InputText(label, buffer.data(), buffer.size());
+    ImGui::InputText("##path", buffer.data(), buffer.size());
+    ImGui::PopID();
 }
 
 bool ClientFlowPanel::ValidateFlowForAuthoring() {

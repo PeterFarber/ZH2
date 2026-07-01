@@ -46,6 +46,7 @@ void RunInspectorAssetContractTests() {
     HK_CHECK_MSG(Contains(assetHeader, "class AssetInspector"), "Asset inspector type exists");
     HK_CHECK_MSG(Contains(assetHeader, "DrawTexturePreview"), "Asset inspector has texture preview UI");
     HK_CHECK_MSG(Contains(assetHeader, "DrawMaterialPreview"), "Asset inspector has material sphere preview UI");
+    HK_CHECK_MSG(Contains(assetHeader, "DrawAudioPreview"), "Asset inspector has audio preview UI");
     HK_CHECK_MSG(Contains(assetHeader, "EditorAssetPreviewRenderer"), "Asset inspector owns shared preview renderer");
     HK_CHECK_MSG(Contains(assetSource, "DrawMaterialEditor"), "Asset inspector edits material assets");
     HK_CHECK_MSG(Contains(assetSource, "IsInspectableAsset") && !Contains(assetSource, "IsVisibleCookedAsset"),
@@ -60,6 +61,11 @@ void RunInspectorAssetContractTests() {
     HK_CHECK_MSG(Contains(assetSource, "DrawMaterialPreview(context)") &&
                      Contains(assetSource, "m_AssetPreviewRenderer.MaterialPreviewTextureId"),
                  "Material assets draw an Inspector sphere preview via the shared helper");
+    HK_CHECK_MSG(Contains(assetSource, "DrawAudioPreview(context, *meta)") &&
+                     Contains(assetSource, "context.audioPreview"),
+                 "Audio assets draw an Inspector preview section");
+    HK_CHECK_MSG(Contains(assetSource, "Preview Audio") && Contains(assetSource, "Stop Preview"),
+                 "Audio preview exposes play and stop controls");
     HK_CHECK_MSG(Contains(assetSource, "ApplyMaterialPreview(context)") &&
                      assetSource.find("ApplyMaterialPreview(context)") < assetSource.find("DrawMaterialPreview(context)"),
                  "Material field edits apply live preview before drawing the material sphere");

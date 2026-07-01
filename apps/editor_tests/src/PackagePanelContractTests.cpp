@@ -50,6 +50,8 @@ void RunPackagePanelContractTests() {
     HK_CHECK_MSG(Contains(panel, "MakeClientPackageCommand"), "Package panel builds client package command");
     HK_CHECK_MSG(Contains(panel, "MakeServerPackageCommand"), "Package panel builds server package command");
     HK_CHECK_MSG(Contains(panel, "ResolvePackageOutputDir"), "Package panel validates output directories");
+    HK_CHECK_MSG(Contains(panel, "ImGui::PushID(label)") && Contains(panel, "ImGui::PopID()"),
+                 "Package panel scopes repeated per-profile widgets to avoid ImGui ID conflicts");
     HK_CHECK_MSG(Contains(app, "AddPanel<PackagePanel>"), "EditorApp registers Package panel");
     HK_CHECK_MSG(Contains(app, "OpenPackageWindow"), "EditorApp can focus Package panel");
     HK_CHECK_MSG(Contains(menu, "Package...") && Contains(menu, "OpenPackageWindow"),

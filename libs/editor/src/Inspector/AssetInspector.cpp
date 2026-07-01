@@ -17,6 +17,7 @@
 #include "Hockey/Assets/Assets/TextureAsset.hpp"
 #include "Hockey/Core/Paths.hpp"
 #include "Hockey/Editor/AssetDragDrop.hpp"
+#include "Hockey/Editor/EditorAudioPreview.hpp"
 #include "Hockey/Editor/EditorContext.hpp"
 #include "Hockey/Editor/ImGui/EditorIcons.hpp"
 #include "Hockey/Editor/ImGui/EditorTooltip.hpp"
@@ -96,6 +97,9 @@ void AssetInspector::Draw(EditorContext& context, AssetID assetId) {
     } else if (meta->type == AssetType::Material) {
         ImGui::Separator();
         DrawMaterialEditor(context, ResolveProjectPath(meta->rawPath));
+    } else if (meta->type == AssetType::Audio) {
+        ImGui::Separator();
+        DrawAudioPreview(context, *meta);
     } else {
         const EditorAssetPreview::Preview preview = EditorAssetPreview::Describe(ResolveProjectPath(meta->rawPath));
         if (preview.hasSnippet) {
@@ -393,6 +397,25 @@ void AssetInspector::DrawMaterialPreview(EditorContext& context) {
 
     const ImVec2 size(previewEdge, previewEdge);
     ImGui::Image(static_cast<ImTextureID>(previewId), size);
+}
+
+void AssetInspector::DrawAudioPreview(EditorContext& context, const AssetMetadata& meta) {
+    ImGui::SeparatorText("Audio");
+    if (context.audioPreview == nullptr || !context.audioPreview->IsReady()) {
+        ImGui::TextDisabled("Audio preview unavailable.");
+        return;
+    }
+
+    const std::string previewLabel = EditorIconLabel(EditorIcon::Audio, "Preview Audio");
+    if (ImGui::Button(previewLabel.c_str())) {
+        context.audioPreview->Preview(meta.id);
+    }
+    EditorTooltip::ForLastItem("Play this audio asset through the editor preview device.");
+    ImGui::SameLine();
+    if (ImGui::Button("Stop Preview")) {
+        context.audioPreview->Stop();
+    }
+    EditorTooltip::ForLastItem("Stop editor audio preview playback.");
 }
 
 void AssetInspector::ApplyMaterialPreview(EditorContext& context) {
